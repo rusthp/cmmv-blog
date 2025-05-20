@@ -12,7 +12,7 @@ export class ChatGPTService {
                 'Authorization': `Bearer ${openaiApiKey || ''}`
             },
             body: JSON.stringify({
-                model: "gpt-4-mini",
+                model: "gpt-4.1-mini",
                 messages: [
                     {
                         role: "user",
