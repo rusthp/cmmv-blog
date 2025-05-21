@@ -1304,7 +1304,14 @@ async function applyBulkSchedule() {
                     post: {
                         ...postDetails,
                         status: 'cron',
-                        autoPublishAt: scheduledTime.getTime()
+                        autoPublishAt: scheduledTime.getTime(),
+                        // Garantir que categories e tags estejam no formato correto
+                        categories: postDetails.categories
+                            ? postDetails.categories.map(cat => (typeof cat === 'object' && cat.id != null) ? cat.id : cat).filter(id => id != null)
+                            : [],
+                        tags: postDetails.tags
+                            ? postDetails.tags.map(tag => (typeof tag === 'object' && tag.name != null) ? tag.name : tag).filter(name => name != null)
+                            : []
                     }
                 }
 
