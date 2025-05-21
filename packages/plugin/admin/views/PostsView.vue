@@ -25,7 +25,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Processar Imagens
+                    Process Images
                 </button>
                 <!-- Add search button with dropdown -->
                 <div class="relative">
@@ -72,6 +72,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Refresh
+                </button>
+                <button @click="openBulkRegenerateTagsDialog"
+                    class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Regenerate Bulk Tags
                 </button>
             </div>
         </div>
@@ -224,6 +231,19 @@
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
+                        <button 
+                            @click="handleRegenerateTags(post.id)"
+                            :disabled="post.isRegeneratingTags"
+                            class="text-neutral-400 hover:text-purple-400 p-1 cursor-pointer"
+                            title="Regerar Tags com IA">
+                            <svg v-if="post.isRegeneratingTags" class="animate-spin h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -237,6 +257,7 @@
                                 <th class="p-4 w-16">Image</th>
                                 <th class="p-4 min-w-[250px]">Title</th>
                                 <th class="p-4 w-44 lg:w-48">Categories</th>
+                                <th class="p-4 w-44 lg:w-48">Tags</th> <!-- Added Tags header -->
                                 <th class="p-4 w-32 hidden lg:table-cell">Stats</th>
                                 <th class="p-4 w-28 text-right">Actions</th>
                             </tr>
@@ -288,6 +309,14 @@
                                         <span v-for="category in (post.categories || [])" :key="category"
                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
                                             {{ category?.name }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span v-for="tag in (post.tags || [])" :key="tag"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-300">
+                                            {{ tag }}
                                         </span>
                                     </div>
                                 </td>
@@ -343,6 +372,19 @@
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                        <button 
+                                            @click="handleRegenerateTags(post.id)"
+                                            :disabled="post.isRegeneratingTags"
+                                            class="text-neutral-400 hover:text-purple-400 p-1 cursor-pointer"
+                                            title="Regerar Tags com IA">
+                                            <svg v-if="post.isRegeneratingTags" class="animate-spin h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                             </svg>
                                         </button>
                                     </div>
@@ -534,7 +576,7 @@
     <div v-if="showBulkImageProcessDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
         <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
             <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white">Processamento em Lote de Imagens</h3>
+                <h3 class="text-lg font-medium text-white">Bulk Image Processing</h3>
                 <button @click="closeBulkImageProcessDialog" class="text-neutral-400 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -544,17 +586,17 @@
             <div class="p-6">
                 <div class="mb-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-md font-medium text-white">Posts com Imagens Não Processadas</h4>
+                        <h4 class="text-md font-medium text-white">Posts with Unprocessed Images</h4>
                         <div class="flex items-center">
                             <input type="checkbox" id="selectAllImages" v-model="selectAllImages" @change="toggleSelectAllImages" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
-                            <label for="selectAllImages" class="text-sm text-neutral-300">Selecionar Todos</label>
+                            <label for="selectAllImages" class="text-sm text-neutral-300">Select All</label>
                         </div>
                     </div>
                     <div v-if="loadingPostsWithImages" class="py-4 flex justify-center">
                         <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                     <div v-else-if="postsWithUnprocessedImages.length === 0" class="py-4 text-center text-neutral-400">
-                        Todos os posts já possuem imagens processadas.
+                        All posts already have processed images.
                     </div>
                     <div v-else class="max-h-64 overflow-y-auto border border-neutral-700 rounded-md">
                         <div class="divide-y divide-neutral-700">
@@ -570,7 +612,7 @@
                                     {{ post.title }}
                                 </label>
                                 <div class="w-20 h-12 overflow-hidden rounded">
-                                    <img v-if="post.featureImage" :src="post.featureImage" alt="Imagem" class="w-full h-full object-cover">
+                                    <img v-if="post.featureImage" :src="post.featureImage" alt="Image" class="w-full h-full object-cover">
                                 </div>
                             </div>
                         </div>
@@ -584,7 +626,7 @@
                         class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
                         :disabled="imageProcessingLoading"
                     >
-                        Cancelar
+                        Cancel
                     </button>
                     <button
                         type="button"
@@ -597,9 +639,9 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Processando...
+                            Processing...
                         </span>
-                        <span v-else>Processar {{ selectedPostsForImageProcess.length }} Imagens</span>
+                        <span v-else>Process {{ selectedPostsForImageProcess.length }} Images</span>
                     </button>
                 </div>
             </div>
@@ -612,8 +654,8 @@
                 <div class="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-6">
                     <div class="text-center mb-4">
                         <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-3"></div>
-                        <h3 class="text-lg font-medium text-white">Processando Imagens</h3>
-                        <p class="text-neutral-400 mt-1">Aguarde enquanto as imagens estão sendo processadas</p>
+                        <h3 class="text-lg font-medium text-white">Processing Images</h3>
+                        <p class="text-neutral-400 mt-1">Please wait while images are being processed</p>
                     </div>
 
                     <!-- Barra de progresso -->
@@ -625,18 +667,18 @@
                     </div>
 
                     <div class="text-center text-sm text-neutral-300 mb-4">
-                        <span>{{ imageProcessingProgress.completed }} de {{ imageProcessingProgress.total }} imagens processadas</span>
+                        <span>{{ imageProcessingProgress.completed }} of {{ imageProcessingProgress.total }} images processed</span>
                     </div>
 
                     <!-- Post sendo processado atualmente -->
                     <div v-if="imageProcessingProgress.currentPost" class="mb-4">
-                        <p class="text-sm text-neutral-400">Processando post:</p>
+                        <p class="text-sm text-neutral-400">Processing post:</p>
                         <p class="text-sm font-medium text-white truncate">{{ imageProcessingProgress.currentPost }}</p>
                     </div>
 
                     <!-- Posts processados recentemente -->
                     <div v-if="imageProcessingProgress.processedPosts.length > 0" class="mt-4">
-                        <p class="text-sm text-neutral-400 mb-2">Processados recentemente:</p>
+                        <p class="text-sm text-neutral-400 mb-2">Recently processed:</p>
                         <div class="max-h-32 overflow-y-auto">
                             <div v-for="(post, index) in imageProcessingProgress.processedPosts.slice().reverse().slice(0, 5)" :key="index"
                                 class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
@@ -650,7 +692,7 @@
                                 </div>
                                 <div class="flex-1 truncate text-sm">
                                     <span v-if="post.success" class="text-neutral-300">{{ post.title }}</span>
-                                    <span v-else class="text-amber-400">{{ post.title }} - Imagem original preservada</span>
+                                    <span v-else class="text-amber-400">{{ post.title }} - Original image preserved</span>
                                 </div>
                             </div>
                         </div>
@@ -658,13 +700,12 @@
 
                     <!-- Adicionar resumo de falhas -->
                     <div v-if="imageProcessingProgress.failedPosts && imageProcessingProgress.failedPosts.length > 0" class="mt-4 bg-neutral-750 border border-amber-900/50 rounded-md p-3">
-                        <p class="text-sm text-amber-400 font-medium mb-2">Atenção: Imagens preservadas</p>
+                        <p class="text-sm text-amber-400 font-medium mb-2">Attention: Images Preserved</p>
                         <p class="text-xs text-neutral-300 mb-2">
-                            {{ imageProcessingProgress.failedPosts.length }} imagens não puderam ser processadas, 
-                            mas foram preservadas em seus formatos originais.
+                            {{ imageProcessingProgress.failedPosts.length }} images could not be processed, but were preserved in their original formats.
                         </p>
                         <p class="text-xs text-neutral-400">
-                            As imagens antigas ou em formatos especiais foram mantidas para evitar a perda de conteúdo.
+                            Old images or those in special formats were kept to prevent content loss.
                         </p>
                     </div>
                 </div>
@@ -676,7 +717,7 @@
     <div v-if="showImageProcessingResultsDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
         <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
             <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white">Resultados do Processamento de Imagens</h3>
+                <h3 class="text-lg font-medium text-white">Image Processing Results</h3>
                 <button @click="showImageProcessingResultsDialog = false" class="text-neutral-400 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -690,13 +731,13 @@
                             <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold mr-3">
                                 <span>{{ processingResults.success.length }}</span>
                             </div>
-                            <span class="text-white">Imagens processadas com sucesso</span>
+                            <span class="text-white">Images processed successfully</span>
                         </div>
                         <div class="w-1/2 flex items-center">
                             <div class="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold mr-3">
                                 <span>{{ processingResults.failed.length }}</span>
                             </div>
-                            <span class="text-white">Imagens originais preservadas</span>
+                            <span class="text-white">Original images preserved</span>
                         </div>
                     </div>
 
@@ -708,14 +749,14 @@
                                 class="px-4 py-2 font-medium text-sm"
                                 :class="activeResultTab === 'success' ? 'text-white border-b-2 border-green-500' : 'text-neutral-400 hover:text-white'"
                             >
-                                Processados
+                                Processed
                             </button>
                             <button 
                                 @click="activeResultTab = 'failed'"
                                 class="px-4 py-2 font-medium text-sm"
                                 :class="activeResultTab === 'failed' ? 'text-white border-b-2 border-amber-500' : 'text-neutral-400 hover:text-white'"
                             >
-                                Preservados
+                                Preserved
                             </button>
                         </div>
                     </div>
@@ -723,7 +764,7 @@
                     <!-- Lista de imagens processadas com sucesso -->
                     <div v-if="activeResultTab === 'success'" class="max-h-96 overflow-y-auto">
                         <div v-if="processingResults.success.length === 0" class="text-center py-6 text-neutral-400">
-                            Nenhuma imagem foi processada com sucesso.
+                            No images were processed successfully.
                         </div>
                         <div v-else class="space-y-3">
                             <div v-for="(post, index) in processingResults.success" :key="index" class="bg-neutral-750 p-3 rounded-md">
@@ -733,7 +774,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="text-sm font-medium text-white truncate">{{ post.title }}</h4>
-                                        <p class="text-xs text-green-400">Processada com sucesso</p>
+                                        <p class="text-xs text-green-400">Processed successfully</p>
                                     </div>
                                 </div>
                             </div>
@@ -743,14 +784,14 @@
                     <!-- Lista de imagens originais preservadas -->
                     <div v-if="activeResultTab === 'failed'" class="max-h-96 overflow-y-auto">
                         <div v-if="processingResults.failed.length === 0" class="text-center py-6 text-neutral-400">
-                            Todas as imagens foram processadas com sucesso.
+                            All images were processed successfully.
                         </div>
                         <div v-else>
                             <div class="bg-amber-900/20 border border-amber-900/30 rounded-md p-3 mb-4">
-                                <p class="text-sm text-amber-400 font-medium">Informação importante</p>
+                                <p class="text-sm text-amber-400 font-medium">Important Information</p>
                                 <p class="text-xs text-neutral-300 mt-1">
-                                    As imagens abaixo foram preservadas em seu formato original para evitar perda de conteúdo.
-                                    Elas continuarão funcionando normalmente, mas podem não se beneficiar de otimizações.
+                                    The images below were preserved in their original format to prevent content loss.
+                                    They will continue to work normally but may not benefit from optimizations.
                                 </p>
                             </div>
                             <div class="space-y-3">
@@ -761,9 +802,9 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <h4 class="text-sm font-medium text-white truncate">{{ post.title }}</h4>
-                                            <p class="text-xs text-amber-400">Imagem original preservada</p>
+                                            <p class="text-xs text-amber-400">Original image preserved</p>
                                             <p v-if="post.error && post.error !== 'Processamento falhou - imagem original preservada'" class="text-xs text-neutral-500 truncate mt-1">
-                                                Motivo: {{ post.error }}
+                                                Reason: {{ post.error }}
                                             </p>
                                         </div>
                                     </div>
@@ -779,8 +820,130 @@
                         @click="showImageProcessingResultsDialog = false"
                         class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
                     >
-                        Fechar
+                        Close
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Regenerate Tags Dialog -->
+    <div v-if="showBulkRegenerateTagsDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+        <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+            <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white">Regenerate Bulk Tags</h3>
+                <button @click="closeBulkRegenerateTagsDialog" class="text-neutral-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-md font-medium text-white">Select Posts to Regenerate Tags</h4>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="selectAllForTagRegen" v-model="selectAllForTagRegen" @change="toggleSelectAllForTagRegen" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
+                            <label for="selectAllForTagRegen" class="text-sm text-neutral-300">Select All Visible</label>
+                        </div>
+                    </div>
+                    <div v-if="postsForTagRegen.length === 0" class="py-4 text-center text-neutral-400">
+                        No visible posts to regenerate tags. Adjust your filters if necessary.
+                    </div>
+                    <div v-else class="max-h-64 overflow-y-auto border border-neutral-700 rounded-md">
+                        <div class="divide-y divide-neutral-700">
+                            <div v-for="postItem in postsForTagRegen" :key="postItem.id" class="flex items-center p-3 hover:bg-neutral-750">
+                                <input
+                                    type="checkbox"
+                                    :id="'tag-regen-post-' + postItem.id"
+                                    v-model="selectedPostsForTagRegen"
+                                    :value="postItem.id"
+                                    class="mr-3 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700"
+                                >
+                                <label :for="'tag-regen-post-' + postItem.id" class="text-sm text-white cursor-pointer flex-1 truncate mr-3">
+                                    {{ postItem.title }}
+                                </label>
+                                <span class="text-xs text-neutral-500 w-20 text-right">{{ postItem.tags && postItem.tags.length > 0 ? postItem.tags.length + ' tags' : 'No tags' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button
+                        type="button"
+                        @click="closeBulkRegenerateTagsDialog"
+                        class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
+                        :disabled="bulkTagRegenLoading"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        @click="applyBulkTagRegeneration"
+                        class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
+                        :disabled="selectedPostsForTagRegen.length === 0 || bulkTagRegenLoading"
+                    >
+                        <span v-if="bulkTagRegenLoading" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Regenerating...
+                        </span>
+                        <span v-else>Regenerate Tags for {{ selectedPostsForTagRegen.length }} Posts</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Tag Regeneration Progress Overlay -->
+        <div
+            v-if="bulkTagRegenLoading"
+            class="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[51] px-6" 
+        >
+            <div class="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-6">
+                <div class="text-center mb-4">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-3"></div>
+                    <h3 class="text-lg font-medium text-white">Regenerating Bulk Tags</h3>
+                    <p class="text-neutral-400 mt-1">Please wait while tags are being processed...</p>
+                </div>
+
+                <div class="w-full bg-neutral-700 rounded-full h-4 mb-3">
+                    <div
+                        class="bg-purple-600 h-4 rounded-full transition-all duration-300 ease-out"
+                        :style="{ width: `${(bulkTagRegenProgress.completed / bulkTagRegenProgress.total) * 100}%` }"
+                    ></div>
+                </div>
+
+                <div class="text-center text-sm text-neutral-300 mb-4">
+                    <span>{{ bulkTagRegenProgress.completed }} of {{ bulkTagRegenProgress.total }} posts processed</span>
+                </div>
+
+                <div v-if="bulkTagRegenProgress.currentPostTitle" class="mb-4">
+                    <p class="text-sm text-neutral-400">Processing tags for:</p>
+                    <p class="text-sm font-medium text-white truncate">{{ bulkTagRegenProgress.currentPostTitle }}</p>
+                </div>
+
+                <div v-if="bulkTagRegenProgress.processedItems.length > 0" class="mt-4">
+                    <p class="text-sm text-neutral-400 mb-2">Recently processed:</p>
+                    <div class="max-h-32 overflow-y-auto">
+                        <div v-for="(item, index) in bulkTagRegenProgress.processedItems.slice().reverse().slice(0, 5)" :key="index"
+                            class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
+                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2">
+                                <svg v-if="item.success" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 truncate text-sm">
+                                <span v-if="item.success" class="text-neutral-300">{{ item.title }} - Tags regenerated</span>
+                                <span v-else class="text-red-400">{{ item.title }} - {{ item.error }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -821,6 +984,10 @@ const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage)
 const endIndex = computed(() => startIndex.value + itemsPerPage)
 const totalPosts = ref(0)
 const blogUrl = ref('');
+
+// Add these for tags
+const allTags = ref([])
+const loadingTags = ref(false)
 
 // Create a pagination object to match the component's expected format
 const pagination = computed(() => ({
@@ -890,33 +1057,83 @@ async function loadPosts() {
         const response = await adminClient.posts.get(params)
 
         if (response && response.posts) {
-            posts.value = response.posts.map(post => {
+            const basicPosts = response.posts.map(post => {
                 const authorData = response.authors?.find(author =>
                     author.user === post.author ||
                     (post.authors && post.authors.includes(author.user))
                 );
-
                 return {
                     ...post,
                     author: authorData?.name || 'Unknown',
                     authorImage: authorData?.image || null,
                     categories: Array.isArray(post.categories) ? post.categories : [post.categories],
                     categoryNames: Array.isArray(post.categories)
-                        ? response.categories
+                        ? response.categories // Assuming response.categories is available from the list call
                             .filter(category => post.categories.includes(category.id))
                             .map(category => category.name)
                         : post.categories?.name ? [post.categories.name] : [],
-                    tags: post.tags || []
+                    tags: [], // Initialize tags as empty, to be populated by individual calls
+                    isRegeneratingTags: false // Add loading state for tag regeneration
+                };
+            });
+            totalPosts.value = response.count || basicPosts.length;
+            posts.value = basicPosts; // Set basic posts first to render something
+
+            // Now fetch details for each post to get tags
+            const postDetailPromises = basicPosts.map(basicPost =>
+                adminClient.posts.getById(basicPost.id)
+                    .then(detailedPost => {
+                        let tagNames = [];
+                        if (detailedPost && detailedPost.tags) {
+                            if (Array.isArray(detailedPost.tags)) {
+                                tagNames = detailedPost.tags.map(tag => {
+                                    if (typeof tag === 'object' && tag !== null && tag.name) {
+                                        return tag.name; // Case: tag is { name: 'TagName' }
+                                    }
+                                    if (typeof tag === 'string') {
+                                        // Case: tag is an ID to be mapped, or already a name
+                                        // If allTags is populated and tag is an ID
+                                        const foundInAllTags = allTags.value.find(t => t.id === tag);
+                                        if (foundInAllTags) return foundInAllTags.name;
+                                        return tag; // Assume it's a name if not found as ID
+                                    }
+                                    return null;
+                                }).filter(name => name !== null);
+                            } else if (typeof detailedPost.tags === 'string') {
+                                // Fallback for single tag as string (ID or name)
+                                const foundInAllTags = allTags.value.find(t => t.id === detailedPost.tags);
+                                if (foundInAllTags) tagNames = [foundInAllTags.name];
+                                else tagNames = [detailedPost.tags]; // Assume it's a name
+                            }
+                        }
+                        return { postId: basicPost.id, tags: tagNames };
+                    })
+                    .catch(err => {
+                        console.error(`Failed to load details for post ${basicPost.id}:`, err);
+                        return { postId: basicPost.id, tags: [], error: true }; // Return empty tags on error for this post
+                    })
+            );
+
+            const detailedResults = await Promise.allSettled(postDetailPromises);
+
+            detailedResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value && !result.value.error) {
+                    const { postId, tags } = result.value;
+                    const postIndex = posts.value.findIndex(p => p.id === postId);
+                    if (postIndex !== -1) {
+                        posts.value[postIndex].tags = tags;
+                    }
                 }
             });
+            // Force reactivity if needed, though Vue 3 is usually good with array element changes.
+            // posts.value = [...posts.value];
 
-            totalPosts.value = response.count || posts.value.length;
         } else {
             posts.value = [];
             totalPosts.value = 0;
         }
 
-        loading.value = false
+        loading.value = false // Set loading to false after all operations
     } catch (error) {
         console.error('Failed to load posts:', error)
         posts.value = [];
@@ -993,7 +1210,7 @@ watch(searchQuery, (newValue) => {
 
     // If there's a search term, switch to "All" status to find post in any status
     if (newValue && newValue.trim() !== '') {
-        filters.value.status = ''
+        filters.value.status = '' // Ensure this correctly triggers the "All" filter view
     }
 
     updateUrlParams()
@@ -1046,10 +1263,34 @@ const loadCategories = async () => {
     }
 }
 
+// Add this function to load tags
+async function loadTags() {
+    try {
+        loadingTags.value = true
+        const response = await adminClient.tags.get({
+            limit: 500, // Or a suitable limit
+            sort: 'asc',
+            sortBy: 'name'
+        })
+        if (response && response.data) {
+            allTags.value = response.data
+            // ---- START DEBUG ----
+            // console.log('[PostsView] loadTags - allTags populated:', allTags.value);
+            // ---- END DEBUG ----
+        }
+        loadingTags.value = false
+    } catch (err) {
+        console.error('Failed to load tags:', err)
+        showNotification('error', 'Failed to load tags')
+        loadingTags.value = false
+    }
+}
+
 onMounted(async () => {
     initializeFromUrl()
     loadBlogUrl()
     loadCategories()
+    await loadTags() // Ensure tags are loaded before posts
 
     if (!filters.value.status)
         filters.value.status = 'draft'
@@ -1752,4 +1993,201 @@ const processingResults = ref({
     success: [],
     failed: []
 })
+
+// Function to handle regenerating tags for a single post
+async function handleRegenerateTags(postId) {
+    const postIndex = posts.value.findIndex(p => p.id === postId);
+    if (postIndex === -1) return;
+
+    const currentPostInList = posts.value[postIndex];
+    currentPostInList.isRegeneratingTags = true;
+    showNotification('info', `Regenerating tags for: ${currentPostInList.title}...`);
+
+    try {
+        // 1. Buscar o post completo para ter todos os dados necessários para o save
+        const fullPostData = await adminClient.posts.getById(postId);
+        if (!fullPostData) {
+            throw new Error('Post não encontrado para obter detalhes.');
+        }
+
+        // Simulação de geração de tags (Placeholder)
+        // A lógica de IA real para tags contextuais e SEO precisaria ser mais avançada
+        // e idealmente residir no backend, acessando o conteúdo completo do post.
+
+        // Simulação de chamada API de IA com delay:
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Simulação de geração de tags a partir do título (para melhor demonstração):
+        let newAiTags = [];
+        if (fullPostData.title) {
+            const stopWords = ['a', 'ao', 'aos', 'as', 'à', 'às', 'com', 'como', 'continuar', 'da', 'das', 'de', 'do', 'dos', 'e', 'em', 'enquanto', 'era', 'estar', 'estava', 'estão', 'é', 'ficar', 'ficou', 'foi', 'mas', 'na', 'nas', 'nem', 'no', 'nos', 'o', 'os', 'ou', 'para', 'parecer', 'pela', 'pelas', 'pelo', 'pelos', 'permanecer', 'pois', 'por', 'porque', 'quando', 'que', 'revela', 'se', 'sem', 'ser', 'são', 'sobre', 'tem', 'ter', 'um', 'uma', 'umas', 'uns', 'usar', 'vai', 'ver'];
+            newAiTags = fullPostData.title.toLowerCase().split(' ')
+                .map(tag => tag.replace(/[.:?!,\'"()]+$/, '').replace(/^['"(]+/, '')) // Limpa pontuação no início e fim
+                .filter(tag => tag.length > 3 && !stopWords.includes(tag))
+                .slice(0, 5); // Pegar as primeiras 5 palavras chave
+        }
+        if (newAiTags.length === 0) { // Fallback se o título não gerar tags
+            newAiTags = [`SimTag1-${Math.random().toString(36).substring(7)}`, `SimTag2-${Math.random().toString(36).substring(7)}`];
+        }
+        // Fim da simulação de IA
+
+        // 2. Preparar o payload para salvar, atualizando apenas as tags
+        const updatedPostPayload = {
+            ...fullPostData,
+            tags: newAiTags // Substitui as tags antigas pelas novas geradas
+        };
+
+        // Remover campos que não devem ser enviados de volta ou que o backend pode não esperar no save simples
+        // Ajuste conforme a necessidade do seu endpoint `save`
+        delete updatedPostPayload.meta; 
+        delete updatedPostPayload.authorsData; // Exemplo, se isso for um campo populado apenas no GET
+        delete updatedPostPayload.categoryNames; // Exemplo
+
+        // 3. Salvar o post com as novas tags
+        // Supondo que adminClient.posts.save() aceita o objeto do post diretamente
+        // e lida com a atualização no backend.
+        const saveResponse = await adminClient.posts.save({ post: updatedPostPayload });
+
+        if (!saveResponse || (saveResponse.id !== postId && !saveResponse.result)) {
+             throw new Error('Falha ao salvar as novas tags no post.');
+        }
+
+        // 4. Atualizar o post na lista local da PostsView
+        currentPostInList.tags = newAiTags;
+        showNotification('success', `Tags for "${currentPostInList.title}" regenerated and saved!`);
+
+    } catch (error) {
+        console.error(`Falha ao regerar e salvar tags para o post ${postId}:`, error);
+        showNotification('error', `Failed to process tags for "${currentPostInList.title}": ${error.message}`);
+    } finally {
+        if (postIndex !== -1 && posts.value[postIndex]) { 
+            posts.value[postIndex].isRegeneratingTags = false;
+        }
+    }
+}
+
+// New variables for Bulk Tag Regeneration
+const showBulkRegenerateTagsDialog = ref(false);
+const postsForTagRegen = ref([]); // Holds posts currently visible for selection in dialog
+const selectedPostsForTagRegen = ref([]); // Array of post IDs
+const selectAllForTagRegen = ref(false);
+const bulkTagRegenLoading = ref(false);
+const bulkTagRegenProgress = ref({
+    total: 0,
+    completed: 0,
+    currentPostTitle: null,
+    processedItems: [] // { id: string, title: string, success: boolean, error?: string, newTags?: string[] }
+});
+
+
+// Functions for Bulk Tag Regeneration
+function openBulkRegenerateTagsDialog() {
+    // Populate with currently visible posts (paginatedPosts)
+    // We need a deep copy to avoid modifying the main list during selection
+    postsForTagRegen.value = JSON.parse(JSON.stringify(paginatedPosts.value));
+    selectedPostsForTagRegen.value = [];
+    selectAllForTagRegen.value = false;
+    showBulkRegenerateTagsDialog.value = true;
+}
+
+function closeBulkRegenerateTagsDialog() {
+    showBulkRegenerateTagsDialog.value = false;
+    postsForTagRegen.value = [];
+    selectedPostsForTagRegen.value = [];
+}
+
+function toggleSelectAllForTagRegen() {
+    if (selectAllForTagRegen.value) {
+        selectedPostsForTagRegen.value = postsForTagRegen.value.map(post => post.id);
+    } else {
+        selectedPostsForTagRegen.value = [];
+    }
+}
+
+watch(selectedPostsForTagRegen, (newVal) => {
+    if (postsForTagRegen.value.length > 0) {
+        selectAllForTagRegen.value = newVal.length === postsForTagRegen.value.length;
+    } else {
+        selectAllForTagRegen.value = false;
+    }
+});
+
+async function applyBulkTagRegeneration() {
+    if (selectedPostsForTagRegen.value.length === 0) return;
+
+    bulkTagRegenLoading.value = true;
+    bulkTagRegenProgress.value = {
+        total: selectedPostsForTagRegen.value.length,
+        completed: 0,
+        currentPostTitle: null,
+        processedItems: []
+    };
+
+    for (const postId of selectedPostsForTagRegen.value) {
+        const postDetailsInDialog = postsForTagRegen.value.find(p => p.id === postId);
+        bulkTagRegenProgress.value.currentPostTitle = postDetailsInDialog ? postDetailsInDialog.title : `Post ID: ${postId}`;
+
+        try {
+            // Re-use the single post regeneration logic, but adapt for bulk context
+            const fullPostData = await adminClient.posts.getById(postId);
+            if (!fullPostData) {
+                throw new Error('Post não encontrado para obter detalhes.');
+            }
+
+            // Simulação de geração de tags (Placeholder para lote)
+
+            // Simulate AI tag generation
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter delay for bulk
+            let newAiTags = [];
+            if (fullPostData.title) {
+                const stopWords = ['a', 'ao', 'aos', 'as', 'à', 'às', 'com', 'como', 'continuar', 'da', 'das', 'de', 'do', 'dos', 'e', 'em', 'enquanto', 'era', 'estar', 'estava', 'estão', 'é', 'ficar', 'ficou', 'foi', 'mas', 'na', 'nas', 'nem', 'no', 'nos', 'o', 'os', 'ou', 'para', 'parecer', 'pela', 'pelas', 'pelo', 'pelos', 'permanecer', 'pois', 'por', 'porque', 'quando', 'que', 'revela', 'se', 'sem', 'ser', 'são', 'sobre', 'tem', 'ter', 'um', 'uma', 'umas', 'uns', 'usar', 'vai', 'ver'];
+                newAiTags = fullPostData.title.toLowerCase().split(' ')
+                    .map(tag => tag.replace(/[.:?!,\'"()]+$/, '').replace(/^['"(]+/, '')) // Limpa pontuação no início e fim
+                    .filter(tag => tag.length > 3 && !stopWords.includes(tag))
+                    .slice(0, 3); // Fewer tags for bulk example
+            }
+            if (newAiTags.length === 0) {
+                newAiTags = [`BulkSimTag-${Math.random().toString(36).substring(7)}`];
+            }
+
+            const updatedPostPayload = { ...fullPostData, tags: newAiTags };
+            delete updatedPostPayload.meta;
+            delete updatedPostPayload.authorsData;
+            delete updatedPostPayload.categoryNames;
+
+            const saveResponse = await adminClient.posts.save({ post: updatedPostPayload });
+            if (!saveResponse || (saveResponse.id !== postId && !saveResponse.result)) {
+                throw new Error('Falha ao salvar tags.');
+            }
+
+            bulkTagRegenProgress.value.processedItems.push({
+                id: postId,
+                title: fullPostData.title,
+                success: true,
+                newTags: newAiTags
+            });
+
+        } catch (error) {
+            console.error(`Falha ao regerar tags para ${postId} em lote:`, error);
+            bulkTagRegenProgress.value.processedItems.push({
+                id: postId,
+                title: bulkTagRegenProgress.value.currentPostTitle, // Use title from dialog if full fetch failed
+                success: false,
+                error: error.message
+            });
+        }
+        bulkTagRegenProgress.value.completed++;
+    }
+
+    bulkTagRegenLoading.value = false;
+    const successCount = bulkTagRegenProgress.value.processedItems.filter(r => r.success).length;
+    showNotification(
+        successCount === bulkTagRegenProgress.value.total ? 'success' : 'warning',
+        `Bulk tag regeneration complete. ${successCount} of ${bulkTagRegenProgress.value.total} posts processed.`
+    );
+
+    closeBulkRegenerateTagsDialog();
+    loadPosts(); // Recarregar a lista principal para ver as tags atualizadas
+}
+
 </script>
