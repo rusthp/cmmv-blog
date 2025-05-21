@@ -1445,8 +1445,9 @@ async function loadPostsWithUnprocessedImages() {
         loadingPostsWithImages.value = true;
 
         const response = await adminClient.posts.get({
-            limit: 100, // Aumentar o limite ou implementar paginação se necessário
+            limit: 1000, // Aumentar o limite ou implementar paginação se necessário
             // status: 'published', // Removido para buscar de todos os status
+            status: 'draft' || 'cron',
             sortBy: 'createdAt',
             sort: 'desc'
         });
