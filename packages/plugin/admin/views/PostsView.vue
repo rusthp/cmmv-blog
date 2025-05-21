@@ -19,6 +19,14 @@
                     </svg>
                     Bulk Schedule
                 </button>
+                <!-- Adicionar botão para processamento em lote de imagens -->
+                <button @click="openBulkImageProcessDialog"
+                    class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Processar Imagens
+                </button>
                 <!-- Add search button with dropdown -->
                 <div class="relative">
                     <button @click="toggleSearchDropdown" data-search-toggle
@@ -198,6 +206,17 @@
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                         </button>
+                        <!-- Adicionar botão para processamento individual de imagem -->
+                        <button 
+                            v-if="post.featureImage && isImageUnprocessed(post.featureImage)"
+                            @click="processImage(post.id)" 
+                            class="text-amber-400 hover:text-amber-300 p-1 cursor-pointer"
+                            title="Processar imagem"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </button>
                         <button @click="deletePost(post.id)" class="text-neutral-400 hover:text-red-500 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -305,6 +324,17 @@
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                        <!-- Adicionar botão para processamento individual de imagem -->
+                                        <button 
+                                            v-if="post.featureImage && isImageUnprocessed(post.featureImage)"
+                                            @click="processImage(post.id)" 
+                                            class="text-amber-400 hover:text-amber-300 p-1 cursor-pointer"
+                                            title="Processar imagem"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </button>
                                         <button @click="deletePost(post.id)" class="text-neutral-400 hover:text-red-500 p-1 cursor-pointer"
@@ -492,6 +522,136 @@
                             <div class="flex-1 truncate text-sm">
                                 <span v-if="post.success" class="text-neutral-300">{{ post.title }}</span>
                                 <span v-else class="text-red-400">{{ post.title }} - {{ post.error }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adicionar diálogo de processamento em lote de imagens -->
+    <div v-if="showBulkImageProcessDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+        <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+            <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white">Processamento em Lote de Imagens</h3>
+                <button @click="closeBulkImageProcessDialog" class="text-neutral-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-md font-medium text-white">Posts com Imagens Não Processadas</h4>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="selectAllImages" v-model="selectAllImages" @change="toggleSelectAllImages" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
+                            <label for="selectAllImages" class="text-sm text-neutral-300">Selecionar Todos</label>
+                        </div>
+                    </div>
+                    <div v-if="loadingPostsWithImages" class="py-4 flex justify-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                    <div v-else-if="postsWithUnprocessedImages.length === 0" class="py-4 text-center text-neutral-400">
+                        Todos os posts já possuem imagens processadas.
+                    </div>
+                    <div v-else class="max-h-64 overflow-y-auto border border-neutral-700 rounded-md">
+                        <div class="divide-y divide-neutral-700">
+                            <div v-for="post in postsWithUnprocessedImages" :key="post.id" class="flex items-center p-3 hover:bg-neutral-750">
+                                <input
+                                    type="checkbox"
+                                    :id="'image-post-' + post.id"
+                                    v-model="selectedPostsForImageProcess"
+                                    :value="post.id"
+                                    class="mr-3 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700"
+                                >
+                                <label :for="'image-post-' + post.id" class="text-sm text-white cursor-pointer flex-1 truncate mr-3">
+                                    {{ post.title }}
+                                </label>
+                                <div class="w-20 h-12 overflow-hidden rounded">
+                                    <img v-if="post.featureImage" :src="post.featureImage" alt="Imagem" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button
+                        type="button"
+                        @click="closeBulkImageProcessDialog"
+                        class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
+                        :disabled="imageProcessingLoading"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        @click="processBulkImages"
+                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors"
+                        :disabled="selectedPostsForImageProcess.length === 0 || imageProcessingLoading"
+                    >
+                        <span v-if="imageProcessingLoading" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processando...
+                        </span>
+                        <span v-else>Processar {{ selectedPostsForImageProcess.length }} Imagens</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overlay de Progresso de Processamento -->
+            <div
+                v-if="imageProcessingLoading"
+                class="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-10 px-6"
+            >
+                <div class="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-6">
+                    <div class="text-center mb-4">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-3"></div>
+                        <h3 class="text-lg font-medium text-white">Processando Imagens</h3>
+                        <p class="text-neutral-400 mt-1">Aguarde enquanto as imagens estão sendo processadas</p>
+                    </div>
+
+                    <!-- Barra de progresso -->
+                    <div class="w-full bg-neutral-700 rounded-full h-4 mb-3">
+                        <div
+                            class="bg-amber-600 h-4 rounded-full transition-all duration-300 ease-out"
+                            :style="{ width: `${(imageProcessingProgress.completed / imageProcessingProgress.total) * 100}%` }"
+                        ></div>
+                    </div>
+
+                    <div class="text-center text-sm text-neutral-300 mb-4">
+                        <span>{{ imageProcessingProgress.completed }} de {{ imageProcessingProgress.total }} imagens processadas</span>
+                    </div>
+
+                    <!-- Post sendo processado atualmente -->
+                    <div v-if="imageProcessingProgress.currentPost" class="mb-4">
+                        <p class="text-sm text-neutral-400">Processando post:</p>
+                        <p class="text-sm font-medium text-white truncate">{{ imageProcessingProgress.currentPost }}</p>
+                    </div>
+
+                    <!-- Posts processados recentemente -->
+                    <div v-if="imageProcessingProgress.processedPosts.length > 0" class="mt-4">
+                        <p class="text-sm text-neutral-400 mb-2">Processados recentemente:</p>
+                        <div class="max-h-32 overflow-y-auto">
+                            <div v-for="(post, index) in imageProcessingProgress.processedPosts.slice().reverse().slice(0, 5)" :key="index"
+                                class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
+                                <div :class="post.success ? 'text-green-500' : 'text-red-500'" class="mr-2">
+                                    <svg v-if="post.success" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <div class="flex-1 truncate text-sm">
+                                    <span v-if="post.success" class="text-neutral-300">{{ post.title }}</span>
+                                    <span v-else class="text-red-400">{{ post.title }} - {{ post.error }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1122,5 +1282,251 @@ function formatDateTimeForInput(date) {
     const minutes = String(date.getMinutes()).padStart(2, '0')
 
     return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+// Add new variables for bulk image processing
+const showBulkImageProcessDialog = ref(false)
+const postsWithUnprocessedImages = ref([])
+const loadingPostsWithImages = ref(false)
+const selectedPostsForImageProcess = ref([])
+const selectAllImages = ref(false)
+const imageProcessingLoading = ref(false)
+const imageProcessingProgress = ref({
+    total: 0,
+    completed: 0,
+    currentPost: null,
+    processedPosts: []
+})
+
+// Add these new functions for bulk image processing
+function openBulkImageProcessDialog() {
+    showBulkImageProcessDialog.value = true
+    loadingPostsWithImages.value = true
+    selectedPostsForImageProcess.value = []
+    selectAllImages.value = false
+    loadPostsWithUnprocessedImages()
+}
+
+function closeBulkImageProcessDialog() {
+    showBulkImageProcessDialog.value = false
+    postsWithUnprocessedImages.value = []
+    selectedPostsForImageProcess.value = []
+}
+
+async function loadPostsWithUnprocessedImages() {
+    try {
+        loadingPostsWithImages.value = true;
+
+        const response = await adminClient.posts.get({
+            limit: 100,
+            sortBy: 'createdAt',
+            sort: 'desc'
+        });
+
+        if (response && response.posts) {
+            // Filtrar posts que têm imagens não processadas
+            postsWithUnprocessedImages.value = response.posts.filter(post => 
+                post.featureImage && isImageUnprocessed(post.featureImage)
+            ).map(post => ({
+                ...post,
+                author: typeof post.author === 'object' ? post.author.name : post.author,
+                authorImage: typeof post.author === 'object' ? post.author.image : null,
+            }));
+        } else {
+            postsWithUnprocessedImages.value = [];
+        }
+
+        loadingPostsWithImages.value = false;
+    } catch (error) {
+        console.error('Falha ao carregar posts com imagens não processadas:', error);
+        postsWithUnprocessedImages.value = [];
+        loadingPostsWithImages.value = false;
+        showNotification('error', 'Falha ao carregar posts com imagens não processadas');
+    }
+}
+
+function toggleSelectAllImages() {
+    if (selectAllImages.value) {
+        selectedPostsForImageProcess.value = postsWithUnprocessedImages.value.map(post => post.id)
+    } else {
+        selectedPostsForImageProcess.value = []
+    }
+}
+
+// Watch selectedPostsForImageProcess to update selectAllImages state
+watch(selectedPostsForImageProcess, (newVal) => {
+    selectAllImages.value = newVal.length > 0 && newVal.length === postsWithUnprocessedImages.value.length
+})
+
+async function processBulkImages() {
+    if (selectedPostsForImageProcess.value.length === 0) return;
+
+    try {
+        imageProcessingLoading.value = true;
+
+        // Reset and initialize progress tracking
+        imageProcessingProgress.value = {
+            total: selectedPostsForImageProcess.value.length,
+            completed: 0,
+            currentPost: null,
+            processedPosts: []
+        };
+
+        const results = [];
+
+        for (const postId of selectedPostsForImageProcess.value) {
+            try {
+                // Update current post in progress
+                const post = postsWithUnprocessedImages.value.find(p => p.id === postId);
+                imageProcessingProgress.value.currentPost = post ? post.title : postId;
+
+                // Process the image
+                await processImage(postId);
+
+                const result = {
+                    id: postId,
+                    title: post.title,
+                    success: true
+                };
+
+                results.push(result);
+
+                // Update progress
+                imageProcessingProgress.value.completed++;
+                imageProcessingProgress.value.processedPosts.push(result);
+            } catch (err) {
+                console.error(`Falha ao processar imagem para o post ${postId}:`, err);
+                const failedResult = {
+                    id: postId,
+                    title: postsWithUnprocessedImages.value.find(p => p.id === postId)?.title || postId,
+                    error: err.message,
+                    success: false
+                };
+                results.push(failedResult);
+                imageProcessingProgress.value.completed++;
+                imageProcessingProgress.value.processedPosts.push(failedResult);
+            }
+        }
+
+        // Count successes
+        const successCount = results.filter(r => r.success).length;
+
+        if (successCount === selectedPostsForImageProcess.value.length) {
+            showNotification('success', `${successCount} imagens processadas com sucesso`);
+        } else {
+            showNotification('warning', `Processadas ${successCount} de ${selectedPostsForImageProcess.value.length} imagens`);
+        }
+
+        imageProcessingLoading.value = false;
+        closeBulkImageProcessDialog();
+        loadPosts(); // Refresh the main posts list
+    } catch (error) {
+        console.error('Falha ao processar imagens em lote:', error);
+        imageProcessingLoading.value = false;
+        showNotification('error', 'Falha ao processar imagens em lote: ' + error.message);
+    }
+}
+
+// Add a helper function to process a single image
+async function processImage(postId) {
+    try {
+        // Buscar o post por ID
+        const postResponse = await adminClient.posts.getById(postId);
+        
+        if (!postResponse || !postResponse.featureImage) {
+            throw new Error('Post ou imagem não encontrada');
+        }
+        
+        const post = postResponse;
+        const imageUrl = post.featureImage;
+        
+        // Verificar se a imagem precisa ser processada
+        if (!isImageUnprocessed(imageUrl)) {
+            return; // Imagem já processada, nada a fazer
+        }
+        
+        let processedImageUrl = '';
+        
+        // Processar a imagem de acordo com seu tipo
+        if (imageUrl.startsWith('data:')) {
+            // Converter imagem base64 para blob
+            const formData = new FormData();
+            const blob = await fetch(imageUrl).then(r => r.blob());
+            formData.append('file', blob, 'feature-image.jpg');
+            
+            // Fazer upload para o servidor
+            const response = await adminClient.medias.upload(formData);
+            
+            if (response && response.url) {
+                processedImageUrl = response.url;
+            } else {
+                throw new Error('Falha ao fazer upload da imagem');
+            }
+        } else if (imageUrl.includes('://')) {
+            // Importar imagem de URL externa
+            const response = await adminClient.medias.importFromUrl({
+                url: imageUrl,
+                alt: post.featureImageAlt || '',
+                caption: post.featureImageCaption || ''
+            });
+            
+            if (response && response.url) {
+                processedImageUrl = response.url;
+            } else {
+                throw new Error('Falha ao processar a imagem externa');
+            }
+        }
+        
+        // Atualizar o post com a nova URL da imagem
+        if (processedImageUrl) {
+            const updateData = {
+                post: {
+                    ...post,
+                    featureImage: processedImageUrl
+                }
+            };
+            
+            await adminClient.posts.save(updateData);
+            
+            showNotification('success', 'Imagem processada com sucesso');
+            
+            // Atualizar a lista de posts
+            const postIndex = posts.value.findIndex(p => p.id === postId);
+            if (postIndex !== -1) {
+                posts.value[postIndex].featureImage = processedImageUrl;
+            }
+            
+            return true;
+        } else {
+            throw new Error('Falha ao processar a imagem');
+        }
+    } catch (err) {
+        console.error(`Falha ao processar imagem para o post ${postId}:`, err);
+        showNotification('error', `Falha ao processar imagem: ${err.message}`);
+        throw err;
+    }
+}
+
+// Add a helper function to check if an image is unprocessed
+function isImageUnprocessed(imageUrl) {
+    if(!imageUrl)
+        return false;
+
+    if(imageUrl.startsWith("https://static") || imageUrl.startsWith("https://cdn"))
+        return false;
+
+    if(!imageUrl.includes(window.location.hostname) &&
+        !imageUrl.includes(blogUrl.value))
+        return true;
+
+    if (imageUrl && (
+        imageUrl.startsWith('data:') ||
+        (imageUrl.startsWith('/') && !imageUrl.includes('://')) ||
+        imageUrl.includes('imageProxy')
+    )) {
+        return true;
+    }
+
+    return false;
 }
 </script>
