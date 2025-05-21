@@ -382,6 +382,7 @@ import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
+import { useDarkMode } from '../../composables/useUtils';
 
 import CookieConsent from '../../components/CookieConsent.vue';
 
@@ -423,27 +424,11 @@ useHead({
     script: scripts
 })
 
-const isDarkMode = ref(false);
+// Usando o composable de gerenciamento de tema
+const { isDarkMode, toggleTheme } = useDarkMode();
+
 const popularPosts = ref<any[]>([]);
 const loadingPopularPosts = ref(true);
-
-const toggleTheme = () => {
-    isDarkMode.value = !isDarkMode.value;
-    localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
-    applyTheme();
-};
-
-const applyTheme = () => {
-    if (isDarkMode.value) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-};
-
-const detectSystemTheme = () => {
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-};
 
 const searchModalOpen = ref(false);
 const searchQuery = ref('');
@@ -583,36 +568,12 @@ onMounted(async () => {
             }
         })()
     ]);
-
-    // Detectar tema do sistema ou usar o valor salvo no localStorage
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        isDarkMode.value = savedTheme === 'dark';
-    } else {
-        // Se não tiver um tema salvo, use a preferência do sistema
-        isDarkMode.value = detectSystemTheme();
-        localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
-    }
-    applyTheme();
-    
-    // Adicionar detector de mudanças de preferência do sistema
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-        if (!localStorage.getItem('theme')) {
-            // Só atualiza automaticamente se o usuário não tiver escolhido um tema manualmente
-            isDarkMode.value = event.matches;
-            localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
-            applyTheme();
-        }
-    });
     
     document.addEventListener('click', closeDropdownsOnClickOutside);
 });
 
 onBeforeUnmount(() => {
     document.removeEventListener('click', closeDropdownsOnClickOutside);
-    // Remover o detector de mudanças de tema para evitar memory leaks
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    darkModeMediaQuery.removeEventListener('change', () => {});
 });
 
 const closeDropdownsOnClickOutside = (event: Event) => {
@@ -636,10 +597,6 @@ const closeDropdownsOnClickOutside = (event: Event) => {
         openDropdowns.value = {};
     }
 };
-
-watch(isDarkMode, () => {
-    applyTheme();
-});
 </script>
 
 <style>
@@ -771,39 +728,51 @@ header.bg-black {
 }
 
 .dark body, 
-.dark .bg-gray-100 {
+.dark .bg-gray-100,
+.dark .bg-neutral-100 {
     background-color: #121212;
     color: #e0e0e0;
 }
 
 .dark .bg-white, 
-.dark .bg-gray-50 {
+.dark .bg-gray-50,
+.dark .bg-neutral-50 {
     background-color: #1e1e1e;
     color: #e0e0e0;
 }
 
 .dark .text-gray-900, 
 .dark .text-gray-800, 
-.dark .text-gray-700 {
+.dark .text-gray-700,
+.dark .text-neutral-900, 
+.dark .text-neutral-800, 
+.dark .text-neutral-700 {
     color: #e0e0e0;
 }
 
 .dark .text-gray-600, 
-.dark .text-gray-500 {
+.dark .text-gray-500,
+.dark .text-neutral-600, 
+.dark .text-neutral-500 {
     color: #a0a0a0;
 }
 
 .dark .border-gray-200, 
-.dark .border-gray-300 {
+.dark .border-gray-300,
+.dark .border-neutral-200, 
+.dark .border-neutral-300,
+.dark .border-neutral-100 {
     border-color: #333333;
 }
 
-.dark .bg-gray-200 {
+.dark .bg-gray-200,
+.dark .bg-neutral-200 {
     background-color: #2a2a2a;
 }
 
 .dark input, 
-.dark textarea {
+.dark textarea,
+.dark select {
     background-color: #2a2a2a;
     color: #e0e0e0;
     border-color: #444;
@@ -814,12 +783,78 @@ header.bg-black {
     color: #888;
 }
 
-.dark .shadow-md {
+.dark .shadow-md,
+.dark .shadow-lg {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .dark header.bg-black {
     background: #000 !important;
     border-color: #333 !important;
+}
+
+/* Estilos específicos para páginas */
+.dark .post-content {
+    color: #e0e0e0;
+}
+
+.dark .post-content :deep(h2),
+.dark .post-content :deep(h3),
+.dark .post-content :deep(h4),
+.dark .post-content :deep(h5),
+.dark .post-content :deep(h6) {
+    color: #e0e0e0;
+}
+
+.dark .post-content :deep(p) {
+    color: #d0d0d0;
+}
+
+.dark .post-content :deep(blockquote) {
+    color: #a0a0a0;
+    background-color: #1a1a1a;
+}
+
+.dark .post-content :deep(code),
+.dark .post-content :deep(pre) {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+}
+
+.dark .post-content :deep(table th),
+.dark .post-content :deep(table td) {
+    border-color: #444;
+}
+
+.dark .ad-placeholder {
+    background-color: #2a2a2a;
+    border-color: #444;
+    color: #888;
+}
+
+.dark .bg-gray-200 {
+    background-color: #2a2a2a;
+}
+
+.dark .bg-gray-100 {
+    background-color: #1a1a1a;
+}
+
+.dark .bg-blue-50,
+.dark .bg-pink-50,
+.dark .bg-neutral-50,
+.dark .bg-green-50 {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-neutral-50:hover,
+.dark .hover\:bg-neutral-100:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .transform:hover {
+    background-color: #2a2a2a;
 }
 </style>
