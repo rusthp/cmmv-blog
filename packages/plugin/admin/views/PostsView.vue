@@ -1564,7 +1564,14 @@ async function processImage(postId) {
                     ...post,
                     featureImage: processedImageUrl,
                     // Guardar a URL original como backup em um campo de metadados
-                    originalFeatureImage: originalImageUrl
+                    originalFeatureImage: originalImageUrl,
+                    // Garantir que categories e tags estejam no formato correto
+                    categories: post.categories
+                        ? post.categories.map(cat => (typeof cat === 'object' && cat.id != null) ? cat.id : cat).filter(id => id != null)
+                        : [],
+                    tags: post.tags
+                        ? post.tags.map(tag => (typeof tag === 'object' && tag.name != null) ? tag.name : tag).filter(name => name != null)
+                        : []
                 }
             };
             
