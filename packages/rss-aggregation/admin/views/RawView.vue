@@ -97,6 +97,12 @@
                     </svg>
                     Refresh
                 </button>
+                <button @click="openBulkReprocessDialog" class="px-2.5 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                    Reprocessar em Lote
+                </button>
             </div>
         </div>
 
@@ -694,6 +700,126 @@
                         </span>
                         <span v-else>Clean Selected Channels</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Reprocess Dialog -->
+        <div v-if="showBulkReprocessDialog" class="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
+                <div class="flex justify-between items-center mb-4 border-b border-neutral-700 pb-3">
+                    <h3 class="text-xl font-semibold text-white">Reprocessar Itens do Feed em Lote</h3>
+                    <button @click="closeBulkReprocessDialog" class="text-neutral-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-md font-medium text-white">Selecionar Itens para Reprocessar</h4>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="selectAllItemsForReprocess" v-model="selectAllForReprocess" @change="toggleSelectAllForReprocess" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
+                            <label for="selectAllItemsForReprocess" class="text-sm text-neutral-300">Selecionar Todos Visíveis</label>
+                        </div>
+                    </div>
+                    <div v-if="loading" class="py-4 flex justify-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                    <div v-else-if="feedItems.length === 0" class="py-4 text-center text-neutral-400">
+                        Nenhum item no feed para reprocessar.
+                    </div>
+                    <div v-else class="max-h-80 overflow-y-auto border border-neutral-700 rounded-md">
+                        <div class="divide-y divide-neutral-700">
+                            <div v-for="item in feedItems" :key="item.id" class="flex items-center p-3 hover:bg-neutral-750">
+                                <input
+                                    type="checkbox"
+                                    :id="'reprocess-item-' + item.id"
+                                    v-model="selectedItemsForReprocess"
+                                    :value="item.id"
+                                    class="mr-3 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700"
+                                >
+                                <label :for="'reprocess-item-' + item.id" class="text-sm text-white cursor-pointer flex-1 truncate mr-3">
+                                    {{ item.title }}
+                                </label>
+                                <span class="text-xs text-neutral-400">{{ getChannelName(item.channel) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                     <p class="text-xs text-neutral-500 mt-2">Apenas os itens atualmente visíveis na lista principal são mostrados aqui. Use os filtros da página principal para refinar a seleção, se necessário.</p>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-neutral-700">
+                    <button
+                        @click="closeBulkReprocessDialog"
+                        class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
+                        :disabled="bulkReprocessLoading"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        @click="startBulkReprocess"
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors"
+                        :disabled="selectedItemsForReprocess.length === 0 || bulkReprocessLoading"
+                    >
+                        <span v-if="bulkReprocessLoading" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Reprocessando...
+                        </span>
+                        <span v-else>Reprocessar {{ selectedItemsForReprocess.length }} Itens</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Reprocess Progress Overlay -->
+        <div v-if="bulkReprocessLoading" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                <div class="text-center mb-4">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-3"></div>
+                    <h3 class="text-lg font-medium text-white">Reprocessando Itens do Feed</h3>
+                    <p class="text-neutral-400 mt-1">Por favor, aguarde...</p>
+                </div>
+
+                <div class="w-full bg-neutral-700 rounded-full h-4 mb-3">
+                    <div
+                        class="bg-orange-600 h-4 rounded-full transition-all duration-300 ease-out"
+                        :style="{ width: `${(bulkReprocessProgress.completed / bulkReprocessProgress.total) * 100}%` }"
+                    ></div>
+                </div>
+
+                <div class="text-center text-sm text-neutral-300 mb-4">
+                    <span>{{ bulkReprocessProgress.completed }} de {{ bulkReprocessProgress.total }} itens reprocessados</span>
+                </div>
+
+                <div v-if="bulkReprocessProgress.currentItem" class="mb-4">
+                    <p class="text-sm text-neutral-400">Reprocessando atualmente:</p>
+                    <p class="text-sm font-medium text-white truncate">{{ bulkReprocessProgress.currentItem }}</p>
+                </div>
+
+                <div v-if="bulkReprocessProgress.processedItems.length > 0" class="mt-4">
+                    <p class="text-sm text-neutral-400 mb-2">Reprocessados recentemente:</p>
+                    <div class="max-h-32 overflow-y-auto">
+                        <div v-for="(item, index) in bulkReprocessProgress.processedItems.slice().reverse().slice(0, 5)" :key="index"
+                            class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
+                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2">
+                                <svg v-if="item.success" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 truncate text-sm">
+                                <span v-if="item.success" class="text-neutral-300">{{ item.title }}</span>
+                                <span v-else class="text-red-400">{{ item.title }} - {{ item.error }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1654,6 +1780,101 @@ const loadPrompts = async (): Promise<void> => {
         loadingPrompts.value = false;
         promptsList.value = [];
     }
+};
+
+// New refs for bulk reprocess
+const showBulkReprocessDialog = ref<boolean>(false);
+const selectedItemsForReprocess = ref<string[]>([]);
+const selectAllForReprocess = ref<boolean>(false);
+const bulkReprocessLoading = ref<boolean>(false);
+const bulkReprocessProgress = ref({
+    total: 0,
+    completed: 0,
+    currentItem: null as string | null, // Correção aqui
+    processedItems: [] as { id: string; title: string; success: boolean; error?: string }[]
+});
+
+const openBulkReprocessDialog = (): void => {
+    selectedItemsForReprocess.value = [];
+    selectAllForReprocess.value = false;
+    // Itens para o diálogo serão os `feedItems` atuais, já filtrados pela view principal
+    showBulkReprocessDialog.value = true;
+};
+
+const closeBulkReprocessDialog = (): void => {
+    showBulkReprocessDialog.value = false;
+};
+
+const toggleSelectAllForReprocess = (): void => {
+    if (selectAllForReprocess.value) {
+        selectedItemsForReprocess.value = feedItems.value.map(item => item.id);
+    } else {
+        selectedItemsForReprocess.value = [];
+    }
+};
+
+watch(selectedItemsForReprocess, (newVal) => {
+    selectAllForReprocess.value = newVal.length > 0 && newVal.length === feedItems.value.length;
+});
+
+const startBulkReprocess = async (): Promise<void> => {
+    if (selectedItemsForReprocess.value.length === 0) return;
+
+    bulkReprocessLoading.value = true;
+    bulkReprocessProgress.value = {
+        total: selectedItemsForReprocess.value.length,
+        completed: 0,
+        currentItem: null,
+        processedItems: []
+    };
+
+    const itemsToProcess = [...selectedItemsForReprocess.value]; // Criar uma cópia
+
+    for (const itemId of itemsToProcess) {
+        const item = feedItems.value.find(i => i.id === itemId);
+        if (!item) continue;
+
+        bulkReprocessProgress.value.currentItem = item.title;
+
+        try {
+            // Reutilizar a função reprocessItem existente
+            processingItems.value[item.id] = true; // Para compatibilidade com o spinner individual se visível
+            const response = await feedClient.raw.reprocessRaw(item.id);
+            processingItems.value[item.id] = false;
+
+            if (response && response.success) {
+                bulkReprocessProgress.value.processedItems.push({
+                    id: item.id,
+                    title: item.title,
+                    success: true
+                });
+            } else {
+                throw new Error(response?.message || 'Failed to reprocess feed item');
+            }
+        } catch (err: unknown) {
+            processingItems.value[item.id] = false;
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            bulkReprocessProgress.value.processedItems.push({
+                id: item.id,
+                title: item.title,
+                success: false,
+                error: errorMsg
+            });
+            console.error(`Failed to reprocess item ${item.id}:`, err);
+        }
+        bulkReprocessProgress.value.completed++;
+    }
+
+    const successCount = bulkReprocessProgress.value.processedItems.filter(r => r.success).length;
+    if (successCount === bulkReprocessProgress.value.total) {
+        showNotification('success', `Todos os ${successCount} itens foram reprocessados com sucesso.`);
+    } else {
+        showNotification('warning', `${successCount} de ${bulkReprocessProgress.value.total} itens reprocessados com sucesso. Verifique o console para erros.`);
+    }
+
+    bulkReprocessLoading.value = false;
+    closeBulkReprocessDialog();
+    await refreshData(); // Atualizar a lista principal
 };
 </script>
 
