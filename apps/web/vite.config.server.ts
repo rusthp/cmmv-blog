@@ -23,6 +23,7 @@ export default defineConfig({
         preserveSymlinks: true,
         alias: {
             '@cmmv/blog': path.resolve(__dirname, '../../packages/plugin/'),
+            '@cmmv/affiliate': path.resolve(__dirname, '../../packages/affiliate/'),
         },
     },
 })

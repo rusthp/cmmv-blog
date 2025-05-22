@@ -27,7 +27,6 @@ export class AnalyticsController {
     @Post("access")
     @ContentType("text/plain")
     @Raw()
-    @Auth("analytics:get")
     async getAnalyticsAccess(@Req() req: any){
 
         const ip = req.headers['cf-connecting-ip'] ||
@@ -52,7 +51,6 @@ export class AnalyticsController {
     @Post("unload")
     @ContentType("text/plain")
     @Raw()
-    @Auth("analytics:get")
     async getAnalyticsUnload(@Req() req: any){
         const ip = req.headers['cf-connecting-ip'] ||
             req.headers['X-Real-IP'] ||

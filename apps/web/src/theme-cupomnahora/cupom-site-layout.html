@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeuCupom - Economize em suas compras online</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <style>
+        .hero-gradient {
+            background: linear-gradient(90deg, #4338ca, #6366f1);
+        }
+        .store-card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+        .coupon-card:hover {
+            border-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="#" class="text-2xl font-bold text-indigo-600">MeuCupom</a>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="hidden md:block flex-grow max-w-xl mx-8">
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar lojas ou cupons..." class="w-full py-2 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button class="absolute right-3 top-2 text-gray-500">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-gray-700 hover:text-indigo-600">Lojas</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600">Categorias</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600">Cashback</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600">Blog</a>
+                    <a href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700">Entrar</a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button class="text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Economize em suas compras online</h1>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Encontre os melhores cupons de desconto e ofertas em mais de 5.000 lojas parceiras.</p>
+            <div class="max-w-xl mx-auto">
+                <div class="relative">
+                    <input type="text" placeholder="Buscar por loja..." class="w-full py-3 px-6 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    <button class="absolute right-3 top-3 text-gray-500">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lojas em Destaque -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Lojas em Destaque</h2>
+                <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todas</a>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Loja 1 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="Amazon" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">Amazon</h3>
+                        <p class="text-xs text-gray-500">38 cupons</p>
+                    </div>
+                </a>
+                
+                <!-- Loja 2 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="Magalu" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">Magalu</h3>
+                        <p class="text-xs text-gray-500">25 cupons</p>
+                    </div>
+                </a>
+                
+                <!-- Loja 3 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="Shein" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">Shein</h3>
+                        <p class="text-xs text-gray-500">42 cupons</p>
+                    </div>
+                </a>
+                
+                <!-- Loja 4 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="Shopee" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">Shopee</h3>
+                        <p class="text-xs text-gray-500">31 cupons</p>
+                    </div>
+                </a>
+                
+                <!-- Loja 5 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="AliExpress" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">AliExpress</h3>
+                        <p class="text-xs text-gray-500">29 cupons</p>
+                    </div>
+                </a>
+                
+                <!-- Loja 6 -->
+                <a href="#" class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                            <img src="/api/placeholder/100/100" alt="Americanas" class="max-w-full max-h-full">
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-800">Americanas</h3>
+                        <p class="text-xs text-gray-500">23 cupons</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cupons em Destaque -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Cupons em Destaque</h2>
+                <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todos</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cupom 1 -->
+                <div class="coupon-card bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="bg-indigo-100 py-4 px-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Amazon" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Amazon</h3>
+                            <p class="text-sm text-gray-600">Válido até 25/05/2025</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-lg font-medium text-gray-800 mb-4">15% OFF em produtos selecionados</p>
+                        <div class="flex items-center justify-between">
+                            <div class="relative flex items-center">
+                                <div class="bg-gray-100 text-gray-800 py-2 px-4 rounded-md font-mono">AMAZON15</div>
+                                <button class="ml-2 text-gray-500 hover:text-indigo-600">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded">Verificado</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-fire text-red-500 mr-2"></i>
+                                <span class="text-sm text-gray-600">Usado 583 vezes</span>
+                            </div>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Pegar cupom</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cupom 2 -->
+                <div class="coupon-card bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="bg-indigo-100 py-4 px-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Magalu" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Magalu</h3>
+                            <p class="text-sm text-gray-600">Válido até 30/05/2025</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-lg font-medium text-gray-800 mb-4">10% OFF em todo o site</p>
+                        <div class="flex items-center justify-between">
+                            <div class="relative flex items-center">
+                                <div class="bg-gray-100 text-gray-800 py-2 px-4 rounded-md font-mono">MAGALU10</div>
+                                <button class="ml-2 text-gray-500 hover:text-indigo-600">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded">Verificado</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-fire text-red-500 mr-2"></i>
+                                <span class="text-sm text-gray-600">Usado 427 vezes</span>
+                            </div>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Pegar cupom</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cupom 3 -->
+                <div class="coupon-card bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="bg-indigo-100 py-4 px-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Shopee" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Shopee</h3>
+                            <p class="text-sm text-gray-600">Válido até 22/05/2025</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-lg font-medium text-gray-800 mb-4">R$ 20 OFF em compras acima de R$ 100</p>
+                        <div class="flex items-center justify-between">
+                            <div class="relative flex items-center">
+                                <div class="bg-gray-100 text-gray-800 py-2 px-4 rounded-md font-mono">SHOP20</div>
+                                <button class="ml-2 text-gray-500 hover:text-indigo-600">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded">Verificado</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-fire text-red-500 mr-2"></i>
+                                <span class="text-sm text-gray-600">Usado 319 vezes</span>
+                            </div>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Pegar cupom</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categorias Populares -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Categorias Populares</h2>
+                <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todas</a>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Categoria 1 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-tshirt"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Moda</h3>
+                    <p class="text-xs text-gray-500">142 cupons</p>
+                </a>
+                
+                <!-- Categoria 2 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Eletrônicos</h3>
+                    <p class="text-xs text-gray-500">98 cupons</p>
+                </a>
+                
+                <!-- Categoria 3 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Restaurantes</h3>
+                    <p class="text-xs text-gray-500">76 cupons</p>
+                </a>
+                
+                <!-- Categoria 4 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Casa e Decoração</h3>
+                    <p class="text-xs text-gray-500">63 cupons</p>
+                </a>
+                
+                <!-- Categoria 5 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-plane"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Viagens</h3>
+                    <p class="text-xs text-gray-500">52 cupons</p>
+                </a>
+                
+                <!-- Categoria 6 -->
+                <a href="#" class="bg-gray-50 rounded-lg p-4 flex flex-col items-center justify-center hover:bg-indigo-50 transition-all">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800">Games</h3>
+                    <p class="text-xs text-gray-500">47 cupons</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cashback Banner -->
+    <section class="py-12 bg-indigo-600">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="md:w-1/2 mb-8 md:mb-0">
+                    <h2 class="text-3xl font-bold text-white mb-4">Ganhe dinheiro de volta com Cashback</h2>
+                    <p class="text-indigo-100 text-lg mb-6">Além de economizar com cupons, receba até 15% de cashback em suas compras online em centenas de lojas parceiras.</p>
+                    <a href="#" class="bg-white text-indigo-600 hover:bg-indigo-100 font-medium px-6 py-3 rounded-full inline-block">Saiba mais</a>
+                </div>
+                <div class="md:w-1/2 flex justify-center">
+                    <img src="/api/placeholder/500/300" alt="Cashback" class="rounded-lg shadow-lg">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ofertas por Loja -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Ofertas por Loja</h2>
+                <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todas</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Loja 1 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="p-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Amazon" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Amazon</h3>
+                            <div class="flex items-center mt-1">
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">15% OFF</span>
+                                <span class="mx-2 text-gray-400">|</span>
+                                <span class="text-sm text-gray-600">38 cupons disponíveis</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-between">
+                            <span>Ver todos os cupons</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Loja 2 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="p-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Shopee" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Shopee</h3>
+                            <div class="flex items-center mt-1">
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">R$ 20 OFF</span>
+                                <span class="mx-2 text-gray-400">|</span>
+                                <span class="text-sm text-gray-600">31 cupons disponíveis</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-between">
+                            <span>Ver todos os cupons</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Loja 3 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <div class="p-6 flex items-center">
+                        <div class="w-16 h-16 flex items-center justify-center mr-4">
+                            <img src="/api/placeholder/100/100" alt="Magalu" class="max-w-full max-h-full">
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Magalu</h3>
+                            <div class="flex items-center mt-1">
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">10% OFF</span>
+                                <span class="mx-2 text-gray-400">|</span>
+                                <span class="text-sm text-gray-600">25 cupons disponíveis</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 px-6 py-4">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-between">
+                            <span>Ver todos os cupons</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Posts -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Últimas do Blog</h2>
+                <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver blog</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Post 1 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <img src="/api/placeholder/400/200" alt="Blog post" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <span class="text-xs font-medium text-indigo-600 mb-2 block">Dicas de Economia</span>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">10 maneiras de economizar nas compras online</h3>
+                        <p class="text-gray-600 mb-4">Aprenda estratégias eficientes para economizar em suas compras pela internet e aproveitar as melhores ofertas.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">12 de maio, 2025</span>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ler mais</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Post 3 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <img src="/api/placeholder/400/200" alt="Blog post" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <span class="text-xs font-medium text-indigo-600 mb-2 block">Novidades</span>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">As melhores promoções para o Dia das Mães</h3>
+                        <p class="text-gray-600 mb-4">Confira nossa seleção das melhores ofertas e cupons para presentear no Dia das Mães sem comprometer seu orçamento.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">08 de maio, 2025</span>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ler mais</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="py-12 bg-white border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Receba as melhores ofertas</h2>
+            <p class="text-gray-600 mb-6 max-w-lg mx-auto">Assine nossa newsletter e receba cupons exclusivos diretamente no seu e-mail.</p>
+            <div class="max-w-md mx-auto flex">
+                <input type="email" placeholder="Seu e-mail" class="flex-grow py-3 px-4 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button class="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700">Assinar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- App Download -->
+    <section class="py-12 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="md:w-1/2 mb-8 md:mb-0">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Baixe nosso aplicativo</h2>
+                    <p class="text-gray-600 text-lg mb-6">Tenha acesso aos melhores cupons, ofertas e cashback na palma da sua mão. Receba notificações exclusivas e economize ainda mais!</p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#" class="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-800">
+                            <i class="fab fa-apple text-2xl mr-3"></i>
+                            <div>
+                                <span class="text-xs block">Baixe na</span>
+                                <span class="text-lg font-medium">App Store</span>
+                            </div>
+                        </a>
+                        <a href="#" class="bg-black text-white px-6 py-3 rounded-lg flex items-center hover:bg-gray-800">
+                            <i class="fab fa-google-play text-2xl mr-3"></i>
+                            <div>
+                                <span class="text-xs block">Disponível no</span>
+                                <span class="text-lg font-medium">Google Play</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2 flex justify-center">
+                    <img src="/api/placeholder/300/600" alt="App Mobile" class="h-96 rounded-lg shadow-lg">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white pt-12 pb-6">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <!-- Sobre -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Sobre MeuCupom</h3>
+                    <p class="text-gray-400 mb-4">Ajudamos milhões de pessoas a economizar nas compras online com cupons de desconto e cashback nas melhores lojas.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Links Úteis -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Links Úteis</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Como funciona</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Cashback</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Perguntas frequentes</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Contato</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Categorias -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Categorias</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Moda</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Eletrônicos</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Viagens</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Restaurantes</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Casa e Decoração</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Lojas Populares -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Lojas Populares</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Amazon</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Magalu</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Shopee</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">AliExpress</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Americanas</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 pt-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 mb-4 md:mb-0">&copy; 2025 MeuCupom. Todos os direitos reservados.</p>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-gray-400 hover:text-white">Termos de uso</a>
+                        <a href="#" class="text-gray-400 hover:text-white">Política de privacidade</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>15 de maio, 2025</span>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Ler mais</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Post 2 -->
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                    <img src="/api/placeholder/400/200" alt="Blog post" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <span class="text-xs font-medium text-indigo-600 mb-2 block">Cashback</span>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Guia completo sobre como funciona o cashback</h3>
+                        <p class="text-gray-600 mb-4">Entenda como o sistema de cashback funciona e como você pode maximizar seus ganhos em compras que já faria normalmente.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">

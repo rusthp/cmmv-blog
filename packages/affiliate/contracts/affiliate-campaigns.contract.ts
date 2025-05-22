@@ -71,6 +71,7 @@ export class AffiliateCampaignsContract extends AbstractContract {
         protoType: 'string',
         nullable: true,
         readOnly: true,
+        index: true
     })
     domain?: string;
 
@@ -85,6 +86,38 @@ export class AffiliateCampaignsContract extends AbstractContract {
         objectType: 'string',
         nullable: true,
         protoRepeated: true,
+        index: true
     })
     categories?: string[];
+
+    @ContractField({
+        protoType: 'boolean',
+        nullable: false,
+        defaultValue: true,
+        index: true
+    })
+    active!: boolean;
+
+    @ContractField({
+        protoType: 'boolean',
+        nullable: false,
+        defaultValue: false,
+        index: true
+    })
+    highlight!: boolean;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        index: true
+    })
+    slug!: string;
+
+    @ContractField({
+        protoType: 'number',
+        nullable: true,
+        defaultValue: 0,
+        index: true
+    })
+    coupons!: number;
 }

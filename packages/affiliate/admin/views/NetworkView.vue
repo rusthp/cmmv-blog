@@ -10,6 +10,7 @@
                     </svg>
                     Refresh
                 </button>
+
                 <!-- Add search dropdown button -->
                 <div class="relative">
                     <button @click="toggleSearchDropdown" data-search-toggle
@@ -55,6 +56,46 @@
                     </svg>
                     Add Network
                 </button>
+                <!-- More actions dropdown -->
+                <div class="relative" data-more-actions-toggle>
+                    <button
+                        @click="toggleMoreActionsDropdown"
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        More
+                    </button>
+                    <!-- More actions dropdown menu -->
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="exportNetworks"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                                :disabled="exportLoading"
+                            >
+                                <svg v-if="exportLoading" class="animate-spin h-3.5 w-3.5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export Networks
+                            </button>
+                            <button
+                                @click="openImportDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Import Networks
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -168,6 +209,7 @@
                                         title="Load Campaigns"
                                         class="text-neutral-400 hover:text-blue-500 transition-colors"
                                         :disabled="network.loadingCampaigns"
+                                        v-if="hasApiConfigured(network, 'campaigns')"
                                     >
                                         <svg v-if="!network.loadingCampaigns" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -182,6 +224,7 @@
                                         title="Load Coupons"
                                         class="text-neutral-400 hover:text-blue-500 transition-colors"
                                         :disabled="network.loadingCoupons"
+                                        v-if="hasApiConfigured(network, 'coupons')"
                                     >
                                         <svg v-if="!network.loadingCoupons" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
@@ -502,17 +545,85 @@
             :duration="notification.duration"
             @close="notification.show = false"
         />
+
+        <!-- Hidden file input for import -->
+        <input
+            type="file"
+            ref="importFileInput"
+            @change="handleFileSelect"
+            accept="application/json"
+            class="hidden"
+        />
+
+        <!-- Import Progress Dialog -->
+        <div v-if="showImportProgress" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
+                <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-white">Importing Networks</h3>
+                    <button @click="cancelImport" class="text-neutral-400 hover:text-white" :disabled="importInProgress">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Progress</span>
+                            <span class="text-sm text-neutral-300">{{ importProgress.current }} / {{ importProgress.total }}</span>
+                        </div>
+                        <div class="w-full bg-neutral-700 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${importProgress.percentage}%` }"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Success</span>
+                            <span class="text-sm text-green-500">{{ importProgress.success }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Failed</span>
+                            <span class="text-sm text-red-500">{{ importProgress.failed }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="importProgress.currentItem" class="mb-4 text-sm text-neutral-400">
+                        <p class="truncate">Processing: {{ importProgress.currentItem }}</p>
+                    </div>
+
+                    <div v-if="importProgress.errorMessage" class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-sm text-red-300">
+                        <p>{{ importProgress.errorMessage }}</p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            @click="closeImportDialog"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                            :disabled="importInProgress"
+                        >
+                            {{ importInProgress ? 'Importing...' : importFinished ? 'Close' : 'Cancel' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAffiliateClient } from '@cmmv/affiliate/admin/client'
+import { useAdminClient } from '@cmmv/blog/admin/client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
 import DeleteDialog from '@cmmv/blog/admin/components/DeleteDialog.vue'
 import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue'
 
 const affiliateClient = useAffiliateClient()
+const adminClient = useAdminClient()
 
 const networks = ref([])
 const loading = ref(true)
@@ -568,9 +679,29 @@ const filters = ref({
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
+const exportLoading = ref(false)
 
 const supportedApis = ref({})
 const loadingApiTypes = ref(false)
+
+// Import functionality
+const importFileInput = ref(null)
+const showImportProgress = ref(false)
+const importInProgress = ref(false)
+const importFinished = ref(false)
+const importCancelled = ref(false)
+const importProgress = ref({
+    current: 0,
+    total: 0,
+    percentage: 0,
+    success: 0,
+    failed: 0,
+    currentItem: '',
+    errorMessage: ''
+})
+
+// Dropdown state
+const showMoreActionsDropdown = ref(false)
 
 const loadNetworks = async () => {
     try {
@@ -1027,12 +1158,208 @@ const loadNetworkCoupons = async (network) => {
     }
 };
 
+// Add this function to check if the network has the necessary API configuration
+const hasApiConfigured = (network, apiType) => {
+    if (!network.apiLinks) return false;
+
+    try {
+        const parsedApiLinks = JSON.parse(network.apiLinks);
+        return parsedApiLinks && parsedApiLinks[apiType] && parsedApiLinks[apiType].trim() !== '';
+    } catch (e) {
+        console.error('Failed to parse API links:', e);
+        return false;
+    }
+};
+
+const exportNetworks = async () => {
+    try {
+        exportLoading.value = true;
+
+        // Get signature token first (requires root access)
+        let signature;
+        try {
+            const signatureResponse = await adminClient.settings.getSignature();
+            if (signatureResponse) {
+                signature = signatureResponse;
+            } else {
+                throw new Error('Failed to get authentication signature');
+            }
+        } catch (err) {
+            console.error('Error getting signature:', err);
+            showNotification('error', 'Only root users can export networks');
+            exportLoading.value = false;
+            return;
+        }
+
+        window.open(`/api/affiliate/networks/export?token=${signature}`, '_blank');
+        showNotification('success', 'Export started. Your download will begin shortly.');
+    } catch (err) {
+        console.error('Failed to export networks:', err);
+        showNotification('error', err.message || 'Failed to export networks');
+    } finally {
+        exportLoading.value = false;
+    }
+}
+
+const openImportDialog = () => {
+    // Trigger the hidden file input
+    importFileInput.value.click();
+}
+
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if it's a JSON file
+    if (file.type !== 'application/json') {
+        showNotification('error', 'Please select a valid JSON file');
+        event.target.value = ''; // Clear the input
+        return;
+    }
+
+    // Read file contents
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const jsonData = JSON.parse(e.target.result);
+
+            // Validate that it's an array of networks
+            if (!Array.isArray(jsonData)) {
+                showNotification('error', 'Invalid JSON format. Expected an array of networks.');
+                return;
+            }
+
+            // Start import process
+            startImport(jsonData);
+        } catch (err) {
+            console.error('Failed to parse JSON:', err);
+            showNotification('error', 'Failed to parse JSON file');
+        }
+    };
+
+    reader.onerror = () => {
+        showNotification('error', 'Failed to read file');
+    };
+
+    reader.readAsText(file);
+    event.target.value = ''; // Clear the input
+}
+
+const startImport = (networks) => {
+    // Reset progress
+    importProgress.value = {
+        current: 0,
+        total: networks.length,
+        percentage: 0,
+        success: 0,
+        failed: 0,
+        currentItem: '',
+        errorMessage: ''
+    };
+
+    // Show progress dialog
+    showImportProgress.value = true;
+    importInProgress.value = true;
+    importFinished.value = false;
+    importCancelled.value = false;
+
+    // Start processing networks
+    processNetworks(networks);
+}
+
+const processNetworks = async (networks) => {
+    for (let i = 0; i < networks.length; i++) {
+        // Check if import was cancelled
+        if (importCancelled.value) {
+            break;
+        }
+
+        const network = networks[i];
+        importProgress.value.current = i + 1;
+        importProgress.value.percentage = Math.round((importProgress.value.current / importProgress.value.total) * 100);
+
+        try {
+            // Update current item being processed
+            importProgress.value.currentItem = network.name || `Network ${i + 1}`;
+            importProgress.value.errorMessage = '';
+
+            // Check if network has required fields
+            if (!network.name) {
+                throw new Error('Network name is required');
+            }
+
+            // Prepare network data for API
+            const networkData = {
+                name: network.name.trim(),
+                url: network.url?.trim() || '',
+                active: network.active === undefined ? true : network.active,
+                apiType: network.apiType || '',
+                metadata: network.metadata || null,
+                apiLinks: network.apiLinks || null
+            };
+
+            // Insert network using API
+            await affiliateClient.networks.insert(networkData);
+
+            // Update success count
+            importProgress.value.success++;
+        } catch (err) {
+            console.error(`Failed to import network ${i + 1}:`, err);
+            importProgress.value.failed++;
+            importProgress.value.errorMessage = err.message || 'Failed to import network';
+
+            // Small delay to let user see the error message
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Small delay to prevent UI freezing
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Import completed
+    importInProgress.value = false;
+    importFinished.value = true;
+
+    // Refresh networks list after import
+    refreshData();
+
+    // Show notification
+    if (importCancelled.value) {
+        showNotification('info', `Import cancelled. ${importProgress.value.success} networks imported successfully.`);
+    } else {
+        showNotification('success', `Import completed. ${importProgress.value.success} networks imported successfully, ${importProgress.value.failed} failed.`);
+    }
+}
+
+const cancelImport = () => {
+    if (importInProgress.value) {
+        importCancelled.value = true;
+    } else {
+        closeImportDialog();
+    }
+}
+
+const closeImportDialog = () => {
+    showImportProgress.value = false;
+    importCancelled.value = false;
+}
+
+const toggleMoreActionsDropdown = () => {
+    showMoreActionsDropdown.value = !showMoreActionsDropdown.value;
+}
+
 onMounted(() => {
     // Add click-outside handling for search dropdown
     document.addEventListener('click', (event) => {
-        const target = event.target
+        const target = event.target;
+        // Handle search dropdown
         if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value) {
-            showSearchDropdown.value = false
+            showSearchDropdown.value = false;
+        }
+
+        // Handle more actions dropdown
+        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
+            showMoreActionsDropdown.value = false;
         }
     })
 

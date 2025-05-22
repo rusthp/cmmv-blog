@@ -72,7 +72,12 @@ export class DeeplinkService {
             const networkAPI = await campaignsNetworksToolsService.getNetworkAPI(affiliateNetwork.apiType);
 
             if(networkAPI){
-                const deeplink = await networkAPI.getDeeplink(formattedUrl);
+                const deeplink = await networkAPI.getDeeplink(formattedUrl, {
+                    ...metadata,
+                    campaignId: campaignNetwork.campaignId,
+                    url: link
+                });
+
                 return { success: true, deeplink: deeplink };
             }
         }

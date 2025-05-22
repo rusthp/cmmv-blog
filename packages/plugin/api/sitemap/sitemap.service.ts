@@ -139,15 +139,17 @@ export class SitemapService {
                     post.featureImageCaption
                 );
 
-                sitemapIndex.push(
-                    `\t<url>`,
-                        `\t\t<loc>${apiUrl}/post/${post.slug}</loc>`,
-                        `\t\t<lastmod>${post.publishedAt.toISOString()}</lastmod>`,
-                        `\t\t<image:image>`,
-                            `\t\t\t<image:loc>${featureImage}</image:loc>`,
-                        `\t\t</image:image>`,
-                    `\t</url>`
-                );
+                try{
+                    sitemapIndex.push(
+                        `\t<url>`,
+                            `\t\t<loc>${apiUrl}/post/${post.slug}</loc>`,
+                            `\t\t<lastmod>${post.publishedAt.toISOString()}</lastmod>`,
+                            `\t\t<image:image>`,
+                                `\t\t\t<image:loc>${featureImage}</image:loc>`,
+                            `\t\t</image:image>`,
+                        `\t</url>`
+                    );
+                }catch(e){}
             }
         }
 
@@ -176,10 +178,12 @@ export class SitemapService {
 
         if(categories){
             for(const category of categories.data){
-                sitemapIndex.push(`<url>`,
-                    `<loc>${apiUrl}/category/${category.slug}</loc>`,
-                    `<lastmod>${category.updatedAt.toISOString()}</lastmod>`,
-                `</url>`);
+                try{
+                    sitemapIndex.push(`<url>`,
+                        `<loc>${apiUrl}/category/${category.slug}</loc>`,
+                        `<lastmod>${category.updatedAt.toISOString()}</lastmod>`,
+                    `</url>`);
+                }catch(e){}
             }
         }
 
@@ -210,10 +214,12 @@ export class SitemapService {
 
         if(tags){
             for(const tag of tags.data){
-                sitemapIndex.push(`<url>`,
-                    `<loc>${apiUrl}/tag/${tag.slug}</loc>`,
-                    `<lastmod>${tag.updatedAt.toISOString()}</lastmod>`,
-                `</url>`);
+                try{
+                    sitemapIndex.push(`<url>`,
+                        `<loc>${apiUrl}/tag/${tag.slug}</loc>`,
+                        `<lastmod>${tag.updatedAt.toISOString()}</lastmod>`,
+                    `</url>`);
+                }catch(e){}
             }
         }
 

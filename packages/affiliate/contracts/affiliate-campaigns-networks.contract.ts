@@ -101,4 +101,12 @@ export class AffiliateCampaignsNetworksContract extends AbstractContract {
         index: true,
     })
     domain?: string;
+
+    @ContractField({
+        protoType: 'number',
+        nullable: true,
+        readOnly: true,
+        index: true,
+    })
+    comission?: number;
 }

@@ -4,6 +4,8 @@ import { Repository } from "@cmmv/repository";
 import { AwinService } from "../network-api/awin.service";
 import { AfilioService } from "../network-api/afilio.service";
 import { CityadsService } from "../network-api/cityads.service";
+import { LomadeeService } from "../network-api/lomadee.service";
+import { RakutenService } from "../network-api/rakuten.service";
 
 @Service()
 export class CampaignsNetworksToolsService {
@@ -40,6 +42,16 @@ export class CampaignsNetworksToolsService {
                 docs: "https://cityads.com/publisher/api/description",
                 version: "2.0.0",
                 service: () => Application.resolveProvider(CityadsService)
+            },
+            "Lomadee": {
+                docs: "https://developer.socialsoul.com.vc/afiliados/",
+                version: "3.0.0",
+                service: () => Application.resolveProvider(LomadeeService)
+            },
+            "Rakuten": {
+                docs: "https://developers.rakutenadvertising.com/documentation/en-GB/affiliate_apis",
+                version: "2.0.0",
+                service: () => Application.resolveProvider(RakutenService)
             }
         }
     }
@@ -81,7 +93,8 @@ export class CampaignsNetworksToolsService {
                 const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
                 if(apiLinks.campaigns){
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, JSON.parse(affiliateAccount.metadata));
+                    const metadata = JSON.parse(affiliateAccount.metadata);
+                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
 
                     if(affiliateNetwork.apiType !== "Fetch"){
                         const supportedApis = await this.getApisSupported();
@@ -89,7 +102,7 @@ export class CampaignsNetworksToolsService {
                             await supportedApis[affiliateNetwork.apiType].service() : null;
 
                         if(service){
-                            const campaigns = await service.getCampaigns(formattedUrl);
+                            const campaigns = await service.getCampaigns(formattedUrl, metadata);
 
                             campaigns.forEach(async (campaign: any) => {
                                 const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
@@ -147,7 +160,8 @@ export class CampaignsNetworksToolsService {
                 const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
                 if(apiLinks.campaigns){
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, JSON.parse(affiliateAccount.metadata));
+                    const metadata = JSON.parse(affiliateAccount.metadata);
+                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
 
                     if(affiliateNetwork.apiType !== "Fetch"){
                         const supportedApis = await this.getApisSupported();
@@ -155,7 +169,7 @@ export class CampaignsNetworksToolsService {
                             await supportedApis[affiliateNetwork.apiType].service() : null;
 
                         if(service){
-                            const campaigns = await service.getCampaigns(formattedUrl);
+                            const campaigns = await service.getCampaigns(formattedUrl, metadata);
 
                             campaigns.forEach(async (campaign: any) => {
                                 const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
@@ -243,7 +257,8 @@ export class CampaignsNetworksToolsService {
                 const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
                 if(apiLinks.coupons){
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, JSON.parse(affiliateAccount.metadata));
+                    const metadata = JSON.parse(affiliateAccount.metadata);
+                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
 
                     if(affiliateNetwork.apiType !== "Fetch"){
                         const supportedApis = await this.getApisSupported();
@@ -251,7 +266,7 @@ export class CampaignsNetworksToolsService {
                             await supportedApis[affiliateNetwork.apiType].service() : null;
 
                         if(service){
-                            const coupons = await service.getCoupons(formattedUrl);
+                            const coupons = await service.getCoupons(formattedUrl, metadata);
 
                             coupons.forEach(async (coupon: any) => {
                                 const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
@@ -266,19 +281,22 @@ export class CampaignsNetworksToolsService {
                                 if(!affiliateCampaignsNetwork && affiliateCampaign){
                                     const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
 
-                                    await Repository.insert(AffiliateCouponsEntity, {
-                                        network: affiliateNetwork.id,
-                                        advertiser: coupon.advertiser,
-                                        promotionId: coupon.promotionId,
-                                        title: coupon.title,
-                                        description: coupon.description,
-                                        code: coupon.code,
-                                        active: coupon.active,
-                                        expiration: coupon.expiration,
-                                        link: coupon.link,
-                                        campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
-                                        campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null
-                                    });
+                                    if(coupon.code.trim() !== ""){
+                                        await Repository.insert(AffiliateCouponsEntity, {
+                                            network: affiliateNetwork.id,
+                                            advertiser: coupon.advertiser,
+                                            promotionId: coupon.promotionId,
+                                            title: coupon.title,
+                                            description: coupon.description,
+                                            code: coupon.code,
+                                            active: coupon.active,
+                                            expiration: coupon.expiration,
+                                            link: coupon.link,
+                                            campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
+                                            campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
+                                            deeplink: coupon.deeplink
+                                        });
+                                    }
                                 }
                             });
                         }
@@ -330,7 +348,8 @@ export class CampaignsNetworksToolsService {
                 const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
                 if(apiLinks.coupons){
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, JSON.parse(affiliateAccount.metadata));
+                    const metadata = JSON.parse(affiliateAccount.metadata);
+                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
 
                     if(affiliateNetwork.apiType !== "Fetch"){
                         const supportedApis = await this.getApisSupported();
@@ -338,7 +357,7 @@ export class CampaignsNetworksToolsService {
                             await supportedApis[affiliateNetwork.apiType].service() : null;
 
                         if(service){
-                            const coupons = await service.getCoupons(formattedUrl);
+                            const coupons = await service.getCoupons(formattedUrl, metadata);
 
                             coupons.forEach(async (coupon: any) => {
                                 const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
@@ -364,7 +383,8 @@ export class CampaignsNetworksToolsService {
                                         expiration: coupon.expiration,
                                         link: coupon.link,
                                         campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
-                                        campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null
+                                        campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
+                                        deeplink: coupon.deeplink
                                     });
                                 }
                             });
@@ -375,5 +395,15 @@ export class CampaignsNetworksToolsService {
         }
 
         return { success: true };
+    }
+
+    /**
+     * Export the campaigns
+     * @returns The campaigns
+     */
+    async export(){
+        const AffiliateCampaignsNetworksEntity = Repository.getEntity("AffiliateCampaignsNetworksEntity");
+        const campaigns = await Repository.findAll(AffiliateCampaignsNetworksEntity, { limit: 1000000 });
+        return (campaigns && campaigns.data.length > 0) ? JSON.stringify(campaigns.data, null, 4) : "";
     }
 }

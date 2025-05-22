@@ -3,7 +3,8 @@ import {
 } from "@cmmv/core";
 
 import {
-    Repository, Like, In
+    Repository, In, Not, IsNull,
+    MoreThan
 } from "@cmmv/repository";
 
 //@ts-ignore
@@ -18,10 +19,10 @@ export class CouponsServiceTools {
      */
     async getCouponsWithAI(campaignId: string) {
         const language = Config.get("blog.language", "en");
-        const CampaignsEntity = Repository.getEntity("CampaignsEntity");
-        const CouponsEntity = Repository.getEntity("CouponsEntity");
+        const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
+        const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
 
-        const campaign = await Repository.findOne(CampaignsEntity, {
+        const campaign = await Repository.findOne(AffiliateCampaignsEntity, {
             id: campaignId
         });
 
@@ -100,7 +101,7 @@ export class CouponsServiceTools {
             for (const coupon of coupons) {
                 if (!coupon.code) continue;
 
-                const existingCoupon = await Repository.findOne(CouponsEntity, {
+                const existingCoupon = await Repository.findOne(AffiliateCouponsEntity, {
                     code: coupon.code
                 });
 
@@ -122,7 +123,7 @@ export class CouponsServiceTools {
                 };
 
                 try {
-                    const savedCoupon = await Repository.insert(CouponsEntity, newCoupon);
+                    const savedCoupon = await Repository.insert(AffiliateCouponsEntity, newCoupon);
                     savedCoupons.push(savedCoupon);
                 } catch (err) {
                     console.warn(`Failed to save coupon ${coupon.code}: ${err instanceof Error ? err.message : String(err)}`);
@@ -142,9 +143,9 @@ export class CouponsServiceTools {
      * @returns Array of coupon objects
      */
     async getCoupons(campaignId: string) {
-        const CouponsEntity = Repository.getEntity("CouponsEntity");
+        const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
 
-        const coupons = await Repository.findAll(CouponsEntity, {
+        const coupons = await Repository.findAll(AffiliateCouponsEntity, {
             limit: 100,
             active: true,
             campaign: campaignId
@@ -156,5 +157,66 @@ export class CouponsServiceTools {
         });
 
         return (coupons) ? coupons.data : [];
+    }
+
+    /**
+     * Get all coupons for a campaign with views
+     * @param campaignId The ID of the campaign to get coupons for
+     * @returns Array of coupon objects
+     */
+    async getCouponsWithViews() {
+        const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
+        const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
+
+        const coupons = await Repository.findAll(AffiliateCouponsEntity, {
+            limit: 100,
+            active: true,
+            campaign: Not(IsNull()),
+            expiration: MoreThan(new Date())
+        }, [], {
+            order: {
+                views: "DESC"
+            },
+            select: ["title", "code", "description", "expiration", "type", "typeDiscount", "views", "campaign"]
+        });
+
+        const campaignIds = (coupons) ? coupons.data.map((coupon: any) => coupon.campaign) : [];
+
+        const campaigns = await Repository.findAll(AffiliateCampaignsEntity, {
+            id: In(campaignIds)
+        }, [], {
+            select: ["id", "name", "slug", "logo"]
+        });
+
+        if (!campaigns)
+            throw new Error(`Campaigns with IDs ${campaignIds} not found`);
+
+        const campaignMap = new Map(campaigns.data.map((campaign: any) => [campaign.id, campaign]));
+        let dataResponse: any[] = [];
+
+        if (coupons) {
+            dataResponse = coupons.data;
+            coupons.data.forEach((coupon: any, index: number) => {
+                const campaign: any = campaignMap.get(coupon.campaign);
+
+                if (campaign) {
+                    dataResponse[index].campaignName = campaign.name;
+                    dataResponse[index].campaignSlug = campaign.slug;
+                    dataResponse[index].campaignLogo = campaign.logo;
+                }
+            });
+        }
+
+        return (dataResponse.length > 0) ? dataResponse : [];
+    }
+
+    /**
+     * Export the coupons
+     * @returns The coupons
+     */
+    async export(){
+        const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
+        const coupons = await Repository.findAll(AffiliateCouponsEntity, { limit: 1000000 });
+        return (coupons && coupons.data.length > 0) ? JSON.stringify(coupons.data, null, 4) : "";
     }
 }

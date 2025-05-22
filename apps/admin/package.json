@@ -23,10 +23,10 @@
         "vitest": "^3.0.9"
     },
     "dependencies": {
+        "@cmmv/affiliate": "workspace:affiliate",
         "@cmmv/blog": "workspace:plugin",
         "@cmmv/rss-aggregation": "workspace:rss-aggregation",
         "@cmmv/yt-aggregation": "workspace:yt-aggregation",
-        "@cmmv/affiliate": "workspace:affiliate",
         "@tailwindcss/vite": "^4.0.17",
         "@tiptap/extension-floating-menu": "^2.11.7",
         "@tiptap/extension-image": "^2.11.7",
@@ -43,6 +43,7 @@
         "@tiptap/starter-kit": "^2.11.7",
         "@tiptap/vue-3": "^2.11.7",
         "chart.js": "^4.4.8",
+        "firebase": "^11.8.0",
         "lightningcss": "^1.29.3",
         "tailwindcss": "^4.0.17",
         "tiptap-extension-resize-image": "^1.2.1",

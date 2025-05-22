@@ -4,8 +4,13 @@ import {
     NetworkApiAbstract
 } from "./network-api.abstract";
 
-@Service()
+@Service("awin")
 export class AwinService extends NetworkApiAbstract {
+    /**
+     * Get the campaigns from the Awin API
+     * @param urlApi - The URL of the API
+     * @returns The campaigns
+     */
     async getCampaigns(urlApi: string){
         const response = await fetch(urlApi);
         const data = (response.status === 200) ? await response.json() : [];
@@ -23,6 +28,11 @@ export class AwinService extends NetworkApiAbstract {
         })) : [];
     }
 
+    /**
+     * Get the coupons from the Awin API
+     * @param urlApi - The URL of the API
+     * @returns The coupons
+     */
     async getCoupons(urlApi: string){
         let allCoupons: any[] = [];
         let currentPage = 1;
@@ -59,11 +69,12 @@ export class AwinService extends NetworkApiAbstract {
                     link: coupon.url,
                     advertiser: coupon.advertiser.id,
                     promotionId: coupon.promotionId,
+                    deeplink: coupon.urlTracking
                 }));
 
                 allCoupons = [...allCoupons, ...coupons];
                 hasMorePages = result.data.length === 100;
-                currentPage++;
+                currentPage++
             } else {
                 hasMorePages = false;
             }
@@ -72,7 +83,26 @@ export class AwinService extends NetworkApiAbstract {
         return allCoupons;
     }
 
-    async getDeeplink(urlApi: string){
-        return urlApi;
+    /**
+     * Get the deeplink from the Awin API
+     * @param urlApi - The URL of the API
+     * @param metadata - The metadata
+     * @returns The deeplink
+     */
+    async getDeeplink(urlApi: string, metadata: any){
+        const response = await fetch(urlApi, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "advertiserId": metadata.campaignId,
+                "destinationUrl": metadata.link,
+                "shorten": true
+            })
+        });
+
+        const result = (response.status === 200) ? await response.json() : { data: [] };
+        return result.shortUrl;
     }
 }

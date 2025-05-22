@@ -130,7 +130,11 @@
                     <div class="ml-3 transition-opacity duration-200"
                         :class="isCollapsed ? 'opacity-0 absolute' : 'opacity-100'">
                         <p class="text-sm font-medium text-neutral-200">{{ userDisplayName }}</p>
-                        <p class="text-xs text-neutral-400"><router-link to="/profile">View Profile</router-link></p>
+                        <div class="flex items-center gap-2 text-xs text-neutral-400">
+                            <p class="text-xs text-neutral-400"><router-link to="/profile">View Profile</router-link></p> -
+                            <p class="text-xs text-neutral-400"><a href="#" @click="logout">Logout</a></p>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -214,11 +218,6 @@ const refreshUserProfile = async () => {
     }
 }
 
-function toggleSidebar() {
-    isCollapsed.value = !isCollapsed.value
-    localStorage.setItem('sidebarCollapsed', isCollapsed.value)
-}
-
 function toggleMobileMenu() {
     isMobileMenuHidden.value = !isMobileMenuHidden.value
 }
@@ -295,6 +294,11 @@ const handleClickOutside = (event) => {
 
 const handleFaviconError = (event) => {
     event.target.style.display = 'none'
+}
+
+const logout = () => {
+    api.session.logout()
+    window.location = window.location.href
 }
 
 onMounted(async () => {

@@ -33,6 +33,10 @@ import {
     AffiliateDeeplinkModule
 } from './deeplink/deeplink.module';
 
+import {
+    AffiliateNetworksModule
+} from './networks/networks.module';
+
 export const AffiliateModule = new Module('affiliate', {
     contracts: [
         AffiliateNetworksContract,
@@ -48,6 +52,7 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateCampaignsModule,
         AffiliateCampaignsNetworksModule,
         AffiliateNetworkApiModule,
-        AffiliateDeeplinkModule
+        AffiliateDeeplinkModule,
+        AffiliateNetworksModule
     ]
 });

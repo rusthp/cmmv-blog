@@ -8,9 +8,9 @@ import {
 @Service()
 export class AfilioService extends NetworkApiAbstract {
     /**
-     * Get campaigns from Afilio
-     * @param urlApi
-     * @returns
+     * Get the campaigns from the Afilio API
+     * @param urlApi - The URL of the API
+     * @returns The campaigns
      */
     async getCampaigns(urlApi: string){
         const response = await fetch(urlApi);
@@ -40,9 +40,9 @@ export class AfilioService extends NetworkApiAbstract {
     }
 
     /**
-     * Get coupons from Afilio
-     * @param urlApi
-     * @returns
+     * Get the coupons from the Afilio API
+     * @param urlApi - The URL of the API
+     * @returns The coupons
      */
     async getCoupons(urlApi: string){
         const response = await fetch(urlApi, {
@@ -68,7 +68,8 @@ export class AfilioService extends NetworkApiAbstract {
                 expiration: (coupon.expiration_date !== "Indefinido") ? new Date(coupon.expiration_date) : null,
                 link: resolvedLink,
                 advertiser: coupon.id_campaign,
-                promotionId: coupon.creative_id
+                promotionId: coupon.creative_id,
+                deeplink: coupon.shortened
             });
         }
 
@@ -76,12 +77,11 @@ export class AfilioService extends NetworkApiAbstract {
     }
 
     /**
-     * Get deeplink from Afilio
-     * @param urlApi
-     * @param url
-     * @returns
+     * Get the deeplink from the Afilio API
+     * @param urlApi - The URL of the API
+     * @returns The deeplink
      */
     async getDeeplink(urlApi: string){
-        return await this.resolveShortenedUrl(urlApi, false);
+        return await this.resolveShortenedUrl(urlApi, false, 1);
     }
 }

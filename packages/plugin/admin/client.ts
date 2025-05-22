@@ -11,6 +11,7 @@ export const useAdminClient = () => {
         setWhitelabel: (key: string, value: any) => api.setSettingsWhitelabel(key, value),
         update: (data: any) => api.updateSettings(data),
         saveSetup: (data: any) => api.saveSetup(data),
+        getSignature: () => api.getSignature(),
     };
 
     const profile = {
@@ -42,6 +43,9 @@ export const useAdminClient = () => {
         check: () => api.checkSession(),
         login: (data: { username: string; password: string }) => api.login(data),
         logout: () => api.logout(),
+        loginWithFirebase: async (payload: any) => {
+            return await api.loginWithFirebase(payload);
+        },
     };
 
     const posts = {

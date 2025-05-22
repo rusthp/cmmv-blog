@@ -23,9 +23,20 @@ export class CategoriesServiceTools {
         }, [], {
             order: {
                 name: "ASC"
-            }
+            },
+            select: ["id", "name", "slug", "active"]
         });
 
         return (categories) ? categories.data : [];
+    }
+
+    /**
+     * Export the categories
+     * @returns The categories
+     */
+    async export(){
+        const AffiliateCategoriesEntity = Repository.getEntity("AffiliateCategoriesEntity");
+        const categories = await Repository.findAll(AffiliateCategoriesEntity, { limit: 1000000 });
+        return (categories && categories.data.length > 0) ? JSON.stringify(categories.data, null, 4) : "";
     }
 }

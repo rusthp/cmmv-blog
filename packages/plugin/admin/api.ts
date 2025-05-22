@@ -135,6 +135,26 @@ export function useApi() {
         }
     }
 
+    const loginWithFirebase = async (credentials: { token: string; provider: string; user: any }) => {
+        const response = await fetch(`/api/accounts/login/firebase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+        })
+
+        const data: any = await response.text()
+
+        if (response.ok && data) {
+            ssrLocalStorage.setItem('token', data)
+            token.value = data
+            return data
+        } else {
+            throw new Error(data.result.message || 'Login failed')
+        }
+    }
+
     const getSettings = async (root: boolean = false) => {
         const apiPath = getApiPath(`settings?t=${new Date().getTime()}`);
 
@@ -146,6 +166,22 @@ export function useApi() {
         })
 
         const data: any = await response.json();
+        return data ? data : null;
+    }
+
+    const getSignature = async () => {
+        const response = await fetch(
+            "/api/get-signature",
+            {
+                method: "GET",
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token.value}`
+                },
+            }
+        )
+
+        const data: any = await response.text();
         return data ? data : null;
     }
 
@@ -253,10 +289,12 @@ export function useApi() {
         setSettingsWhitelabel,
         updateSettings,
         login,
+        loginWithFirebase,
         logout,
         saveSetup,
         setWhitelabel,
         getWhitelabel,
+        getSignature,
         ...methods,
     }
 }

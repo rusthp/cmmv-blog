@@ -16,7 +16,9 @@
         "types": ["node"],
         "paths": {
             "@cmmv/blog": ["../../packages/plugin"],
-            "@cmmv/blog/*": ["../../packages/plugin/*"]
+            "@cmmv/blog/*": ["../../packages/plugin/*"],
+            "@cmmv/affiliate": ["../../packages/affiliate"],
+            "@cmmv/affiliate/*": ["../../packages/affiliate/*"]
         }
     },
     "ts-node": {

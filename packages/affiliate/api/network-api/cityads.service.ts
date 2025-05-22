@@ -7,6 +7,11 @@ import {
 
 @Service("cityads")
 export class CityadsService extends NetworkApiAbstract {
+    /**
+     * Get the campaigns from the Cityads API
+     * @param urlApi - The URL of the API
+     * @returns The campaigns
+     */
     async getCampaigns(urlApi: string){
         const response = await fetch(urlApi);
         const data = (response.status === 200) ? await response.json() : [];
@@ -26,6 +31,11 @@ export class CityadsService extends NetworkApiAbstract {
             })) : [];
     }
 
+    /**
+     * Get the coupons from the Cityads API
+     * @param urlApi - The URL of the API
+     * @returns The coupons
+     */
     async getCoupons(urlApi: string){
         const response = await fetch(urlApi, {
             method: "GET",
@@ -50,14 +60,38 @@ export class CityadsService extends NetworkApiAbstract {
                 expiration: new Date(coupon.active_to),
                 link: resolvedLink,
                 advertiser: coupon.offer_id,
-                promotionId: coupon.id
+                promotionId: coupon.id,
+                deeplink: coupon.url
             });
         }
 
         return dataReturn;
     }
 
-    async getDeeplink(urlApi: string){
-        return urlApi;
+    /**
+     * Get the deeplink from the Cityads API
+     * @param urlApi - The URL of the API
+     * @param metadata - The metadata
+     * @returns The deeplink
+     */
+    async getDeeplink(urlApi: string, metadata: any){
+        const response = await fetch(urlApi, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const result = (response.status === 200) ? await response.json() : [];
+        let deeplink = "";
+
+        for(var key2 in result.data.items){
+            if(result.data.items[key2].is_default){
+                deeplink = result.data.items[key2].deep_link+"?url="+encodeURIComponent(metadata.url);
+                break;
+            }
+        }
+
+        return deeplink;
     }
 }

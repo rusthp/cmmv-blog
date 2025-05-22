@@ -1,7 +1,6 @@
 import {
     Controller, Get, Param,
-    CacheControl, ContentType,
-    Raw, Put, Body, Post, Delete, Queries
+    ContentType, Raw, Res, Query
 } from "@cmmv/http";
 
 import {
@@ -52,5 +51,21 @@ export class CampaignsNetworksControllerTools {
     @Auth("affiliatecampaignsnetworks:get")
     async getCouponsByNetwork(@Param("networkId") networkId: string) {
         return this.campaignsNetworksService.getCouponsByNetwork(networkId);
+    }
+
+    @Get("export")
+    async export(@Res() response: any, @Query("token") token: string){
+        if(token !== process.env.API_SIGNATURE)
+            throw new Error("Invalid token");
+
+        const data: string = await this.campaignsNetworksService.export();
+
+        response.res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="campaigns-networks.json"`,
+            'Content-Length': Buffer.byteLength(data, 'utf-8')
+        });
+
+        response.res.end(data);
     }
 }

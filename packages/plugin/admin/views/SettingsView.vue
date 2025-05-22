@@ -1,51 +1,17 @@
 <template>
-    <div>
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-white">Settings</h1>
-            <div class="flex space-x-2">
-                <button
-                    @click="saveSettings"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                    :disabled="saving"
-                >
-                    <span v-if="saving" class="flex items-center">
-                        <svg
-                            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4"
-                            ></circle>
-                            <path
-                                class="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                        </svg>
-                        Saving...
-                    </span>
-                    <span v-else>Save Settings</span>
-                </button>
-            </div>
-        </div>
-
+    <div class="-m-4 h-screen overflow-hidden">
         <div v-if="isLoading" class="loading-container">
             <span class="spinner"></span>
         </div>
 
-        <div v-else class="bg-neutral-900 rounded-xl shadow-lg overflow-hidden">
-            <div class="flex flex-col md:flex-row">
+        <div v-else class="rounded-xl">
+            <div class="flex flex-col md:flex-row h-full h-screen">
                 <!-- Vertical Tabs Navigation -->
                 <div
-                    class="w-full md:w-64 bg-neutral-800 p-3 md:border-r border-neutral-700"
+                    class="w-full md:w-64 p-3 md:border-r border-neutral-700"
                 >
+                    <h1 class="text-2xl font-bold text-white mb-4">Settings</h1>
+
                     <div class="flex flex-col space-y-1">
                         <button
                             v-for="tab in tabs"
@@ -54,7 +20,7 @@
                             :class="[
                                 'flex items-center px-3 py-2 rounded-lg text-left transition-colors',
                                 activeTab === tab.id
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-neutral-600 text-white'
                                     : 'bg-transparent text-neutral-300 hover:bg-neutral-700',
                             ]"
                         >
@@ -62,10 +28,43 @@
                             <span>{{ tab.name }}</span>
                         </button>
                     </div>
+
+                    <button
+                        @click="saveSettings"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors w-full mt-8"
+                        :disabled="saving"
+                    >
+                        <span v-if="saving" class="flex items-center">
+                            <svg
+                                class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            Saving...
+                        </span>
+                        <span v-else>Save Settings</span>
+                    </button>
+
+
                 </div>
 
                 <!-- Tab Content -->
-                <div class="flex-1 bg-neutral-800">
+                <div class="flex-1 overflow-y-auto">
                     <!-- General Settings -->
                     <div class="p-6" v-if="activeTab === 'general'">
                         <h2 class="text-xl font-bold text-white mb-6">
@@ -2166,6 +2165,301 @@
                                                 />
                                             </svg>
                                             Twitter API Documentation
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Firebase OAuth Integration -->
+                            <div
+                                class="space-y-4 p-4 border border-neutral-700 rounded-md"
+                            >
+                                <h3
+                                    class="text-lg font-medium text-white border-b border-neutral-700 pb-2"
+                                >
+                                    Firebase OAuth
+                                </h3>
+                                <div class="space-y-4">
+                                    <p class="text-sm text-neutral-400">
+                                        Configure Firebase Authentication to enable user login with Google, Facebook, Twitter, GitHub, and other providers.
+                                    </p>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">API Key</label>
+                                        <input
+                                            v-model="settings.firebaseApiKey"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Enter your Firebase API Key"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Auth Domain</label>
+                                        <input
+                                            v-model="settings.firebaseAuthDomain"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="your-project-id.firebaseapp.com"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Project ID</label>
+                                        <input
+                                            v-model="settings.firebaseProjectId"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="your-project-id"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Storage Bucket</label>
+                                        <input
+                                            v-model="settings.firebaseStorageBucket"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="your-project-id.appspot.com"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Messaging Sender ID</label>
+                                        <input
+                                            v-model="settings.firebaseMessagingSenderId"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="123456789012"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">App ID</label>
+                                        <input
+                                            v-model="settings.firebaseAppId"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="1:123456789012:web:abcdef1234567890"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Client Email</label>
+                                        <input
+                                            v-model="settings.firebaseClientEmail"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="your-project-id@appspot.gserviceaccount.com"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Private Key</label>
+                                        <textarea
+                                            v-model="settings.firebasePrivateKey"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        ></textarea>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Enabled Providers</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-google"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersGoogle"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-google" class="text-sm text-neutral-300">Google</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-facebook"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersFacebook"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-facebook" class="text-sm text-neutral-300">Facebook</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-twitter"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersTwitter"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-twitter" class="text-sm text-neutral-300">Twitter</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-github"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersGithub"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-github" class="text-sm text-neutral-300">GitHub</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-email"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersEmail"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-email" class="text-sm text-neutral-300">Email/Password</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="provider-phone"
+                                                    type="checkbox"
+                                                    v-model="settings.firebaseProvidersPhone"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="provider-phone" class="text-sm text-neutral-300">Phone</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <h4 class="text-sm font-medium text-neutral-300 mb-2">How to set up Firebase Authentication:</h4>
+                                        <ol class="list-decimal pl-5 space-y-1 text-sm text-neutral-400">
+                                            <li>Create a project in the <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-400 hover:underline">Firebase Console</a></li>
+                                            <li>Add a web app to your project</li>
+                                            <li>Enable Authentication and the desired providers</li>
+                                            <li>Copy the Firebase configuration from the Firebase SDK snippet</li>
+                                        </ol>
+                                        <a href="https://firebase.google.com/docs/auth" target="_blank" class="inline-flex items-center mt-2 text-blue-400 hover:underline">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Firebase Auth Documentation
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Supabase OAuth Integration -->
+                            <div
+                                class="space-y-4 p-4 border border-neutral-700 rounded-md"
+                            >
+                                <h3
+                                    class="text-lg font-medium text-white border-b border-neutral-700 pb-2"
+                                >
+                                    Supabase OAuth
+                                </h3>
+                                <div class="space-y-4">
+                                    <p class="text-sm text-neutral-400">
+                                        Configure Supabase Authentication to enable user login with multiple OAuth providers.
+                                    </p>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Supabase URL</label>
+                                        <input
+                                            v-model="settings.supabaseUrl"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="https://your-project-id.supabase.co"
+                                        />
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">API Key (anon public)</label>
+                                        <input
+                                            v-model="settings.supabaseAnonKey"
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Enter your Supabase public API Key"
+                                        />
+                                        <p class="text-xs text-neutral-500">This is your public anon key, safe to use in browser environments</p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Service Role Key (private)</label>
+                                        <input
+                                            v-model="settings.supabaseServiceKey"
+                                            type="password"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="Enter your Supabase service role key"
+                                        />
+                                        <p class="text-xs text-neutral-500 text-red-400">WARNING: Keep this key secure. Only use in server environments.</p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-medium text-neutral-300">Enabled Providers</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-google"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersGoogle"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-google" class="text-sm text-neutral-300">Google</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-facebook"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersFacebook"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-facebook" class="text-sm text-neutral-300">Facebook</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-twitter"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersTwitter"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-twitter" class="text-sm text-neutral-300">Twitter</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-github"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersGithub"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-github" class="text-sm text-neutral-300">GitHub</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-discord"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersDiscord"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-discord" class="text-sm text-neutral-300">Discord</label>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <input
+                                                    id="supabase-apple"
+                                                    type="checkbox"
+                                                    v-model="settings.supabaseProvidersApple"
+                                                    class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                                />
+                                                <label for="supabase-apple" class="text-sm text-neutral-300">Apple</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <h4 class="text-sm font-medium text-neutral-300 mb-2">How to set up Supabase Authentication:</h4>
+                                        <ol class="list-decimal pl-5 space-y-1 text-sm text-neutral-400">
+                                            <li>Create a project on <a href="https://app.supabase.com/" target="_blank" class="text-blue-400 hover:underline">Supabase</a></li>
+                                            <li>Navigate to Authentication → Providers</li>
+                                            <li>Enable and configure the desired OAuth providers</li>
+                                            <li>Get your API keys from the Project Settings → API section</li>
+                                            <li>Set up redirect URLs in Supabase Authentication settings</li>
+                                        </ol>
+                                        <a href="https://supabase.com/docs/guides/auth" target="_blank" class="inline-flex items-center mt-2 text-blue-400 hover:underline">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Supabase Auth Documentation
                                         </a>
                                     </div>
                                 </div>
@@ -4386,64 +4680,64 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Toast notifications -->
-    <div
-        v-if="notification.show"
-        class="fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg flex items-center z-50"
-        :class="
-            notification.type === 'success'
-                ? 'bg-green-600 text-white'
-                : 'bg-red-600 text-white'
-        "
-    >
-        <span v-if="notification.type === 'success'" class="mr-2">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-            >
-                <path
-                    fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd"
-                />
-            </svg>
-        </span>
-        <span v-else class="mr-2">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-            >
-                <path
-                    fill-rule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clip-rule="evenodd"
-                />
-            </svg>
-        </span>
-        <span>{{ notification.message }}</span>
-        <button
-            @click="notification.show = false"
-            class="ml-4 text-white hover:text-neutral-200"
+        <!-- Toast notifications -->
+        <div
+            v-if="notification.show"
+            class="fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg flex items-center z-50"
+            :class="
+                notification.type === 'success'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-600 text-white'
+            "
         >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+            <span v-if="notification.type === 'success'" class="mr-2">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                >
+                    <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+            </span>
+            <span v-else class="mr-2">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                >
+                    <path
+                        fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+            </span>
+            <span>{{ notification.message }}</span>
+            <button
+                @click="notification.show = false"
+                class="ml-4 text-white hover:text-neutral-200"
             >
-                <path
-                    fill-rule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clip-rule="evenodd"
-                />
-            </svg>
-        </button>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                >
+                    <path
+                        fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+            </button>
+        </div>
     </div>
 </template>
 
@@ -4516,6 +4810,7 @@ const settings = ref({
 
     disqusShortname: "",
     disqusLazyLoad: true,
+
     // Native Comments
     enablecomments: true,
     moderatecomments: true,
@@ -4726,6 +5021,35 @@ const settings = ref({
     articlePageAfterContent: true,
     articlePageFooter: false,
 
+    // Firebase
+    firebaseApiKey: "",
+    firebaseAuthDomain: "",
+    firebaseProjectId: "",
+    firebaseStorageBucket: "",
+    firebaseMessagingSenderId: "",
+    firebaseAppId: "",
+    firebaseProvidersGoogle: false,
+    firebaseProvidersFacebook: false,
+    firebaseProvidersTwitter: false,
+    firebaseProvidersGithub: false,
+    firebaseProvidersEmail: false,
+    firebaseProvidersPhone: false,
+    firebaseProvidersApple: false,
+
+    // Supabase
+    supabaseUrl: "",
+    supabaseKey: "",
+    supabaseBucket: "",
+    supabaseBucketUrl: "",
+    supabaseBucketPublicUrl: "",
+    supabaseProvidersGoogle: false,
+    supabaseProvidersFacebook: false,
+    supabaseProvidersTwitter: false,
+    supabaseProvidersGithub: false,
+    supabaseProvidersEmail: false,
+    supabaseProvidersPhone: false,
+    supabaseProvidersApple: false,
+
     inContentAdGap: 3,
     maxInContentAds: 2,
 });
@@ -4819,6 +5143,33 @@ const tabFieldMap = {
         "redditClientSecret",
         "redditUsername",
         "redditPassword",
+        "firebaseApiKey",
+        "firebaseAuthDomain",
+        "firebaseProjectId",
+        "firebaseStorageBucket",
+        "firebaseMessagingSenderId",
+        "firebaseClientEmail",
+        "firebasePrivateKey",
+        "firebaseAppId",
+        "firebaseProvidersGoogle",
+        "firebaseProvidersFacebook",
+        "firebaseProvidersTwitter",
+        "firebaseProvidersGithub",
+        "firebaseProvidersEmail",
+        "firebaseProvidersPhone",
+        "firebaseProvidersApple",
+        "supabaseUrl",
+        "supabaseKey",
+        "supabaseBucket",
+        "supabaseBucketUrl",
+        "supabaseBucketPublicUrl",
+        "supabaseProvidersGoogle",
+        "supabaseProvidersFacebook",
+        "supabaseProvidersTwitter",
+        "supabaseProvidersGithub",
+        "supabaseProvidersEmail",
+        "supabaseProvidersPhone",
+        "supabaseProvidersApple",
     ],
     seo: [
         "metaDescription",
@@ -4918,18 +5269,15 @@ const mapApiSettingsToForm = (apiSettings) => {
         if (!key.startsWith("blog.")) return;
 
         const fieldName = key.replace("blog.", "");
+        let convertedValue = value;
 
-        if (fieldName in settings.value) {
-            let convertedValue = value;
-
-            if (type === "boolean") {
-                convertedValue = value === "1" || value === "true";
-            } else if (type === "number") {
-                convertedValue = parseInt(value, 10);
-            }
-
-            settings.value[fieldName] = convertedValue;
+        if (type === "boolean") {
+            convertedValue = (value === "1" || value === "true") ? true : false;
+        } else if (type === "number") {
+            convertedValue = parseInt(value, 10);
         }
+
+        settings.value[fieldName] = convertedValue;
     });
 };
 
@@ -5261,11 +5609,9 @@ onMounted(() => {
     loadSettings();
 });
 
-// LinkedIn OAuth in-progress state
 const linkedInOAuthInProgress = ref(false);
 const linkedInOAuthWindow = ref(null);
 
-// LinkedIn OAuth configuration - replace with your actual values in production
 const LINKEDIN_CLIENT_ID = "your-linkedin-client-id";
 const LINKEDIN_REDIRECT_URI = window.location.origin + "/linkedin-callback";
 
@@ -5337,7 +5683,6 @@ const handleLinkedInCallback = async (event) => {
     }
 };
 
-// CDN Cache Purging States and Functions
 const cachePurgeInProgress = ref(false);
 const cfCachePurgeInProgress = ref(false);
 const allCachePurgeInProgress = ref(false);
@@ -5400,30 +5745,6 @@ const purgeAllCaches = async () => {
         showNotification("error", "Error purging CDN caches: " + (error.message || "Unknown error"));
     } finally {
         allCachePurgeInProgress.value = false;
-    }
-};
-
-const testIndexingAPI = async () => {
-    if (indexingTestInProgress.value) return;
-
-    indexingTestInProgress.value = true;
-    try {
-        const response = await adminClient.indexing.testConnection({
-            apiKey: settings.value.googleIndexingApiKey,
-            serviceAccount: settings.value.googleIndexingServiceAccount,
-            url: settings.value.url
-        });
-
-        if (response.success) {
-            showNotification("success", "Google Indexing API connection successful!");
-        } else {
-            showNotification("error", `Failed to connect to Google Indexing API: ${response.message}`);
-        }
-    } catch (error) {
-        console.error("Error testing Google Indexing API:", error);
-        showNotification("error", "Error testing Google Indexing API: " + (error.message || "Unknown error"));
-    } finally {
-        indexingTestInProgress.value = false;
     }
 };
 </script>

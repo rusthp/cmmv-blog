@@ -40,23 +40,28 @@ export const useAffiliate = () => {
 
     const categories = {
         getAll: async () => {
-            const { data } = await api.get<any[]>("blog/categories", "categories");
-            categoriesData.value = data.value || [];
+            const { data } = await api.get<any[]>("affiliate/categories/public", "categories");
             return data.value || [];
-        },
-        getById: async (id: string, offset: number = 0) => {
-            const urlQueries = new URLSearchParams({ limit: "32", offset: offset.toString() }).toString();
-            const { data } = await api.get<any[]>(`blog/categories/${id}?${urlQueries}`, "category");
+        }
+    };
+
+    const campaigns = {
+        getAll: async () => {
+            const { data } = await api.get<any[]>("affiliate/campaigns/public", "campaigns");
             return data.value || [];
-        },
-        getBySlug: async (slug: string, offset: number = 0) => {
-            const urlQueries = new URLSearchParams({ limit: "32", offset: offset.toString() }).toString();
-            const { data } = await api.get<any[]>(`blog/categories/slug/${slug}?${urlQueries}`, "category");
+        }
+    };
+
+    const coupons = {
+        getMostViewed: async () => {
+            const { data } = await api.get<any[]>("affiliate/coupons/campaign/views", "coupons");
             return data.value || [];
         }
     };
 
     return {
         categories,
+        campaigns,
+        coupons
     };
 };

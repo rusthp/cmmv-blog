@@ -1,5 +1,6 @@
 import { Module } from '@cmmv/core';
 
+import { AccountsModule } from './accounts/accounts.module';
 import { AuthorsModule } from './authors/authors.module';
 import { PostsModule } from './posts/posts.module';
 import { CategoriesModule } from './categories/categories.modules';
@@ -26,6 +27,7 @@ import { StorageModule } from './storage/storage.module';
 
 export const BlogModule = new Module('blog', {
     submodules: [
+        AccountsModule,
         AuthorsModule,
         PostsModule,
         CategoriesModule,

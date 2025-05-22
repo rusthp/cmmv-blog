@@ -382,8 +382,9 @@ import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
-import { useDarkMode } from '../../composables/useUtils';
-
+//import { useDarkMode } from '../../composables/useUtils';
+import { useDarkMode } from '../../composables/useDarkMode';
+import { onClickOutside } from '@vueuse/core';
 import CookieConsent from '../../components/CookieConsent.vue';
 
 const blogAPI = vue3.useBlog();

@@ -21,7 +21,7 @@ export class UserBlogService {
         let users = await Repository.findAll(UserEntity, queries, [], {
             select: [
                 'id', 'username', 'email', 'password', 'root', 'validated',
-                'groups', 'roles'
+                'groups', 'roles', 'verifyEmail'
             ]
         });
 

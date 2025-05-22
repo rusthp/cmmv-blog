@@ -23,6 +23,9 @@ export const useAffiliateClient = () => {
         },
         getCouponsByNetwork: async (networkId: string) => {
             return api.authRequest(`affiliate/campaigns-networks/coupons/${networkId}`, "GET");
+        },
+        export: async (token: string) => {
+            return api.authRequest(`affiliate/networks/export?token=${token}`, "GET");
         }
     }
 
@@ -42,6 +45,9 @@ export const useAffiliateClient = () => {
         },
         updateLogo: async (id: string, logoData: string) => {
             return api.authRequest(`affiliate/campaigns/${id}/logo`, "PUT", { logo: logoData });
+        },
+        export: async (token: string) => {
+            return api.authRequest(`affiliate/campaigns/export?token=${token}`, "GET");
         }
     }
 
@@ -61,6 +67,9 @@ export const useAffiliateClient = () => {
         },
         getCouponsWithAI: async (campaignId: string) => {
             return api.authRequest(`affiliate/coupons/ai/${campaignId}`, "GET");
+        },
+        export: async (token: string) => {
+            return api.authRequest(`affiliate/coupons/export?token=${token}`, "GET");
         }
     }
 
@@ -93,6 +102,9 @@ export const useAffiliateClient = () => {
         },
         delete: async (id: string) => {
             return api.authRequest(`affiliate/categories/${id}`, "DELETE");
+        },
+        export: async (token: string) => {
+            return api.authRequest(`affiliate/categories/export?token=${token}`, "GET");
         }
     }
 
@@ -121,6 +133,9 @@ export const useAffiliateClient = () => {
         },
         getNetworkCampaignsList: async (networkId: string) => {
             return api.authRequest(`affiliate/campaigns-networks/network-campaigns-list/${networkId}`, "GET");
+        },
+        export: async (token: string) => {
+            return api.authRequest(`affiliate/campaigns-networks/export?token=${token}`, "GET");
         }
     }
 

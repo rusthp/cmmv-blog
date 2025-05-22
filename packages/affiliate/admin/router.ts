@@ -69,12 +69,6 @@ useNavbar().addItems([
         group: 'Affiliate'
     },
     {
-        label: 'Campaigns',
-        icon: 'fas fa-bullhorn',
-        to: '/affiliate/campaigns',
-        group: 'Affiliate'
-    },
-    {
         label: 'Accounts',
         icon: 'fas fa-user',
         to: '/affiliate/accounts',
@@ -84,6 +78,12 @@ useNavbar().addItems([
         label: 'Categories',
         icon: 'fas fa-tags',
         to: '/affiliate/categories',
+        group: 'Affiliate'
+    },
+    {
+        label: 'Campaigns',
+        icon: 'fas fa-bullhorn',
+        to: '/affiliate/campaigns',
         group: 'Affiliate'
     },
     {

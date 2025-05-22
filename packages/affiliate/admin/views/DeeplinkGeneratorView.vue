@@ -56,7 +56,7 @@
                                     v-for="account in filteredAccounts"
                                     :key="account.id"
                                     @click="selectAccount(account)"
-                                    class="px-3 py-2 cursor-pointer hover:bg-neutral-700 border-b border-neutral-700 last:border-b-0"
+                                    class="px-3 py-2 cursor-pointer hover:bg-neutral-700 border-b border-neutral-700 last:border-b-0 text-white"
                                 >
                                     {{ account.label }}
                                 </div>
@@ -108,7 +108,7 @@
                                     v-for="campaign in filteredCampaigns"
                                     :key="campaign.id"
                                     @click="selectCampaign(campaign)"
-                                    class="px-3 py-2 cursor-pointer hover:bg-neutral-700 border-b border-neutral-700 last:border-b-0"
+                                    class="px-3 py-2 cursor-pointer hover:bg-neutral-700 border-b border-neutral-700 last:border-b-0 text-white"
                                 >
                                     {{ campaign.name }}
                                 </div>

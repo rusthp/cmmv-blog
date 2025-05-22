@@ -26,6 +26,12 @@ export class SettingsController {
         private readonly settingsService: SettingsService
     ) {}
 
+    @Get("get-signature")
+    @Auth({ rootOnly: true })
+    public async getSignature(){
+        return process.env.API_SIGNATURE;
+    }
+
     @Post('setup', { exclude: true })
     public async getSetup(@Body() setupData: any) {
         return this.settingsService.getSetup(setupData);

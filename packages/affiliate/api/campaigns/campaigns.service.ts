@@ -30,4 +30,30 @@ export class CampaignsServiceTools {
 
         return { affected: affectedRows};
     }
+
+    /**
+     * Get the list of campaigns that are public
+     * @returns The list of campaigns
+     */
+    async getCampaignsPublicList(){
+        const CampaignEntity = Repository.getEntity("AffiliateCampaignsEntity");
+        const campaigns = await Repository.findAll(CampaignEntity, {
+            active: true,
+            limit: 10000
+        }, [], {
+            select: ["id", "name", "logo", "description", "highlight", "slug"]
+        });
+
+        return (campaigns && campaigns.data.length > 0) ? campaigns?.data : [];
+    }
+
+    /**
+     * Export the campaigns
+     * @returns The campaigns
+     */
+    async export(){
+        const CampaignEntity = Repository.getEntity("AffiliateCampaignsEntity");
+        const campaigns = await Repository.findAll(CampaignEntity, { limit: 1000000 });
+        return (campaigns && campaigns.data.length > 0) ? JSON.stringify(campaigns.data, null, 4) : "";
+    }
 }

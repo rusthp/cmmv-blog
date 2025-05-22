@@ -1,4 +1,4 @@
-/*import {
+import {
     createMemoryHistory, createWebHistory,
     createRouter as _createRouter
 } from 'vue-router';
@@ -35,4 +35,4 @@ export function createRouter() {
             }
         ]
     });
-}*/
+}

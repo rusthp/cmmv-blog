@@ -57,6 +57,46 @@
                     </svg>
                     Add Category
                 </button>
+                <!-- More actions dropdown -->
+                <div class="relative" data-more-actions-toggle>
+                    <button
+                        @click="toggleMoreActionsDropdown"
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        More
+                    </button>
+                    <!-- More actions dropdown menu -->
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="exportCategories"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                                :disabled="exportLoading"
+                            >
+                                <svg v-if="exportLoading" class="animate-spin h-3.5 w-3.5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export Categories
+                            </button>
+                            <button
+                                @click="openImportFileDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Import Categories
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -113,6 +153,9 @@
                                 Slug
                             </th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                Icon
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider">
                                 Active
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-300 uppercase tracking-wider w-24">
@@ -130,6 +173,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                 <span class="font-mono">{{ category.slug }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <i v-if="category.icon" :class="[category.icon, 'text-xl text-white']" :title="category.icon"></i>
+                                <span v-else class="text-neutral-500">—</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                 <button
@@ -219,6 +266,37 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="categoryIcon" class="block text-sm font-medium text-neutral-300 mb-1">Icon</label>
+                            <div class="flex items-center space-x-2">
+                                <div class="relative">
+                                    <button
+                                        type="button"
+                                        @click="showIconSelector = true"
+                                        class="flex items-center space-x-2 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white hover:bg-neutral-650 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    >
+                                        <i v-if="categoryForm.icon" :class="['text-lg text-white', categoryForm.icon]"></i>
+                                        <span v-else class="text-neutral-400">Select Icon</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button
+                                    v-if="categoryForm.icon"
+                                    type="button"
+                                    @click="categoryForm.icon = ''"
+                                    class="text-neutral-400 hover:text-white"
+                                    title="Clear icon"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="mt-1 text-sm text-neutral-500">Select an icon for this category</p>
+                        </div>
+
+                        <div class="mb-4">
                             <div class="flex items-center">
                                 <input
                                     id="categoryActive"
@@ -283,17 +361,161 @@
             :duration="notification.duration"
             @close="notification.show = false"
         />
+
+        <!-- Hidden file input for importing JSON files -->
+        <input
+            type="file"
+            ref="importFileInput"
+            @change="handleFileSelect"
+            accept="application/json"
+            class="hidden"
+        />
+
+        <!-- Import Progress Dialog -->
+        <div v-if="showImportProgress" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
+                <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-white">Importing Categories</h3>
+                    <button @click="cancelImport" class="text-neutral-400 hover:text-white" :disabled="importInProgress">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Progress</span>
+                            <span class="text-sm text-neutral-300">{{ importProgress.current }} / {{ importProgress.total }}</span>
+                        </div>
+                        <div class="w-full bg-neutral-700 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${importProgress.percentage}%` }"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Success</span>
+                            <span class="text-sm text-green-500">{{ importProgress.success }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Failed</span>
+                            <span class="text-sm text-red-500">{{ importProgress.failed }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="importProgress.currentItem" class="mb-4 text-sm text-neutral-400">
+                        <p class="truncate">Processing: {{ importProgress.currentItem }}</p>
+                    </div>
+
+                    <div v-if="importProgress.errorMessage" class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-sm text-red-300">
+                        <p>{{ importProgress.errorMessage }}</p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            @click="closeImportDialog"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                            :disabled="importInProgress"
+                        >
+                            {{ importInProgress ? 'Importing...' : importFinished ? 'Close' : 'Cancel' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Icon Selector Modal -->
+        <div v-if="showIconSelector" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-3xl mx-auto max-h-[80vh] flex flex-col">
+                <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-white">Select an Icon</h3>
+                    <button @click="showIconSelector = false" class="text-neutral-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4 border-b border-neutral-700">
+                    <div class="relative">
+                        <input
+                            v-model="iconSearch"
+                            type="text"
+                            placeholder="Search icons..."
+                            class="w-full px-3 py-2 pl-9 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400 absolute left-2 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <button
+                            v-if="iconSearch"
+                            @click="iconSearch = ''"
+                            class="absolute right-2 top-2.5 text-neutral-400 hover:text-white"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap mt-2 gap-2">
+                        <button
+                            v-for="type in iconTypes"
+                            :key="type.name"
+                            @click="activeIconType = type.prefix"
+                            :class="[
+                                'px-2 py-1 text-xs rounded',
+                                activeIconType === type.prefix ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                            ]"
+                        >
+                            {{ type.name }}
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-y-auto flex-grow p-4">
+                    <div v-if="filteredIcons.length === 0" class="flex flex-col items-center justify-center h-full text-neutral-400 py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p>No icons found</p>
+                    </div>
+                    <div v-else class="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                        <button
+                            v-for="icon in filteredIcons"
+                            :key="icon"
+                            @click="selectIcon(icon)"
+                            class="flex items-center justify-center p-3 bg-neutral-700 rounded hover:bg-neutral-600 text-xl transition-colors"
+                            :class="{ 'ring-2 ring-blue-500 bg-neutral-600': categoryForm.icon === icon }"
+                        >
+                            <i :class="[icon, 'text-white']"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4 border-t border-neutral-700 flex justify-end">
+                    <button
+                        @click="showIconSelector = false"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAffiliateClient } from '@cmmv/affiliate/admin/client'
+import { useAdminClient } from '@cmmv/blog/admin/client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
 import DeleteDialog from '@cmmv/blog/admin/components/DeleteDialog.vue'
 import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue'
 
 const affiliateClient = useAffiliateClient()
+const adminClient = useAdminClient()
 
 const categories = ref([])
 const loading = ref(true)
@@ -304,7 +526,8 @@ const isEditing = ref(false)
 const categoryForm = ref({
     name: '',
     slug: '',
-    active: true
+    active: true,
+    icon: ''
 })
 const categoryToEdit = ref(null)
 const formErrors = ref({})
@@ -339,6 +562,73 @@ const filters = ref({
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
+const exportLoading = ref(false)
+
+// More actions dropdown state
+const showMoreActionsDropdown = ref(false)
+
+// Import functionality
+const importFileInput = ref(null)
+const showImportProgress = ref(false)
+const importInProgress = ref(false)
+const importFinished = ref(false)
+const importCancelled = ref(false)
+const importProgress = ref({
+    current: 0,
+    total: 0,
+    percentage: 0,
+    success: 0,
+    failed: 0,
+    currentItem: '',
+    errorMessage: ''
+})
+
+const showIconSelector = ref(false)
+const iconSearch = ref('')
+const activeIconType = ref('fas')
+
+const iconTypes = [
+    { name: 'Solid', prefix: 'fas' },
+    { name: 'Regular', prefix: 'far' },
+    { name: 'Brands', prefix: 'fab' },
+    { name: 'All Icons', prefix: 'all' }
+]
+
+const fontAwesomeIcons = computed(() => {
+    // Get all icons from the CDN
+    if (activeIconType.value === 'all') {
+        // Return all icons combined
+        return [...getSolidIcons(), ...getRegularIcons(), ...getBrandIcons()];
+    }
+
+    if (activeIconType.value === 'fas') return getSolidIcons();
+    if (activeIconType.value === 'far') return getRegularIcons();
+    if (activeIconType.value === 'fab') return getBrandIcons();
+
+    // Default fallback
+    return getSolidIcons();
+})
+
+const filteredIcons = computed(() => {
+    let icons = fontAwesomeIcons.value;
+
+    // Apply search filter if there's a search query
+    if (iconSearch.value) {
+        const search = iconSearch.value.toLowerCase();
+        icons = icons.filter(icon => {
+            // Extract the icon name (remove the prefix)
+            const iconName = icon.split('fa-')[1];
+            return iconName && iconName.includes(search);
+        });
+    }
+
+    return icons;
+})
+
+const selectIcon = (icon) => {
+    categoryForm.value.icon = icon
+    showIconSelector.value = false
+}
 
 const loadCategories = async () => {
     try {
@@ -437,7 +727,8 @@ const openAddDialog = () => {
     categoryForm.value = {
         name: '',
         slug: '',
-        active: true
+        active: true,
+        icon: ''
     }
     formErrors.value = {}
     showDialog.value = true
@@ -450,7 +741,8 @@ const openEditDialog = (category) => {
     categoryForm.value = {
         name: category.name,
         slug: category.slug,
-        active: category.active === undefined ? true : category.active
+        active: category.active === undefined ? true : category.active,
+        icon: category.icon || ''
     }
     formErrors.value = {}
     showDialog.value = true
@@ -461,7 +753,8 @@ const closeDialog = () => {
     categoryForm.value = {
         name: '',
         slug: '',
-        active: true
+        active: true,
+        icon: ''
     }
     formErrors.value = {}
     categoryToEdit.value = null
@@ -489,7 +782,8 @@ const saveCategory = async () => {
         const categoryData = {
             name: categoryForm.value.name.trim(),
             slug: categoryForm.value.slug.trim(),
-            active: categoryForm.value.active
+            active: categoryForm.value.active,
+            icon: categoryForm.value.icon
         }
 
         if (isEditing.value) {
@@ -596,12 +890,378 @@ const clearSearch = () => {
     showSearchDropdown.value = false
 }
 
+// Helper functions to get icons by type - these separate functions help keep the code organized
+const getSolidIcons = () => {
+    return [
+        // Common solid icons (fas) - first batch
+        'fas fa-address-book', 'fas fa-address-card', 'fas fa-adjust', 'fas fa-air-freshener', 'fas fa-align-center',
+        'fas fa-align-justify', 'fas fa-align-left', 'fas fa-align-right', 'fas fa-allergies', 'fas fa-ambulance',
+        'fas fa-american-sign-language-interpreting', 'fas fa-anchor', 'fas fa-angle-double-down', 'fas fa-angle-double-left',
+        'fas fa-angle-double-right', 'fas fa-angle-double-up', 'fas fa-angle-down', 'fas fa-angle-left', 'fas fa-angle-right',
+        'fas fa-angle-up', 'fas fa-angry', 'fas fa-ankh', 'fas fa-apple-alt', 'fas fa-archive', 'fas fa-archway',
+        'fas fa-arrow-alt-circle-down', 'fas fa-arrow-alt-circle-left', 'fas fa-arrow-alt-circle-right', 'fas fa-arrow-alt-circle-up',
+        'fas fa-arrow-circle-down', 'fas fa-arrow-circle-left', 'fas fa-arrow-circle-right', 'fas fa-arrow-circle-up',
+        'fas fa-arrow-down', 'fas fa-arrow-left', 'fas fa-arrow-right', 'fas fa-arrow-up', 'fas fa-arrows-alt',
+        'fas fa-arrows-alt-h', 'fas fa-arrows-alt-v', 'fas fa-assistive-listening-systems', 'fas fa-asterisk',
+        'fas fa-at', 'fas fa-atlas', 'fas fa-atom', 'fas fa-audio-description', 'fas fa-award',
+
+        // Common icons relevant for categories
+        'fas fa-home', 'fas fa-user', 'fas fa-cog', 'fas fa-wrench', 'fas fa-shopping-cart',
+        'fas fa-star', 'fas fa-heart', 'fas fa-bars', 'fas fa-bell', 'fas fa-envelope',
+        'fas fa-search', 'fas fa-phone', 'fas fa-calendar', 'fas fa-clock', 'fas fa-map-marker-alt',
+        'fas fa-credit-card', 'fas fa-dollar-sign', 'fas fa-tag', 'fas fa-bookmark', 'fas fa-file',
+        'fas fa-image', 'fas fa-video', 'fas fa-music', 'fas fa-camera', 'fas fa-microphone',
+        'fas fa-headphones', 'fas fa-tv', 'fas fa-desktop', 'fas fa-mobile-alt', 'fas fa-tablet-alt',
+        'fas fa-book', 'fas fa-newspaper', 'fas fa-graduation-cap', 'fas fa-briefcase', 'fas fa-building',
+        'fas fa-car', 'fas fa-plane', 'fas fa-train', 'fas fa-ship', 'fas fa-bus',
+        'fas fa-bicycle', 'fas fa-motorcycle', 'fas fa-truck', 'fas fa-tractor', 'fas fa-rocket',
+        'fas fa-utensils', 'fas fa-coffee', 'fas fa-glass-martini', 'fas fa-wine-glass', 'fas fa-beer',
+        'fas fa-pizza-slice', 'fas fa-hamburger', 'fas fa-ice-cream', 'fas fa-cookie', 'fas fa-carrot',
+        'fas fa-apple-alt', 'fas fa-lemon', 'fas fa-pepper-hot', 'fas fa-bread-slice', 'fas fa-egg',
+        'fas fa-cheese', 'fas fa-drumstick-bite', 'fas fa-fish', 'fas fa-bone', 'fas fa-candy-cane',
+
+        // Electronics & tech
+        'fas fa-mobile', 'fas fa-laptop', 'fas fa-keyboard', 'fas fa-mouse', 'fas fa-battery-full',
+        'fas fa-wifi', 'fas fa-bluetooth', 'fas fa-signal', 'fas fa-sd-card', 'fas fa-memory',
+        'fas fa-hdd', 'fas fa-microchip', 'fas fa-sim-card', 'fas fa-plug',
+
+        // Shopping & commerce
+        'fas fa-store', 'fas fa-shopping-bag', 'fas fa-shopping-basket', 'fas fa-cart-plus', 'fas fa-cash-register',
+        'fas fa-receipt', 'fas fa-money-bill', 'fas fa-money-bill-wave', 'fas fa-money-check', 'fas fa-piggy-bank',
+        'fas fa-coins', 'fas fa-gift', 'fas fa-percentage', 'fas fa-tags', 'fas fa-hand-holding-usd',
+
+        // Media & entertainment
+        'fas fa-film', 'fas fa-photo-video', 'fas fa-podcast', 'fas fa-gamepad', 'fas fa-dice',
+        'fas fa-chess', 'fas fa-theater-masks', 'fas fa-ticket-alt', 'fas fa-compact-disc',
+
+        // Sports & fitness
+        'fas fa-football-ball', 'fas fa-basketball-ball', 'fas fa-baseball-ball', 'fas fa-volleyball-ball',
+        'fas fa-futbol', 'fas fa-golf-ball', 'fas fa-bowling-ball', 'fas fa-dumbbell', 'fas fa-running',
+        'fas fa-biking', 'fas fa-swimmer', 'fas fa-hiking', 'fas fa-skiing', 'fas fa-snowboarding',
+
+        // Travel & transportation
+        'fas fa-map', 'fas fa-compass', 'fas fa-globe', 'fas fa-passport', 'fas fa-suitcase',
+        'fas fa-concierge-bell', 'fas fa-hotel', 'fas fa-umbrella-beach', 'fas fa-mountain', 'fas fa-road',
+
+        // Home & living
+        'fas fa-couch', 'fas fa-bed', 'fas fa-bath', 'fas fa-chair', 'fas fa-toilet',
+        'fas fa-shower', 'fas fa-hot-tub', 'fas fa-sink', 'fas fa-house-user', 'fas fa-door-open',
+        'fas fa-lightbulb', 'fas fa-fan', 'fas fa-temperature-high', 'fas fa-temperature-low', 'fas fa-wind',
+
+        // Beauty & fashion
+        'fas fa-tshirt', 'fas fa-shoe-prints', 'fas fa-hat-cowboy', 'fas fa-glasses', 'fas fa-socks',
+        'fas fa-vest', 'fas fa-ring', 'fas fa-gem', 'fas fa-cut', 'fas fa-spray-can',
+
+        'fas fa-ring'
+    ];
+}
+
+const getRegularIcons = () => {
+    return [
+        'far fa-address-book', 'far fa-address-card', 'far fa-angry', 'far fa-arrow-alt-circle-down', 'far fa-arrow-alt-circle-left',
+        'far fa-arrow-alt-circle-right', 'far fa-arrow-alt-circle-up', 'far fa-bell', 'far fa-bell-slash', 'far fa-bookmark',
+        'far fa-building', 'far fa-calendar', 'far fa-calendar-alt', 'far fa-calendar-check', 'far fa-calendar-minus',
+        'far fa-calendar-plus', 'far fa-calendar-times', 'far fa-caret-square-down', 'far fa-caret-square-left',
+        'far fa-caret-square-right', 'far fa-caret-square-up', 'far fa-chart-bar', 'far fa-check-circle', 'far fa-check-square',
+        'far fa-circle', 'far fa-clipboard', 'far fa-clock', 'far fa-clone', 'far fa-closed-captioning', 'far fa-comment',
+        'far fa-comment-alt', 'far fa-comment-dots', 'far fa-comments', 'far fa-compass', 'far fa-copy', 'far fa-copyright',
+        'far fa-credit-card', 'far fa-dizzy', 'far fa-dot-circle', 'far fa-edit', 'far fa-envelope', 'far fa-envelope-open',
+        'far fa-eye', 'far fa-eye-slash', 'far fa-file', 'far fa-file-alt', 'far fa-file-archive', 'far fa-file-audio',
+        'far fa-file-code', 'far fa-file-excel', 'far fa-file-image', 'far fa-file-pdf', 'far fa-file-powerpoint',
+        'far fa-file-video', 'far fa-file-word', 'far fa-flag', 'far fa-flushed', 'far fa-folder', 'far fa-folder-open',
+        'far fa-frown', 'far fa-frown-open', 'far fa-futbol', 'far fa-gem', 'far fa-grimace', 'far fa-grin',
+        'far fa-grin-alt', 'far fa-grin-beam', 'far fa-grin-beam-sweat', 'far fa-grin-hearts', 'far fa-grin-squint',
+        'far fa-grin-squint-tears', 'far fa-grin-stars', 'far fa-grin-tears', 'far fa-grin-tongue',
+        'far fa-grin-tongue-squint', 'far fa-grin-tongue-wink', 'far fa-grin-wink', 'far fa-hand-lizard',
+        'far fa-hand-paper', 'far fa-hand-peace', 'far fa-hand-point-down', 'far fa-hand-point-left',
+        'far fa-hand-point-right', 'far fa-hand-point-up', 'far fa-hand-pointer', 'far fa-hand-rock',
+        'far fa-hand-scissors', 'far fa-hand-spock', 'far fa-handshake', 'far fa-hdd', 'far fa-heart',
+        'far fa-hospital', 'far fa-hourglass', 'far fa-id-badge', 'far fa-id-card', 'far fa-image',
+        'far fa-images', 'far fa-keyboard', 'far fa-kiss', 'far fa-kiss-beam', 'far fa-kiss-wink-heart',
+        'far fa-laugh', 'far fa-laugh-beam', 'far fa-laugh-squint', 'far fa-laugh-wink', 'far fa-lemon',
+        'far fa-life-ring', 'far fa-lightbulb', 'far fa-list-alt', 'far fa-map', 'far fa-meh',
+        'far fa-meh-blank', 'far fa-meh-rolling-eyes', 'far fa-minus-square', 'far fa-money-bill-alt',
+        'far fa-moon', 'far fa-newspaper', 'far fa-object-group', 'far fa-object-ungroup', 'far fa-paper-plane',
+        'far fa-pause-circle', 'far fa-play-circle', 'far fa-plus-square', 'far fa-question-circle',
+        'far fa-registered', 'far fa-sad-cry', 'far fa-sad-tear', 'far fa-save', 'far fa-share-square',
+        'far fa-smile', 'far fa-smile-beam', 'far fa-smile-wink', 'far fa-snowflake', 'far fa-square',
+        'far fa-star', 'far fa-star-half', 'far fa-sticky-note', 'far fa-stop-circle', 'far fa-sun',
+        'far fa-surprise', 'far fa-thumbs-down', 'far fa-thumbs-up', 'far fa-times-circle', 'far fa-tired',
+        'far fa-trash-alt', 'far fa-user', 'far fa-user-circle', 'far fa-window-close', 'far fa-window-maximize',
+        'far fa-window-minimize', 'far fa-window-restore'
+    ];
+}
+
+const getBrandIcons = () => {
+    return [
+        'fab fa-500px', 'fab fa-accessible-icon', 'fab fa-accusoft', 'fab fa-acquisitions-incorporated', 'fab fa-adn',
+        'fab fa-adversal', 'fab fa-affiliatetheme', 'fab fa-airbnb', 'fab fa-algolia', 'fab fa-alipay',
+        'fab fa-amazon', 'fab fa-amazon-pay', 'fab fa-amilia', 'fab fa-android', 'fab fa-angellist',
+        'fab fa-angrycreative', 'fab fa-angular', 'fab fa-app-store', 'fab fa-app-store-ios', 'fab fa-apple',
+        'fab fa-apple-pay', 'fab fa-artstation', 'fab fa-asymmetrik', 'fab fa-atlassian', 'fab fa-audible',
+        'fab fa-autoprefixer', 'fab fa-avianex', 'fab fa-aviato', 'fab fa-aws', 'fab fa-bandcamp',
+        'fab fa-behance', 'fab fa-behance-square', 'fab fa-bimobject', 'fab fa-bitbucket', 'fab fa-bitcoin',
+        'fab fa-bity', 'fab fa-black-tie', 'fab fa-blackberry', 'fab fa-blogger', 'fab fa-blogger-b',
+        'fab fa-bluetooth', 'fab fa-bluetooth-b', 'fab fa-bootstrap', 'fab fa-btc', 'fab fa-buffer',
+        'fab fa-buromobelexperte', 'fab fa-buy-n-large', 'fab fa-buysellads', 'fab fa-canadian-maple-leaf',
+        'fab fa-cc-amazon-pay', 'fab fa-cc-amex', 'fab fa-cc-apple-pay', 'fab fa-cc-diners-club',
+        'fab fa-cc-discover', 'fab fa-cc-jcb', 'fab fa-cc-mastercard', 'fab fa-cc-paypal', 'fab fa-cc-stripe',
+        'fab fa-cc-visa', 'fab fa-centercode', 'fab fa-centos', 'fab fa-chrome', 'fab fa-chromecast',
+        'fab fa-cloudflare', 'fab fa-cloudscale', 'fab fa-cloudsmith', 'fab fa-cloudversify', 'fab fa-codepen',
+        'fab fa-codiepie', 'fab fa-confluence', 'fab fa-connectdevelop', 'fab fa-contao', 'fab fa-cotton-bureau',
+        'fab fa-cpanel', 'fab fa-creative-commons', 'fab fa-css3', 'fab fa-css3-alt', 'fab fa-cuttlefish',
+        'fab fa-dailymotion', 'fab fa-dashcube', 'fab fa-deezer', 'fab fa-delicious', 'fab fa-deploydog',
+        'fab fa-deskpro', 'fab fa-dev', 'fab fa-deviantart', 'fab fa-dhl', 'fab fa-diaspora',
+        'fab fa-digg', 'fab fa-digital-ocean', 'fab fa-discord', 'fab fa-discourse', 'fab fa-dochub',
+        'fab fa-docker', 'fab fa-draft2digital', 'fab fa-dribbble', 'fab fa-dribbble-square', 'fab fa-dropbox',
+        'fab fa-drupal', 'fab fa-dyalog', 'fab fa-earlybirds', 'fab fa-ebay', 'fab fa-edge',
+        'fab fa-edge-legacy', 'fab fa-elementor', 'fab fa-ello', 'fab fa-ember', 'fab fa-empire',
+        'fab fa-envira', 'fab fa-erlang', 'fab fa-ethereum', 'fab fa-etsy', 'fab fa-evernote',
+        'fab fa-expeditedssl', 'fab fa-facebook', 'fab fa-facebook-f', 'fab fa-facebook-messenger',
+        'fab fa-facebook-square', 'fab fa-fantasy-flight-games', 'fab fa-fedex', 'fab fa-fedora', 'fab fa-figma',
+        'fab fa-firefox', 'fab fa-firefox-browser', 'fab fa-first-order', 'fab fa-first-order-alt',
+        'fab fa-firstdraft', 'fab fa-flickr', 'fab fa-flipboard', 'fab fa-fly', 'fab fa-font-awesome',
+        'fab fa-font-awesome-alt', 'fab fa-font-awesome-flag', 'fab fa-fonticons', 'fab fa-fonticons-fi',
+        'fab fa-fort-awesome', 'fab fa-fort-awesome-alt', 'fab fa-forumbee', 'fab fa-foursquare',
+        'fab fa-free-code-camp', 'fab fa-freebsd', 'fab fa-fulcrum', 'fab fa-galactic-republic',
+        'fab fa-galactic-senate', 'fab fa-get-pocket', 'fab fa-gg', 'fab fa-gg-circle', 'fab fa-git',
+        'fab fa-git-alt', 'fab fa-git-square', 'fab fa-github', 'fab fa-github-alt', 'fab fa-github-square',
+        'fab fa-gitkraken', 'fab fa-gitlab', 'fab fa-gitter', 'fab fa-glide', 'fab fa-glide-g',
+        'fab fa-gofore', 'fab fa-google', 'fab fa-google-drive', 'fab fa-google-pay', 'fab fa-google-play',
+        'fab fa-google-plus', 'fab fa-google-plus-g', 'fab fa-google-plus-square', 'fab fa-google-wallet',
+        'fab fa-gratipay', 'fab fa-grav', 'fab fa-gripfire', 'fab fa-grunt', 'fab fa-guilded',
+        'fab fa-gulp', 'fab fa-hacker-news', 'fab fa-hacker-news-square', 'fab fa-hackerrank', 'fab fa-hips',
+        'fab fa-hire-a-helper', 'fab fa-hive', 'fab fa-hooli', 'fab fa-hornbill', 'fab fa-hotjar',
+        'fab fa-houzz', 'fab fa-html5', 'fab fa-hubspot', 'fab fa-ideal', 'fab fa-imdb',
+        'fab fa-instagram', 'fab fa-instagram-square', 'fab fa-intercom', 'fab fa-internet-explorer',
+        'fab fa-invision', 'fab fa-ioxhost', 'fab fa-itch-io', 'fab fa-itunes', 'fab fa-itunes-note',
+        'fab fa-java', 'fab fa-jedi-order', 'fab fa-jenkins', 'fab fa-jira', 'fab fa-joget',
+        'fab fa-joomla', 'fab fa-js', 'fab fa-js-square', 'fab fa-jsfiddle', 'fab fa-kaggle',
+        'fab fa-keybase', 'fab fa-keycdn', 'fab fa-kickstarter', 'fab fa-kickstarter-k', 'fab fa-korvue',
+        'fab fa-laravel', 'fab fa-lastfm', 'fab fa-lastfm-square', 'fab fa-leanpub', 'fab fa-less',
+        'fab fa-line', 'fab fa-linkedin', 'fab fa-linkedin-in', 'fab fa-linode', 'fab fa-linux',
+        'fab fa-lyft', 'fab fa-magento', 'fab fa-mailchimp', 'fab fa-mandalorian', 'fab fa-markdown',
+        'fab fa-mastodon', 'fab fa-maxcdn', 'fab fa-mdb', 'fab fa-medapps', 'fab fa-medium',
+        'fab fa-medium-m', 'fab fa-medrt', 'fab fa-meetup', 'fab fa-megaport', 'fab fa-mendeley',
+        'fab fa-microblog', 'fab fa-microsoft', 'fab fa-mix', 'fab fa-mixcloud', 'fab fa-mixer',
+        'fab fa-mizuni', 'fab fa-modx', 'fab fa-monero', 'fab fa-napster', 'fab fa-neos',
+        'fab fa-nimblr', 'fab fa-node', 'fab fa-node-js', 'fab fa-npm', 'fab fa-ns8',
+        'fab fa-nutritionix', 'fab fa-odnoklassniki', 'fab fa-odnoklassniki-square', 'fab fa-old-republic',
+        'fab fa-opencart', 'fab fa-openid', 'fab fa-opera', 'fab fa-optin-monster', 'fab fa-orcid',
+        'fab fa-osi', 'fab fa-page4', 'fab fa-pagelines', 'fab fa-palfed', 'fab fa-patreon',
+        'fab fa-paypal', 'fab fa-penny-arcade', 'fab fa-periscope', 'fab fa-phabricator', 'fab fa-phoenix-framework',
+        'fab fa-phoenix-squadron', 'fab fa-php', 'fab fa-pinterest', 'fab fa-pinterest-p', 'fab fa-pinterest-square',
+        'fab fa-playstation', 'fab fa-product-hunt', 'fab fa-pushed', 'fab fa-python', 'fab fa-qq',
+        'fab fa-quinscape', 'fab fa-quora', 'fab fa-r-project', 'fab fa-raspberry-pi', 'fab fa-ravelry',
+        'fab fa-react', 'fab fa-reacteurope', 'fab fa-readme', 'fab fa-rebel', 'fab fa-red-river',
+        'fab fa-reddit', 'fab fa-reddit-alien', 'fab fa-reddit-square', 'fab fa-redhat', 'fab fa-renren',
+        'fab fa-replyd', 'fab fa-researchgate', 'fab fa-resolving', 'fab fa-rev', 'fab fa-rocketchat',
+        'fab fa-rockrms', 'fab fa-rust', 'fab fa-safari', 'fab fa-salesforce', 'fab fa-sass',
+        'fab fa-schlix', 'fab fa-scribd', 'fab fa-searchengin', 'fab fa-sellcast', 'fab fa-sellsy',
+        'fab fa-servicestack', 'fab fa-shirtsinbulk', 'fab fa-shopify', 'fab fa-shopware', 'fab fa-simplybuilt',
+        'fab fa-sistrix', 'fab fa-sith', 'fab fa-sketch', 'fab fa-skyatlas', 'fab fa-skype',
+        'fab fa-slack', 'fab fa-slack-hash', 'fab fa-slideshare', 'fab fa-snapchat', 'fab fa-snapchat-ghost',
+        'fab fa-snapchat-square', 'fab fa-soundcloud', 'fab fa-sourcetree', 'fab fa-speakap', 'fab fa-speaker-deck',
+        'fab fa-spotify', 'fab fa-squarespace', 'fab fa-stack-exchange', 'fab fa-stack-overflow',
+        'fab fa-stackpath', 'fab fa-staylinked', 'fab fa-steam', 'fab fa-steam-square', 'fab fa-steam-symbol',
+        'fab fa-sticker-mule', 'fab fa-strava', 'fab fa-stripe', 'fab fa-stripe-s', 'fab fa-studiovinari',
+        'fab fa-stumbleupon', 'fab fa-stumbleupon-circle', 'fab fa-superpowers', 'fab fa-supple', 'fas fa-guitar',
+    ];
+}
+
+const exportCategories = async () => {
+    try {
+        exportLoading.value = true;
+
+        // Get signature token first (requires root access)
+        let signature;
+        try {
+            const signatureResponse = await adminClient.settings.getSignature();
+            if (signatureResponse) {
+                signature = signatureResponse;
+            } else {
+                throw new Error('Failed to get authentication signature');
+            }
+        } catch (err) {
+            console.error('Error getting signature:', err);
+            showNotification('error', 'Only root users can export categories');
+            exportLoading.value = false;
+            return;
+        }
+
+        window.open(`/api/affiliate/categories/export?token=${signature}`, '_blank');
+        showNotification('success', 'Export started. Your download will begin shortly.');
+    } catch (err) {
+        console.error('Failed to export categories:', err);
+        showNotification('error', err.message || 'Failed to export categories');
+    } finally {
+        exportLoading.value = false;
+    }
+}
+
+// Function to toggle the more actions dropdown
+const toggleMoreActionsDropdown = () => {
+    showMoreActionsDropdown.value = !showMoreActionsDropdown.value;
+}
+
+// Function to open the file dialog for import
+const openImportFileDialog = () => {
+    // Trigger the hidden file input
+    importFileInput.value.click();
+}
+
+// Function to handle file selection
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if it's a JSON file
+    if (file.type !== 'application/json') {
+        showNotification('error', 'Please select a valid JSON file');
+        event.target.value = ''; // Clear the input
+        return;
+    }
+
+    // Read file contents
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const jsonData = JSON.parse(e.target.result);
+
+            // Validate that it's an array of categories
+            if (!Array.isArray(jsonData)) {
+                showNotification('error', 'Invalid JSON format. Expected an array of categories.');
+                return;
+            }
+
+            // Start import process
+            startImport(jsonData);
+        } catch (err) {
+            console.error('Failed to parse JSON:', err);
+            showNotification('error', 'Failed to parse JSON file');
+        }
+    };
+
+    reader.onerror = () => {
+        showNotification('error', 'Failed to read file');
+    };
+
+    reader.readAsText(file);
+    event.target.value = ''; // Clear the input
+}
+
+// Function to start the import process
+const startImport = (categories) => {
+    // Reset progress
+    importProgress.value = {
+        current: 0,
+        total: categories.length,
+        percentage: 0,
+        success: 0,
+        failed: 0,
+        currentItem: '',
+        errorMessage: ''
+    };
+
+    // Show progress dialog
+    showImportProgress.value = true;
+    importInProgress.value = true;
+    importFinished.value = false;
+    importCancelled.value = false;
+
+    // Start processing categories
+    processCategories(categories);
+}
+
+// Function to process categories one by one
+const processCategories = async (categories) => {
+    for (let i = 0; i < categories.length; i++) {
+        // Check if import was cancelled
+        if (importCancelled.value) {
+            break;
+        }
+
+        const category = categories[i];
+        importProgress.value.current = i + 1;
+        importProgress.value.percentage = Math.round((importProgress.value.current / importProgress.value.total) * 100);
+
+        try {
+            // Update current item being processed
+            importProgress.value.currentItem = category.name || `Category ${i + 1}`;
+            importProgress.value.errorMessage = '';
+
+            // Check if category has required fields
+            if (!category.name || !category.slug) {
+                throw new Error('Category requires name and slug fields');
+            }
+
+            // Prepare category data for API
+            const categoryData = {
+                name: category.name.trim(),
+                slug: category.slug.trim(),
+                active: category.active !== undefined ? category.active : true,
+                icon: category.icon || ''
+            };
+
+            // Insert category using API
+            await affiliateClient.categories.insert(categoryData);
+
+            // Update success count
+            importProgress.value.success++;
+        } catch (err) {
+            console.error(`Failed to import category ${i + 1}:`, err);
+            importProgress.value.failed++;
+            importProgress.value.errorMessage = err.message || 'Failed to import category';
+
+            // Small delay to let user see the error message
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Small delay to prevent UI freezing
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Import completed
+    importInProgress.value = false;
+    importFinished.value = true;
+
+    // Refresh category list after import
+    refreshData();
+
+    // Show notification
+    if (importCancelled.value) {
+        showNotification('info', `Import cancelled. ${importProgress.value.success} categories imported successfully.`);
+    } else {
+        showNotification('success', `Import completed. ${importProgress.value.success} categories imported successfully, ${importProgress.value.failed} failed.`);
+    }
+}
+
+// Function to cancel the import
+const cancelImport = () => {
+    if (importInProgress.value) {
+        importCancelled.value = true;
+    } else {
+        closeImportDialog();
+    }
+}
+
+// Function to close the import dialog
+const closeImportDialog = () => {
+    showImportProgress.value = false;
+    importCancelled.value = false;
+}
+
 onMounted(() => {
     // Add click-outside handling for search dropdown
     document.addEventListener('click', (event) => {
         const target = event.target
         if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value) {
             showSearchDropdown.value = false
+        }
+
+        // Handle more actions dropdown
+        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
+            showMoreActionsDropdown.value = false
         }
     })
 

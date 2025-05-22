@@ -57,6 +57,46 @@
                     </svg>
                     Add Campaign
                 </button>
+                <!-- More actions dropdown -->
+                <div class="relative" data-more-actions-toggle>
+                    <button
+                        @click="toggleMoreActionsDropdown"
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        More
+                    </button>
+                    <!-- More actions dropdown menu -->
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="exportCampaigns"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                                :disabled="exportLoading"
+                            >
+                                <svg v-if="exportLoading" class="animate-spin h-3.5 w-3.5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export Campaigns
+                            </button>
+                            <button
+                                @click="openImportFileDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Import Campaigns
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -110,10 +150,13 @@
                                 </span>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
-                                URL
+                                Slug
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
                                 Network
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                Active
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-300 uppercase tracking-wider w-24">
                                 Actions
@@ -129,13 +172,14 @@
                                 <div class="flex items-center">
                                     <img v-if="campaign.logo" :src="campaign.logo" alt="Campaign logo" class="h-8 w-8 mr-3 rounded-full object-cover" />
                                     <span>{{ campaign.name }}</span>
+                                    <span v-if="campaign.highlight" class="ml-2 bg-yellow-500 text-xs rounded-full px-2 py-0.5 text-black font-medium">Highlight</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400 truncate max-w-xs">
-                                <a v-if="campaign.url" :href="campaign.url" target="_blank" class="hover:text-blue-400">
-                                    {{ formatUrl(campaign.url) }}
-                                </a>
-                                <span v-else class="text-neutral-500 italic">No URL provided</span>
+                                <span v-if="campaign.slug" class="font-mono">
+                                    {{ campaign.slug }}
+                                </span>
+                                <span v-else class="text-neutral-500 italic">No slug</span>
                             </td>
                             <td class="px-6 py-4 text-sm text-neutral-400">
                                 <!-- Visualización de red única usando el campo network -->
@@ -148,6 +192,17 @@
                                 <span v-else class="text-neutral-500 italic">
                                     No network
                                 </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <button
+                                    @click="toggleActive(campaign)"
+                                    :class="[
+                                        'rounded-full p-1 w-12 h-6 flex items-center transition-colors',
+                                        campaign.active ? 'bg-green-600 justify-end' : 'bg-neutral-600 justify-start'
+                                    ]"
+                                >
+                                    <span class="bg-white rounded-full w-4 h-4"></span>
+                                </button>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
@@ -208,304 +263,375 @@
                         </svg>
                     </button>
                 </div>
-                <div class="p-6">
-                    <form @submit.prevent="saveCampaign" class="max-h-[70vh] overflow-y-auto">
-                        <div class="mb-4">
-                            <label for="campaignName" class="block text-sm font-medium text-neutral-300 mb-1">Campaign Name</label>
-                            <input
-                                id="campaignName"
-                                v-model="campaignForm.name"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Campaign name"
-                                required
-                            />
-                            <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
-                        </div>
 
-                        <div class="mb-4">
-                            <label for="campaignUrl" class="block text-sm font-medium text-neutral-300 mb-1">URL</label>
-                            <input
-                                id="campaignUrl"
-                                v-model="campaignForm.url"
-                                type="url"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="https://example.com"
-                                required
-                            />
-                            <p class="mt-1 text-sm text-neutral-500">The campaign's landing page URL</p>
-                            <p v-if="formErrors.url" class="mt-1 text-sm text-red-500">{{ formErrors.url }}</p>
-                        </div>
+                <!-- Tab navigation -->
+                <div class="px-6 pt-4 border-b border-neutral-700">
+                    <div class="flex space-x-4">
+                        <button
+                            @click="activeTab = 'basic'"
+                            :class="[
+                                'pb-2 px-1 text-sm font-medium transition-colors border-b-2',
+                                activeTab === 'basic'
+                                    ? 'border-blue-500 text-blue-400'
+                                    : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                            ]"
+                        >
+                            Basic Information
+                        </button>
+                        <button
+                            @click="activeTab = 'extra'"
+                            :class="[
+                                'pb-2 px-1 text-sm font-medium transition-colors border-b-2',
+                                activeTab === 'extra'
+                                    ? 'border-blue-500 text-blue-400'
+                                    : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                            ]"
+                        >
+                            Extra
+                        </button>
+                    </div>
+                </div>
 
-                        <div class="mb-4">
-                            <label for="campaignDomain" class="block text-sm font-medium text-neutral-300 mb-1">Domain</label>
-                            <input
-                                id="campaignDomain"
-                                v-model="campaignForm.domain"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="example.com"
-                                required
-                            />
-                            <p class="mt-1 text-sm text-neutral-500">The campaign's landing page domain</p>
-                            <p v-if="formErrors.domain" class="mt-1 text-sm text-red-500">{{ formErrors.domain }}</p>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-neutral-300 mb-2">Logo</label>
-                            <div class="flex items-center space-x-4">
-                                <div class="w-40 h-[125px] bg-neutral-700 rounded-md overflow-hidden flex items-center justify-center border border-neutral-600">
-                                    <img v-if="campaignForm.logo" :src="campaignForm.logo" alt="Campaign logo" class="w-full h-full object-contain" />
-                                    <div v-else class="text-neutral-500 flex flex-col items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <span class="text-xs">No logo</span>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col space-y-2">
-                                    <button
-                                        type="button"
-                                        @click="openLogoUpload"
-                                        class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded-md transition-colors"
-                                    >
-                                        {{ campaignForm.logo ? 'Change Logo' : 'Upload Logo' }}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        v-if="campaignForm.logo"
-                                        @click="removeLogo"
-                                        class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded-md transition-colors"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-neutral-500">Recommended size: 160 × 125 pixels</p>
-                            <p v-if="formErrors.logo" class="mt-1 text-sm text-red-500">{{ formErrors.logo }}</p>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="campaignDescription" class="block text-sm font-medium text-neutral-300 mb-1">Description</label>
-                            <textarea
-                                id="campaignDescription"
-                                v-model="campaignForm.description"
-                                rows="3"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Campaign description"
-                            ></textarea>
-                            <p v-if="formErrors.description" class="mt-1 text-sm text-red-500">{{ formErrors.description }}</p>
-                        </div>
-
-                        <!-- Metadata Section -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-neutral-300 mb-2">Metadata</label>
-                            <div class="bg-neutral-750 p-3 rounded-md mb-2">
-                                <div class="max-h-[250px] overflow-y-auto pr-1">
-                                    <div v-for="(item, index) in campaignForm.metadata" :key="index" class="mb-3 border-b border-neutral-700 pb-3">
-                                        <div class="grid grid-cols-2 gap-2 mb-2">
-                                            <div>
-                                                <label :for="`metadataKey${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Key</label>
-                                                <input
-                                                    :id="`metadataKey${index}`"
-                                                    v-model="item.key"
-                                                    type="text"
-                                                    class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    placeholder="Key"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label :for="`metadataType${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Type</label>
-                                                <select
-                                                    :id="`metadataType${index}`"
-                                                    v-model="item.type"
-                                                    class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                >
-                                                    <option value="string">String</option>
-                                                    <option value="text">Text</option>
-                                                    <option value="number">Number</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="mb-2">
-                                            <label :for="`metadataValue${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Value</label>
-                                            <textarea
-                                                v-if="item.type === 'text'"
-                                                :id="`metadataValue${index}`"
-                                                v-model="item.value"
-                                                rows="2"
-                                                class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                placeholder="Value"
-                                            ></textarea>
-                                            <input
-                                                v-else-if="item.type === 'string'"
-                                                :id="`metadataValue${index}`"
-                                                v-model="item.value"
-                                                type="text"
-                                                class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                placeholder="Value"
-                                            />
-                                            <input
-                                                v-else
-                                                :id="`metadataValue${index}`"
-                                                v-model.number="item.value"
-                                                type="number"
-                                                class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                placeholder="Value"
-                                            />
-                                        </div>
-                                        <div class="flex justify-end">
-                                            <button
-                                                type="button"
-                                                @click="removeMetadataItem(index)"
-                                                class="text-xs text-red-400 hover:text-red-300"
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div v-if="campaignForm.metadata.length === 0" class="text-center py-3 text-sm text-neutral-500">
-                                        No metadata added yet
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    @click="addMetadataItem"
-                                    class="mt-2 w-full px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md flex items-center justify-center"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    Add Metadata
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mb-6">
-                            <label for="campaignNetwork" class="block text-sm font-medium text-neutral-300 mb-1">Network</label>
-                            <div v-if="loadingNetworks" class="flex items-center py-2">
-                                <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
-                                <span class="ml-2 text-neutral-400 text-sm">Loading networks...</span>
-                            </div>
-                            <div v-else-if="availableNetworks.length === 0" class="py-2 text-sm text-neutral-400">
-                                No networks available. Please create a network first.
-                            </div>
-                            <div v-else>
-                                <!-- Network dropdown - sin buscador -->
-                                <select
-                                    id="campaignNetwork"
-                                    v-model="campaignForm.networkId"
+                <div class="p-6 overflow-y-auto" style="max-height: calc(85vh - 168px);">
+                    <form @submit.prevent="saveCampaign">
+                        <!-- Basic Tab -->
+                        <div v-if="activeTab === 'basic'">
+                            <div class="mb-4">
+                                <label for="campaignName" class="block text-sm font-medium text-neutral-300 mb-1">Campaign Name</label>
+                                <input
+                                    id="campaignName"
+                                    v-model="campaignForm.name"
+                                    @input="updateSlug"
+                                    type="text"
                                     class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Campaign name"
                                     required
-                                >
-                                    <option value="" disabled>Select a network</option>
-                                    <option
-                                        v-for="network in availableNetworks"
-                                        :key="network.id"
-                                        :value="network.id"
-                                    >
-                                        {{ network.name }}
-                                    </option>
-                                </select>
+                                />
+                                <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
                             </div>
-                            <p v-if="formErrors.networkId" class="mt-1 text-sm text-red-500">{{ formErrors.networkId }}</p>
-                        </div>
 
-                        <!-- Categories Section -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-neutral-300 mb-2">Categories</label>
-                            <div v-if="loadingCategories" class="flex items-center py-2">
-                                <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
-                                <span class="ml-2 text-neutral-400 text-sm">Loading categories...</span>
+                            <div class="mb-4">
+                                <label for="campaignSlug" class="block text-sm font-medium text-neutral-300 mb-1">Slug</label>
+                                <input
+                                    id="campaignSlug"
+                                    v-model="campaignForm.slug"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="campaign-slug"
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">URL-friendly name. Generated automatically from the campaign name.</p>
+                                <p v-if="formErrors.slug" class="mt-1 text-sm text-red-500">{{ formErrors.slug }}</p>
                             </div>
-                            <div v-else-if="availableCategories.length === 0" class="py-2 text-sm text-neutral-400">
-                                No categories available. Please create categories first.
+
+                            <div class="mb-4">
+                                <label for="campaignUrl" class="block text-sm font-medium text-neutral-300 mb-1">URL</label>
+                                <input
+                                    id="campaignUrl"
+                                    v-model="campaignForm.url"
+                                    type="url"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="https://example.com"
+                                    required
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">The campaign's landing page URL</p>
+                                <p v-if="formErrors.url" class="mt-1 text-sm text-red-500">{{ formErrors.url }}</p>
                             </div>
-                            <div v-else class="bg-neutral-750 p-3 rounded-md mb-2">
-                                <div class="mb-2">
-                                    <input
-                                        type="text"
-                                        v-model="categorySearch"
-                                        placeholder="Search categories..."
-                                        class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div class="max-h-[200px] overflow-y-auto pr-1 grid grid-cols-2 gap-2">
-                                    <div
-                                        v-for="category in filteredCategories"
-                                        :key="category.id"
-                                        class="flex items-center space-x-2"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            :id="`category-${category.id}`"
-                                            :value="category.id"
-                                            v-model="campaignForm.categories"
-                                            class="rounded bg-neutral-700 border-neutral-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-neutral-800"
-                                        />
-                                        <label :for="`category-${category.id}`" class="text-sm text-neutral-300">
-                                            {{ category.name }}
-                                        </label>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-neutral-300 mb-2">Logo</label>
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-40 h-[125px] bg-neutral-700 rounded-md overflow-hidden flex items-center justify-center border border-neutral-600">
+                                        <img v-if="campaignForm.logo" :src="campaignForm.logo" alt="Campaign logo" class="w-full h-full object-contain" />
+                                        <div v-else class="text-neutral-500 flex flex-col items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span class="text-xs">No logo</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div v-if="campaignForm.categories.length > 0" class="mt-3">
-                                    <div class="flex flex-wrap gap-2 mb-2">
-                                        <span class="text-xs text-neutral-400">Selected ({{ campaignForm.categories.length }}): </span>
+                                    <div class="flex flex-col space-y-2">
                                         <button
                                             type="button"
-                                            @click="campaignForm.categories = []"
-                                            class="text-xs text-red-400 hover:text-red-300"
+                                            @click="openLogoUpload"
+                                            class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded-md transition-colors"
                                         >
-                                            Clear all
+                                            {{ campaignForm.logo ? 'Change Logo' : 'Upload Logo' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            v-if="campaignForm.logo"
+                                            @click="removeLogo"
+                                            class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded-md transition-colors"
+                                        >
+                                            Remove
                                         </button>
                                     </div>
-                                    <div class="flex flex-wrap gap-1">
-                                        <span
-                                            v-for="categoryId in campaignForm.categories"
-                                            :key="categoryId"
-                                            class="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-900/40 text-blue-200 border border-blue-800"
-                                        >
-                                            {{ getCategoryName(categoryId) }}
-                                            <button
-                                                type="button"
-                                                @click="removeCategory(categoryId)"
-                                                class="ml-1 text-blue-300 hover:text-blue-100"
-                                            >
-                                                ×
-                                            </button>
-                                        </span>
-                                    </div>
+                                </div>
+                                <p class="mt-1 text-xs text-neutral-500">Recommended size: 160 × 125 pixels</p>
+                                <p v-if="formErrors.logo" class="mt-1 text-sm text-red-500">{{ formErrors.logo }}</p>
+                            </div>
+
+                            <!-- Status Options -->
+                            <div class="mb-4 flex items-center space-x-6">
+                                <div class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="campaignActive"
+                                        v-model="campaignForm.active"
+                                        class="w-4 h-4 rounded bg-neutral-700 border-neutral-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-neutral-800"
+                                    />
+                                    <label for="campaignActive" class="ml-2 text-sm text-neutral-300">Active</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="campaignHighlight"
+                                        v-model="campaignForm.highlight"
+                                        class="w-4 h-4 rounded bg-neutral-700 border-neutral-600 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-neutral-800"
+                                    />
+                                    <label for="campaignHighlight" class="ml-2 text-sm text-neutral-300">Highlight</label>
                                 </div>
                             </div>
-                            <p v-if="formErrors.categories" class="mt-1 text-sm text-red-500">{{ formErrors.categories }}</p>
                         </div>
 
-                        <div class="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                @click="closeDialog"
-                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                                :disabled="formLoading"
-                            >
-                                <span v-if="formLoading" class="flex items-center">
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Saving...
-                                </span>
-                                <span v-else>
-                                    {{ isEditing ? 'Update' : 'Create' }}
-                                </span>
-                            </button>
+                        <!-- Extra Tab -->
+                        <div v-if="activeTab === 'extra'">
+                            <div class="mb-4">
+                                <label for="campaignDomain" class="block text-sm font-medium text-neutral-300 mb-1">Domain</label>
+                                <input
+                                    id="campaignDomain"
+                                    v-model="campaignForm.domain"
+                                    @input="cleanDomain"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="example.com"
+                                    required
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">The campaign's landing page domain (without www. or https://)</p>
+                                <p v-if="formErrors.domain" class="mt-1 text-sm text-red-500">{{ formErrors.domain }}</p>
+                            </div>
+
+                            <div class="mb-6">
+                                <label for="campaignNetwork" class="block text-sm font-medium text-neutral-300 mb-1">Network</label>
+                                <div v-if="loadingNetworks" class="flex items-center py-2">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                                    <span class="ml-2 text-neutral-400 text-sm">Loading networks...</span>
+                                </div>
+                                <div v-else-if="availableNetworks.length === 0" class="py-2 text-sm text-neutral-400">
+                                    No networks available. Please create a network first.
+                                </div>
+                                <div v-else>
+                                    <!-- Network dropdown - sin buscador -->
+                                    <select
+                                        id="campaignNetwork"
+                                        v-model="campaignForm.networkId"
+                                        class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        required
+                                    >
+                                        <option value="" disabled>Select a network</option>
+                                        <option
+                                            v-for="network in availableNetworks"
+                                            :key="network.id"
+                                            :value="network.id"
+                                        >
+                                            {{ network.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <p v-if="formErrors.networkId" class="mt-1 text-sm text-red-500">{{ formErrors.networkId }}</p>
+                            </div>
+
+                            <!-- Categories Section -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-neutral-300 mb-2">Categories</label>
+                                <div v-if="loadingCategories" class="flex items-center py-2">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                                    <span class="ml-2 text-neutral-400 text-sm">Loading categories...</span>
+                                </div>
+                                <div v-else-if="availableCategories.length === 0" class="py-2 text-sm text-neutral-400">
+                                    No categories available. Please create categories first.
+                                </div>
+                                <div v-else class="bg-neutral-750 p-3 rounded-md mb-2">
+                                    <div class="mb-2">
+                                        <input
+                                            type="text"
+                                            v-model="categorySearch"
+                                            placeholder="Search categories..."
+                                            class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div class="max-h-[200px] overflow-y-auto pr-1 grid grid-cols-2 gap-2">
+                                        <div
+                                            v-for="category in filteredCategories"
+                                            :key="category.id"
+                                            class="flex items-center space-x-2"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                :id="`category-${category.id}`"
+                                                :value="category.id"
+                                                v-model="campaignForm.categories"
+                                                class="rounded bg-neutral-700 border-neutral-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-neutral-800"
+                                            />
+                                            <label :for="`category-${category.id}`" class="text-sm text-neutral-300">
+                                                {{ category.name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div v-if="campaignForm.categories.length > 0" class="mt-3">
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            <span class="text-xs text-neutral-400">Selected ({{ campaignForm.categories.length }}): </span>
+                                            <button
+                                                type="button"
+                                                @click="campaignForm.categories = []"
+                                                class="text-xs text-red-400 hover:text-red-300"
+                                            >
+                                                Clear all
+                                            </button>
+                                        </div>
+                                        <div class="flex flex-wrap gap-1">
+                                            <span
+                                                v-for="categoryId in campaignForm.categories"
+                                                :key="categoryId"
+                                                class="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-900/40 text-blue-200 border border-blue-800"
+                                            >
+                                                {{ getCategoryName(categoryId) }}
+                                                <button
+                                                    type="button"
+                                                    @click="removeCategory(categoryId)"
+                                                    class="ml-1 text-blue-300 hover:text-blue-100"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-if="formErrors.categories" class="mt-1 text-sm text-red-500">{{ formErrors.categories }}</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="campaignDescription" class="block text-sm font-medium text-neutral-300 mb-1">Description</label>
+                                <textarea
+                                    id="campaignDescription"
+                                    v-model="campaignForm.description"
+                                    rows="3"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Campaign description"
+                                ></textarea>
+                                <p v-if="formErrors.description" class="mt-1 text-sm text-red-500">{{ formErrors.description }}</p>
+                            </div>
+
+                            <!-- Metadata Section -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-neutral-300 mb-2">Metadata</label>
+                                <div class="bg-neutral-750 p-3 rounded-md mb-2">
+                                    <div class="max-h-[250px] overflow-y-auto pr-1">
+                                        <div v-for="(item, index) in campaignForm.metadata" :key="index" class="mb-3 border-b border-neutral-700 pb-3">
+                                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                                <div>
+                                                    <label :for="`metadataKey${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Key</label>
+                                                    <input
+                                                        :id="`metadataKey${index}`"
+                                                        v-model="item.key"
+                                                        type="text"
+                                                        class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        placeholder="Key"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label :for="`metadataType${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Type</label>
+                                                    <select
+                                                        :id="`metadataType${index}`"
+                                                        v-model="item.type"
+                                                        class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    >
+                                                        <option value="string">String</option>
+                                                        <option value="text">Text</option>
+                                                        <option value="number">Number</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label :for="`metadataValue${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Value</label>
+                                                <textarea
+                                                    v-if="item.type === 'text'"
+                                                    :id="`metadataValue${index}`"
+                                                    v-model="item.value"
+                                                    rows="2"
+                                                    class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="Value"
+                                                ></textarea>
+                                                <input
+                                                    v-else-if="item.type === 'string'"
+                                                    :id="`metadataValue${index}`"
+                                                    v-model="item.value"
+                                                    type="text"
+                                                    class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="Value"
+                                                />
+                                                <input
+                                                    v-else
+                                                    :id="`metadataValue${index}`"
+                                                    v-model.number="item.value"
+                                                    type="number"
+                                                    class="w-full px-2 py-1 text-sm bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    placeholder="Value"
+                                                />
+                                            </div>
+                                            <div class="flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    @click="removeMetadataItem(index)"
+                                                    class="text-xs text-red-400 hover:text-red-300"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div v-if="campaignForm.metadata.length === 0" class="text-center py-3 text-sm text-neutral-500">
+                                            No metadata added yet
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="addMetadataItem"
+                                        class="mt-2 w-full px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md flex items-center justify-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Add Metadata
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </form>
+                </div>
+                <div class="p-6 border-t border-neutral-700 bg-neutral-800 flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        @click="closeDialog"
+                        class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="saveCampaign"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                        :disabled="formLoading"
+                    >
+                        <span v-if="formLoading" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                        </span>
+                        <span v-else>
+                            {{ isEditing ? 'Update' : 'Create' }}
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -539,6 +665,72 @@
             accept="image/*"
             class="hidden"
         />
+
+        <!-- Hidden file input for importing JSON files -->
+        <input
+            type="file"
+            ref="importFileInput"
+            @change="handleFileSelect"
+            accept="application/json"
+            class="hidden"
+        />
+
+        <!-- Import Progress Dialog -->
+        <div v-if="showImportProgress" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
+                <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-white">Importing Campaigns</h3>
+                    <button @click="cancelImport" class="text-neutral-400 hover:text-white" :disabled="importInProgress">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Progress</span>
+                            <span class="text-sm text-neutral-300">{{ importProgress.current }} / {{ importProgress.total }}</span>
+                        </div>
+                        <div class="w-full bg-neutral-700 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${importProgress.percentage}%` }"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Success</span>
+                            <span class="text-sm text-green-500">{{ importProgress.success }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-neutral-300">Failed</span>
+                            <span class="text-sm text-red-500">{{ importProgress.failed }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="importProgress.currentItem" class="mb-4 text-sm text-neutral-400">
+                        <p class="truncate">Processing: {{ importProgress.currentItem }}</p>
+                    </div>
+
+                    <div v-if="importProgress.errorMessage" class="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-sm text-red-300">
+                        <p>{{ importProgress.errorMessage }}</p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            @click="closeImportDialog"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                            :disabled="importInProgress"
+                        >
+                            {{ importInProgress ? 'Importing...' : importFinished ? 'Close' : 'Cancel' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Logo crop modal -->
         <div v-if="logoCropModalOpen" class="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
@@ -616,11 +808,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAffiliateClient } from '@cmmv/affiliate/admin/client'
+import { useAdminClient } from '@cmmv/blog/admin/client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
 import DeleteDialog from '@cmmv/blog/admin/components/DeleteDialog.vue'
 import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue'
 
 const affiliateClient = useAffiliateClient()
+const adminClient = useAdminClient()
 
 const campaigns = ref([])
 const loading = ref(true)
@@ -641,7 +835,10 @@ const campaignForm = ref({
     networkId: '',
     metadata: [],
     domain: '',
-    categories: []
+    categories: [],
+    active: true,
+    highlight: false,
+    slug: ''
 })
 const campaignToEdit = ref(null)
 const formErrors = ref({})
@@ -676,8 +873,7 @@ const filters = ref({
 })
 
 const aiLoadingMap = ref({});
-
-// Logo crop state
+const exportLoading = ref(false);
 const logoCropModalOpen = ref(false)
 const logoZoomLevel = ref(1)
 const logoCropCanvas = ref(null)
@@ -690,6 +886,27 @@ const logoImagePosition = ref({ x: 0, y: 0 })
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
+
+// More actions dropdown state
+const showMoreActionsDropdown = ref(false)
+
+// Import functionality
+const importFileInput = ref(null)
+const showImportProgress = ref(false)
+const importInProgress = ref(false)
+const importFinished = ref(false)
+const importCancelled = ref(false)
+const importProgress = ref({
+    current: 0,
+    total: 0,
+    percentage: 0,
+    success: 0,
+    failed: 0,
+    currentItem: '',
+    errorMessage: ''
+})
+
+const activeTab = ref('basic')
 
 const loadCampaigns = async () => {
     try {
@@ -718,7 +935,6 @@ const loadCampaigns = async () => {
             const currentOffset = paginationData.offset || 0
             const currentLimit = paginationData.limit || 10
 
-            // Calculate current page from offset and limit
             const currentPage = Math.floor(currentOffset / currentLimit) + 1
             const lastPage = Math.ceil(totalCount / currentLimit)
 
@@ -732,7 +948,6 @@ const loadCampaigns = async () => {
             }
         } else {
             campaigns.value = []
-            // Reset pagination if data format is unexpected
             pagination.value = {
                 current: 1,
                 lastPage: 1,
@@ -800,33 +1015,35 @@ const loadCategories = async () => {
     }
 }
 
-// Refresh data
 const refreshData = () => {
     loadCampaigns()
 }
 
-// Pagination methods
 const handlePageChange = (newPage) => {
     filters.value.page = newPage;
 }
 
-// Watch for filter changes
 watch(filters, () => {
     loadCampaigns()
 }, { deep: true })
 
-// Dialog methods
+
 const openAddDialog = async () => {
     isEditing.value = false
+    activeTab.value = 'basic'
     campaignForm.value = {
         name: '',
+        _previousName: '',
         url: '',
         logo: '',
         description: '',
         networkId: '',
         metadata: [],
         domain: '',
-        categories: []
+        categories: [],
+        active: true,
+        highlight: false,
+        slug: ''
     }
     formErrors.value = {}
     categorySearch.value = ''
@@ -843,20 +1060,23 @@ const openAddDialog = async () => {
 
 const openEditDialog = async (campaign) => {
     isEditing.value = true
+    activeTab.value = 'basic'
     campaignToEdit.value = campaign
-
-    // Parse metadata if exists
     const parsedMetadata = parseMetadata(campaign.metadata);
 
     campaignForm.value = {
         name: campaign.name,
+        _previousName: campaign.name,
         url: campaign.url || '',
         logo: campaign.logo || '',
         description: campaign.description || '',
         networkId: campaign.network || '',
         metadata: parsedMetadata,
         domain: campaign.domain || '',
-        categories: campaign.categories || []
+        categories: campaign.categories || [],
+        active: campaign.active !== false,
+        highlight: campaign.highlight === true,
+        slug: campaign.slug || ''
     }
     formErrors.value = {}
     categorySearch.value = ''
@@ -881,19 +1101,20 @@ const closeDialog = () => {
         description: '',
         networkId: '',
         metadata: [],
-        categories: []
+        categories: [],
+        active: true,
+        highlight: false,
+        slug: ''
     }
     formErrors.value = {}
     campaignToEdit.value = null
 }
 
-// Save campaign
 const saveCampaign = async () => {
     try {
         formLoading.value = true
         formErrors.value = {}
 
-        // Validate
         if (!campaignForm.value.name.trim()) {
             formErrors.value.name = 'Campaign name is required'
             formLoading.value = false
@@ -911,6 +1132,9 @@ const saveCampaign = async () => {
             formLoading.value = false
             return
         }
+
+        // Clean domain before saving
+        cleanDomain();
 
         const metadataObject = {};
         campaignForm.value.metadata.forEach(item => {
@@ -931,7 +1155,10 @@ const saveCampaign = async () => {
             network: campaignForm.value.networkId,
             domain: campaignForm.value.domain,
             metadata: Object.keys(metadataObject).length > 0 ? JSON.stringify(metadataObject) : null,
-            categories: campaignForm.value.categories
+            categories: campaignForm.value.categories,
+            active: campaignForm.value.active,
+            highlight: campaignForm.value.highlight,
+            slug: campaignForm.value.slug.trim() || undefined
         }
 
         if (campaignForm.value.logo && campaignForm.value.logo.startsWith('data:')) {
@@ -1066,17 +1293,6 @@ const getNetworkName = (networkId) => {
     return network ? network.name : 'Unknown Network'
 }
 
-const formatUrl = (url) => {
-    if (!url) return '';
-
-    try {
-        const parsedUrl = new URL(url);
-        return parsedUrl.hostname + (parsedUrl.pathname !== '/' ? parsedUrl.pathname : '');
-    } catch (e) {
-        return url;
-    }
-}
-
 const addMetadataItem = () => {
     campaignForm.value.metadata.push({
         key: '',
@@ -1177,7 +1393,6 @@ const handleLogoImageSelect = (event) => {
             selectedLogoImage.value = img
             logoCropModalOpen.value = true
 
-            // Initialize canvas after modal is open
             setTimeout(() => {
                 initLogoCropCanvas()
             }, 100)
@@ -1191,28 +1406,21 @@ const handleLogoImageSelect = (event) => {
         img.src = e.target.result
     }
     reader.readAsDataURL(file)
-
-    // Reset file input
     event.target.value = ''
 }
 
-// Initialize logo crop canvas
 const initLogoCropCanvas = () => {
     if (!logoCropCanvas.value || !selectedLogoImage.value) return
 
     const canvas = logoCropCanvas.value
     const ctx = canvas.getContext('2d')
     logoCropContext.value = ctx
-
-    // Reset zoom and position
     logoZoomLevel.value = 1
     logoImagePosition.value = { x: 0, y: 0 }
 
-    // Draw initial image
     drawLogoImageOnCanvas()
 }
 
-// Draw logo image on canvas
 const drawLogoImageOnCanvas = () => {
     if (!logoCropCanvas.value || !selectedLogoImage.value || !logoCropContext.value) return
 
@@ -1220,80 +1428,60 @@ const drawLogoImageOnCanvas = () => {
     const ctx = logoCropContext.value
     const img = selectedLogoImage.value
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Calculate dimensions for centered, zoomed image
     const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * logoZoomLevel.value
     const scaledWidth = img.width * scale
     const scaledHeight = img.height * scale
 
-    // Use position for x,y coordinates (for dragging)
     const x = logoImagePosition.value.x + (canvas.width - scaledWidth) / 2
     const y = logoImagePosition.value.y + (canvas.height - scaledHeight) / 2
 
-    // Draw image
     ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
-
-    // Draw overlay to highlight crop area (160x125)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
 
-    // Top overlay
     ctx.fillRect(0, 0, canvas.width, canvas.height / 2 - 62.5)
-    // Bottom overlay
     ctx.fillRect(0, canvas.height / 2 + 62.5, canvas.width, canvas.height / 2 - 62.5)
-    // Left overlay
     ctx.fillRect(0, canvas.height / 2 - 62.5, canvas.width / 2 - 80, 125)
-    // Right overlay
     ctx.fillRect(canvas.width / 2 + 80, canvas.height / 2 - 62.5, canvas.width / 2 - 80, 125)
 
-    // Draw border around crop area
     ctx.strokeStyle = 'white'
     ctx.lineWidth = 2
     ctx.strokeRect(canvas.width / 2 - 80, canvas.height / 2 - 62.5, 160, 125)
 }
 
-// Logo dragging
 const startLogoDrag = (e) => {
     isLogoDragging.value = true
 
-    // Get initial position
-    if (e.type.includes('mouse')) {
+    if (e.type.includes('mouse'))
         logoDragStart.value = { x: e.clientX, y: e.clientY }
-    } else { // touch event
+    else
         logoDragStart.value = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    }
 }
 
 const onLogoDrag = (e) => {
     if (!isLogoDragging.value) return
 
-    // Prevent default to avoid scrolling on touch devices
     e.preventDefault()
 
     let currentX, currentY
     if (e.type.includes('mouse')) {
         currentX = e.clientX
         currentY = e.clientY
-    } else { // touch event
+    } else {
         currentX = e.touches[0].clientX
         currentY = e.touches[0].clientY
     }
 
-    // Calculate the distance moved
     const deltaX = currentX - logoDragStart.value.x
     const deltaY = currentY - logoDragStart.value.y
 
-    // Update image position
     logoImagePosition.value = {
         x: logoImagePosition.value.x + deltaX,
         y: logoImagePosition.value.y + deltaY
     }
 
-    // Update drag start for next movement
     logoDragStart.value = { x: currentX, y: currentY }
-
-    // Redraw canvas
     drawLogoImageOnCanvas()
 }
 
@@ -1312,21 +1500,16 @@ const adjustLogoZoom = (delta) => {
     drawLogoImageOnCanvas()
 }
 
-// Crop the logo and save
 const cropLogo = async () => {
     if (!logoCropCanvas.value || !selectedLogoImage.value || !logoCropContext.value) return
 
     const canvas = logoCropCanvas.value
-
-    // Create a temporary canvas for the crop
     const tempCanvas = document.createElement('canvas')
     const tempCtx = tempCanvas.getContext('2d')
 
-    // Set output dimensions (target size is 160x125)
     tempCanvas.width = 160
     tempCanvas.height = 125
 
-    // Calculate the crop area (center of the canvas)
     const cropArea = {
         x: canvas.width / 2 - 80,
         y: canvas.height / 2 - 62.5,
@@ -1334,7 +1517,6 @@ const cropLogo = async () => {
         height: 125
     }
 
-    // Scale factor of the image
     const scale = Math.max(canvas.width / selectedLogoImage.value.width, canvas.height / selectedLogoImage.value.height) * logoZoomLevel.value
     const scaledWidth = selectedLogoImage.value.width * scale
     const scaledHeight = selectedLogoImage.value.height * scale
@@ -1411,6 +1593,164 @@ const clearSearch = () => {
     showSearchDropdown.value = false
 }
 
+// Toggle more actions dropdown
+const toggleMoreActionsDropdown = () => {
+    showMoreActionsDropdown.value = !showMoreActionsDropdown.value;
+}
+
+// Open file input for import
+const openImportFileDialog = () => {
+    importFileInput.value.click();
+}
+
+// Handle JSON file selection
+const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if it's a JSON file
+    if (file.type !== 'application/json') {
+        showNotification('error', 'Please select a valid JSON file');
+        event.target.value = ''; // Clear the input
+        return;
+    }
+
+    // Read file contents
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const jsonData = JSON.parse(e.target.result);
+
+            // Validate that it's an array of campaigns
+            if (!Array.isArray(jsonData)) {
+                showNotification('error', 'Invalid JSON format. Expected an array of campaigns.');
+                return;
+            }
+
+            // Start import process
+            startImport(jsonData);
+        } catch (err) {
+            console.error('Failed to parse JSON:', err);
+            showNotification('error', 'Failed to parse JSON file');
+        }
+    };
+
+    reader.onerror = () => {
+        showNotification('error', 'Failed to read file');
+    };
+
+    reader.readAsText(file);
+    event.target.value = ''; // Clear the input
+}
+
+// Start the import process
+const startImport = (campaigns) => {
+    // Reset progress
+    importProgress.value = {
+        current: 0,
+        total: campaigns.length,
+        percentage: 0,
+        success: 0,
+        failed: 0,
+        currentItem: '',
+        errorMessage: ''
+    };
+
+    // Show progress dialog
+    showImportProgress.value = true;
+    importInProgress.value = true;
+    importFinished.value = false;
+    importCancelled.value = false;
+
+    // Start processing campaigns
+    processCampaigns(campaigns);
+}
+
+// Process campaigns one by one
+const processCampaigns = async (campaigns) => {
+    for (let i = 0; i < campaigns.length; i++) {
+        // Check if import was cancelled
+        if (importCancelled.value) {
+            break;
+        }
+
+        const campaign = campaigns[i];
+        importProgress.value.current = i + 1;
+        importProgress.value.percentage = Math.round((importProgress.value.current / importProgress.value.total) * 100);
+
+        try {
+            // Update current item being processed
+            importProgress.value.currentItem = campaign.name || `Campaign ${i + 1}`;
+            importProgress.value.errorMessage = '';
+
+            // Check if campaign has required fields
+            if (!campaign.name || !campaign.url) {
+                throw new Error('Campaign requires name and URL fields');
+            }
+
+            // Prepare campaign data for API
+            const campaignData = {
+                name: campaign.name.trim(),
+                url: campaign.url.trim(),
+                slug: campaign.slug || '',
+                logo: campaign.logo || '',
+                description: campaign.description || '',
+                network: campaign.network || campaign.networkId || '',
+                domain: campaign.domain || '',
+                metadata: campaign.metadata ? (typeof campaign.metadata === 'string' ? campaign.metadata : JSON.stringify(campaign.metadata)) : null,
+                categories: campaign.categories || [],
+                active: campaign.active !== undefined ? campaign.active : true,
+                highlight: campaign.highlight || false
+            };
+
+            // Insert campaign using API
+            await affiliateClient.campaigns.insert(campaignData);
+
+            // Update success count
+            importProgress.value.success++;
+        } catch (err) {
+            console.error(`Failed to import campaign ${i + 1}:`, err);
+            importProgress.value.failed++;
+            importProgress.value.errorMessage = err.message || 'Failed to import campaign';
+
+            // Small delay to let user see the error message
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Small delay to prevent UI freezing
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Import completed
+    importInProgress.value = false;
+    importFinished.value = true;
+
+    // Refresh campaign list after import
+    refreshData();
+
+    // Show notification
+    if (importCancelled.value) {
+        showNotification('info', `Import cancelled. ${importProgress.value.success} campaigns imported successfully.`);
+    } else {
+        showNotification('success', `Import completed. ${importProgress.value.success} campaigns imported successfully, ${importProgress.value.failed} failed.`);
+    }
+}
+
+// Cancel the import process
+const cancelImport = () => {
+    if (importInProgress.value) {
+        importCancelled.value = true;
+    } else {
+        closeImportDialog();
+    }
+}
+
+// Close import dialog
+const closeImportDialog = () => {
+    showImportProgress.value = false;
+    importCancelled.value = false;
+}
+
 const getCategoryName = (categoryId) => {
     const category = availableCategories.value.find(c => c.id === categoryId)
     return category ? category.name : 'Unknown Category'
@@ -1433,11 +1773,87 @@ const filteredCategories = computed(() => {
     )
 })
 
+const generateSlug = (text) => {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/&/g, '-and-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+}
+
+const updateSlug = () => {
+    if (!campaignForm.value.slug ||
+        campaignForm.value.slug === generateSlug(campaignForm.value._previousName)) {
+        campaignForm.value.slug = generateSlug(campaignForm.value.name)
+    }
+
+    campaignForm.value._previousName = campaignForm.value.name
+}
+
+const toggleActive = async (campaign) => {
+    try {
+        const updatedCampaign = {
+            ...campaign,
+            active: !campaign.active
+        };
+
+        await affiliateClient.campaigns.update(campaign.id, updatedCampaign);
+        const index = campaigns.value.findIndex(c => c.id === campaign.id);
+
+        if (index !== -1)
+            campaigns.value[index].active = !campaign.active;
+
+        showNotification('success', `Campaign ${updatedCampaign.active ? 'activated' : 'deactivated'} successfully`);
+    } catch (err) {
+        console.error('Failed to toggle campaign active state:', err);
+        showNotification('error', err.message || 'Failed to update campaign status');
+        campaign.active = !campaign.active;
+    }
+}
+
+const exportCampaigns = async () => {
+    try {
+        exportLoading.value = true;
+        let signature;
+        try {
+            const signatureResponse = await adminClient.settings.getSignature();
+
+            if (signatureResponse) {
+                signature = signatureResponse;
+            } else {
+                throw new Error('Failed to get authentication signature');
+            }
+        } catch (err) {
+            console.error('Error getting signature:', err);
+            showNotification('error', 'Only root users can export campaigns');
+            exportLoading.value = false;
+            return;
+        }
+
+        window.open(`/api/affiliate/campaigns/export?token=${signature}`, '_blank');
+    } catch (err) {
+        console.error('Failed to export campaigns:', err);
+        showNotification('error', err.message || 'Failed to export campaigns');
+    } finally {
+        exportLoading.value = false;
+    }
+}
+
 onMounted(() => {
     document.addEventListener('click', (event) => {
         const target = event.target
         if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value) {
             showSearchDropdown.value = false
+        }
+
+        // Handle more actions dropdown
+        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
+            showMoreActionsDropdown.value = false
         }
     })
 
@@ -1445,4 +1861,18 @@ onMounted(() => {
     loadNetworks()
     loadCategories()
 })
+
+// Add this to the script section, somewhere before the saveCampaign method
+const cleanDomain = () => {
+    if (campaignForm.value.domain) {
+        // Remove http:// or https:// protocol
+        let cleanedDomain = campaignForm.value.domain.replace(/^https?:\/\//, '');
+        // Remove www.
+        cleanedDomain = cleanedDomain.replace(/^www\./, '');
+        // Remove trailing slashes
+        cleanedDomain = cleanedDomain.replace(/\/+$/, '');
+
+        campaignForm.value.domain = cleanedDomain;
+    }
+}
 </script>

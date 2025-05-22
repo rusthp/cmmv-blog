@@ -1,7 +1,7 @@
 import {
     Controller, Get, Param,
     CacheControl, ContentType,
-    Raw
+    Raw, Res, Query
 } from "@cmmv/http";
 
 import {
@@ -31,8 +31,32 @@ export class CouponsControllerTools {
     @CacheControl({ maxAge: 3600, public: true })
     @ContentType('application/json')
     @Raw()
-    @Auth("affiliatecoupons:get")
     async getCoupons(@Param("campaignId") campaignId: string) {
         return await this.couponsService.getCoupons(campaignId);
+    }
+
+    @Get("campaign/views")
+    @Cache("coupons:")
+    @CacheControl({ maxAge: 3600, public: true })
+    @ContentType('application/json')
+    @Raw()
+    async getCouponsWithViews() {
+        return await this.couponsService.getCouponsWithViews();
+    }
+
+    @Get("export")
+    async export(@Res() response: any, @Query("token") token: string){
+        if(token !== process.env.API_SIGNATURE)
+            throw new Error("Invalid token");
+
+        const data: string = await this.couponsService.export();
+
+        response.res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="coupons.json"`,
+            'Content-Length': Buffer.byteLength(data, 'utf-8')
+        });
+
+        response.res.end(data);
     }
 }

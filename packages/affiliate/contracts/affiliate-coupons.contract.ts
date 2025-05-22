@@ -113,4 +113,18 @@ export class AffiliateCouponsContract extends AbstractContract {
         nullable: true
     })
     linkRef?: string;
+
+    @ContractField({
+        protoType: 'text',
+        nullable: true
+    })
+    deeplink?: string;
+
+    @ContractField({
+        protoType: 'number',
+        nullable: false,
+        defaultValue: 0,
+        index: true
+    })
+    views!: number;
 }

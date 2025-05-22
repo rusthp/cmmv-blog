@@ -40,4 +40,10 @@ export class AffiliateCategoriesContract extends AbstractContract {
         index: true
     })
     active!: boolean;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
+    icon!: string;
 }

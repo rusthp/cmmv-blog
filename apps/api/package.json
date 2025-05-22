@@ -48,6 +48,7 @@
         "@cmmv/rss-aggregation": "workspace:rss-aggregation",
         "@cmmv/yt-aggregation": "workspace:yt-aggregation",
         "cache-manager-fs-binary": "^1.0.4",
+        "firebase-admin": "^13.4.0",
         "sharp": "^0.34.1",
         "tsx": "^4.19.4"
     },

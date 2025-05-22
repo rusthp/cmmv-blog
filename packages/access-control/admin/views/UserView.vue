@@ -625,10 +625,10 @@ const openEditDialog = (user) => {
         email: user.email,
         password: '',
         groups: user.groups || [],
-        validated: user.validated !== undefined ? user.validated : false,
-        blocked: user.blocked !== undefined ? user.blocked : false,
-        verifyEmail: false,
-        root: user.root !== undefined ? user.root : false
+        validated: user.validated,
+        blocked: user.blocked,
+        verifyEmail: user.verifyEmail,
+        root: user.root
     }
     formErrors.value = {}
     loadGroups()
@@ -713,16 +713,6 @@ const saveUser = async () => {
     }
 };
 
-const blockUser = async (user) => {
-    try {
-        await client.users.block(user.id)
-        showNotification('success', `User ${user.username} blocked successfully`)
-        refreshData()
-    } catch (err) {
-        showNotification('error', err.message || 'Failed to block user')
-    }
-}
-
 const unblockUser = async (user) => {
     try {
         await client.users.unblock(user.id)
@@ -781,21 +771,16 @@ const toggleSort = (column) => {
     }
 }
 
-// Add helper function to get group name from ID
 const getGroupName = (groupId) => {
     if (!groupId) return '';
 
-    // First check if this is already a name (backward compatibility)
-    if (typeof groupId === 'string' && !groupId.includes('-')) {
+    if (typeof groupId === 'string' && !groupId.includes('-'))
         return groupId;
-    }
 
-    // Try to find the group by ID
     const group = availableGroups.value.find(g => g.id === groupId);
     return group ? group.name : groupId;
 };
 
-// Add computed properties and methods for group selection
 const allGroupsSelected = computed(() => {
     return availableGroups.value.length > 0 &&
            availableGroups.value.every(group => userForm.value.groups.includes(group.id));
@@ -810,20 +795,15 @@ const someGroupsSelected = computed(() => {
 const toggleAllGroups = (event) => {
     const isChecked = event.target.checked;
 
-    if (isChecked) {
-        // Select all groups
+    if (isChecked)
         userForm.value.groups = availableGroups.value.map(group => group.id);
-    } else {
-        // Deselect all groups
+    else
         userForm.value.groups = [];
-    }
 };
 
-// Toggle search dropdown
 const toggleSearchDropdown = () => {
     showSearchDropdown.value = !showSearchDropdown.value
 
-    // Focus the search input when dropdown opens
     if (showSearchDropdown.value) {
         nextTick(() => {
             searchInput.value?.focus()
@@ -831,7 +811,6 @@ const toggleSearchDropdown = () => {
     }
 }
 
-// Clear search
 const clearSearch = () => {
     filters.value.search = ''
     filters.value.page = 1
@@ -843,7 +822,6 @@ onMounted(() => {
     loadGroups();
     loadUsers();
 
-    // Close search dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (showSearchDropdown.value &&
             !e.target.closest('[data-search-toggle]') &&

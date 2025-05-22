@@ -78,6 +78,9 @@ const SENSITIVE_KEYS = [
     "blog.spacesRegion",
     "blog.spacesEndpoint",
     "blog.spacesUrl",
+    // Firebase settings
+    "blog.firebaseClientEmail",
+    "blog.firebasePrivateKey",
 ];
 
 @Service("blog_settings")
@@ -91,6 +94,7 @@ export class SettingsService {
         const adminEnv = path.join(__dirname, "../../../../apps/admin/.env");
         const apiEnv = path.join(__dirname, "../../../../apps/api/.env");
         const webEnv = path.join(__dirname, "../../../../apps/web/.env");
+        const ecosystemEnv = path.join(__dirname, "../../../../ecosystem.config.cjs");
 
         const signature = crypto
             .createHash('sha256')
@@ -98,7 +102,9 @@ export class SettingsService {
             .digest('hex');
 
         await fs.writeFileSync(adminEnv, `VITE_PORT=${setupData.settings.basePort + 2}
-VITE_ALLOWED_HOSTS="0.0.0.0,${setupData.blog.adminUrl}"`);
+VITE_API_URL="${setupData.settings.apiUrl}"
+VITE_ALLOWED_HOSTS="0.0.0.0,${setupData.blog.adminUrl}"
+VITE_API_SIGNATURE="${signature}"`);
 
         await fs.writeFileSync(apiEnv, `PORT=${setupData.settings.basePort}
 API_URL="${setupData.settings.apiUrl}"
@@ -113,6 +119,16 @@ VITE_SSR_PORT="${setupData.settings.basePort + 1}"
 VITE_ALLOWED_HOSTS="${setupData.settings.allowedHosts.join(",")}"
 VITE_SIGNATURE="${signature}"
 VITE_DEFAULT_THEME="default"`);
+
+        await fs.writeFileSync(ecosystemEnv, `module.exports = {
+    apps: [
+        {
+            name: "${setupData.blog.title}",
+            script: "pnpm start",
+        }
+    ]
+};
+`);
 
         const SettingsRepository = Repository.getEntity("SettingsEntity");
 
