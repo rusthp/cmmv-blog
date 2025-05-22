@@ -148,7 +148,8 @@ export class RawService {
             {
               "title": "translated and rewritten title",
               "content": "HTML-formatted content with proper tags",
-              "suggestedTags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
+              "suggestedTags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+              "suggestedCategories": ["categoryName1", "categoryName2"]
             }`;
 
             this.logger.log(`Processing AI job ${jobId} for raw ${job.rawId}`);
@@ -245,6 +246,7 @@ export class RawService {
                     title: parsedContent.title,
                     content: parsedContent.content,
                     suggestedTags: parsedContent.suggestedTags || [],
+                    suggestedCategories: parsedContent.suggestedCategories || [],
                     aiProcessed: true,
                     processedAt: new Date()
                 };
@@ -347,6 +349,8 @@ export class RawService {
             It should not wrap up the discussion or provide closing thoughts. Avoid phrases like "In conclusion," "To summarize,"
             "Finally," or any language that suggests the article is ending.
 
+            - ONLY use images that exist in the original post - DO NOT create or generate new images that don't exist
+
             Here is the content to transform:
 
             Title: ${contentToProcess.title}
@@ -359,7 +363,8 @@ export class RawService {
             {
               "title": "translated and rewritten title",
               "content": "HTML-formatted content with proper tags",
-              "suggestedTags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
+              "suggestedTags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+              "suggestedCategories": ["categoryName1", "categoryName2"]
             }`;
 
             const generatedText = await this.aiContentService.generateContent(prompt);
@@ -458,6 +463,7 @@ export class RawService {
                     title: parsedContent.title,
                     content: parsedContent.content,
                     suggestedTags: parsedContent.suggestedTags || [],
+                    suggestedCategories: parsedContent.suggestedCategories || [],
                     aiProcessed: true,
                     processedAt: new Date()
                 };
