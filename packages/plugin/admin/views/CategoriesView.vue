@@ -8,7 +8,14 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Refresh
+                    <span v-if="recalculatingCounts">
+                        <svg class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Recalculating...
+                    </span>
+                    <span v-else>Refresh</span>
                 </button>
                 <!-- Add search button with dropdown -->
                 <div class="relative">
@@ -146,8 +153,29 @@
                                 {{ category.id.substring(0, 6) }}...
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                                <span :style="{ paddingLeft: category.depth * 20 + 'px' }">
-                                    <span v-if="category.depth > 0" class="mr-1 text-neutral-500">↳</span>
+                                <span :style="{ paddingLeft: category.depth * 20 + 'px' }" class="flex items-center">
+                                    <button 
+                                        v-if="category.hasChildren"
+                                        @click.stop="toggleExpand(category.id)" 
+                                        class="mr-2 text-neutral-500 hover:text-neutral-300 focus:outline-none"
+                                        :aria-expanded="expandedCategories.has(category.id) ? 'true' : 'false'"
+                                        :title="expandedCategories.has(category.id) ? 'Collapse' : 'Expand'"
+                                    >
+                                        <svg v-if="expandedCategories.has(category.id)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                    <span v-else-if="category.depth > 0 || (categories.filter(c => c.parentCategory === null).length > 1 && !category.hasChildren)" class="w-4 mr-2"></span> <!-- Espaçador para alinhar com itens que têm botão -->
+                                    
+                                    <span v-if="category.depth > 0 && !category.hasChildren && !category.children?.length" class="mr-1 text-neutral-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" transform="scale(0.1)" />
+                                        </svg> <!-- Ícone de item/documento muito pequeno, quase um ponto -->
+                                    </span>
+                                    <span class="mr-1 text-neutral-500" v-if="category.depth > 0 && (category.hasChildren || category.children?.length)">↳</span>
                                     {{ category.name }}
                                 </span>
                             </td>
@@ -155,11 +183,15 @@
                                 {{ category.postCount || 0 }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400 hidden md:table-cell">
-                                <div v-if="category.mainNav" class="flex items-center justify-center" 
-                                     :title="`Label: ${category.navigationLabel || category.name}\nGroup: ${category.mainNavGroup || 'N/A'}\nOrder: ${category.mainNavIndex}`">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                    </svg>
+                                <div v-if="category.mainNav" 
+                                     class="flex items-center" 
+                                     :title="`Label: ${category.navigationLabel || category.name}\nGroup: ${category.mainNavGroup || 'N/A'}\nOrder: ${category.mainNavIndex !== undefined ? category.mainNavIndex : 'N/A'}`">
+                                    <span class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
+                                        <span class="text-xs">{{ category.mainNavIndex !== undefined ? category.mainNavIndex : '-' }}</span>
+                                    </span>
                                 </div>
                                 <span v-else class="flex items-center justify-center">-</span>
                             </td>
@@ -364,6 +396,7 @@
                                     placeholder="0"
                                 />
                                 <p class="mt-1 text-sm text-neutral-500">Lower numbers appear first in navigation</p>
+                                <p v-if="formErrors.mainNavIndex" class="mt-1 text-sm text-red-500">{{ formErrors.mainNavIndex }}</p>
                             </div>
                         </div>
 
@@ -454,6 +487,8 @@ const showDeleteDialog = ref(false)
 const categoryToDelete = ref(null)
 const deleteLoading = ref(false)
 
+const recalculatingCounts = ref(false);
+
 const notification = ref({
     show: false,
     type: 'success',
@@ -484,6 +519,19 @@ const showSearchDropdown = ref(false)
 const searchInput = ref(null)
 
 const activeTab = ref('basic'); // 'basic' or 'navigation'
+
+const expandedCategories = ref(new Set());
+
+const toggleExpand = (categoryId) => {
+    if (expandedCategories.value.has(categoryId)) {
+        expandedCategories.value.delete(categoryId);
+    } else {
+        expandedCategories.value.add(categoryId);
+    }
+    // É importante que o Vue reaja à mudança no Set. 
+    // Forçar uma reatribuição pode ser necessário em alguns casos, mas Set é geralmente reativo.
+    // expandedCategories.value = new Set(expandedCategories.value); 
+};
 
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
@@ -619,9 +667,31 @@ const loadAllCategoriesForDropdown = async () => {
 }
 
 // Refresh data
-const refreshData = () => {
-    loadCategories()
-}
+const refreshData = async () => {
+    if (recalculatingCounts.value) return; // Evita múltiplas chamadas
+
+    recalculatingCounts.value = true;
+    showNotification('info', 'Recalculating post counts...');
+
+    try {
+        // Assumindo que você adicionará este método ao seu adminClient
+        // Exemplo: await adminClient.posts.recalculateCategoryCounts(); 
+        // Por enquanto, vamos simular a chamada direta se você não tiver o client atualizado ainda:
+        await adminClient.posts.recalculateCategoryCounts();
+        showNotification('success', 'Post counts recalculated. Refreshing list...');
+    } catch (err) {
+        console.error('Failed to recalculate post counts:', err);
+        showNotification('error', err.message || 'Failed to trigger post count recalculation');
+        // Mesmo se o recálculo falhar, ainda tentamos carregar as categorias
+    } finally {
+        recalculatingCounts.value = false;
+    }
+
+    // Carrega as categorias após a tentativa de recálculo
+    await loadCategories();
+    // Opcionalmente, recarregar todas as categorias para o dropdown se as contagens são usadas lá
+    // await loadAllCategoriesForDropdown(); 
+};
 
 // Pagination methods
 const handlePageChange = (newPage) => {
@@ -691,6 +761,43 @@ const closeDialog = () => {
     categoryToEdit.value = null
 }
 
+const validateNavOrder = () => {
+    if (!categoryForm.value.mainNav || categoryForm.value.mainNavIndex === undefined || categoryForm.value.mainNavIndex === null) {
+        delete formErrors.value.mainNavIndex; // Clear error if not applicable
+        return true;
+    }
+
+    const currentIndex = Number(categoryForm.value.mainNavIndex);
+    const currentParentId = categoryForm.value.parentCategory || null;
+    const currentCategoryId = categoryToEdit.value?.id || null; // For excluding self during edit
+
+    const conflictingCategory = allCategoriesForDropdown.value.find(cat => {
+        // Skip self when editing
+        if (isEditing.value && cat.id === currentCategoryId) {
+            return false;
+        }
+
+        // Only consider active for main navigation
+        if (!cat.mainNav) {
+            return false;
+        }
+
+        const catParentId = cat.parentCategory || null;
+        const catNavIndex = Number(cat.mainNavIndex);
+
+        // Check for same index within the same parent or at root level
+        return catParentId === currentParentId && catNavIndex === currentIndex;
+    });
+
+    if (conflictingCategory) {
+        formErrors.value.mainNavIndex = `Order ${currentIndex} is already used by "${conflictingCategory.name}" within the same parent/level.`;
+        return false;
+    }
+
+    delete formErrors.value.mainNavIndex; // Clear error if validation passes
+    return true;
+};
+
 // Save category
 const saveCategory = async () => {
     try {
@@ -708,6 +815,14 @@ const saveCategory = async () => {
             formErrors.value.slug = 'Category slug is required'
             formLoading.value = false
             return
+        }
+
+        // Validate Navigation Order
+        if (!validateNavOrder()) {
+            formLoading.value = false;
+            activeTab.value = 'navigation'; // Switch to navigation tab if there's an error there
+            showNotification('error', 'Please fix validation errors in the Navigation tab.');
+            return;
         }
 
         const { _previousName, ...categoryData } = {
@@ -870,36 +985,65 @@ const buildCategoryHierarchy = (categoriesRaw) => {
         if (catRaw.parentCategory && categoriesMap.has(catRaw.parentCategory)) {
             const parentNode = categoriesMap.get(catRaw.parentCategory);
             if (parentNode) { // Certifique-se de que o pai existe no mapa
+                // Adicionamos a informação se tem filhos diretamente no nó para facilitar no template
+                catNode.hasChildren = catNode.children && catNode.children.length > 0;
                 parentNode.children.push(catNode);
+                parentNode.hasChildren = true; 
             }
         } else {
+            catNode.hasChildren = catNode.children && catNode.children.length > 0;
             tree.push(catNode); // Categoria de nível superior
         }
     });
 
     const flattenedList = [];
-    // Função auxiliar para percorrer a árvore e definir a profundidade
     function flatten(nodes, depth) {
-        // Ordenar alfabeticamente em cada nível antes de achatar
-        nodes.sort((a, b) => a.name.localeCompare(b.name));
+        nodes.sort((a, b) => {
+            const aHasNav = a.mainNav && (a.mainNavIndex !== undefined && a.mainNavIndex !== null);
+            const bHasNav = b.mainNav && (b.mainNavIndex !== undefined && b.mainNavIndex !== null);
+
+            if (aHasNav && bHasNav) {
+                if (a.mainNavIndex !== b.mainNavIndex) {
+                    return Number(a.mainNavIndex) - Number(b.mainNavIndex);
+                }
+            } else if (aHasNav) {
+                return -1; // a vem primeiro
+            } else if (bHasNav) {
+                return 1;  // b vem primeiro
+            }
+            return a.name.localeCompare(b.name);
+        });
         
         for (const node of nodes) {
-            if (node._visited) continue; // Evitar processamento duplicado se houver referências circulares (improvável com parentCategory)
-            node._visited = true;
+            if (node._visited && !flattenedList.find(n => n.id === node.id)) {
+                 // Se já visitado mas não está na lista (acontece se um pai foi recolhido e depois reexpandido)
+                 // precisamos resetar _visited para reprocessar seus filhos se ele estiver expandido agora.
+                 // No entanto, a lógica atual de _visited é para evitar loops infinitos em estruturas malformadas,
+                 // o que não deveria ser o caso aqui. Vamos simplificar e remover _visited por enquanto
+                 // já que a estrutura é uma árvore a partir das raízes.
+            }
+            // node._visited = true; // Removendo _visited por enquanto
             node.depth = depth;
+            // Adiciona a informação se tem filhos no nó achatado, para o template
+            // Esta já foi definida quando construímos categoriesMap e tree.
+            // node.hasChildren = categoriesMap.get(node.id)?.children?.length > 0;
             flattenedList.push(node);
-            if (node.children && node.children.length > 0) {
+
+            // Só achata os filhos se o nó atual estiver expandido e tiver filhos
+            if (expandedCategories.value.has(node.id) && node.children && node.children.length > 0) {
                 flatten(node.children, depth + 1);
             }
         }
     }
 
-    // Primeiro processar nós raiz e depois suas subárvores
+    // Processar nós raiz (aqueles sem pai ou cujo pai não está no mapa)
     const rootNodes = Array.from(categoriesMap.values()).filter(node => !node.parentCategory || !categoriesMap.has(node.parentCategory));
+    rootNodes.forEach(rn => rn.hasChildren = rn.children && rn.children.length > 0); // Garante que hasChildren está setado para raízes
+
     flatten(rootNodes, 0);
     
-    // Limpar _visited se necessário para outros usos
-    flattenedList.forEach(node => delete node._visited);
+    // Limpar _visited não é mais necessário
+    // flattenedList.forEach(node => delete node._visited);
 
     return flattenedList;
 };

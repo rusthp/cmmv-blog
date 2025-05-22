@@ -60,6 +60,7 @@ export const useAdminClient = () => {
         generate: (data: any) => api.authRequest('blog/posts/generate', 'POST', data),
         startGenerate: (data: any) => api.authRequest('blog/posts/generate/start', 'POST', data),
         getGenerateStatus: (jobId: string) => api.authRequest(`blog/posts/generate/status/${jobId}`, 'GET'),
+        recalculateCategoryCounts: () => api.authRequest('blog/posts/actions/recalculate-category-counts', 'POST'),
     };
 
     const pages = {

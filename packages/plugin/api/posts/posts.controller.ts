@@ -193,4 +193,11 @@ export class PostsController {
     async getGeneratePostStatus(@Param("jobId") jobId: string) {
         return this.postsPublicService.getGenerateJobStatus(jobId);
     }
+
+    @Post("posts/actions/recalculate-category-counts", { exclude: true })
+    @Auth("categories:update")
+    async recalculateCategoryPostCounts() {
+        await this.postsPublicService.recalculateCategories();
+        return { message: "Category post counts recalculation initiated." };
+    }
 }
