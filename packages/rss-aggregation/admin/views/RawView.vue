@@ -914,6 +914,12 @@ const promptsList = ref<any[]>([]);
 const selectedPrompt = ref<string>('default');
 const loadingPrompts = ref<boolean>(false);
 
+// Helper function to remove accents
+const removeAccents = (str: string): string => {
+    if (!str) return '';
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 const notification = ref<NotificationData>({
     show: false,
     type: 'success',
@@ -1156,26 +1162,43 @@ const generateAIContent = async (): Promise<void> => {
 
                             const matchingCategoryIds = categories.value
                                 .filter(category => {
-                                    const systemCategoryNameLower = category.name.toLowerCase();
+                                    const systemCategoryNameLower = removeAccents(category.name.toLowerCase());
+                                    const normalizedSuggestedCategories = suggestedCategoryNames.map((sc: string) => removeAccents(sc));
+
                                     // Check if the exact system category name is included in any AI suggestion string
-                                    let isMatch = suggestedCategoryNames.some((aiSuggest: string) => aiSuggest.includes(systemCategoryNameLower));
+                                    let isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => aiSuggest.includes(systemCategoryNameLower));
 
                                     // If not, check if any word from the system category name is in any AI suggestion word list
                                     if (!isMatch) {
                                         const systemWords = systemCategoryNameLower.split(/\s+/);
-                                        isMatch = suggestedCategoryNames.some((aiSuggest: string) => {
+                                        isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => {
                                             const aiWords = aiSuggest.split(/\s+/);
-                                            return systemWords.some(sysWord => aiWords.includes(sysWord));
+                                            // Check for partial matches between individual words
+                                            return systemWords.some(sysWord => 
+                                                aiWords.some(aiWord => {
+                                                    let partMatch = false;
+                                                    if (sysWord.length < 3 || aiWord.length < 3) {
+                                                        partMatch = sysWord === aiWord;
+                                                    } else {
+                                                        partMatch = sysWord.includes(aiWord) || aiWord.includes(sysWord);
+                                                    }
+                                                    
+                                                    //if (partMatch) {
+                                                    //    console.log(`[DEBUG] Word match: sysWord="${sysWord}", aiWord="${aiWord}" from aiSuggest="${aiSuggest}"`);
+                                                    //}
+                                                    return partMatch;
+                                                })
+                                            );
                                         });
                                     }
                                     
                                     // Also check if any AI suggested category name is included in the system category name (for shorter AI suggestions)
                                     if (!isMatch) {
-                                        isMatch = suggestedCategoryNames.some((aiSuggest: string) => systemCategoryNameLower.includes(aiSuggest));
+                                        isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => systemCategoryNameLower.includes(aiSuggest));
                                     }
 
                                     //if (isMatch) {
-                                    //    console.log(`[DEBUG] Match found: AI Suggs: "${suggestedCategoryNames.join(", ")}" vs System-"${category.name}" (ID: ${category.id})`);
+                                    //    console.log(`[DEBUG] Match found: AI Suggs: "${normalizedSuggestedCategories.join(", ")}" vs System-"${category.name}" (Normalized: "${systemCategoryNameLower}") (ID: ${category.id})`);
                                     //}
                                     return isMatch;
                                 })
