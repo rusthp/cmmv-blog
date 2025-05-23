@@ -295,6 +295,55 @@ export class PostsPublicService {
     }
 
     /**
+     * Recursively get all parent category IDs for a given set of category IDs.
+     * @param categoryIds - Array of category IDs to start from.
+     * @param CategoriesEntity - The repository entity for categories.
+     * @returns Promise<string[]> - Array of unique category IDs including all parents.
+     */
+    private async getAllParentCategoryIds(categoryIds: string[], CategoriesEntity: any): Promise<string[]> {
+        if (!categoryIds || categoryIds.length === 0) {
+            return [];
+        }
+
+        interface CategoryWithParent {
+            id: string;
+            parentCategory?: string | null | { id: string }; // Accept string ID or an object with id
+            [key: string]: any; // Allow other properties
+        }
+
+        const allCategoryIds = new Set<string>(categoryIds);
+        const queue = [...categoryIds];
+
+        while (queue.length > 0) {
+            const currentId = queue.shift();
+            if (!currentId) continue;
+
+            // Fetch the full category object to inspect its structure
+            const category: CategoryWithParent | null = await Repository.findOne(CategoriesEntity, 
+                { id: currentId } 
+            );
+            
+            // CRUCIAL LOG: Inspect the structure of the fetched category object
+            this.logger.log(`Fetched category object for ID ${currentId}: ${JSON.stringify(category)}`);
+
+            if (category && category.parentCategory) {
+                let parentId: string | null = null;
+                if (typeof category.parentCategory === 'string') {
+                    parentId = category.parentCategory;
+                } else if (typeof category.parentCategory === 'object' && category.parentCategory !== null && 'id' in category.parentCategory) {
+                    parentId = category.parentCategory.id;
+                }
+
+                if (parentId && !allCategoryIds.has(parentId)) {
+                    allCategoryIds.add(parentId);
+                    queue.push(parentId);
+                }
+            }
+        }
+        return Array.from(allCategoryIds);
+    }
+
+    /**
      * Draft a post
      * @param {IDraftPost} data.post - The post data
      * @param {IPostMetadata} data.meta - The post metadata
@@ -306,6 +355,7 @@ export class PostsPublicService {
     }, user: any) {
         const PostsEntity = Repository.getEntity("PostsEntity");
         const MetaEntity = Repository.getEntity("MetaEntity");
+        const CategoriesEntity = Repository.getEntity("CategoriesEntity");
 
         if(data.post.content.length < 100)
             throw new Error("The content must be at least 100 characters");
@@ -361,6 +411,20 @@ export class PostsPublicService {
             if(data.post.author !== "current-user-id")
                 data.post.authors.push(data.post.author);
 
+            // --- Start Parent Category Inheritance Logic ---
+            if (data.post.categories && data.post.categories.length > 0) {
+                try {
+                    this.logger.log(`Original categories for post ${data.post.id || 'new'}: ${data.post.categories.join(', ')}`);
+                    const allCategoriesWithParents = await this.getAllParentCategoryIds(data.post.categories, CategoriesEntity);
+                    data.post.categories = [...new Set(allCategoriesWithParents)]; // Ensure uniqueness
+                    this.logger.log(`Categories with parents for post ${data.post.id || 'new'}: ${data.post.categories.join(', ')}`);
+                } catch (catError) {
+                    this.logger.error(`Error processing parent categories for post ${data.post.id || 'new'}: ${catError}`);
+                    // Decide if you want to throw the error or proceed without parent inheritance
+                }
+            }
+            // --- End Parent Category Inheritance Logic ---
+
             const post: any = await Repository.updateOne(
                 PostsEntity, Repository.queryBuilder({ id: data.post.id }), data.post
             );
@@ -401,6 +465,19 @@ export class PostsPublicService {
 
             if(!data.post.authors || data.post.authors.length === 1)
                 data.post.authors = [user.id];
+
+            // --- Start Parent Category Inheritance Logic for new posts ---
+            if (data.post.categories && data.post.categories.length > 0) {
+                try {
+                    this.logger.log(`Original categories for new post: ${data.post.categories.join(', ')}`);
+                    const allCategoriesWithParents = await this.getAllParentCategoryIds(data.post.categories, CategoriesEntity);
+                    data.post.categories = [...new Set(allCategoriesWithParents)]; // Ensure uniqueness
+                    this.logger.log(`Categories with parents for new post: ${data.post.categories.join(', ')}`);
+                } catch (catError) {
+                    this.logger.error(`Error processing parent categories for new post: ${catError}`);
+                }
+            }
+            // --- End Parent Category Inheritance Logic for new posts ---
 
             const post: any = await Repository.insert(PostsEntity, data.post);
 

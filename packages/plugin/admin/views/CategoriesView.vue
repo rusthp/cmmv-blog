@@ -8,7 +8,14 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Refresh
+                    <span v-if="recalculatingCounts">
+                        <svg class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Recalculating...
+                    </span>
+                    <span v-else>Refresh</span>
                 </button>
                 <!-- Add search button with dropdown -->
                 <div class="relative">
@@ -141,23 +148,52 @@
                         </tr>
                     </thead>
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
-                        <tr v-for="category in categories" :key="category.id" class="hover:bg-neutral-750">
+                        <tr v-for="category in displayedCategories" :key="category.id" class="hover:bg-neutral-750">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400" :title="category.id">
                                 {{ category.id.substring(0, 6) }}...
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                                {{ category.name }}
+                                <span :style="{ paddingLeft: category.depth * 20 + 'px' }" class="flex items-center">
+                                    <button 
+                                        v-if="category.hasChildren"
+                                        @click.stop="toggleExpand(category.id)" 
+                                        class="mr-2 text-neutral-500 hover:text-neutral-300 focus:outline-none"
+                                        :aria-expanded="expandedCategories.has(category.id) ? 'true' : 'false'"
+                                        :title="expandedCategories.has(category.id) ? 'Collapse' : 'Expand'"
+                                    >
+                                        <svg v-if="expandedCategories.has(category.id)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                    <span v-else-if="category.depth > 0 || (categories.filter(c => c.parentCategory === null).length > 1 && !category.hasChildren)" class="w-4 mr-2"></span> <!-- Espaçador para alinhar com itens que têm botão -->
+                                    
+                                    <span v-if="category.depth > 0 && !category.hasChildren && !category.children?.length" class="mr-1 text-neutral-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" transform="scale(0.1)" />
+                                        </svg> <!-- Ícone de item/documento muito pequeno, quase um ponto -->
+                                    </span>
+                                    <span class="mr-1 text-neutral-500" v-if="category.depth > 0 && (category.hasChildren || category.children?.length)">↳</span>
+                                    {{ category.name }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                 {{ category.postCount || 0 }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400 hidden md:table-cell">
-                                <div v-if="category.mainNav" class="flex flex-col">
-                                    <span class="text-green-500">Main Menu</span>
-                                    <span v-if="category.mainNavGroup" class="text-xs">Group: {{ category.mainNavGroup }}</span>
-                                    <span class="text-xs">Order: {{ category.mainNavIndex }}</span>
+                                <div v-if="category.mainNav" 
+                                     class="flex items-center" 
+                                     :title="`Label: ${category.navigationLabel || category.name}\nGroup: ${category.mainNavGroup || 'N/A'}\nOrder: ${category.mainNavIndex !== undefined ? category.mainNavIndex : 'N/A'}`">
+                                    <span class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
+                                        <span class="text-xs">{{ category.mainNavIndex !== undefined ? category.mainNavIndex : '-' }}</span>
+                                    </span>
                                 </div>
-                                <span v-else>-</span>
+                                <span v-else class="flex items-center justify-center">-</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span
@@ -224,108 +260,144 @@
                         </svg>
                     </button>
                 </div>
+
+                <!-- Tab Navigation -->
+                <div class="px-6 pt-4 border-b border-neutral-700 flex space-x-1">
+                    <button 
+                        type="button"
+                        @click="activeTab = 'basic'"
+                        :class="[
+                            'px-4 py-2 text-sm font-medium rounded-t-md',
+                            activeTab === 'basic' 
+                                ? 'bg-neutral-700 text-white' 
+                                : 'text-neutral-400 hover:bg-neutral-750 hover:text-neutral-200'
+                        ]"
+                    >
+                        Basic Info
+                    </button>
+                    <button 
+                        type="button"
+                        @click="activeTab = 'navigation'"
+                        :class="[
+                            'px-4 py-2 text-sm font-medium rounded-t-md',
+                            activeTab === 'navigation' 
+                                ? 'bg-neutral-700 text-white' 
+                                : 'text-neutral-400 hover:bg-neutral-750 hover:text-neutral-200'
+                        ]"
+                    >
+                        Navigation
+                    </button>
+                </div>
+
                 <div class="p-6">
                     <form @submit.prevent="saveCategory">
-                        <div class="mb-4">
-                            <label for="categoryName" class="block text-sm font-medium text-neutral-300 mb-1">Name</label>
-                            <input
-                                id="categoryName"
-                                v-model="categoryForm.name"
-                                @input="updateSlugAndLabel"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Category name"
-                                required
-                            />
-                            <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
+                        <!-- Basic Info Tab -->
+                        <div v-show="activeTab === 'basic'" class="space-y-4">
+                            <div class="mb-4">
+                                <label for="categoryName" class="block text-sm font-medium text-neutral-300 mb-1">Name</label>
+                                <input
+                                    id="categoryName"
+                                    v-model="categoryForm.name"
+                                    @input="updateSlugAndLabel"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Category name"
+                                    required
+                                />
+                                <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="categorySlug" class="block text-sm font-medium text-neutral-300 mb-1">Slug</label>
+                                <input
+                                    id="categorySlug"
+                                    v-model="categoryForm.slug"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="category-slug"
+                                    required
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">URL: /category/<span class="text-blue-400">{{ categoryForm.slug || 'your-slug' }}</span></p>
+                                <p v-if="formErrors.slug" class="mt-1 text-sm text-red-500">{{ formErrors.slug }}</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="parentCategory" class="block text-sm font-medium text-neutral-300 mb-1">Parent Category (optional)</label>
+                                <select
+                                    id="parentCategory"
+                                    v-model="categoryForm.parentCategory"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                >
+                                    <option value="">None</option>
+                                    <option v-for="category in allCategoriesForDropdown" :key="category.id" :value="category.id">
+                                        {{ category.name }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4 flex items-center">
+                                <input
+                                    id="categoryActive"
+                                    v-model="categoryForm.active"
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded border-neutral-600 text-blue-600 focus:ring-blue-500 bg-neutral-700"
+                                />
+                                <label for="categoryActive" class="ml-2 block text-sm text-neutral-300">
+                                    Active
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="categorySlug" class="block text-sm font-medium text-neutral-300 mb-1">Slug</label>
-                            <input
-                                id="categorySlug"
-                                v-model="categoryForm.slug"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="category-slug"
-                                required
-                            />
-                            <p class="mt-1 text-sm text-neutral-500">URL: /category/<span class="text-blue-400">{{ categoryForm.slug || 'your-slug' }}</span></p>
-                            <p v-if="formErrors.slug" class="mt-1 text-sm text-red-500">{{ formErrors.slug }}</p>
-                        </div>
+                        <!-- Navigation Tab -->
+                        <div v-show="activeTab === 'navigation'" class="space-y-4">
+                            <div class="mb-4">
+                                <label for="navigationLabel" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Label (optional)</label>
+                                <input
+                                    id="navigationLabel"
+                                    v-model="categoryForm.navigationLabel"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Custom navigation label"
+                                />
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="parentCategory" class="block text-sm font-medium text-neutral-300 mb-1">Parent Category (optional)</label>
-                            <select
-                                id="parentCategory"
-                                v-model="categoryForm.parentCategory"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                                <option value="">None</option>
-                                <option v-for="category in allCategoriesForDropdown" :key="category.id" :value="category.id">
-                                    {{ category.name }}
-                                </option>
-                            </select>
-                        </div>
+                            <div class="mb-4 flex items-center">
+                                <input
+                                    id="categoryMainNav"
+                                    v-model="categoryForm.mainNav"
+                                    type="checkbox"
+                                    class="h-4 w-4 rounded border-neutral-600 text-blue-600 focus:ring-blue-500 bg-neutral-700"
+                                />
+                                <label for="categoryMainNav" class="ml-2 block text-sm text-neutral-300">
+                                    Show in Main Navigation
+                                </label>
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="navigationLabel" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Label (optional)</label>
-                            <input
-                                id="navigationLabel"
-                                v-model="categoryForm.navigationLabel"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Custom navigation label"
-                            />
-                        </div>
+                            <div class="mb-4">
+                                <label for="categoryMainNavGroup" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Group (optional)</label>
+                                <input
+                                    id="categoryMainNavGroup"
+                                    v-model="categoryForm.mainNavGroup"
+                                    type="text"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Group name for navigation"
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">Used to create navigation dropdown groups</p>
+                            </div>
 
-                        <div class="mb-4 flex items-center">
-                            <input
-                                id="categoryMainNav"
-                                v-model="categoryForm.mainNav"
-                                type="checkbox"
-                                class="h-4 w-4 rounded border-neutral-600 text-blue-600 focus:ring-blue-500 bg-neutral-700"
-                            />
-                            <label for="categoryMainNav" class="ml-2 block text-sm text-neutral-300">
-                                Show in Main Navigation
-                            </label>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="categoryMainNavGroup" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Group (optional)</label>
-                            <input
-                                id="categoryMainNavGroup"
-                                v-model="categoryForm.mainNavGroup"
-                                type="text"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Group name for navigation"
-                            />
-                            <p class="mt-1 text-sm text-neutral-500">Used to create navigation dropdown groups</p>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="categoryMainNavIndex" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Order</label>
-                            <input
-                                id="categoryMainNavIndex"
-                                v-model.number="categoryForm.mainNavIndex"
-                                type="number"
-                                min="0"
-                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="0"
-                            />
-                            <p class="mt-1 text-sm text-neutral-500">Lower numbers appear first in navigation</p>
-                        </div>
-
-                        <div class="mb-4 flex items-center">
-                            <input
-                                id="categoryActive"
-                                v-model="categoryForm.active"
-                                type="checkbox"
-                                class="h-4 w-4 rounded border-neutral-600 text-blue-600 focus:ring-blue-500 bg-neutral-700"
-                            />
-                            <label for="categoryActive" class="ml-2 block text-sm text-neutral-300">
-                                Active
-                            </label>
+                            <div class="mb-4">
+                                <label for="categoryMainNavIndex" class="block text-sm font-medium text-neutral-300 mb-1">Navigation Order</label>
+                                <input
+                                    id="categoryMainNavIndex"
+                                    v-model.number="categoryForm.mainNavIndex"
+                                    type="number"
+                                    min="0"
+                                    class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="0"
+                                />
+                                <p class="mt-1 text-sm text-neutral-500">Lower numbers appear first in navigation</p>
+                                <p v-if="formErrors.mainNavIndex" class="mt-1 text-sm text-red-500">{{ formErrors.mainNavIndex }}</p>
+                            </div>
                         </div>
 
                         <div class="flex justify-end space-x-3 mt-6">
@@ -415,6 +487,8 @@ const showDeleteDialog = ref(false)
 const categoryToDelete = ref(null)
 const deleteLoading = ref(false)
 
+const recalculatingCounts = ref(false);
+
 const notification = ref({
     show: false,
     type: 'success',
@@ -425,10 +499,10 @@ const notification = ref({
 const pagination = ref({
     current: 1,
     lastPage: 1,
-    perPage: 10,
+    perPage: 50,
     total: 0,
     from: 1,
-    to: 10
+    to: 50
 })
 
 const filters = ref({
@@ -443,6 +517,21 @@ const blogUrl = ref('');
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
+
+const activeTab = ref('basic'); // 'basic' or 'navigation'
+
+const expandedCategories = ref(new Set());
+
+const toggleExpand = (categoryId) => {
+    if (expandedCategories.value.has(categoryId)) {
+        expandedCategories.value.delete(categoryId);
+    } else {
+        expandedCategories.value.add(categoryId);
+    }
+    // É importante que o Vue reaja à mudança no Set. 
+    // Forçar uma reatribuição pode ser necessário em alguns casos, mas Set é geralmente reativo.
+    // expandedCategories.value = new Set(expandedCategories.value); 
+};
 
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
@@ -519,7 +608,7 @@ const loadCategories = async () => {
             const paginationData = response.pagination || {}
             const totalCount = response.count || 0
             const currentOffset = paginationData.offset || 0
-            const currentLimit = paginationData.limit || 10
+            const currentLimit = paginationData.limit || 50;
 
             // Calculate current page from offset and limit
             const currentPage = Math.floor(currentOffset / currentLimit) + 1
@@ -539,7 +628,7 @@ const loadCategories = async () => {
             pagination.value = {
                 current: 1,
                 lastPage: 1,
-                perPage: 10,
+                perPage: 50,
                 total: 0,
                 from: 0,
                 to: 0
@@ -578,9 +667,31 @@ const loadAllCategoriesForDropdown = async () => {
 }
 
 // Refresh data
-const refreshData = () => {
-    loadCategories()
-}
+const refreshData = async () => {
+    if (recalculatingCounts.value) return; // Evita múltiplas chamadas
+
+    recalculatingCounts.value = true;
+    showNotification('info', 'Recalculating post counts...');
+
+    try {
+        // Assumindo que você adicionará este método ao seu adminClient
+        // Exemplo: await adminClient.posts.recalculateCategoryCounts(); 
+        // Por enquanto, vamos simular a chamada direta se você não tiver o client atualizado ainda:
+        await adminClient.posts.recalculateCategoryCounts();
+        showNotification('success', 'Post counts recalculated. Refreshing list...');
+    } catch (err) {
+        console.error('Failed to recalculate post counts:', err);
+        showNotification('error', err.message || 'Failed to trigger post count recalculation');
+        // Mesmo se o recálculo falhar, ainda tentamos carregar as categorias
+    } finally {
+        recalculatingCounts.value = false;
+    }
+
+    // Carrega as categorias após a tentativa de recálculo
+    await loadCategories();
+    // Opcionalmente, recarregar todas as categorias para o dropdown se as contagens são usadas lá
+    // await loadAllCategoriesForDropdown(); 
+};
 
 // Pagination methods
 const handlePageChange = (newPage) => {
@@ -595,6 +706,7 @@ watch(filters, () => {
 // Dialog methods
 const openAddDialog = () => {
     isEditing.value = false
+    activeTab.value = 'basic'; // Default to basic tab
     categoryForm.value = {
         name: '',
         _previousName: '',
@@ -613,6 +725,7 @@ const openAddDialog = () => {
 
 const openEditDialog = (category) => {
     isEditing.value = true
+    activeTab.value = 'basic'; // Default to basic tab, user can switch
     categoryToEdit.value = category
     categoryForm.value = {
         name: category.name,
@@ -632,6 +745,7 @@ const openEditDialog = (category) => {
 
 const closeDialog = () => {
     showDialog.value = false
+    activeTab.value = 'basic'; // Reset tab on close
     categoryForm.value = {
         name: '',
         _previousName: '',
@@ -646,6 +760,43 @@ const closeDialog = () => {
     formErrors.value = {}
     categoryToEdit.value = null
 }
+
+const validateNavOrder = () => {
+    if (!categoryForm.value.mainNav || categoryForm.value.mainNavIndex === undefined || categoryForm.value.mainNavIndex === null) {
+        delete formErrors.value.mainNavIndex; // Clear error if not applicable
+        return true;
+    }
+
+    const currentIndex = Number(categoryForm.value.mainNavIndex);
+    const currentParentId = categoryForm.value.parentCategory || null;
+    const currentCategoryId = categoryToEdit.value?.id || null; // For excluding self during edit
+
+    const conflictingCategory = allCategoriesForDropdown.value.find(cat => {
+        // Skip self when editing
+        if (isEditing.value && cat.id === currentCategoryId) {
+            return false;
+        }
+
+        // Only consider active for main navigation
+        if (!cat.mainNav) {
+            return false;
+        }
+
+        const catParentId = cat.parentCategory || null;
+        const catNavIndex = Number(cat.mainNavIndex);
+
+        // Check for same index within the same parent or at root level
+        return catParentId === currentParentId && catNavIndex === currentIndex;
+    });
+
+    if (conflictingCategory) {
+        formErrors.value.mainNavIndex = `Order ${currentIndex} is already used by "${conflictingCategory.name}" within the same parent/level.`;
+        return false;
+    }
+
+    delete formErrors.value.mainNavIndex; // Clear error if validation passes
+    return true;
+};
 
 // Save category
 const saveCategory = async () => {
@@ -664,6 +815,14 @@ const saveCategory = async () => {
             formErrors.value.slug = 'Category slug is required'
             formLoading.value = false
             return
+        }
+
+        // Validate Navigation Order
+        if (!validateNavOrder()) {
+            formLoading.value = false;
+            activeTab.value = 'navigation'; // Switch to navigation tab if there's an error there
+            showNotification('error', 'Please fix validation errors in the Navigation tab.');
+            return;
         }
 
         const { _previousName, ...categoryData } = {
@@ -810,4 +969,90 @@ const viewCategory = (category) => {
     console.log('Opening category URL:', url); // For debugging
     window.open(url, '_blank');
 }
+
+// Função para ajudar a construir a árvore (ou lista ordenada com profundidade)
+const buildCategoryHierarchy = (categoriesRaw) => {
+    if (!categoriesRaw || categoriesRaw.length === 0) return [];
+
+    const categoriesMap = new Map();
+    categoriesRaw.forEach(cat => {
+        categoriesMap.set(cat.id, { ...cat, children: [], _visited: false });
+    });
+
+    const tree = [];
+    categoriesRaw.forEach(catRaw => {
+        const catNode = categoriesMap.get(catRaw.id);
+        if (catRaw.parentCategory && categoriesMap.has(catRaw.parentCategory)) {
+            const parentNode = categoriesMap.get(catRaw.parentCategory);
+            if (parentNode) { // Certifique-se de que o pai existe no mapa
+                // Adicionamos a informação se tem filhos diretamente no nó para facilitar no template
+                catNode.hasChildren = catNode.children && catNode.children.length > 0;
+                parentNode.children.push(catNode);
+                parentNode.hasChildren = true; 
+            }
+        } else {
+            catNode.hasChildren = catNode.children && catNode.children.length > 0;
+            tree.push(catNode); // Categoria de nível superior
+        }
+    });
+
+    const flattenedList = [];
+    function flatten(nodes, depth) {
+        nodes.sort((a, b) => {
+            const aHasNav = a.mainNav && (a.mainNavIndex !== undefined && a.mainNavIndex !== null);
+            const bHasNav = b.mainNav && (b.mainNavIndex !== undefined && b.mainNavIndex !== null);
+
+            if (aHasNav && bHasNav) {
+                if (a.mainNavIndex !== b.mainNavIndex) {
+                    return Number(a.mainNavIndex) - Number(b.mainNavIndex);
+                }
+            } else if (aHasNav) {
+                return -1; // a vem primeiro
+            } else if (bHasNav) {
+                return 1;  // b vem primeiro
+            }
+            return a.name.localeCompare(b.name);
+        });
+        
+        for (const node of nodes) {
+            if (node._visited && !flattenedList.find(n => n.id === node.id)) {
+                 // Se já visitado mas não está na lista (acontece se um pai foi recolhido e depois reexpandido)
+                 // precisamos resetar _visited para reprocessar seus filhos se ele estiver expandido agora.
+                 // No entanto, a lógica atual de _visited é para evitar loops infinitos em estruturas malformadas,
+                 // o que não deveria ser o caso aqui. Vamos simplificar e remover _visited por enquanto
+                 // já que a estrutura é uma árvore a partir das raízes.
+            }
+            // node._visited = true; // Removendo _visited por enquanto
+            node.depth = depth;
+            // Adiciona a informação se tem filhos no nó achatado, para o template
+            // Esta já foi definida quando construímos categoriesMap e tree.
+            // node.hasChildren = categoriesMap.get(node.id)?.children?.length > 0;
+            flattenedList.push(node);
+
+            // Só achata os filhos se o nó atual estiver expandido e tiver filhos
+            if (expandedCategories.value.has(node.id) && node.children && node.children.length > 0) {
+                flatten(node.children, depth + 1);
+            }
+        }
+    }
+
+    // Processar nós raiz (aqueles sem pai ou cujo pai não está no mapa)
+    const rootNodes = Array.from(categoriesMap.values()).filter(node => !node.parentCategory || !categoriesMap.has(node.parentCategory));
+    rootNodes.forEach(rn => rn.hasChildren = rn.children && rn.children.length > 0); // Garante que hasChildren está setado para raízes
+
+    flatten(rootNodes, 0);
+    
+    // Limpar _visited não é mais necessário
+    // flattenedList.forEach(node => delete node._visited);
+
+    return flattenedList;
+};
+
+const displayedCategories = computed(() => {
+    if (categories.value && categories.value.length > 0) {
+        // Usar deep copy para não mutar o ref original ou causar loops de re-renderização infinitos
+        return buildCategoryHierarchy(JSON.parse(JSON.stringify(categories.value)));
+    }
+    return [];
+});
 </script>
