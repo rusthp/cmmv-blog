@@ -28,10 +28,9 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <!-- Main Category Content (2 columns width) -->
                         <div class="lg:col-span-2 bg-white rounded-lg p-4 overflow-hidden">
-                            <header class="border-b border-neutral-200 pb-4 mb-6 pr-4 pt-4">
+                            <header class="border-b border-neutral-200 pb-4 mb-6 pr-4 pt-4 text-center">
                                 <h1 class="text-3xl font-bold text-neutral-900 mb-3">{{ category.name }}</h1>
                                 <p v-if="category.description" class="text-neutral-600 mb-4">{{ category.description }}</p>
-                                <div class="text-sm text-neutral-500">{{ category.postCount }} posts nesta categoria</div>
                             </header>
 
                             <!-- Top AdSense Banner -->

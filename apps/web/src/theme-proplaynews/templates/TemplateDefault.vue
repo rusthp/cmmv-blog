@@ -16,8 +16,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </button>
-                            <a href="#" class="text-gray-300 text-sm hover:text-[#ff0030] transition-colors">Entrar</a>
-                            <a href="#" class="text-gray-300 text-sm hover:text-[#ff0030] transition-colors">Cadastrar</a>
+                            <!-- Botões temporariamente escondidos -->
+                            <!-- <a href="#" class="text-gray-300 text-sm hover:text-[#ff0030] transition-colors">Entrar</a>
+                            <a href="#" class="text-gray-300 text-sm hover:text-[#ff0030] transition-colors">Cadastrar</a> -->
                             <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-white">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path v-if="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -34,12 +35,12 @@
                         <div class="nav-container flex justify-between items-center relative">
                             <!-- Menu para desktop -->
                             <div class="categories hidden md:flex flex-wrap scrollbar-hide py-1 w-full md:w-auto">
-                                <a href="/" class="text-gray-800 px-4 py-2 mr-2 font-medium text-sm md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
+                                <a href="/" class="text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
                                     <div v-if="mainNavCategories.childrenMap[category.id]" class="relative">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
-                                            class="dropdown-toggle text-gray-800 px-4 py-2 mr-2 font-medium text-sm md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
+                                            class="dropdown-toggle text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
                                             :class="{'bg-gray-100': openDropdowns[category.id]}"
                                         >
                                             {{ category.name }}
@@ -53,7 +54,7 @@
                                         >
                                             <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
                                                 :href="`/category/${child.slug}`"
-                                                class="block text-gray-800 hover:bg-gray-100 px-4 py-2 text-sm transition-colors"
+                                                class="block text-gray-800 hover:bg-gray-100 px-4 py-2 text-base transition-colors"
                                             >
                                                 {{ child.name }}
                                             </a>
@@ -62,7 +63,7 @@
                                     <a
                                         v-else
                                         :href="`/category/${category.slug}`"
-                                        class="text-gray-800 px-4 py-2 mr-2 font-medium text-sm md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                                        class="text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
                                     >
                                         {{ category.name }}
                                     </a>

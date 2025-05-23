@@ -10,9 +10,9 @@
 
             <div v-else class="bg-white rounded-lg p-6 article-container overflow-hidden">
                 <header class="border-b border-neutral-200 pb-4 mb-6 pr-4 pt-4">
-                    <h1 class="text-3xl font-bold text-neutral-900 mb-3">{{ category.name }}</h1>
+                    <h1 class="text-3xl font-bold text-neutral-900 mb-15{ category.name }}</h1>
                     <p v-if="category.description" class="text-neutral-600 mb-4">{{ category.description }}</p>
-                    <div class="text-sm text-neutral-500">{{ category.postCount }} posts nesta categoria</div>
+                   
                 </header>
 
                 <!-- Initial loading state -->
