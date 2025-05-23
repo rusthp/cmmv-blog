@@ -11,7 +11,7 @@
             <div v-else class="bg-white rounded-lg p-6 article-container overflow-hidden">
                 <header class="border-b border-neutral-200 pb-4 mb-6 pr-4 pt-4 text-center">
                     <h1 class="text-4xl font-bold text-neutral-900 mb-3">{{ category.name }}</h1>
-                    <p v-if="category.description" class="text-lg text-neutral-600 mb-4">{{ category.description }}</p>
+                    <p v-if="category.description" class="text-lg text-neutral-800 mb-4">{{ category.description }}</p>
                 </header>
 
                 <!-- Initial loading state -->
@@ -37,7 +37,7 @@
                         </h2>
 
                         <!-- Post Meta -->
-                        <div class="flex items-center mb-4 text-base text-neutral-600">
+                        <div class="flex items-center mb-4 text-base text-neutral-800">
                             <div class="flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -47,17 +47,17 @@
                         </div>
 
                         <!-- Post Excerpt -->
-                        <div v-if="post.excerpt" class="text-lg text-neutral-700 mb-4">
+                        <div v-if="post.excerpt" class="text-neutral-800 mb-4">
                             {{ post.excerpt }}
                         </div>
-                        <div v-else-if="post.content" class="text-lg text-neutral-700 mb-4">
+                        <div v-else-if="post.content" class="text-neutral-800 mb-4">
                             {{ stripHtml(post.content).substring(0, 200) }}{{ stripHtml(post.content).length > 200 ? '...' : '' }}
                         </div>
 
                         <!-- Tags -->
                         <div v-if="post.tags && post.tags.length > 0" class="mb-4 flex flex-wrap gap-2">
                             <a v-for="tag in post.tags" :key="tag" :href="`/tag/${tag.slug}`"
-                            class="bg-neutral-100 text-neutral-700 text-base px-3 py-1 rounded-full hover:bg-neutral-200 transition-colors">
+                            class="bg-neutral-100 text-neutral-800 text-base px-3 py-1 rounded-full hover:bg-neutral-200 transition-colors">
                                 {{ tag.name }}
                             </a>
                         </div>

@@ -4,10 +4,10 @@
         <header class="bg-gradient-to-r from-blue-600 via-blue-500 to-purple-500 text-white sticky top-0 z-50 shadow-md w-full">
             <div class="mx-auto">
                 <div class="max-w-[1200px] mx-auto px-4">
-                    <div class="top-header flex justify-center items-center py-4 relative">
+                    <div class="top-header flex justify-center items-center py-1 relative">
                         <div class="logo flex items-center">
                             <a href="/" class="text-2xl font-bold text-white">
-                                <img src="/src/theme-proplaynews/assets/android-icon-48x48.png" alt="proplaynews Logo" class="h-auto w-12 max-h-12">
+                                <img src="/src/theme-proplaynews/assets/android-icon-96x96.png" alt="proplaynews Logo" class="h-auto w-15 max-h-25">
                             </a>
                         </div>
                         <div class="flex items-center space-x-4 absolute right-0">
@@ -35,7 +35,7 @@
                         <div class="nav-container flex justify-between items-center relative">
                             <!-- Menu para desktop -->
                             <div class="categories hidden md:flex flex-wrap scrollbar-hide py-1 w-full md:w-auto">
-                                <a href="/" class="text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
+                                <a href="/" class="text-gray-800 px-4 py-0 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
                                     <div v-if="mainNavCategories.childrenMap[category.id]" class="relative">
                                         <button
@@ -235,7 +235,7 @@
                 </div>
 
                 <div class="border-t border-gray-800 mt-4 pt-4 text-center">
-                    <p class="text-gray-500 text-xs">
+                    <p class="text-white text-xs">
                         &copy; {{ new Date().getFullYear() }} Proplay News - Todos os direitos reservados.
                     </p>
                 </div>
