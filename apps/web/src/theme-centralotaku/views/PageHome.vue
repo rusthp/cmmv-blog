@@ -26,7 +26,7 @@
                 <!-- Full Layout (default) -->
                 <div v-if="coverSettings.layoutType === 'full' || !coverSettings.layoutType" class="bg-white rounded-lg overflow-hidden shadow-md">
                     <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block">
-                        <div class="relative h-[400px]">
+                        <div class="relative h-[300px] sm:h-[350px] md:h-[400px]">
                             <img
                                 v-if="coverPosts.full && coverPosts.full.featureImage"
                                 :src="coverPosts.full.featureImage"
@@ -44,13 +44,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                            <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                 <div v-if="coverPosts.full && coverPosts.full.categories && coverPosts.full.categories.length > 0" class="mb-2 flex flex-wrap gap-2">
                                     <span v-for="category in coverPosts.full.categories" :key="category.id" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium">
                                         {{ category.name }}
                                     </span>
                                 </div>
-                                <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
+                                <h2 v-if="coverPosts.full" class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
                                 <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                     {{ coverPosts.full.excerpt || stripHtml(coverPosts.full.content).substring(0, 150) + '...' }}
                                 </p>
@@ -64,7 +64,7 @@
 
                 <!-- Carousel Layout -->
                 <div v-else-if="coverSettings.layoutType === 'carousel'" class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="relative h-[400px]">
+                    <div class="relative h-[300px] sm:h-[350px] md:h-[400px]">
                         <div v-for="(post, index) in coverPosts.carousel" :key="post.id"
                              class="absolute w-full h-full transition-opacity duration-500 ease-in-out"
                              :class="{ 'opacity-100': currentCarouselIndex === index, 'opacity-0': currentCarouselIndex !== index }">
@@ -86,13 +86,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                                <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-2">
                                         <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium">
                                             {{ category.name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                    <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                     </p>
@@ -136,7 +136,7 @@
                 <div v-else-if="coverSettings.layoutType === 'split'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-2 bg-white rounded-lg overflow-hidden shadow-md">
                         <a v-if="coverPosts.splitMain" :href="`/post/${coverPosts.splitMain.slug}`" class="block h-full">
-                            <div class="relative h-full">
+                            <div class="relative h-[300px] md:h-full">
                                 <img
                                     v-if="coverPosts.splitMain && coverPosts.splitMain.featureImage"
                                     :src="coverPosts.splitMain.featureImage"
@@ -154,13 +154,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                                <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="coverPosts.splitMain && coverPosts.splitMain.categories && coverPosts.splitMain.categories.length > 0" class="mb-2 flex flex-wrap gap-2">
                                         <span v-for="category in coverPosts.splitMain.categories" :key="category.id" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium">
                                             {{ category.name }}
                                         </span>
                                     </div>
-                                    <h2 v-if="coverPosts.splitMain" class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.splitMain.title }}</h2>
+                                    <h2 v-if="coverPosts.splitMain" class="text-lg sm:text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.splitMain.title }}</h2>
                                     <p v-if="coverPosts.splitMain" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ coverPosts.splitMain.excerpt || stripHtml(coverPosts.splitMain.content).substring(0, 150) + '...' }}
                                     </p>
@@ -174,7 +174,7 @@
                     <div class="md:col-span-1 flex flex-col gap-4">
                         <div v-for="(post, index) in coverPosts.splitSide" :key="post.id" class="flex-1 bg-white rounded-lg overflow-hidden shadow-md">
                             <a :href="`/post/${post.slug}`" class="block h-full">
-                                <div class="relative h-full">
+                                <div class="relative h-[200px] md:h-full">
                                     <img
                                         v-if="post.featureImage"
                                         :src="post.featureImage"
@@ -186,14 +186,14 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                     </div>
-                                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
-                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                        <div v-if="post.categories && post.categories.length > 0" class="mb-1 sm:mb-2 flex flex-wrap gap-1">
                                             <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-1 rounded-md text-xs font-medium">
                                                 {{ category.name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-base font-bold mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h3>
-                                        <span class="text-sm text-white hover:text-red-400 transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
+                                        <h3 class="text-sm sm:text-base font-bold mb-1 sm:mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h3>
+                                        <span class="text-xs sm:text-sm text-white hover:text-red-400 transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
                                             Continuar lendo &rarr;
                                         </span>
                                     </div>
@@ -207,7 +207,7 @@
                 <div v-else-if="coverSettings.layoutType === 'dual'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div v-for="post in coverPosts.dual" :key="post.id" class="bg-white rounded-lg overflow-hidden shadow-md">
                         <a :href="`/post/${post.slug}`" class="block">
-                            <div class="relative h-[350px]">
+                            <div class="relative h-[250px] sm:h-[300px] md:h-[350px]">
                                 <img
                                     v-if="post.featureImage"
                                     :src="post.featureImage"
@@ -225,13 +225,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                                <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-2">
                                         <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium">
                                             {{ category.name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                     </p>
@@ -283,47 +283,47 @@
                                 Últimas Notícias
                             </h2>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <article
+                            <div class="space-y-6">
+                                <a
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
                                     :key="post.id"
-                                    class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
+                                    :href="`/post/${post.slug}`"
+                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
                                 >
-                                    <a :href="`/post/${post.slug}`" class="block">
-                                        <div class="h-48 overflow-hidden relative">
-                                            <img
-                                                v-if="post.featureImage"
-                                                :src="post.featureImage"
-                                                :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                            />
-                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2 flex flex-wrap gap-1">
-                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-1 rounded-md text-xs font-medium">
-                                                    {{ category.name }}
-                                                </span>
-                                            </div>
+                                    <!-- Imagem à esquerda -->
+                                    <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
+                                        <img
+                                            v-if="post.featureImage"
+                                            :src="post.featureImage"
+                                            :alt="post.title"
+                                            class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                        />
+                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
                                         </div>
-                                    </a>
-                                    <div class="p-4">
-                                        <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-red-600 transition-colors line-clamp-2">
-                                                {{ post.title }}
-                                            </h3>
-                                        </a>
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                            {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                    </div>
+
+                                    <!-- Conteúdo à direita -->
+                                    <div class="flex-grow flex flex-col">
+                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                            <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                {{ category.name }}
+                                            </span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            {{ post.title }}
+                                        </h3>
+                                        <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                            {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                         </p>
-                                        <div class="flex justify-between items-center text-xs text-gray-500">
+                                        <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
                                             <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
                                             <span>{{ formatDate(post.publishedAt) }}</span>
                                         </div>
                                     </div>
-                                </article>
+                                </a>
                             </div>
 
                             <!-- Mid-content AdSense Banner -->
@@ -344,47 +344,47 @@
                                     Mais Conteúdo
                                 </h2>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    <article
+                                <div class="space-y-6">
+                                    <a
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
                                         :key="post.id"
-                                        class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
+                                        :href="`/post/${post.slug}`"
+                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
                                     >
-                                        <a :href="`/post/${post.slug}`" class="block">
-                                            <div class="h-48 overflow-hidden relative">
-                                                <img
-                                                    v-if="post.featureImage"
-                                                    :src="post.featureImage"
-                                                    :alt="post.title"
-                                                    class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                                />
-                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2 flex flex-wrap gap-1">
-                                                    <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-1 rounded-md text-xs font-medium">
-                                                        {{ category.name }}
-                                                    </span>
-                                                </div>
+                                        <!-- Imagem à esquerda -->
+                                        <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
+                                            <img
+                                                v-if="post.featureImage"
+                                                :src="post.featureImage"
+                                                :alt="post.title"
+                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                            />
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
                                             </div>
-                                        </a>
-                                        <div class="p-4">
-                                            <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-red-600 transition-colors line-clamp-2">
-                                                    {{ post.title }}
-                                                </h3>
-                                            </a>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                        </div>
+
+                                        <!-- Conteúdo à direita -->
+                                        <div class="flex-grow flex flex-col">
+                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                    {{ category.name }}
+                                                </span>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                {{ post.title }}
+                                            </h3>
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                             </p>
-                                            <div class="flex justify-between items-center text-xs text-gray-500">
+                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
                                                 <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
                                                 <span>{{ formatDate(post.publishedAt) }}</span>
                                             </div>
                                         </div>
-                                    </article>
+                                    </a>
                                 </div>
                             </div>
 
