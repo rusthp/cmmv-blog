@@ -477,27 +477,6 @@
                                 </div>
                             </div>
 
-                            <!-- Categories Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
-                                    Categorias
-                                </h2>
-
-                                <ul class="space-y-2">
-                                    <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
-                                        <a
-                                            :href="`/category/${category.slug}`"
-                                            class="flex justify-between items-center text-gray-700 hover:text-red-600 transition-colors"
-                                        >
-                                            {{ category.name }}
-                                            <span class="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                                {{ category.postCount }}
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-
                             <!-- AdSense Rectangle (Bottom) -->
                             <div v-if="adSettings.enableAds && adSettings.homePageSidebarBottom" class="bg-gray-100 rounded-lg shadow-md p-2 mb-6 flex justify-center">
                                 <div class="ad-container ad-sidebar-bottom" v-if="getAdHtml('sidebarBottom')">
@@ -525,7 +504,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useHead } from '@unhead/vue';
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
-import { useCategoriesStore } from '../../store/categories';
 import { usePostsStore } from '../../store/posts';
 import { useMostAccessedPostsStore } from '../../store/mostaccessed';
 import { formatDate, stripHtml } from '../../composables/useUtils';
@@ -539,7 +517,6 @@ declare global {
 }
 
 const settingsStore = useSettingsStore();
-const categoriesStore = useCategoriesStore();
 const postsStore = usePostsStore();
 const mostAccessedStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog();
@@ -558,7 +535,6 @@ const settings = computed<Record<string, any>>(() => {
     });
     return blogSettings;
 });
-const categories = ref<any[]>(categoriesStore.getCategories || []);
 const posts = ref<any[]>(postsStore.getPosts || []);
 const popularPosts = ref<any[]>(mostAccessedStore.getMostAccessedPosts || []);
 const loading = ref(true);
@@ -735,7 +711,7 @@ const pagination = ref({
 const featuredPost = computed(() => {
     return posts.value.length > 0 ? posts.value[0] : null;
 });
-
+/*
 const reviewPosts = computed(() => {
     const reviewCategory = categories.value.find(cat =>
         cat.name.toLowerCase() === 'review' ||
@@ -753,7 +729,7 @@ const reviewPosts = computed(() => {
         return posts.value.slice(middleIndex, middleIndex + 2);
     }
 });
-
+*/
 const loadPosts = async () => {
     try {
         loading.value = true;
@@ -771,7 +747,7 @@ const loadPosts = async () => {
             };
 
             hasMorePosts.value = posts.value.length < response.count;
-
+            /*
             if (!categories.value.length) {
                 try {
                     const categoriesResponse = await blogAPI.categories.getAll();
@@ -781,7 +757,7 @@ const loadPosts = async () => {
                 } catch (err) {
                     console.error('Failed to load categories:', err);
                 }
-            }
+            }*/
         }
     } catch (err: any) {
         console.error('Failed to load posts:', err);
