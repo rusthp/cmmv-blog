@@ -279,6 +279,45 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <!-- Left Column (Latest News) -->
                         <div class="lg:col-span-2">
+                            <!-- Popular Posts Ticker -->
+                            <section v-if="popularPosts.length > 0" class="mb-8 popular-posts-ticker-section">
+                                <h2 class="text-xl font-bold mb-4 text-red-600">
+                                    🔥 Mais Populares
+                                </h2>
+                                <div class="popular-posts-ticker-container bg-white rounded-lg shadow-md p-4 overflow-hidden">
+                                    <div class="popular-posts-ticker-wrapper" :style="tickerStyle">
+                                        <a
+                                            v-for="(post, index) in duplicatedPopularPosts"
+                                            :key="`popular-${post.id}-${index}`"
+                                            :href="`/post/${post.slug}`"
+                                            class="popular-post-card group"
+                                        >
+                                            <div class="popular-post-image-wrapper">
+                                                <img
+                                                    v-if="post.image"
+                                                    :src="post.image"
+                                                    :alt="post.title"
+                                                    class="popular-post-image"
+                                                />
+                                                <div v-else class="popular-post-image-placeholder">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="popular-post-content">
+                                                <h4 class="popular-post-title group-hover:text-red-600">
+                                                    {{ post.title }}
+                                                </h4>
+                                                <span class="popular-post-date">
+                                                    {{ formatDate(post.publishedAt) }}
+                                                </span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </section>
+
                             <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
                                 Últimas Notícias
                             </h2>
@@ -425,6 +464,7 @@
                             </div>
 
                             <!-- Popular Posts Widget -->
+                            <!--
                             <div class="bg-white rounded-lg shadow-md p-5 mb-6">
                                 <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                     Mais Populares
@@ -464,6 +504,7 @@
                                     </div>
                                 </div>
                             </div>
+                            -->
 
                             <!-- AdSense Rectangle (Middle) -->
                             <div class="bg-gray-100 rounded-lg shadow-md p-2 mb-6 flex justify-center">
@@ -839,6 +880,33 @@ watch(() => settings.value['blog.cover'], () => {
     stopCarouselInterval();
     startCarouselInterval();
 }, { deep: true });
+
+// Popular Posts Ticker
+const duplicatedPopularPosts = computed(() => {
+    if (popularPosts.value.length === 0) return [];
+    // Duplicar para efeito de loop infinito suave, especialmente se houver poucos posts
+    const basePosts = popularPosts.value.slice(0, 10); // Limitar a 10 posts para o ticker
+    return [...basePosts, ...basePosts];
+});
+
+const tickerStyle = computed(() => {
+    const numberOfCards = duplicatedPopularPosts.value.length;
+    if (numberOfCards === 0) return {};
+
+    const cardWidth = 320; // Estimativa da largura de cada card em pixels (incluindo margin/gap)
+    const totalWidth = numberOfCards * cardWidth;
+    // Ajustar a velocidade da animação. Quanto maior o valor, mais lenta a animação.
+    // Queremos que cada card fique visível por um tempo razoável.
+    // Por exemplo, 5 segundos por card.
+    const animationDuration = numberOfCards * 5; // segundos
+
+    return {
+        '--ticker-width': `${totalWidth}px`,
+        '--animation-duration': `${animationDuration}s`,
+        'width': `${totalWidth}px`,
+        'animation-duration': `${animationDuration}s`
+    };
+});
 </script>
 
 <style scoped>
@@ -862,6 +930,112 @@ watch(() => settings.value['blog.cover'], () => {
     .ad-sidebar-left {
         display: none;
     }
+}
+
+/* Popular Posts Ticker Styles */
+.popular-posts-ticker-section {
+    /* Adicione quaisquer estilos específicos da seção aqui, se necessário */
+}
+
+.popular-posts-ticker-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden; /* Essencial para o efeito de ticker */
+}
+
+.popular-posts-ticker-wrapper {
+    display: flex;
+    /* A animação será definida inline via tickerStyle para duração dinâmica */
+    animation-name: ticker-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform; /* Otimização de performance para animação */
+}
+
+@keyframes ticker-scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        /* Metade da largura total porque duplicamos os posts */
+        transform: translateX(calc(-1 * var(--ticker-width) / 2));
+    }
+}
+
+.popular-post-card {
+    display: flex;
+    align-items: center;
+    width: 300px; /* Largura fixa para cada card */
+    margin-right: 20px; /* Espaço entre os cards */
+    padding: 0.75rem; /* 12px */
+    background-color: #f9fafb; /* bg-gray-50 */
+    border-radius: 0.375rem; /* rounded-md */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
+    transition: box-shadow 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.popular-post-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+}
+
+.popular-post-image-wrapper {
+    width: 80px; /* w-20 */
+    height: 64px; /* h-16 */
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.25rem; /* rounded-sm */
+    margin-right: 0.75rem; /* mr-3 */
+}
+
+.popular-post-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.popular-post-card:hover .popular-post-image {
+    transform: scale(1.05);
+}
+
+.popular-post-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #e5e7eb; /* bg-gray-200 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popular-post-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1;
+    min-width: 0; /* Para line-clamp funcionar corretamente em flex item */
+}
+
+.popular-post-title {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+    color: #1f2937; /* text-gray-800 */
+    line-height: 1.25rem; /* leading-tight */
+    margin-bottom: 0.25rem; /* mb-1 */
+    transition: color 0.3s ease;
+    /* Para truncar títulos longos em 2 linhas */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.5rem; /* (line-height * lines) 1.25rem * 2 = 2.5rem */
+}
+
+.popular-post-date {
+    font-size: 0.75rem; /* text-xs */
+    color: #6b7280; /* text-gray-500 */
 }
 </style>
 
