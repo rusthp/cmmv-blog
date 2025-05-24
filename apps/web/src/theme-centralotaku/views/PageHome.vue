@@ -322,9 +322,54 @@
                                 Últimas Notícias
                             </h2>
 
-                            <div class="space-y-6">
+                            <!-- Desktop: Últimas Notícias -->
+                            <div class="hidden md:block space-y-6">
                                 <a
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
+                                    :key="post.id"
+                                    :href="`/post/${post.slug}`"
+                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                >
+                                    <!-- Imagem à esquerda -->
+                                    <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
+                                        <img
+                                            v-if="post.featureImage"
+                                            :src="post.featureImage"
+                                            :alt="post.title"
+                                            class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                        />
+                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- Conteúdo à direita -->
+                                    <div class="flex-grow flex flex-col">
+                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                            <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                {{ category.name }}
+                                            </span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            {{ post.title }}
+                                        </h3>
+                                        <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                            {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                        </p>
+                                        <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
+                                            <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
+                                            <span>{{ formatDate(post.publishedAt) }}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <!-- Mobile: Últimas Notícias -->
+                            <div class="block md:hidden space-y-6">
+                                <a
+                                    v-for="post in posts.slice(0, 4)"
                                     :key="post.id"
                                     :href="`/post/${post.slug}`"
                                     class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
@@ -378,7 +423,8 @@
                             </div>
 
                             <!-- More Posts Section -->
-                            <div v-if="posts.length > (featuredPost ? 5 : 4)">
+                            <!-- Desktop: More Posts -->
+                            <div v-if="posts.length > (featuredPost ? 5 : 4)" class="hidden md:block">
                                 <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
                                     Mais Conteúdo
                                 </h2>
@@ -386,6 +432,56 @@
                                 <div class="space-y-6">
                                     <a
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
+                                        :key="post.id"
+                                        :href="`/post/${post.slug}`"
+                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                    >
+                                        <!-- Imagem à esquerda -->
+                                        <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
+                                            <img
+                                                v-if="post.featureImage"
+                                                :src="post.featureImage"
+                                                :alt="post.title"
+                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                            />
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <!-- Conteúdo à direita -->
+                                        <div class="flex-grow flex flex-col">
+                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                    {{ category.name }}
+                                                </span>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                {{ post.title }}
+                                            </h3>
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                            </p>
+                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
+                                                <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
+                                                <span>{{ formatDate(post.publishedAt) }}</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Mobile: More Posts -->
+                            <div v-if="posts.length > 4" class="block md:hidden">
+                                <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
+                                    Mais Conteúdo
+                                </h2>
+
+                                <div class="space-y-6">
+                                    <a
+                                        v-for="post in posts.slice(4)"
                                         :key="post.id"
                                         :href="`/post/${post.slug}`"
                                         class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
@@ -893,12 +989,12 @@ const tickerStyle = computed(() => {
     const numberOfCards = duplicatedPopularPosts.value.length;
     if (numberOfCards === 0) return {};
 
-    const cardWidth = 320; // Estimativa da largura de cada card em pixels (incluindo margin/gap)
+    const cardWidth = 480; // Estimativa da largura de cada card em pixels (350px card + 20px margin)
     const totalWidth = numberOfCards * cardWidth;
     // Ajustar a velocidade da animação. Quanto maior o valor, mais lenta a animação.
     // Queremos que cada card fique visível por um tempo razoável.
     // Por exemplo, 5 segundos por card.
-    const animationDuration = numberOfCards * 5; // segundos
+    const animationDuration = numberOfCards * 10; // segundos
 
     return {
         '--ticker-width': `${totalWidth}px`,
@@ -965,9 +1061,9 @@ const tickerStyle = computed(() => {
 .popular-post-card {
     display: flex;
     align-items: center;
-    width: 300px; /* Largura fixa para cada card */
+    width: 350px; /* Largura aumentada para cada card */
     margin-right: 20px; /* Espaço entre os cards */
-    padding: 0.75rem; /* 12px */
+    padding: 1rem; /* Padding aumentado (16px) */
     background-color: #f9fafb; /* bg-gray-50 */
     border-radius: 0.375rem; /* rounded-md */
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
@@ -981,8 +1077,8 @@ const tickerStyle = computed(() => {
 }
 
 .popular-post-image-wrapper {
-    width: 80px; /* w-20 */
-    height: 64px; /* h-16 */
+    width: 100px; /* Largura da imagem aumentada */
+    height: 80px; /* Altura da imagem aumentada */
     flex-shrink: 0;
     overflow: hidden;
     border-radius: 0.25rem; /* rounded-sm */
@@ -1018,10 +1114,10 @@ const tickerStyle = computed(() => {
 }
 
 .popular-post-title {
-    font-size: 0.875rem; /* text-sm */
+    font-size: 1rem; /* Tamanho da fonte aumentado (text-base) */
     font-weight: 600; /* font-semibold */
     color: #1f2937; /* text-gray-800 */
-    line-height: 1.25rem; /* leading-tight */
+    line-height: 1.5rem; /* Ajustado para text-base */
     margin-bottom: 0.25rem; /* mb-1 */
     transition: color 0.3s ease;
     /* Para truncar títulos longos em 2 linhas */
@@ -1030,11 +1126,11 @@ const tickerStyle = computed(() => {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: 2.5rem; /* (line-height * lines) 1.25rem * 2 = 2.5rem */
+    max-height: 3rem; /* (line-height * lines) 1.5rem * 2 = 3rem */
 }
 
 .popular-post-date {
-    font-size: 0.75rem; /* text-xs */
+    font-size: 0.875rem; /* Tamanho da fonte aumentado (text-sm) */
     color: #6b7280; /* text-gray-500 */
 }
 </style>
