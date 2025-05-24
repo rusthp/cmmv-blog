@@ -251,7 +251,7 @@
                             Categorias
                             <span class="absolute bottom-0 left-0 w-10 h-1 bg-red-500"></span>
                         </h3>
-                        <div class="grid grid-cols-3 gap-x-4">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4">
                             <ul class="space-y-2">
                                 <li v-for="(category, index) in categoriesColumns[0]" :key="category.id">
                                     <a :href="`/category/${category.slug}`" class="text-gray-300 hover:text-red-500">

@@ -52,61 +52,59 @@
                             </div>
 
                             <!-- Posts List -->
-                            <div v-else-if="posts.length > 0" class="space-y-10 post-content prose prose-sm sm:prose prose-neutral max-w-none">
-                                <article v-for="(post, index) in posts" :key="post.id" class="border-b border-neutral-200 pb-8 last:border-0">
-                                    <!-- Feature Image -->
-                                    <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
-                                        <div v-if="post.featureImage" class="relative aspect-video overflow-hidden rounded-lg">
-                                            <img :src="post.featureImage" :alt="post.featureImageAlt || post.title" class="w-full h-full object-cover" />
+                            <div v-else-if="posts.length > 0" class="space-y-6">
+                                <template v-for="(post, index) in posts" :key="post.id">
+                                    <article class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group">
+                                        <!-- Imagem à esquerda -->
+                                        <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity">
+                                            <div v-if="post.featureImage" class="w-full h-full">
+                                                <img :src="post.featureImage" :alt="post.featureImageAlt || post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                                            </div>
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        </a>
+
+                                        <!-- Conteúdo à direita -->
+                                        <div class="flex-grow flex flex-col">
+                                            <h2 class="text-xl lg:text-2xl font-bold text-neutral-900 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors">
+                                                    {{ post.title }}
+                                                </a>
+                                            </h2>
+                                            <div class="flex items-center mb-3 text-xs text-neutral-600">
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <span>{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-neutral-700 text-sm mb-3 line-clamp-3 flex-grow">
+                                                {{ post.excerpt || (stripHtml(post.content).substring(0, 150) + (stripHtml(post.content).length > 150 ? '...' : '')) }}
+                                            </div>
+                                            <div v-if="post.tags && post.tags.length > 0" class="mb-3 flex flex-wrap gap-2">
+                                                <a v-for="tag in post.tags" :key="tag.slug" :href="`/tag/${tag.slug}`"
+                                                class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full hover:bg-red-600 hover:text-white transition-colors">
+                                                    {{ tag.name }}
+                                                </a>
+                                            </div>
+                                            <div class="mt-auto">
+                                                <a :href="`/post/${post.slug}`"
+                                                class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm">
+                                                    Ler mais
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </a>
+                                            </div>
                                         </div>
-                                    </a>
-
-                                    <!-- Post Title -->
-                                    <h2 class="text-2xl font-bold text-neutral-900 mb-3">
-                                        <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors" aria-label="Ler mais sobre este post">
-                                            {{ post.title }}
-                                        </a>
-                                    </h2>
-
-                                    <!-- Post Meta -->
-                                    <div class="flex items-center mb-4 text-sm text-neutral-600">
-                                        <div class="flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            <span>{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Post Excerpt -->
-                                    <div v-if="post.excerpt" class="text-neutral-700 mb-4">
-                                        {{ post.excerpt }}
-                                    </div>
-                                    <div v-else-if="post.content" class="text-neutral-700 mb-4">
-                                        {{ stripHtml(post.content).substring(0, 200) }}{{ stripHtml(post.content).length > 200 ? '...' : '' }}
-                                    </div>
-
-                                    <!-- Tags -->
-                                    <div v-if="post.tags && post.tags.length > 0" class="mb-4 flex flex-wrap gap-2">
-                                        <a v-for="tag in post.tags" :key="tag" :href="`/tag/${tag.slug}`"
-                                        class="bg-gray-200 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-red-600 hover:!text-white transition-colors">
-                                            {{ tag.name }}
-                                        </a>
-                                    </div>
-
-                                    <!-- Read More Button -->
-                                    <div class="mt-4">
-                                        <a :href="`/post/${post.slug}`"
-                                        class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors">
-                                            Ler mais
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </a>
-                                    </div>
+                                    </article>
 
                                     <!-- Mid-content AdSense Banner (after every 3 posts) -->
-                                    <div v-if="adSettings.enableAds && adSettings.tagPageInContent && (index + 1) % 3 === 0 && index < posts.length - 1" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
+                                    <div v-if="adSettings.enableAds && adSettings.tagPageInContent && (index + 1) % 3 === 0 && index < posts.length - 1" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
                                         <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
                                             <div v-html="getAdHtml('inContent')"></div>
                                         </div>
@@ -116,7 +114,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </article>
+                                </template>
                             </div>
 
                             <!-- No posts state -->
