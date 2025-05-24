@@ -29,32 +29,39 @@
                     </div>
                 </div>
             </div>
-            <nav class="main-nav bg-white py-3 relative md:block" :style="{ display: mobileMenuOpen ? 'block' : '' }">
-                <div class="max-w-[1200px] mx-auto px-4">
+            <nav class="main-nav bg-white py-2 relative md:block" :style="{ display: mobileMenuOpen ? 'block' : '' }">
+                <div class="max-w-[1200px] mx-auto px-3">
                     <div class="mx-auto">
                         <div class="nav-container flex justify-between items-center relative">
                             <!-- Menu para desktop -->
-                            <div class="categories hidden md:flex flex-wrap scrollbar-hide py-1 w-full md:w-auto">
-                                <a href="/" class="text-gray-800 px-4 py-0 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
+                            <div class="categories hidden md:flex flex-wrap scrollbar-hide w-full md:w-auto">
+                                <a href="/" class="text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                                    <div v-if="mainNavCategories.childrenMap[category.id]" class="relative">
+                                    <div v-if="mainNavCategories.childrenMap[category.id]" class="relative group">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
-                                            class="dropdown-toggle text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
+                                            class="dropdown-toggle text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
                                             :class="{'bg-gray-100': openDropdowns[category.id]}"
                                         >
                                             {{ category.name }}
-                                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <svg 
+                                                class="ml-1 w-3 h-3 transition-transform duration-200" 
+                                                :class="{'rotate-180': openDropdowns[category.id]}"
+                                                fill="none" 
+                                                stroke="currentColor" 
+                                                viewBox="0 0 24 24" 
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </button>
                                         <div
                                             v-show="openDropdowns[category.id]"
-                                            class="dropdown-menu absolute left-0 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10"
+                                            class="dropdown-menu absolute left-0 mt-1 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10"
                                         >
                                             <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
                                                 :href="`/category/${child.slug}`"
-                                                class="block text-gray-800 hover:bg-gray-100 px-4 py-2 text-base transition-colors"
+                                                class="block text-gray-900 hover:bg-gray-100 px-3 py-1.5 text-sm font-bold uppercase tracking-wide transition-colors"
                                             >
                                                 {{ child.name }}
                                             </a>
@@ -63,7 +70,7 @@
                                     <a
                                         v-else
                                         :href="`/category/${category.slug}`"
-                                        class="text-gray-800 px-4 py-2 mr-2 font-medium text-base md:text-lg rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                                        class="text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
                                     >
                                         {{ category.name }}
                                     </a>
@@ -99,27 +106,34 @@
                         </div>
 
                         <!-- Mobile Menu -->
-                        <div v-show="mobileMenuOpen" class="md:hidden py-3 border-t border-gray-700 mt-2">
-                            <div class="flex flex-col gap-1">
-                                <a href="/" class="text-white px-4 py-2 font-medium text-sm rounded hover:bg-[#ff0030] transition-colors">Home</a>
+                        <div v-show="mobileMenuOpen" class="md:hidden py-2 border-t border-gray-200 mt-2">
+                            <div class="flex flex-col gap-0.5">
+                                <a href="/" class="text-gray-900 px-3 py-1.5 font-bold text-sm uppercase tracking-wide rounded hover:bg-gray-100 transition-colors">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
                                     <div v-if="mainNavCategories.childrenMap[category.id]" class="w-full">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
-                                            class="dropdown-toggle flex items-center justify-between w-full text-white hover:bg-[#ff0030] rounded px-4 py-2 text-sm"
-                                            :class="{'bg-[#ff0030]': openDropdowns[category.id]}"
+                                            class="dropdown-toggle flex items-center justify-between w-full text-gray-900 hover:bg-gray-100 rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide"
+                                            :class="{'bg-gray-100': openDropdowns[category.id]}"
                                         >
                                             {{ category.name }}
-                                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <svg 
+                                                class="ml-1 w-3 h-3 transition-transform duration-200" 
+                                                :class="{'rotate-180': openDropdowns[category.id]}"
+                                                fill="none" 
+                                                stroke="currentColor" 
+                                                viewBox="0 0 24 24" 
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </button>
-                                        <div v-show="openDropdowns[category.id]" class="pl-4 py-1 bg-[#222] rounded mt-1">
+                                        <div v-show="openDropdowns[category.id]" class="pl-3 py-0.5 bg-gray-50 rounded mt-0.5">
                                             <a
                                                 v-for="child in mainNavCategories.childrenMap[category.id]"
                                                 :key="child.id"
                                                 :href="`/category/${child.slug}`"
-                                                class="block px-4 py-2 text-sm text-white hover:bg-[#ff0030] rounded"
+                                                class="block px-3 py-1.5 text-sm text-gray-900 font-bold uppercase tracking-wide hover:bg-gray-100 rounded"
                                             >
                                                 {{ child.name }}
                                             </a>
@@ -128,7 +142,7 @@
                                     <a
                                         v-else
                                         :href="`/category/${category.slug}`"
-                                        class="block text-white hover:bg-[#ff0030] rounded px-4 py-2 text-sm"
+                                        class="block text-gray-900 hover:bg-gray-100 rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide"
                                     >
                                         {{ category.name }}
                                     </a>
@@ -164,6 +178,8 @@
                     </div>
                 </div>
             </nav>
+            <!-- Linha decorativa -->
+            <div class="h-[2px] w-full bg-gradient-to-r from-blue-600 via-blue-500 to-purple-500"></div>
         </header>
 
         <!-- Main Content -->
@@ -222,7 +238,7 @@
                             </a>
                             <a v-if="settings['blog.telegram']" :href="`https://t.me/${settings['blog.telegram']}`" target="_blank" class="text-gray-400 hover:text-[#ff0030] transition-colors" aria-label="Telegram">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.325.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                                 </svg>
                             </a>
                             <a v-if="settings['blog.discord']" :href="`https://discord.gg/${settings['blog.discord']}`" target="_blank" class="text-gray-400 hover:text-[#ff0030] transition-colors" aria-label="Discord">
@@ -406,18 +422,28 @@ const mainNavCategories = computed(() => {
     const navCategories = categories.value?.filter((category: any) => category.mainNav) || [];
     navCategories.sort((a: any, b: any) => (a.mainNavIndex ?? 999) - (b.mainNavIndex ?? 999));
 
+    // Filtra categorias raiz (sem parentCategory)
     const rootCategories = navCategories.filter((cat: any) => !cat.parentCategory);
-    const childCategories = navCategories.filter((cat: any) => cat.parentCategory);
+    
+    // Cria mapa de subcategorias
+    const childrenMap = navCategories.reduce((map: Record<string, any[]>, category: any) => {
+        if (category.parentCategory) {
+            if (!map[category.parentCategory]) {
+                map[category.parentCategory] = [];
+            }
+            map[category.parentCategory].push(category);
+        }
+        return map;
+    }, {});
+
+    // Ordena subcategorias por mainNavIndex
+    Object.values(childrenMap).forEach(children => {
+        children.sort((a: any, b: any) => (a.mainNavIndex ?? 999) - (b.mainNavIndex ?? 999));
+    });
 
     return {
         rootCategories,
-        childrenMap: childCategories.reduce((map: Record<string, any[]>, child: any) => {
-            if (!map[child.parentCategory]) {
-                map[child.parentCategory] = [];
-            }
-            map[child.parentCategory].push(child);
-            return map;
-        }, {} as Record<string, any[]>),
+        childrenMap
     };
 });
 
@@ -425,19 +451,12 @@ const openDropdowns = ref<Record<string, boolean>>({});
 
 const toggleDropdown = (categoryId: string, event: Event) => {
     event.stopPropagation();
-    if (openDropdowns.value[categoryId]) {
-        openDropdowns.value = {
-            ...openDropdowns.value,
-            [categoryId]: false
-        };
-    } else {
-        const newDropdownState: Record<string, boolean> = {};
-        Object.keys(openDropdowns.value).forEach(key => {
-            newDropdownState[key] = false;
-        });
-        newDropdownState[categoryId] = true;
-        openDropdowns.value = newDropdownState;
-    }
+    
+    // Atualiza o estado do dropdown
+    openDropdowns.value = {
+        ...openDropdowns.value,
+        [categoryId]: !openDropdowns.value[categoryId]
+    };
 };
 
 const openSearchModal = () => {
@@ -514,10 +533,12 @@ const categoriesColumns = computed(() => {
 onMounted(async () => {
     await Promise.all([
         (async () => {
-            if (!categories.value.length) {
+            if (!categories.value?.length) {
                 try {
                     const categoriesResponse = await blogAPI.categories.getAll();
                     if (categoriesResponse) {
+                        // Atualiza tanto o store quanto a referência local
+                        categoriesStore.setCategories(categoriesResponse);
                         categories.value = categoriesResponse;
                     }
                 } catch (err) {
@@ -563,3 +584,27 @@ watch(isDarkMode, () => {
     applyTheme();
 });
 </script>
+
+<style scoped>
+.barber-line {
+    height: 100%;
+    width: 200%;
+    background: repeating-linear-gradient(
+        45deg,
+        #ff0030,
+        #ff0030 10px,
+        #ffffff 10px,
+        #ffffff 20px
+    );
+    animation: slide 20s linear infinite;
+}
+
+@keyframes slide {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+</style>
