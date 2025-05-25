@@ -101,7 +101,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                     </svg>
-                    Reprocessar em Lote
+                    Bulk Reprocess
                 </button>
             </div>
         </div>
@@ -453,12 +453,39 @@
                                     <div
                                         v-for="(tag, index) in aiContent.suggestedTags"
                                         :key="index"
-                                        class="bg-purple-100 text-purple-800 px-3 py-1 rounded text-sm flex items-center"
+                                        class="bg-purple-100 text-purple-800 px-3 py-1 rounded text-sm flex items-center cursor-pointer hover:bg-purple-200 transition-colors"
                                         :class="{'bg-green-100 text-green-800': selectedTags.includes(tag)}"
                                         @click="toggleTagSelection(tag)"
                                     >
                                         <span>{{ tag }}</span>
                                         <svg v-if="selectedTags.includes(tag)" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI Suggested Categories -->
+                            <div v-if="aiContent.suggestedCategories && aiContent.suggestedCategories.length > 0" class="mt-6 mb-8">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-3">AI Suggested Categories</h3>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <div
+                                        v-for="(suggestedCategory, index) in aiContent.suggestedCategories"
+                                        :key="index"
+                                        class="bg-orange-100 text-orange-800 px-3 py-1 rounded text-sm flex items-center"
+                                    >
+                                        <span>{{ suggestedCategory }}</span>
+                                        <button
+                                            v-if="!categoryExists(suggestedCategory)"
+                                            @click="openCreateCategoryDialog(suggestedCategory)"
+                                            class="ml-2 text-orange-600 hover:text-orange-800 transition-colors"
+                                            title="Create this category"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                        </button>
+                                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
@@ -708,7 +735,7 @@
         <div v-if="showBulkReprocessDialog" class="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" style="backdrop-filter: blur(4px);">
             <div class="bg-neutral-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
                 <div class="flex justify-between items-center mb-4 border-b border-neutral-700 pb-3">
-                    <h3 class="text-xl font-semibold text-white">Reprocessar Itens do Feed em Lote</h3>
+                    <h3 class="text-xl font-semibold text-white">Bulk Reprocess Feed Items</h3>
                     <button @click="closeBulkReprocessDialog" class="text-neutral-400 hover:text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -718,17 +745,17 @@
 
                 <div class="mb-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-md font-medium text-white">Selecionar Itens para Reprocessar</h4>
+                        <h4 class="text-md font-medium text-white">Select Items to Reprocess</h4>
                         <div class="flex items-center">
                             <input type="checkbox" id="selectAllItemsForReprocess" v-model="selectAllForReprocess" @change="toggleSelectAllForReprocess" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
-                            <label for="selectAllItemsForReprocess" class="text-sm text-neutral-300">Selecionar Todos Visíveis</label>
+                            <label for="selectAllItemsForReprocess" class="text-sm text-neutral-300">Select All Visible</label>
                         </div>
                     </div>
                     <div v-if="loading" class="py-4 flex justify-center">
                         <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                     <div v-else-if="feedItems.length === 0" class="py-4 text-center text-neutral-400">
-                        Nenhum item no feed para reprocessar.
+                        No feed items to reprocess.
                     </div>
                     <div v-else class="max-h-80 overflow-y-auto border border-neutral-700 rounded-md">
                         <div class="divide-y divide-neutral-700">
@@ -747,7 +774,7 @@
                             </div>
                         </div>
                     </div>
-                     <p class="text-xs text-neutral-500 mt-2">Apenas os itens atualmente visíveis na lista principal são mostrados aqui. Use os filtros da página principal para refinar a seleção, se necessário.</p>
+                     <p class="text-xs text-neutral-500 mt-2">Only items currently visible in the main list are shown here. Use the main page filters to refine the selection if needed.</p>
                 </div>
 
                 <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-neutral-700">
@@ -756,7 +783,7 @@
                         class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
                         :disabled="bulkReprocessLoading"
                     >
-                        Cancelar
+                        Cancel
                     </button>
                     <button
                         @click="startBulkReprocess"
@@ -768,9 +795,9 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Reprocessando...
+                            Reprocessing...
                         </span>
-                        <span v-else>Reprocessar {{ selectedItemsForReprocess.length }} Itens</span>
+                        <span v-else>Reprocess {{ selectedItemsForReprocess.length }} Items</span>
                     </button>
                 </div>
             </div>
@@ -781,8 +808,8 @@
             <div class="bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
                 <div class="text-center mb-4">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-3"></div>
-                    <h3 class="text-lg font-medium text-white">Reprocessando Itens do Feed</h3>
-                    <p class="text-neutral-400 mt-1">Por favor, aguarde...</p>
+                    <h3 class="text-lg font-medium text-white">Reprocessing Feed Items</h3>
+                    <p class="text-neutral-400 mt-1">Please wait...</p>
                 </div>
 
                 <div class="w-full bg-neutral-700 rounded-full h-4 mb-3">
@@ -793,20 +820,20 @@
                 </div>
 
                 <div class="text-center text-sm text-neutral-300 mb-4">
-                    <span>{{ bulkReprocessProgress.completed }} de {{ bulkReprocessProgress.total }} itens reprocessados</span>
+                    <span>{{ bulkReprocessProgress.completed }} of {{ bulkReprocessProgress.total }} items reprocessed</span>
                 </div>
 
                 <div v-if="bulkReprocessProgress.currentItem" class="mb-4">
-                    <p class="text-sm text-neutral-400">Reprocessando atualmente:</p>
+                    <p class="text-sm text-neutral-400">Currently reprocessing:</p>
                     <p class="text-sm font-medium text-white truncate">{{ bulkReprocessProgress.currentItem }}</p>
                 </div>
 
                 <div v-if="bulkReprocessProgress.processedItems.length > 0" class="mt-4">
-                    <p class="text-sm text-neutral-400 mb-2">Reprocessados recentemente:</p>
-                    <div class="max-h-32 overflow-y-auto">
-                        <div v-for="(item, index) in bulkReprocessProgress.processedItems.slice().reverse().slice(0, 5)" :key="index"
-                            class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
-                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2">
+                    <p class="text-sm text-neutral-400 mb-2">Recently processed:</p>
+                    <div class="max-h-40 overflow-y-auto">
+                        <div v-for="(item, index) in bulkReprocessProgress.processedItems.slice().reverse().slice(0, 8)" :key="index"
+                            class="flex items-start py-2 border-b border-neutral-700 last:border-b-0">
+                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2 mt-0.5 flex-shrink-0">
                                 <svg v-if="item.success" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
@@ -814,13 +841,109 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </div>
-                            <div class="flex-1 truncate text-sm">
-                                <span v-if="item.success" class="text-neutral-300">{{ item.title }}</span>
-                                <span v-else class="text-red-400">{{ item.title }} - {{ item.error }}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-neutral-300 truncate">{{ item.title }}</div>
+                                <div v-if="!item.success && item.error" class="text-xs text-red-400 mt-1 break-words">
+                                    {{ item.error }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Create Category Dialog -->
+        <div v-if="showCreateCategoryDialog" class="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Create New Category</h3>
+                    <button @click="closeCreateCategoryDialog" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="createCategory">
+                    <div class="mb-4">
+                        <label for="newCategoryName" class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                        <input
+                            id="newCategoryName"
+                            v-model="newCategoryForm.name"
+                            @input="updateCategorySlug"
+                            type="text"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Category name"
+                            required
+                        />
+                        <p v-if="categoryFormErrors.name" class="mt-1 text-sm text-red-500">{{ categoryFormErrors.name }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="newCategorySlug" class="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                        <input
+                            id="newCategorySlug"
+                            v-model="newCategoryForm.slug"
+                            type="text"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="category-slug"
+                            required
+                        />
+                        <p class="mt-1 text-sm text-gray-500">URL: /category/<span class="text-blue-600">{{ newCategoryForm.slug || 'your-slug' }}</span></p>
+                        <p v-if="categoryFormErrors.slug" class="mt-1 text-sm text-red-500">{{ categoryFormErrors.slug }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="newCategoryParent" class="block text-sm font-medium text-gray-700 mb-1">Parent Category (optional)</label>
+                        <select
+                            id="newCategoryParent"
+                            v-model="newCategoryForm.parentCategory"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                            <option value="">None</option>
+                            <option v-for="category in categories" :key="category.id" :value="category.id">
+                                {{ category.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                v-model="newCategoryForm.active"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span class="ml-2 text-sm text-gray-700">Active category</span>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            @click="closeCreateCategoryDialog"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
+                            :disabled="createCategoryLoading"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                            :disabled="createCategoryLoading"
+                        >
+                            <span v-if="createCategoryLoading" class="flex items-center">
+                                <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Creating...
+                            </span>
+                            <span v-else>Create Category</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1718,11 +1841,27 @@ const reprocessItem = async (item: FeedItem): Promise<void> => {
             showNotification('success', 'Feed item reprocessed successfully');
             await refreshData();
         } else {
-            throw new Error('Failed to reprocess feed item');
+            throw new Error(response?.message || 'Failed to reprocess feed item');
         }
     } catch (err: unknown) {
         console.error('Failed to reprocess feed item:', err);
-        showNotification('error', err instanceof Error ? err.message : 'Failed to reprocess feed item');
+        
+        // Better error handling
+        let errorMsg = 'Failed to reprocess feed item';
+        if (err instanceof Error) {
+            errorMsg = err.message;
+        } else if (err && typeof err === 'object' && 'response' in err) {
+            const errorResponse = err as any;
+            if (errorResponse.response?.status === 500) {
+                errorMsg = 'Internal server error - item may be corrupted or missing';
+            } else if (errorResponse.response?.data?.message) {
+                errorMsg = errorResponse.response.data.message;
+            } else if (errorResponse.message) {
+                errorMsg = errorResponse.message;
+            }
+        }
+        
+        showNotification('error', errorMsg);
     } finally {
         processingItems.value[item.id] = false;
     }
@@ -1857,10 +1996,21 @@ const bulkReprocessProgress = ref({
     processedItems: [] as { id: string; title: string; success: boolean; error?: string }[]
 });
 
+// New refs for category creation
+const showCreateCategoryDialog = ref<boolean>(false);
+const createCategoryLoading = ref<boolean>(false);
+const newCategoryForm = ref({
+    name: '',
+    slug: '',
+    parentCategory: '',
+    active: true
+});
+const categoryFormErrors = ref<Record<string, string>>({});
+
 const openBulkReprocessDialog = (): void => {
     selectedItemsForReprocess.value = [];
     selectAllForReprocess.value = false;
-    // Itens para o diálogo serão os `feedItems` atuais, já filtrados pela view principal
+    // Items for the dialog will be the current `feedItems`, already filtered by the main view
     showBulkReprocessDialog.value = true;
 };
 
@@ -1880,6 +2030,11 @@ watch(selectedItemsForReprocess, (newVal) => {
     selectAllForReprocess.value = newVal.length > 0 && newVal.length === feedItems.value.length;
 });
 
+// Function to validate if an item is valid for reprocessing
+const isValidForReprocessing = (item: FeedItem): boolean => {
+    return !!(item && item.id && item.title && item.content && !item.postRef);
+};
+
 const startBulkReprocess = async (): Promise<void> => {
     if (selectedItemsForReprocess.value.length === 0) return;
 
@@ -1895,7 +2050,28 @@ const startBulkReprocess = async (): Promise<void> => {
 
     for (const itemId of itemsToProcess) {
         const item = feedItems.value.find(i => i.id === itemId);
-        if (!item) continue;
+        if (!item) {
+            bulkReprocessProgress.value.processedItems.push({
+                id: itemId,
+                title: 'Item not found',
+                success: false,
+                error: 'Item was not found in current list'
+            });
+            bulkReprocessProgress.value.completed++;
+            continue;
+        }
+
+        // Validate if the item is valid for reprocessing
+        if (!isValidForReprocessing(item)) {
+            bulkReprocessProgress.value.processedItems.push({
+                id: item.id,
+                title: item.title,
+                success: false,
+                error: 'Item already processed or does not have valid data'
+            });
+            bulkReprocessProgress.value.completed++;
+            continue;
+        }
 
         bulkReprocessProgress.value.currentItem = item.title;
 
@@ -1916,7 +2092,22 @@ const startBulkReprocess = async (): Promise<void> => {
             }
         } catch (err: unknown) {
             processingItems.value[item.id] = false;
-            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            
+            // Better error handling
+            let errorMsg = 'Unknown error';
+            if (err instanceof Error) {
+                errorMsg = err.message;
+            } else if (err && typeof err === 'object' && 'response' in err) {
+                const errorResponse = err as any;
+                if (errorResponse.response?.status === 500) {
+                    errorMsg = 'Internal server error - item may be corrupted or missing';
+                } else if (errorResponse.response?.data?.message) {
+                    errorMsg = errorResponse.response.data.message;
+                } else if (errorResponse.message) {
+                    errorMsg = errorResponse.message;
+                }
+            }
+            
             bulkReprocessProgress.value.processedItems.push({
                 id: item.id,
                 title: item.title,
@@ -1925,19 +2116,140 @@ const startBulkReprocess = async (): Promise<void> => {
             });
             console.error(`Failed to reprocess item ${item.id}:`, err);
         }
+        
         bulkReprocessProgress.value.completed++;
+        
+        // Small pause between requests to avoid server overload
+        if (bulkReprocessProgress.value.completed < bulkReprocessProgress.value.total) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
     }
 
     const successCount = bulkReprocessProgress.value.processedItems.filter(r => r.success).length;
+    const failureCount = bulkReprocessProgress.value.processedItems.filter(r => !r.success).length;
+    
     if (successCount === bulkReprocessProgress.value.total) {
-        showNotification('success', `Todos os ${successCount} itens foram reprocessados com sucesso.`);
+        showNotification('success', `All ${successCount} items were reprocessed successfully.`);
+    } else if (successCount > 0) {
+        showNotification('warning', `${successCount} of ${bulkReprocessProgress.value.total} items reprocessed successfully. ${failureCount} failed.`);
     } else {
-        showNotification('warning', `${successCount} de ${bulkReprocessProgress.value.total} itens reprocessados com sucesso. Verifique o console para erros.`);
+        showNotification('error', `Failed to reprocess all ${bulkReprocessProgress.value.total} items.`);
     }
 
     bulkReprocessLoading.value = false;
     closeBulkReprocessDialog();
-    await refreshData(); // Atualizar a lista principal
+    await refreshData(); // Refresh the main list
+};
+
+// Category creation functions
+const categoryExists = (categoryName: string): boolean => {
+    return categories.value.some(cat => 
+        cat.name.toLowerCase() === categoryName.toLowerCase()
+    );
+};
+
+const openCreateCategoryDialog = (suggestedName: string): void => {
+    newCategoryForm.value = {
+        name: suggestedName,
+        slug: generateCategorySlug(suggestedName),
+        parentCategory: '',
+        active: true
+    };
+    categoryFormErrors.value = {};
+    showCreateCategoryDialog.value = true;
+};
+
+const closeCreateCategoryDialog = (): void => {
+    showCreateCategoryDialog.value = false;
+    newCategoryForm.value = {
+        name: '',
+        slug: '',
+        parentCategory: '',
+        active: true
+    };
+    categoryFormErrors.value = {};
+};
+
+const updateCategorySlug = (): void => {
+    newCategoryForm.value.slug = generateCategorySlug(newCategoryForm.value.name);
+};
+
+const generateCategorySlug = (text: string): string => {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/\s+/g, '-')        // Replace spaces with -
+        .replace(/&/g, '-and-')      // Replace & with 'and'
+        .replace(/[^\w\-]+/g, '')    // Remove all non-word characters
+        .replace(/\-\-+/g, '-')      // Replace multiple - with single -
+        .replace(/^-+/, '')          // Trim - from start of text
+        .replace(/-+$/, '');         // Trim - from end of text
+};
+
+const createCategory = async (): Promise<void> => {
+    try {
+        createCategoryLoading.value = true;
+        categoryFormErrors.value = {};
+
+        // Validate
+        if (!newCategoryForm.value.name.trim()) {
+            categoryFormErrors.value.name = 'Category name is required';
+            createCategoryLoading.value = false;
+            return;
+        }
+
+        if (!newCategoryForm.value.slug.trim()) {
+            categoryFormErrors.value.slug = 'Category slug is required';
+            createCategoryLoading.value = false;
+            return;
+        }
+
+        const categoryData = {
+            name: newCategoryForm.value.name.trim(),
+            slug: newCategoryForm.value.slug.trim(),
+            active: newCategoryForm.value.active,
+            parentCategory: newCategoryForm.value.parentCategory || null,
+            navigationLabel: newCategoryForm.value.name.trim(),
+            mainNav: false,
+            mainNavGroup: null,
+            mainNavIndex: 0
+        };
+
+        await adminClient.categories.insert(categoryData);
+        
+        showNotification('success', 'Category created successfully!');
+        closeCreateCategoryDialog();
+        
+        // Reload categories to update the list
+        await loadCategories();
+        
+        // Auto-select the newly created category
+        const newCategory = categories.value.find(cat => 
+            cat.name.toLowerCase() === categoryData.name.toLowerCase()
+        );
+        if (newCategory && !selectedCategories.value.includes(newCategory.id)) {
+            selectedCategories.value.push(newCategory.id);
+        }
+        
+    } catch (err: unknown) {
+        createCategoryLoading.value = false;
+        
+        if (err && typeof err === 'object' && 'response' in err) {
+            const errorResponse = err as any;
+            if (errorResponse.response?.data?.errors) {
+                categoryFormErrors.value = errorResponse.response.data.errors;
+            } else {
+                showNotification('error', errorResponse.message || 'Failed to create category');
+            }
+        } else {
+            showNotification('error', err instanceof Error ? err.message : 'Failed to create category');
+        }
+    } finally {
+        createCategoryLoading.value = false;
+    }
 };
 </script>
 
