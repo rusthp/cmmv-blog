@@ -793,7 +793,7 @@
                         <span v-if="bulkReprocessLoading" class="flex items-center">
                             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             Reprocessing...
                         </span>
@@ -829,11 +829,11 @@
                 </div>
 
                 <div v-if="bulkReprocessProgress.processedItems.length > 0" class="mt-4">
-                    <p class="text-sm text-neutral-400 mb-2">Recently reprocessed:</p>
-                    <div class="max-h-32 overflow-y-auto">
-                        <div v-for="(item, index) in bulkReprocessProgress.processedItems.slice().reverse().slice(0, 5)" :key="index"
-                            class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
-                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2">
+                    <p class="text-sm text-neutral-400 mb-2">Recently processed:</p>
+                    <div class="max-h-40 overflow-y-auto">
+                        <div v-for="(item, index) in bulkReprocessProgress.processedItems.slice().reverse().slice(0, 8)" :key="index"
+                            class="flex items-start py-2 border-b border-neutral-700 last:border-b-0">
+                            <div :class="item.success ? 'text-green-500' : 'text-red-500'" class="mr-2 mt-0.5 flex-shrink-0">
                                 <svg v-if="item.success" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
@@ -841,9 +841,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </div>
-                            <div class="flex-1 truncate text-sm">
-                                <span v-if="item.success" class="text-neutral-300">{{ item.title }}</span>
-                                <span v-else class="text-red-400">{{ item.title }} - {{ item.error }}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-neutral-300 truncate">{{ item.title }}</div>
+                                <div v-if="!item.success && item.error" class="text-xs text-red-400 mt-1 break-words">
+                                    {{ item.error }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1839,11 +1841,27 @@ const reprocessItem = async (item: FeedItem): Promise<void> => {
             showNotification('success', 'Feed item reprocessed successfully');
             await refreshData();
         } else {
-            throw new Error('Failed to reprocess feed item');
+            throw new Error(response?.message || 'Failed to reprocess feed item');
         }
     } catch (err: unknown) {
         console.error('Failed to reprocess feed item:', err);
-        showNotification('error', err instanceof Error ? err.message : 'Failed to reprocess feed item');
+        
+        // Better error handling
+        let errorMsg = 'Failed to reprocess feed item';
+        if (err instanceof Error) {
+            errorMsg = err.message;
+        } else if (err && typeof err === 'object' && 'response' in err) {
+            const errorResponse = err as any;
+            if (errorResponse.response?.status === 500) {
+                errorMsg = 'Internal server error - item may be corrupted or missing';
+            } else if (errorResponse.response?.data?.message) {
+                errorMsg = errorResponse.response.data.message;
+            } else if (errorResponse.message) {
+                errorMsg = errorResponse.message;
+            }
+        }
+        
+        showNotification('error', errorMsg);
     } finally {
         processingItems.value[item.id] = false;
     }
@@ -2012,6 +2030,11 @@ watch(selectedItemsForReprocess, (newVal) => {
     selectAllForReprocess.value = newVal.length > 0 && newVal.length === feedItems.value.length;
 });
 
+// Function to validate if an item is valid for reprocessing
+const isValidForReprocessing = (item: FeedItem): boolean => {
+    return !!(item && item.id && item.title && item.content && !item.postRef);
+};
+
 const startBulkReprocess = async (): Promise<void> => {
     if (selectedItemsForReprocess.value.length === 0) return;
 
@@ -2027,7 +2050,28 @@ const startBulkReprocess = async (): Promise<void> => {
 
     for (const itemId of itemsToProcess) {
         const item = feedItems.value.find(i => i.id === itemId);
-        if (!item) continue;
+        if (!item) {
+            bulkReprocessProgress.value.processedItems.push({
+                id: itemId,
+                title: 'Item not found',
+                success: false,
+                error: 'Item was not found in current list'
+            });
+            bulkReprocessProgress.value.completed++;
+            continue;
+        }
+
+        // Validate if the item is valid for reprocessing
+        if (!isValidForReprocessing(item)) {
+            bulkReprocessProgress.value.processedItems.push({
+                id: item.id,
+                title: item.title,
+                success: false,
+                error: 'Item already processed or does not have valid data'
+            });
+            bulkReprocessProgress.value.completed++;
+            continue;
+        }
 
         bulkReprocessProgress.value.currentItem = item.title;
 
@@ -2048,7 +2092,22 @@ const startBulkReprocess = async (): Promise<void> => {
             }
         } catch (err: unknown) {
             processingItems.value[item.id] = false;
-            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            
+            // Better error handling
+            let errorMsg = 'Unknown error';
+            if (err instanceof Error) {
+                errorMsg = err.message;
+            } else if (err && typeof err === 'object' && 'response' in err) {
+                const errorResponse = err as any;
+                if (errorResponse.response?.status === 500) {
+                    errorMsg = 'Internal server error - item may be corrupted or missing';
+                } else if (errorResponse.response?.data?.message) {
+                    errorMsg = errorResponse.response.data.message;
+                } else if (errorResponse.message) {
+                    errorMsg = errorResponse.message;
+                }
+            }
+            
             bulkReprocessProgress.value.processedItems.push({
                 id: item.id,
                 title: item.title,
@@ -2057,19 +2116,29 @@ const startBulkReprocess = async (): Promise<void> => {
             });
             console.error(`Failed to reprocess item ${item.id}:`, err);
         }
+        
         bulkReprocessProgress.value.completed++;
+        
+        // Small pause between requests to avoid server overload
+        if (bulkReprocessProgress.value.completed < bulkReprocessProgress.value.total) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
     }
 
     const successCount = bulkReprocessProgress.value.processedItems.filter(r => r.success).length;
+    const failureCount = bulkReprocessProgress.value.processedItems.filter(r => !r.success).length;
+    
     if (successCount === bulkReprocessProgress.value.total) {
         showNotification('success', `All ${successCount} items were reprocessed successfully.`);
+    } else if (successCount > 0) {
+        showNotification('warning', `${successCount} of ${bulkReprocessProgress.value.total} items reprocessed successfully. ${failureCount} failed.`);
     } else {
-        showNotification('warning', `${successCount} of ${bulkReprocessProgress.value.total} items reprocessed successfully. Check console for errors.`);
+        showNotification('error', `Failed to reprocess all ${bulkReprocessProgress.value.total} items.`);
     }
 
     bulkReprocessLoading.value = false;
     closeBulkReprocessDialog();
-    await refreshData(); // Atualizar a lista principal
+    await refreshData(); // Refresh the main list
 };
 
 // Category creation functions
