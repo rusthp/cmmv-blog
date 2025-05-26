@@ -22,7 +22,7 @@
 
         <div v-else>
             <!-- Cover Section -->
-            <section v-if="posts.length > 0" class="mb-8 md:block hidden">
+            <section v-if="posts.length > 0" class="mb-4 md:block hidden">
                 <!-- Full Layout (default) -->
                 <div v-if="coverSettings.layoutType === 'full' || !coverSettings.layoutType" class="bg-white rounded-lg overflow-hidden shadow-md">
                     <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block">
@@ -246,7 +246,7 @@
             </section>
 
             <!-- Top AdSense Banner -->
-            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
+            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-4 overflow-hidden flex justify-center">
                 <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
                     <div v-html="getAdHtml('header')"></div>
                 </div>
@@ -256,6 +256,45 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Mobile Popular Posts (appears at top when no banners) -->
+            <section v-if="popularPosts.length > 0" class="mb-6 md:hidden popular-posts-ticker-section">
+                <h2 class="text-xl font-bold mb-4 text-red-600">
+                    🔥 Mais Populares
+                </h2>
+                <div class="popular-posts-ticker-container bg-white rounded-lg shadow-md p-4 overflow-hidden">
+                    <div class="popular-posts-ticker-wrapper" :style="tickerStyle">
+                        <a
+                            v-for="(post, index) in duplicatedPopularPosts"
+                            :key="`popular-mobile-${post.id}-${index}`"
+                            :href="`/post/${post.slug}`"
+                            class="popular-post-card group"
+                        >
+                            <div class="popular-post-image-wrapper">
+                                <img
+                                    v-if="post.image"
+                                    :src="post.image"
+                                    :alt="post.title"
+                                    class="popular-post-image"
+                                />
+                                <div v-else class="popular-post-image-placeholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="popular-post-content">
+                                <h4 class="popular-post-title group-hover:text-red-600">
+                                    {{ post.title }}
+                                </h4>
+                                <span class="popular-post-date">
+                                    {{ formatDate(post.publishedAt) }}
+                                </span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </section>
 
             <!-- Main Content Layout -->
             <div class="flex flex-col lg:flex-row gap-8">
@@ -279,8 +318,8 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <!-- Left Column (Latest News) -->
                         <div class="lg:col-span-2">
-                            <!-- Popular Posts Ticker -->
-                            <section v-if="popularPosts.length > 0" class="mb-8 popular-posts-ticker-section">
+                            <!-- Popular Posts Ticker (Desktop only) -->
+                            <section v-if="popularPosts.length > 0" class="mb-6 popular-posts-ticker-section hidden md:block">
                                 <h2 class="text-xl font-bold mb-4 text-red-600">
                                     🔥 Mais Populares
                                 </h2>
@@ -318,7 +357,7 @@
                                 </div>
                             </section>
 
-                            <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
+                            <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                 Últimas Notícias
                             </h2>
 
@@ -352,10 +391,10 @@
                                                 {{ category.name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                             {{ post.title }}
                                         </h3>
-                                        <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                        <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
                                             {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                         </p>
                                         <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
@@ -396,10 +435,10 @@
                                                 {{ category.name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                             {{ post.title }}
                                         </h3>
-                                        <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                        <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
                                             {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                         </p>
                                         <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
@@ -411,7 +450,7 @@
                             </div>
 
                             <!-- Mid-content AdSense Banner -->
-                            <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
+                            <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
                                 <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
                                     <div v-html="getAdHtml('inContent')"></div>
                                 </div>
@@ -425,7 +464,7 @@
                             <!-- More Posts Section -->
                             <!-- Desktop: More Posts -->
                             <div v-if="posts.length > (featuredPost ? 5 : 4)" class="hidden md:block">
-                                <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                     Mais Conteúdo
                                 </h2>
 
@@ -458,10 +497,10 @@
                                                     {{ category.name }}
                                                 </span>
                                             </div>
-                                            <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                                 {{ post.title }}
                                             </h3>
-                                            <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
                                                 {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                             </p>
                                             <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
@@ -475,7 +514,7 @@
 
                             <!-- Mobile: More Posts -->
                             <div v-if="posts.length > 4" class="block md:hidden">
-                                <h2 class="text-xl font-bold mb-6 pb-2 text-red-600 border-b-2 border-black">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                     Mais Conteúdo
                                 </h2>
 
@@ -508,10 +547,10 @@
                                                     {{ category.name }}
                                                 </span>
                                             </div>
-                                            <h3 class="text-lg font-bold text-gray-800 mb-1 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                                 {{ post.title }}
                                             </h3>
-                                            <p class="text-gray-600 text-sm mb-2 line-clamp-3 flex-grow">
+                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
                                                 {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                             </p>
                                             <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
@@ -989,11 +1028,8 @@ const tickerStyle = computed(() => {
     const numberOfCards = duplicatedPopularPosts.value.length;
     if (numberOfCards === 0) return {};
 
-    const cardWidth = 480; // Estimativa da largura de cada card em pixels (350px card + 20px margin)
+    const cardWidth = 370; // 350px card + 20px margin
     const totalWidth = numberOfCards * cardWidth;
-    // Ajustar a velocidade da animação. Quanto maior o valor, mais lenta a animação.
-    // Queremos que cada card fique visível por um tempo razoável.
-    // Por exemplo, 5 segundos por card.
     const animationDuration = numberOfCards * 10; // segundos
 
     return {
@@ -1028,6 +1064,8 @@ const tickerStyle = computed(() => {
     }
 }
 
+
+
 /* Popular Posts Ticker Styles */
 .popular-posts-ticker-section {
     /* Adicione quaisquer estilos específicos da seção aqui, se necessário */
@@ -1046,6 +1084,9 @@ const tickerStyle = computed(() => {
     animation-timing-function: linear;
     animation-iteration-count: infinite;
     will-change: transform; /* Otimização de performance para animação */
+    /* Garantir que o wrapper não quebre em telas pequenas */
+    min-width: 100%;
+    flex-wrap: nowrap;
 }
 
 @keyframes ticker-scroll {
@@ -1061,15 +1102,16 @@ const tickerStyle = computed(() => {
 .popular-post-card {
     display: flex;
     align-items: center;
-    width: 350px; /* Largura aumentada para cada card */
-    margin-right: 20px; /* Espaço entre os cards */
-    padding: 1rem; /* Padding aumentado (16px) */
+    width: 350px;
+    margin-right: 20px;
+    padding: 1rem;
     background-color: #f9fafb; /* bg-gray-50 */
     border-radius: 0.375rem; /* rounded-md */
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
     transition: box-shadow 0.3s ease;
     text-decoration: none;
     color: inherit;
+    flex-shrink: 0;
 }
 
 .popular-post-card:hover {
@@ -1077,8 +1119,8 @@ const tickerStyle = computed(() => {
 }
 
 .popular-post-image-wrapper {
-    width: 100px; /* Largura da imagem aumentada */
-    height: 80px; /* Altura da imagem aumentada */
+    width: 100px;
+    height: 80px;
     flex-shrink: 0;
     overflow: hidden;
     border-radius: 0.25rem; /* rounded-sm */
@@ -1114,10 +1156,10 @@ const tickerStyle = computed(() => {
 }
 
 .popular-post-title {
-    font-size: 1rem; /* Tamanho da fonte aumentado (text-base) */
+    font-size: 1rem; /* text-base */
     font-weight: 600; /* font-semibold */
     color: #1f2937; /* text-gray-800 */
-    line-height: 1.5rem; /* Ajustado para text-base */
+    line-height: 1.5rem;
     margin-bottom: 0.25rem; /* mb-1 */
     transition: color 0.3s ease;
     /* Para truncar títulos longos em 2 linhas */
@@ -1130,7 +1172,7 @@ const tickerStyle = computed(() => {
 }
 
 .popular-post-date {
-    font-size: 0.875rem; /* Tamanho da fonte aumentado (text-sm) */
+    font-size: 0.875rem; /* text-sm */
     color: #6b7280; /* text-gray-500 */
 }
 </style>
