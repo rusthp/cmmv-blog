@@ -1061,6 +1061,11 @@ onMounted(async () => {
     // Load ad scripts and sidebar left ad
     loadAdScripts();
     loadSidebarLeftAd(sidebarLeftAdContainer.value);
+
+    // Mark page as loaded to re-enable transitions
+    setTimeout(() => {
+        document.documentElement.classList.add('loaded');
+    }, 100);
 });
 
 onUnmounted(() => {
@@ -1081,6 +1086,81 @@ watch(() => settings.value['blog.cover'], () => {
 </script>
 
 <style scoped>
+/* Prevent flash of light theme during page transitions */
+html.dark,
+html[data-theme="dark"],
+.dark {
+    color-scheme: dark;
+}
+
+/* Immediate dark mode application - prevent FOUC */
+html.dark body,
+html[data-theme="dark"] body,
+.dark body {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+    transition: none !important;
+}
+
+/* Immediate dark mode for main containers */
+html.dark .flex.min-h-screen,
+html[data-theme="dark"] .flex.min-h-screen,
+.dark .flex.min-h-screen {
+    background-color: #121212 !important;
+    transition: none !important;
+}
+
+/* Prevent white flash on page load */
+html.dark *,
+html[data-theme="dark"] *,
+.dark * {
+    transition: background-color 0s !important;
+}
+
+/* Re-enable transitions after page load */
+html.dark.loaded *,
+html[data-theme="dark"].loaded *,
+.dark.loaded * {
+    transition: background-color 0.2s ease !important;
+}
+
+/* Immediate dark mode for cards and containers */
+html.dark .bg-white,
+html[data-theme="dark"] .bg-white,
+.dark .bg-white {
+    background-color: #1e1e1e !important;
+    border-color: #333333 !important;
+    color: #e0e0e0 !important;
+}
+
+html.dark .bg-gray-100,
+html[data-theme="dark"] .bg-gray-100,
+.dark .bg-gray-100 {
+    background-color: #1e1e1e !important;
+    border-color: #333333 !important;
+}
+
+/* Immediate text color changes */
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-gray-600 {
+    color: #e0e0e0 !important;
+}
+
+/* Prevent layout shift during theme transition */
+html.dark,
+html[data-theme="dark"] {
+    background-color: #121212 !important;
+}
+
+/* Force immediate application on theme override container */
+.theme-override {
+    transition: none !important;
+}
+
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1144,6 +1224,12 @@ html, body {
 /* Override template background */
 .flex.min-h-screen.bg-gray-100 {
     background-color: #f5f5f5 !important;
+}
+
+/* Immediate theme application - highest priority */
+html.dark .flex.min-h-screen.bg-gray-100,
+html[data-theme="dark"] .flex.min-h-screen.bg-gray-100 {
+    background-color: #121212 !important;
 }
 
 /* Inherit theme from template */
