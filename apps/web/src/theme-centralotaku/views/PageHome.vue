@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-[1400px] mx-auto px-4">
+    <div class="w-full max-w-[1400px] mx-auto px-3 sm:px-4">
         <div v-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -257,44 +257,7 @@
                 </div>
             </div>
 
-            <!-- Mobile Popular Posts (appears at top when no banners) -->
-            <section v-if="popularPosts.length > 0" class="mb-6 md:hidden popular-posts-ticker-section">
-                <h2 class="text-xl font-bold mb-4 text-red-600">
-                    🔥 Mais Populares
-                </h2>
-                <div class="popular-posts-ticker-container bg-white rounded-lg shadow-md p-4 overflow-hidden">
-                    <div class="popular-posts-ticker-wrapper" :style="tickerStyle">
-                        <a
-                            v-for="(post, index) in duplicatedPopularPosts"
-                            :key="`popular-mobile-${post.id}-${index}`"
-                            :href="`/post/${post.slug}`"
-                            class="popular-post-card group"
-                        >
-                            <div class="popular-post-image-wrapper">
-                                <img
-                                    v-if="post.image"
-                                    :src="post.image"
-                                    :alt="post.title"
-                                    class="popular-post-image"
-                                />
-                                <div v-else class="popular-post-image-placeholder">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="popular-post-content">
-                                <h4 class="popular-post-title group-hover:text-red-600">
-                                    {{ post.title }}
-                                </h4>
-                                <span class="popular-post-date">
-                                    {{ formatDate(post.publishedAt) }}
-                                </span>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </section>
+
 
             <!-- Main Content Layout -->
             <div class="flex flex-col lg:flex-row gap-8">
@@ -318,132 +281,183 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <!-- Left Column (Latest News) -->
                         <div class="lg:col-span-2">
-                            <!-- Popular Posts Ticker (Desktop only) -->
-                            <section v-if="popularPosts.length > 0" class="mb-6 popular-posts-ticker-section hidden md:block">
-                                <h2 class="text-xl font-bold mb-4 text-red-600">
-                                    🔥 Mais Populares
+                            <!-- Popular Posts Carousel (Desktop Only) -->
+                            <div class="hidden lg:block mb-8">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black flex items-center">
+                                    <span class="mr-2">🔥</span> Mais Populares
                                 </h2>
-                                <div class="popular-posts-ticker-container bg-white rounded-lg shadow-md p-4 overflow-hidden">
-                                    <div class="popular-posts-ticker-wrapper" :style="tickerStyle">
-                                        <a
-                                            v-for="(post, index) in duplicatedPopularPosts"
-                                            :key="`popular-${post.id}-${index}`"
-                                            :href="`/post/${post.slug}`"
-                                            class="popular-post-card group"
+                                
+                                <div class="relative bg-white rounded-lg shadow-md overflow-hidden">
+                                    <!-- Container do carrossel -->
+                                    <div 
+                                        class="flex transition-transform duration-500 ease-in-out cursor-grab active:cursor-grabbing select-none"
+                                        :style="{ transform: `translateX(-${currentPopularIndex * 100}%)` }"
+                                        @mousedown="startPopularDrag"
+                                        @touchstart="startPopularDrag"
+                                        @mousemove="onPopularDrag"
+                                        @touchmove="onPopularDrag"
+                                        @mouseup="endPopularDrag"
+                                        @touchend="endPopularDrag"
+                                        @mouseleave="endPopularDrag"
+                                        @dragstart.prevent
+                                    >
+                                        <div
+                                            v-for="post in popularPosts.slice(0, 5)"
+                                            :key="post.id"
+                                            class="w-full flex-shrink-0 p-4"
                                         >
-                                            <div class="popular-post-image-wrapper">
-                                                <img
-                                                    v-if="post.image"
-                                                    :src="post.image"
-                                                    :alt="post.title"
-                                                    class="popular-post-image"
-                                                />
-                                                <div v-else class="popular-post-image-placeholder">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
+                                            <div class="flex gap-4 h-32">
+                                                <!-- Imagem -->
+                                                <div class="w-48 h-32 overflow-hidden rounded-lg flex-shrink-0">
+                                                    <a :href="`/post/${post.slug}`" class="block w-full h-full">
+                                                        <img
+                                                            v-if="post.featureImage || post.image"
+                                                            :src="post.featureImage || post.image"
+                                                            :alt="post.title"
+                                                            class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                                            loading="lazy"
+                                                        />
+                                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                <!-- Conteúdo -->
+                                                <div class="flex-1 flex flex-col justify-center min-w-0">
+                                                    <a :href="`/post/${post.slug}`" class="block group">
+                                                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-red-600 transition-colors line-clamp-2 mb-2">
+                                                            {{ post.title }}
+                                                        </h3>
+                                                        <p class="text-gray-600 text-sm line-clamp-2 mb-3">
+                                                            {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                                        </p>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ formatDate(post.publishedAt) }}
+                                                        </span>
+                                                    </a>
                                                 </div>
                                             </div>
-                                            <div class="popular-post-content">
-                                                <h4 class="popular-post-title group-hover:text-red-600">
-                                                    {{ post.title }}
-                                                </h4>
-                                                <span class="popular-post-date">
-                                                    {{ formatDate(post.publishedAt) }}
-                                                </span>
-                                            </div>
-                                        </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Controles de navegação -->
+                                    <div v-if="popularPosts.length > 1" class="absolute top-0 bottom-0 left-0 flex items-center">
+                                        <button 
+                                            @click="prevPopularSlide" 
+                                            class="bg-black/50 hover:bg-black/70 text-white p-2 rounded-r-md focus:outline-none z-10 transition-colors ml-2"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div v-if="popularPosts.length > 1" class="absolute top-0 bottom-0 right-0 flex items-center">
+                                        <button 
+                                            @click="nextPopularSlideManual" 
+                                            class="bg-black/50 hover:bg-black/70 text-white p-2 rounded-l-md focus:outline-none z-10 transition-colors mr-2"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Indicadores de posição -->
+                                    <div v-if="popularPosts.length > 1" class="absolute bottom-3 left-0 right-0 flex justify-center space-x-2">
+                                        <button
+                                            v-for="(_, index) in popularPosts.slice(0, 5)"
+                                            :key="index"
+                                            @click="setPopularIndex(index)"
+                                            class="w-2 h-2 rounded-full transition-colors"
+                                            :class="{ 'bg-red-600': currentPopularIndex === index, 'bg-white/50': currentPopularIndex !== index }"
+                                        ></button>
                                     </div>
                                 </div>
-                            </section>
+                            </div>
 
                             <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                 Últimas Notícias
                             </h2>
 
-                            <!-- Desktop: Últimas Notícias -->
-                            <div class="hidden md:block space-y-6">
+                            <!-- Posts Responsivos -->
+                            <div class="space-y-4">
                                 <a
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
                                     :key="post.id"
                                     :href="`/post/${post.slug}`"
-                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group"
                                 >
-                                    <!-- Imagem à esquerda -->
-                                    <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
-                                        <img
-                                            v-if="post.featureImage"
-                                            :src="post.featureImage"
-                                            :alt="post.title"
-                                            class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                        />
-                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
+                                    <!-- Mobile: Layout Vertical -->
+                                    <div class="block md:hidden">
+                                        <!-- Imagem no topo -->
+                                        <div class="w-full h-48 overflow-hidden">
+                                            <img
+                                                v-if="post.featureImage"
+                                                :src="post.featureImage"
+                                                :alt="post.title"
+                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                            />
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <!-- Conteúdo embaixo -->
+                                        <div class="p-4">
+                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                    {{ category.name }}
+                                                </span>
+                                            </div>
+                                            <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                {{ post.title }}
+                                            </h3>
+                                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                                {{ post.excerpt || stripHtml(post.content).substring(0, 100) + '...' }}
+                                            </p>
+                                            <div class="flex justify-between items-center text-xs text-gray-500">
+                                                <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
+                                                <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <!-- Conteúdo à direita -->
-                                    <div class="flex-grow flex flex-col">
-                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                            <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                {{ category.name }}
-                                            </span>
+                                    <!-- Desktop: Layout Horizontal -->
+                                    <div class="hidden md:flex">
+                                        <!-- Imagem à esquerda -->
+                                        <div class="w-2/5 h-40 lg:h-48 overflow-hidden">
+                                            <img
+                                                v-if="post.featureImage"
+                                                :src="post.featureImage"
+                                                :alt="post.title"
+                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                            />
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
                                         </div>
-                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                            {{ post.title }}
-                                        </h3>
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                            {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                        </p>
-                                        <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                            <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                            <span>{{ formatDate(post.publishedAt) }}</span>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-
-                            <!-- Mobile: Últimas Notícias -->
-                            <div class="block md:hidden space-y-6">
-                                <a
-                                    v-for="post in posts.slice(0, 4)"
-                                    :key="post.id"
-                                    :href="`/post/${post.slug}`"
-                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
-                                >
-                                    <!-- Imagem à esquerda -->
-                                    <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
-                                        <img
-                                            v-if="post.featureImage"
-                                            :src="post.featureImage"
-                                            :alt="post.title"
-                                            class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                        />
-                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-
-                                    <!-- Conteúdo à direita -->
-                                    <div class="flex-grow flex flex-col">
-                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                            <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                {{ category.name }}
-                                            </span>
-                                        </div>
-                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                            {{ post.title }}
-                                        </h3>
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                            {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                        </p>
-                                        <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                            <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                            <span>{{ formatDate(post.publishedAt) }}</span>
+                                        <!-- Conteúdo à direita -->
+                                        <div class="flex-1 p-4 flex flex-col">
+                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                    {{ category.name }}
+                                                </span>
+                                            </div>
+                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                {{ post.title }}
+                                            </h3>
+                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
+                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                            </p>
+                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
+                                                <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
+                                                <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>
@@ -462,100 +476,87 @@
                             </div>
 
                             <!-- More Posts Section -->
-                            <!-- Desktop: More Posts -->
-                            <div v-if="posts.length > (featuredPost ? 5 : 4)" class="hidden md:block">
+                            <div v-if="posts.length > (featuredPost ? 5 : 4)">
                                 <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
                                     Mais Conteúdo
                                 </h2>
 
-                                <div class="space-y-6">
+                                <div class="space-y-4">
                                     <a
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
                                         :key="post.id"
                                         :href="`/post/${post.slug}`"
-                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group"
                                     >
-                                        <!-- Imagem à esquerda -->
-                                        <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
-                                            <img
-                                                v-if="post.featureImage"
-                                                :src="post.featureImage"
-                                                :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                            />
-                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
+                                        <!-- Mobile: Layout Vertical -->
+                                        <div class="block md:hidden">
+                                            <!-- Imagem no topo -->
+                                            <div class="w-full h-48 overflow-hidden">
+                                                <img
+                                                    v-if="post.featureImage"
+                                                    :src="post.featureImage"
+                                                    :alt="post.title"
+                                                    class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                                />
+                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <!-- Conteúdo embaixo -->
+                                            <div class="p-4">
+                                                <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                    <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                        {{ category.name }}
+                                                    </span>
+                                                </div>
+                                                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                    {{ post.title }}
+                                                </h3>
+                                                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                                    {{ post.excerpt || stripHtml(post.content).substring(0, 100) + '...' }}
+                                                </p>
+                                                <div class="flex justify-between items-center text-xs text-gray-500">
+                                                    <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
+                                                    <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <!-- Conteúdo à direita -->
-                                        <div class="flex-grow flex flex-col">
-                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                    {{ category.name }}
-                                                </span>
+                                        <!-- Desktop: Layout Horizontal -->
+                                        <div class="hidden md:flex">
+                                            <!-- Imagem à esquerda -->
+                                            <div class="w-2/5 h-40 lg:h-48 overflow-hidden">
+                                                <img
+                                                    v-if="post.featureImage"
+                                                    :src="post.featureImage"
+                                                    :alt="post.title"
+                                                    class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                                                />
+                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
                                             </div>
-                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                {{ post.title }}
-                                            </h3>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                            </p>
-                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                                <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                                <span>{{ formatDate(post.publishedAt) }}</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-
-                            <!-- Mobile: More Posts -->
-                            <div v-if="posts.length > 4" class="block md:hidden">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
-                                    Mais Conteúdo
-                                </h2>
-
-                                <div class="space-y-6">
-                                    <a
-                                        v-for="post in posts.slice(4)"
-                                        :key="post.id"
-                                        :href="`/post/${post.slug}`"
-                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
-                                    >
-                                        <!-- Imagem à esquerda -->
-                                        <div class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md">
-                                            <img
-                                                v-if="post.featureImage"
-                                                :src="post.featureImage"
-                                                :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                            />
-                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                        </div>
-
-                                        <!-- Conteúdo à direita -->
-                                        <div class="flex-grow flex flex-col">
-                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                    {{ category.name }}
-                                                </span>
-                                            </div>
-                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                {{ post.title }}
-                                            </h3>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                            </p>
-                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                                <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                                <span>{{ formatDate(post.publishedAt) }}</span>
+                                            <!-- Conteúdo à direita -->
+                                            <div class="flex-1 p-4 flex flex-col">
+                                                <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                    <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
+                                                        {{ category.name }}
+                                                    </span>
+                                                </div>
+                                                <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                    {{ post.title }}
+                                                </h3>
+                                                <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
+                                                    {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                                </p>
+                                                <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
+                                                    <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
+                                                    <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </a>
@@ -598,48 +599,7 @@
                                 </div>
                             </div>
 
-                            <!-- Popular Posts Widget -->
-                            <!--
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
-                                    Mais Populares
-                                </h2>
 
-                                <div class="space-y-4">
-                                    <div
-                                        v-for="post in popularPosts"
-                                        :key="post.id"
-                                        class="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
-                                    >
-                                        <div class="w-20 h-16 flex-shrink-0 overflow-hidden rounded-md">
-                                            <a :href="`/post/${post.slug}`">
-                                                <img
-                                                    v-if="post.image"
-                                                    :src="post.image"
-                                                    :alt="post.title"
-                                                    class="w-full h-full object-cover"
-                                                />
-                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                            </a>
-                                        </div>
-                                        <div class="flex-grow">
-                                            <a :href="`/post/${post.slug}`" class="block">
-                                                <h4 class="text-sm font-semibold text-gray-800 hover:text-red-600 transition-colors line-clamp-2">
-                                                    {{ post.title }}
-                                                </h4>
-                                            </a>
-                                            <span class="text-xs text-gray-500 mt-1 block">
-                                                {{ formatDate(post.publishedAt) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            -->
 
                             <!-- AdSense Rectangle (Middle) -->
                             <div class="bg-gray-100 rounded-lg shadow-md p-2 mb-6 flex justify-center">
@@ -712,7 +672,11 @@ const settings = computed<Record<string, any>>(() => {
     return blogSettings;
 });
 const posts = ref<any[]>(postsStore.getPosts || []);
-const popularPosts = ref<any[]>(mostAccessedStore.getMostAccessedPosts || []);
+const popularPosts = computed(() => {
+    const mostAccessed = mostAccessedStore.getMostAccessedPosts || [];
+    // Se não há posts populares, usa os posts normais como fallback
+    return mostAccessed.length > 0 ? mostAccessed : posts.value.slice(0, 5);
+});
 const loading = ref(true);
 const loadingMore = ref(false);
 const error = ref(null);
@@ -722,6 +686,14 @@ const observerTarget = ref<HTMLElement | null>(null);
 const observer = ref<IntersectionObserver | null>(null);
 const currentCarouselIndex = ref(0);
 const carouselInterval = ref<number | null>(null);
+const currentPopularIndex = ref(0);
+const popularInterval = ref<number | null>(null);
+const isDragging = ref(false);
+const dragStartX = ref(0);
+const dragCurrentX = ref(0);
+const isPopularDragging = ref(false);
+const popularDragStartX = ref(0);
+const popularDragCurrentX = ref(0);
 
 // Elements references
 const sidebarLeftAdContainer = ref<HTMLElement | null>(null);
@@ -858,6 +830,145 @@ const prevCarouselSlide = () => {
         currentCarouselIndex.value = (currentCarouselIndex.value - 1 + coverPosts.value.carousel.length) % coverPosts.value.carousel.length;
     }
     startCarouselInterval();
+};
+
+const startPopularInterval = () => {
+    if (popularPosts.value.length > 1) {
+        popularInterval.value = window.setInterval(() => {
+            nextPopularSlide();
+        }, 10000); // 10 segundos
+    }
+};
+
+const stopPopularInterval = () => {
+    if (popularInterval.value) {
+        clearInterval(popularInterval.value);
+        popularInterval.value = null;
+    }
+};
+
+const nextPopularSlide = () => {
+    if (popularPosts.value.length > 1) {
+        const maxIndex = Math.min(popularPosts.value.length - 1, 4);
+        currentPopularIndex.value = (currentPopularIndex.value + 1) % (maxIndex + 1);
+    }
+};
+
+const setPopularIndex = (index: number) => {
+    stopPopularInterval();
+    currentPopularIndex.value = index;
+    startPopularInterval();
+};
+
+const startDrag = (e: MouseEvent | TouchEvent) => {
+    isDragging.value = true;
+    stopPopularInterval();
+    
+    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    dragStartX.value = clientX;
+    dragCurrentX.value = clientX;
+    
+    e.preventDefault();
+};
+
+const onDrag = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging.value) return;
+    
+    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    dragCurrentX.value = clientX;
+    
+    e.preventDefault();
+};
+
+const endDrag = () => {
+    if (!isDragging.value) return;
+    
+    const dragDistance = dragCurrentX.value - dragStartX.value;
+    const threshold = 50; // Minimum drag distance to trigger navigation
+    
+    if (Math.abs(dragDistance) > threshold) {
+        if (dragDistance > 0 && currentPopularIndex.value > 0) {
+            // Dragged right - go to previous
+            currentPopularIndex.value--;
+        } else if (dragDistance < 0 && currentPopularIndex.value < popularPosts.value.length - 1) {
+            // Dragged left - go to next
+            currentPopularIndex.value++;
+        }
+    }
+    
+    isDragging.value = false;
+    startPopularInterval();
+};
+
+const prevPopularSlide = () => {
+    stopPopularInterval();
+    const maxIndex = Math.min(popularPosts.value.length - 1, 4);
+    if (currentPopularIndex.value > 0) {
+        currentPopularIndex.value--;
+    } else {
+        currentPopularIndex.value = maxIndex;
+    }
+    startPopularInterval();
+};
+
+const nextPopularSlideManual = () => {
+    stopPopularInterval();
+    const maxIndex = Math.min(popularPosts.value.length - 1, 4);
+    if (currentPopularIndex.value < maxIndex) {
+        currentPopularIndex.value++;
+    } else {
+        currentPopularIndex.value = 0;
+    }
+    startPopularInterval();
+};
+
+const startPopularDrag = (e: MouseEvent | TouchEvent) => {
+    isPopularDragging.value = true;
+    stopPopularInterval();
+    
+    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    popularDragStartX.value = clientX;
+    popularDragCurrentX.value = clientX;
+    
+    e.preventDefault();
+};
+
+const onPopularDrag = (e: MouseEvent | TouchEvent) => {
+    if (!isPopularDragging.value) return;
+    
+    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    popularDragCurrentX.value = clientX;
+    
+    e.preventDefault();
+};
+
+const endPopularDrag = () => {
+    if (!isPopularDragging.value) return;
+    
+    const dragDistance = popularDragCurrentX.value - popularDragStartX.value;
+    const threshold = 50; // Minimum drag distance to trigger navigation
+    
+    if (Math.abs(dragDistance) > threshold) {
+        const maxIndex = Math.min(popularPosts.value.length - 1, 4);
+        if (dragDistance > 0) {
+            // Dragged right - go to previous (with loop)
+            if (currentPopularIndex.value > 0) {
+                currentPopularIndex.value--;
+            } else {
+                currentPopularIndex.value = maxIndex;
+            }
+        } else if (dragDistance < 0) {
+            // Dragged left - go to next (with loop)
+            if (currentPopularIndex.value < maxIndex) {
+                currentPopularIndex.value++;
+            } else {
+                currentPopularIndex.value = 0;
+            }
+        }
+    }
+    
+    isPopularDragging.value = false;
+    startPopularInterval();
 };
 
 const headData = ref({
@@ -997,6 +1108,7 @@ onMounted(async () => {
     loading.value = false;
     setupIntersectionObserver();
     startCarouselInterval();
+    startPopularInterval();
 
     // Load ad scripts and sidebar left ad
     loadAdScripts();
@@ -1009,6 +1121,7 @@ onUnmounted(() => {
         observer.value.disconnect();
     }
     stopCarouselInterval();
+    stopPopularInterval();
 });
 
 watch(() => settings.value['blog.cover'], () => {
@@ -1016,29 +1129,7 @@ watch(() => settings.value['blog.cover'], () => {
     startCarouselInterval();
 }, { deep: true });
 
-// Popular Posts Ticker
-const duplicatedPopularPosts = computed(() => {
-    if (popularPosts.value.length === 0) return [];
-    // Duplicar para efeito de loop infinito suave, especialmente se houver poucos posts
-    const basePosts = popularPosts.value.slice(0, 10); // Limitar a 10 posts para o ticker
-    return [...basePosts, ...basePosts];
-});
 
-const tickerStyle = computed(() => {
-    const numberOfCards = duplicatedPopularPosts.value.length;
-    if (numberOfCards === 0) return {};
-
-    const cardWidth = 370; // 350px card + 20px margin
-    const totalWidth = numberOfCards * cardWidth;
-    const animationDuration = numberOfCards * 10; // segundos
-
-    return {
-        '--ticker-width': `${totalWidth}px`,
-        '--animation-duration': `${animationDuration}s`,
-        'width': `${totalWidth}px`,
-        'animation-duration': `${animationDuration}s`
-    };
-});
 </script>
 
 <style scoped>
@@ -1047,6 +1138,22 @@ const tickerStyle = computed(() => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 
 .ad-placeholder {
@@ -1066,115 +1173,7 @@ const tickerStyle = computed(() => {
 
 
 
-/* Popular Posts Ticker Styles */
-.popular-posts-ticker-section {
-    /* Adicione quaisquer estilos específicos da seção aqui, se necessário */
-}
 
-.popular-posts-ticker-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden; /* Essencial para o efeito de ticker */
-}
-
-.popular-posts-ticker-wrapper {
-    display: flex;
-    /* A animação será definida inline via tickerStyle para duração dinâmica */
-    animation-name: ticker-scroll;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    will-change: transform; /* Otimização de performance para animação */
-    /* Garantir que o wrapper não quebre em telas pequenas */
-    min-width: 100%;
-    flex-wrap: nowrap;
-}
-
-@keyframes ticker-scroll {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        /* Metade da largura total porque duplicamos os posts */
-        transform: translateX(calc(-1 * var(--ticker-width) / 2));
-    }
-}
-
-.popular-post-card {
-    display: flex;
-    align-items: center;
-    width: 350px;
-    margin-right: 20px;
-    padding: 1rem;
-    background-color: #f9fafb; /* bg-gray-50 */
-    border-radius: 0.375rem; /* rounded-md */
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
-    transition: box-shadow 0.3s ease;
-    text-decoration: none;
-    color: inherit;
-    flex-shrink: 0;
-}
-
-.popular-post-card:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-}
-
-.popular-post-image-wrapper {
-    width: 100px;
-    height: 80px;
-    flex-shrink: 0;
-    overflow: hidden;
-    border-radius: 0.25rem; /* rounded-sm */
-    margin-right: 0.75rem; /* mr-3 */
-}
-
-.popular-post-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.popular-post-card:hover .popular-post-image {
-    transform: scale(1.05);
-}
-
-.popular-post-image-placeholder {
-    width: 100%;
-    height: 100%;
-    background-color: #e5e7eb; /* bg-gray-200 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.popular-post-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    flex-grow: 1;
-    min-width: 0; /* Para line-clamp funcionar corretamente em flex item */
-}
-
-.popular-post-title {
-    font-size: 1rem; /* text-base */
-    font-weight: 600; /* font-semibold */
-    color: #1f2937; /* text-gray-800 */
-    line-height: 1.5rem;
-    margin-bottom: 0.25rem; /* mb-1 */
-    transition: color 0.3s ease;
-    /* Para truncar títulos longos em 2 linhas */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-height: 3rem; /* (line-height * lines) 1.5rem * 2 = 3rem */
-}
-
-.popular-post-date {
-    font-size: 0.875rem; /* text-sm */
-    color: #6b7280; /* text-gray-500 */
-}
 </style>
 
 
