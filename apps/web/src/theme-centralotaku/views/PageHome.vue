@@ -1,7 +1,7 @@
 <template>
     <div class="w-full max-w-[1400px] mx-auto px-2 sm:px-4 overflow-hidden theme-override">
         <div v-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h2 class="text-2xl font-bold mb-2 text-gray-800">Erro ao carregar posts</h2>
@@ -13,7 +13,7 @@
 
         <!-- Empty State -->
         <div v-else-if="posts.length === 0" class="text-center py-16 bg-white rounded-lg shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h2 class="text-2xl font-bold mb-2 text-gray-800">Nenhum post encontrado</h2>
@@ -36,11 +36,11 @@
                                 width="890"
                                 height="606"
                                 :title="coverPosts.full.title"
-                                aria-label="Cover Image"
+                                aria-label="Imagem de capa do post em destaque"
                                 fetchpriority="high"
                             />
                             <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
@@ -78,11 +78,11 @@
                                     width="890"
                                     height="606"
                                     :title="post.title"
-                                    aria-label="Cover Image"
+                                    aria-label="Imagem de capa do post no carrossel"
                                     fetchpriority="high"
                                 />
                                 <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
@@ -105,15 +105,15 @@
 
                         <!-- Carousel Controls -->
                         <div class="absolute top-0 bottom-0 left-0 flex items-center">
-                            <button @click="prevCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none z-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button @click="prevCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none z-10" aria-label="Slide anterior do carrossel">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
                         </div>
                         <div class="absolute top-0 bottom-0 right-0 flex items-center">
-                            <button @click="nextCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none z-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button @click="nextCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none z-10" aria-label="Próximo slide do carrossel">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
@@ -127,6 +127,7 @@
                                 @click="currentCarouselIndex = index"
                                 class="w-3 h-3 rounded-full bg-white/50 focus:outline-none"
                                 :class="{ 'bg-white': currentCarouselIndex === index }"
+                                :aria-label="`Ir para o slide ${index + 1} do carrossel`"
                             ></button>
                         </div>
                     </div>
@@ -135,7 +136,7 @@
                 <!-- Split Layout (1 large, 2 small) -->
                 <div v-else-if="coverSettings.layoutType === 'split'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-2 bg-white rounded-lg overflow-hidden shadow-md">
-                        <a v-if="coverPosts.splitMain" :href="`/post/${coverPosts.splitMain.slug}`" class="block h-full">
+                        <a v-if="coverPosts.splitMain" :href="`/post/${coverPosts.splitMain.slug}`" class="block h-full" :aria-label="`Ler post em destaque: ${coverPosts.splitMain.title}`">
                             <div class="relative h-[300px] md:h-full">
                                 <img
                                     v-if="coverPosts.splitMain && coverPosts.splitMain.featureImage"
@@ -146,11 +147,11 @@
                                     width="890"
                                     height="606"
                                     :title="coverPosts.splitMain.title"
-                                    aria-label="Cover Image"
+                                    aria-label="Imagem de capa do post principal"
                                     fetchpriority="high"
                                 />
                                 <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
@@ -173,16 +174,17 @@
                     </div>
                     <div class="md:col-span-1 flex flex-col gap-4">
                         <div v-for="(post, index) in coverPosts.splitSide" :key="post.id" class="flex-1 bg-white rounded-lg overflow-hidden shadow-md">
-                            <a :href="`/post/${post.slug}`" class="block h-full">
+                            <a :href="`/post/${post.slug}`" class="block h-full" :aria-label="`Ler post secundário: ${post.title}`">
                                 <div class="relative h-[200px] md:h-full">
                                     <img
                                         v-if="post.featureImage"
                                         :src="post.featureImage"
                                         :alt="post.title"
                                         class="w-full h-full object-cover"
+                                        aria-label="Imagem de capa do post secundário"
                                     />
                                     <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                     </div>
@@ -206,7 +208,7 @@
                 <!-- Dual Layout (2 equal columns) -->
                 <div v-else-if="coverSettings.layoutType === 'dual'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div v-for="post in coverPosts.dual" :key="post.id" class="bg-white rounded-lg overflow-hidden shadow-md">
-                        <a :href="`/post/${post.slug}`" class="block">
+                        <a :href="`/post/${post.slug}`" class="block" :aria-label="`Ler post: ${post.title}`">
                             <div class="relative h-[250px] sm:h-[300px] md:h-[350px]">
                                 <img
                                     v-if="post.featureImage"
@@ -217,11 +219,11 @@
                                     width="890"
                                     height="606"
                                     :title="post.title"
-                                    aria-label="Cover Image"
+                                    aria-label="Imagem de capa do post"
                                     fetchpriority="high"
                                 />
                                 <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
@@ -268,7 +270,7 @@
                             <div ref="sidebarLeftAdContainer"></div>
                         </div>
                         <div class="ad-container ad-sidebar-left mb-6" v-else>
-                            <div class="ad-placeholder h-[600px] w-[160px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                            <div class="ad-placeholder h-[600px] w-[160px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio lateral">
                                 <span>Anúncio</span>
                             </div>
                         </div>
@@ -284,7 +286,7 @@
                             <!-- Popular Posts Carousel (Desktop Only) -->
                             <div class="hidden lg:block mb-8">
                                 <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black flex items-center">
-                                    <span class="mr-2">🔥</span> Mais Populares
+                                    <span class="mr-2" aria-hidden="true">🔥</span> Mais Populares
                                 </h2>
                                 
                                 <div class="relative bg-white rounded-lg shadow-md overflow-hidden">
@@ -316,9 +318,10 @@
                                                     :alt="post.title"
                                                             class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                                                             loading="lazy"
+                                                            aria-label="Imagem do post popular"
                                                 />
                                                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                     </svg>
                                                 </div>
@@ -326,7 +329,7 @@
                                             </div>
                                                 <!-- Conteúdo -->
                                                 <div class="flex-1 flex flex-col justify-center min-w-0">
-                                                    <a :href="`/post/${post.slug}`" class="block group">
+                                                    <a :href="`/post/${post.slug}`" class="block group" :aria-label="`Ler post popular: ${post.title}`">
                                                         <h3 class="text-lg font-bold text-gray-800 group-hover:text-red-600 transition-colors line-clamp-2 mb-2">
                                                     {{ post.title }}
                                                         </h3>
@@ -347,8 +350,9 @@
                                         <button 
                                             @click="prevPopularSlide" 
                                             class="bg-black/50 hover:bg-black/70 text-white p-2 rounded-r-md focus:outline-none z-10 transition-colors ml-2"
+                                            aria-label="Slide anterior de posts populares"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                             </svg>
                                         </button>
@@ -357,8 +361,9 @@
                                         <button 
                                             @click="nextPopularSlideManual" 
                                             class="bg-black/50 hover:bg-black/70 text-white p-2 rounded-l-md focus:outline-none z-10 transition-colors mr-2"
+                                            aria-label="Próximo slide de posts populares"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                             </svg>
                                         </button>
@@ -372,6 +377,7 @@
                                             @click="setPopularIndex(index)"
                                             class="w-2 h-2 rounded-full transition-colors"
                                             :class="{ 'bg-red-600': currentPopularIndex === index, 'bg-white/50': currentPopularIndex !== index }"
+                                            :aria-label="`Ir para o slide ${index + 1} de posts populares`"
                                         ></button>
                                         </div>
                                         </div>
@@ -387,14 +393,16 @@
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
                                     :key="post.id"
                                     class="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                    role="article"
+                                    :aria-labelledby="`post-title-${post.id}`"
                                 >
                                     <!-- Imagem à esquerda -->
-                                    <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity">
+                                    <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity" :aria-label="`Ver imagem do post ${post.title}`">
                                         <div v-if="post.featureImage" class="w-full h-full">
-                                            <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                                            <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" aria-label="Imagem do post" />
                                         </div>
                                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </div>
@@ -407,14 +415,14 @@
                                                 {{ category.name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                        <h3 :id="`post-title-${post.id}`" class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                             <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors">
                                             {{ post.title }}
                                             </a>
                                         </h3>
                                         <div class="flex items-center mb-3 text-xs text-gray-600">
                                             <div class="flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
                                             <span>{{ formatDate(post.publishedAt) }}</span>
@@ -426,9 +434,9 @@
                                         </div>
                                         <div class="mt-auto">
                                             <a :href="`/post/${post.slug}`"
-                                            class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm">
+                                            class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm" :aria-label="`Ler mais sobre ${post.title}`">
                                                 Ler mais
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                     <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                                                     </svg>
                                                 </a>
@@ -443,7 +451,7 @@
                                     <div v-html="getAdHtml('inContent')"></div>
                                 </div>
                                 <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4" v-else>
-                                    <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio no conteúdo">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -460,14 +468,16 @@
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
                                         :key="post.id"
                                         class="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
+                                        role="article"
+                                        :aria-labelledby="`post-title-${post.id}`"
                                     >
                                         <!-- Imagem à esquerda -->
-                                        <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity">
+                                        <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity" :aria-label="`Ver imagem do post ${post.title}`">
                                             <div v-if="post.featureImage" class="w-full h-full">
-                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" aria-label="Imagem do post" />
                                             </div>
                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
                                             </div>
@@ -480,14 +490,14 @@
                                                     {{ category.name }}
                                                 </span>
                                             </div>
-                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            <h3 :id="`post-title-${post.id}`" class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
                                                 <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors">
                                                 {{ post.title }}
                                                 </a>
                                             </h3>
                                             <div class="flex items-center mb-3 text-xs text-gray-600">
                                                 <div class="flex items-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                     </svg>
                                                 <span>{{ formatDate(post.publishedAt) }}</span>
@@ -499,9 +509,9 @@
                                 </div>
                                             <div class="mt-auto">
                                                 <a :href="`/post/${post.slug}`"
-                                                class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm">
+                                                class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm" :aria-label="`Ler mais sobre ${post.title}`">
                                                     Ler mais
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                         <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                                                 </svg>
                                                     </a>
@@ -517,14 +527,14 @@
                                     <div v-html="getAdHtml('belowContent')"></div>
                                 </div>
                                 <div class="ad-container ad-banner-bottom py-2 px-4" v-else>
-                                    <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio abaixo do conteúdo">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Loading More Indicator -->
-                            <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
+                            <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6" aria-live="polite">
                                 <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
                                 <span class="ml-3 text-gray-600">Carregando mais posts...</span>
                             </div>
@@ -541,7 +551,7 @@
                                     <div v-html="getAdHtml('sidebarTop')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-top" v-else>
-                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio no topo da barra lateral">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -555,7 +565,7 @@
                                     <div v-html="getAdHtml('sidebarMid')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-mid" v-else>
-                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio no meio da barra lateral">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -567,7 +577,7 @@
                                     <div v-html="getAdHtml('sidebarBottom')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-bottom" v-else>
-                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm" role="complementary" aria-label="Espaço para anúncio na base da barra lateral">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
