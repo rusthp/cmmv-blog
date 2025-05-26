@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-[1400px] mx-auto px-3 sm:px-4">
+    <div class="w-full max-w-[1400px] mx-auto px-2 sm:px-4 overflow-hidden theme-override">
         <div v-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -246,11 +246,11 @@
             </section>
 
             <!-- Top AdSense Banner -->
-            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-4 overflow-hidden flex justify-center">
-                <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
+            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
+                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4" v-if="getAdHtml('header')">
                     <div v-html="getAdHtml('header')"></div>
                 </div>
-                <div class="ad-container ad-banner-top py-2 px-4" v-else>
+                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4" v-else>
                     <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                         <span>Anúncio</span>
                     </div>
@@ -276,9 +276,9 @@
                 </aside>
 
                 <!-- Main Content Area -->
-                <div class="flex-grow">
+                <div class="flex-grow min-w-0 overflow-hidden">
                     <!-- Main Content in 2 Columns -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-hidden">
                         <!-- Left Column (Latest News) -->
                         <div class="lg:col-span-2">
                             <!-- Popular Posts Carousel (Desktop Only) -->
@@ -313,32 +313,32 @@
                                                         <img
                                                             v-if="post.featureImage || post.image"
                                                             :src="post.featureImage || post.image"
-                                                            :alt="post.title"
+                                                    :alt="post.title"
                                                             class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                                                             loading="lazy"
-                                                        />
+                                                />
                                                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    </a>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
                                                 </div>
+                                                    </a>
+                                            </div>
                                                 <!-- Conteúdo -->
                                                 <div class="flex-1 flex flex-col justify-center min-w-0">
                                                     <a :href="`/post/${post.slug}`" class="block group">
                                                         <h3 class="text-lg font-bold text-gray-800 group-hover:text-red-600 transition-colors line-clamp-2 mb-2">
-                                                            {{ post.title }}
+                                                    {{ post.title }}
                                                         </h3>
                                                         <p class="text-gray-600 text-sm line-clamp-2 mb-3">
                                                             {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                                         </p>
                                                         <span class="text-xs text-gray-500">
-                                                            {{ formatDate(post.publishedAt) }}
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
+                                                    {{ formatDate(post.publishedAt) }}
+                                                </span>
+                                        </a>
+                                    </div>
+                                </div>
                                         </div>
                                     </div>
                                     
@@ -352,7 +352,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                             </svg>
                                         </button>
-                                    </div>
+                                        </div>
                                     <div v-if="popularPosts.length > 1" class="absolute top-0 bottom-0 right-0 flex items-center">
                                         <button 
                                             @click="nextPopularSlideManual" 
@@ -363,7 +363,7 @@
                                             </svg>
                                         </button>
                                     </div>
-                                    
+
                                     <!-- Indicadores de posição -->
                                     <div v-if="popularPosts.length > 1" class="absolute bottom-3 left-0 right-0 flex justify-center space-x-2">
                                         <button
@@ -373,8 +373,8 @@
                                             class="w-2 h-2 rounded-full transition-colors"
                                             :class="{ 'bg-red-600': currentPopularIndex === index, 'bg-white/50': currentPopularIndex !== index }"
                                         ></button>
-                                    </div>
-                                </div>
+                                        </div>
+                                        </div>
                             </div>
 
                             <h2 class="text-xl font-bold mb-4 pb-2 text-red-600 border-b-2 border-black">
@@ -382,93 +382,67 @@
                             </h2>
 
                             <!-- Posts Responsivos -->
-                            <div class="space-y-4">
-                                <a
+                            <div class="space-y-6">
+                                <article
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
                                     :key="post.id"
-                                    :href="`/post/${post.slug}`"
-                                    class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group"
+                                    class="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
                                 >
-                                    <!-- Mobile: Layout Vertical -->
-                                    <div class="block md:hidden">
-                                        <!-- Imagem no topo -->
-                                        <div class="w-full h-48 overflow-hidden">
-                                            <img
-                                                v-if="post.featureImage"
-                                                :src="post.featureImage"
-                                                :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                            />
-                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
+                                    <!-- Imagem à esquerda -->
+                                    <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity">
+                                        <div v-if="post.featureImage" class="w-full h-full">
+                                            <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
                                         </div>
-                                        <!-- Conteúdo embaixo -->
-                                        <div class="p-4">
-                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                    {{ category.name }}
-                                                </span>
-                                            </div>
-                                            <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                {{ post.title }}
-                                            </h3>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 100) + '...' }}
-                                            </p>
-                                            <div class="flex justify-between items-center text-xs text-gray-500">
-                                                <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
-                                                <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
-                                            </div>
+                                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
                                         </div>
-                                    </div>
+                                    </a>
 
-                                    <!-- Desktop: Layout Horizontal -->
-                                    <div class="hidden md:flex">
-                                        <!-- Imagem à esquerda -->
-                                        <div class="w-2/5 h-40 lg:h-48 overflow-hidden">
-                                            <img
-                                                v-if="post.featureImage"
-                                                :src="post.featureImage"
-                                                :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                            />
-                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
+                                    <!-- Conteúdo à direita -->
+                                    <div class="flex-grow flex flex-col">
+                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                            <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded text-xs font-medium">
+                                                {{ category.name }}
+                                            </span>
                                         </div>
-                                        <!-- Conteúdo à direita -->
-                                        <div class="flex-1 p-4 flex flex-col">
-                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                    {{ category.name }}
-                                                </span>
-                                            </div>
-                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                {{ post.title }}
-                                            </h3>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                            </p>
-                                            <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                                <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
-                                                <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
-                                            </div>
+                                        <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                            <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors">
+                                            {{ post.title }}
+                                            </a>
+                                        </h3>
+                                        <div class="flex items-center mb-3 text-xs text-gray-600">
+                                            <div class="flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            <span>{{ formatDate(post.publishedAt) }}</span>
+                                        </div>
+                                            <span v-if="getAuthor(post)" class="ml-4">Por {{ getAuthor(post).name }}</span>
+                                    </div>
+                                        <div class="text-gray-700 text-sm mb-3 line-clamp-3 flex-grow">
+                                            {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                        </div>
+                                        <div class="mt-auto">
+                                            <a :href="`/post/${post.slug}`"
+                                            class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm">
+                                                Ler mais
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </a>
                                         </div>
                                     </div>
-                                </a>
+                                </article>
                             </div>
 
                             <!-- Mid-content AdSense Banner -->
                             <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
-                                <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
+                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4" v-if="getAdHtml('inContent')">
                                     <div v-html="getAdHtml('inContent')"></div>
                                 </div>
-                                <div class="ad-container ad-banner-mid py-2 px-4" v-else>
+                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4" v-else>
                                     <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                         <span>Anúncio</span>
                                     </div>
@@ -481,90 +455,64 @@
                                     Mais Conteúdo
                                 </h2>
 
-                                <div class="space-y-4">
-                                    <a
+                                <div class="space-y-6">
+                                    <article
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
                                         :key="post.id"
-                                        :href="`/post/${post.slug}`"
-                                        class="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group"
+                                        class="block bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col md:flex-row gap-4 p-4 group"
                                     >
-                                        <!-- Mobile: Layout Vertical -->
-                                        <div class="block md:hidden">
-                                            <!-- Imagem no topo -->
-                                            <div class="w-full h-48 overflow-hidden">
-                                                <img
-                                                    v-if="post.featureImage"
-                                                    :src="post.featureImage"
-                                                    :alt="post.title"
-                                                    class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                                />
-                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
+                                        <!-- Imagem à esquerda -->
+                                        <a :href="`/post/${post.slug}`" class="w-full md:w-2/5 flex-shrink-0 h-48 md:h-auto overflow-hidden rounded-md block group-hover:opacity-90 transition-opacity">
+                                            <div v-if="post.featureImage" class="w-full h-full">
+                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
                                             </div>
-                                            <!-- Conteúdo embaixo -->
-                                            <div class="p-4">
-                                                <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                    <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                        {{ category.name }}
-                                                    </span>
-                                                </div>
-                                                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                    {{ post.title }}
-                                                </h3>
-                                                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                                    {{ post.excerpt || stripHtml(post.content).substring(0, 100) + '...' }}
-                                                </p>
-                                                <div class="flex justify-between items-center text-xs text-gray-500">
-                                                    <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
-                                                    <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
-                                                </div>
+                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
                                             </div>
-                                        </div>
+                                        </a>
 
-                                        <!-- Desktop: Layout Horizontal -->
-                                        <div class="hidden md:flex">
-                                            <!-- Imagem à esquerda -->
-                                            <div class="w-2/5 h-40 lg:h-48 overflow-hidden">
-                                                <img
-                                                    v-if="post.featureImage"
-                                                    :src="post.featureImage"
-                                                    :alt="post.title"
-                                                    class="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
-                                                />
-                                                <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
+                                        <!-- Conteúdo à direita -->
+                                        <div class="flex-grow flex flex-col">
+                                            <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
+                                                <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded text-xs font-medium">
+                                                    {{ category.name }}
+                                                </span>
                                             </div>
-                                            <!-- Conteúdo à direita -->
-                                            <div class="flex-1 p-4 flex flex-col">
-                                                <div v-if="post.categories && post.categories.length > 0" class="mb-2 flex flex-wrap gap-1">
-                                                    <span v-for="category in post.categories" :key="category.id" class="bg-red-600 text-white px-2 py-0.5 rounded-md text-xs font-medium">
-                                                        {{ category.name }}
-                                                    </span>
-                                                </div>
-                                                <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                                                    {{ post.title }}
-                                                </h3>
-                                                <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
-                                                    {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                                </p>
-                                                <div class="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                                                    <span v-if="getAuthor(post)" class="truncate mr-2">Por {{ getAuthor(post).name }}</span>
-                                                    <span class="whitespace-nowrap">{{ formatDate(post.publishedAt) }}</span>
-                                                </div>
+                                            <h3 class="text-xl lg:text-2xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                                                <a :href="`/post/${post.slug}`" class="hover:text-red-600 transition-colors">
+                                                {{ post.title }}
+                                                </a>
+                                            </h3>
+                                            <div class="flex items-center mb-3 text-xs text-gray-600">
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                <span>{{ formatDate(post.publishedAt) }}</span>
+                                            </div>
+                                                <span v-if="getAuthor(post)" class="ml-4">Por {{ getAuthor(post).name }}</span>
+                                        </div>
+                                            <div class="text-gray-700 text-sm mb-3 line-clamp-3 flex-grow">
+                                                {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
+                                </div>
+                                            <div class="mt-auto">
+                                                <a :href="`/post/${post.slug}`"
+                                                class="inline-flex items-center text-red-600 font-medium hover:text-red-700 transition-colors text-sm">
+                                                    Ler mais
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                                    </a>
                                             </div>
                                         </div>
-                                    </a>
+                                    </article>
                                 </div>
                             </div>
 
                             <!-- Bottom AdSense Banner -->
-                            <div v-if="adSettings.enableAds && adSettings.homePageAfterPosts" class="w-full bg-gray-100 rounded-lg mt-8 mb-4 overflow-hidden flex justify-center">
+                            <div v-if="adSettings.enableAds && adSettings.homePageAfterPosts" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
                                 <div class="ad-container ad-banner-bottom py-2 px-4" v-if="getAdHtml('belowContent')">
                                     <div v-html="getAdHtml('belowContent')"></div>
                                 </div>
@@ -586,14 +534,14 @@
                         </div>
 
                         <!-- Right Column (Widgets + Ads) -->
-                        <div class="lg:col-span-1">
+                        <div class="lg:col-span-1 min-w-0 overflow-hidden">
                             <!-- AdSense Rectangle (Top) -->
                             <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg shadow-md p-2 mb-6 flex justify-center">
                                 <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
                                     <div v-html="getAdHtml('sidebarTop')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-top" v-else>
-                                    <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -607,7 +555,7 @@
                                     <div v-html="getAdHtml('sidebarMid')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-mid" v-else>
-                                    <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -619,7 +567,7 @@
                                     <div v-html="getAdHtml('sidebarBottom')"></div>
                                 </div>
                                 <div class="ad-container ad-sidebar-bottom" v-else>
-                                    <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                                    <div class="ad-placeholder h-[250px] w-full max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -1162,6 +1110,448 @@ watch(() => settings.value['blog.cover'], () => {
     justify-content: center;
     border: 1px dashed #ccc;
     border-radius: 4px;
+}
+
+/* Prevent horizontal overflow */
+* {
+    box-sizing: border-box;
+}
+
+/* Ensure viewport inherits theme properly */
+html {
+    background-color: inherit;
+    width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Maintain box-sizing */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Allow template background to work */
+.flex.min-h-screen.bg-gray-100,
+.bg-gray-100 {
+    background-color: inherit;
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    background-color: inherit;
+}
+
+/* Override template background */
+.flex.min-h-screen.bg-gray-100 {
+    background-color: #f5f5f5 !important;
+}
+
+/* Inherit theme from template */
+body, html, #app {
+    background-color: inherit;
+}
+
+/* Ensure main content area inherits background */
+.container, .mx-auto, .max-w-\[1400px\], main {
+    background-color: inherit;
+}
+
+/* Ensure cards have proper styling - inherit from template theme */
+.bg-white {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode card styling - inherit from template */
+.dark .bg-white {
+    background-color: #1e1e1e;
+    border-color: #333333;
+    color: #e0e0e0;
+}
+
+/* Dark mode text colors */
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+    color: #e0e0e0;
+}
+
+.dark .text-gray-500 {
+    color: #a0a0a0;
+}
+
+/* Dark mode ad placeholders */
+.dark .ad-placeholder {
+    background-color: #2a2a2a;
+    border-color: #444;
+    color: #888;
+}
+
+/* Dark mode ad containers - Match card background color */
+.dark .bg-gray-100:not(.flex.min-h-screen),
+.dark div.bg-gray-100,
+.dark .bg-gray-100.rounded-lg,
+.dark .bg-gray-100.rounded-lg.shadow-md,
+.dark .w-full.bg-gray-100.rounded-lg,
+.dark .bg-gray-100.rounded-lg.mb-8,
+.dark .bg-gray-100.rounded-lg.my-8,
+.dark .bg-gray-100.rounded-lg.my-6,
+.dark .bg-gray-100.rounded-lg.mb-6 {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* All ad containers - Match card background color */
+.dark .ad-container,
+.dark .ad-banner-top,
+.dark .ad-banner-mid,
+.dark .ad-banner-bottom,
+.dark .ad-sidebar-top,
+.dark .ad-sidebar-mid,
+.dark .ad-sidebar-bottom,
+.dark .ad-sidebar-left {
+    background-color: #1e1e1e !important;
+    border-color: #333333 !important;
+}
+
+/* Specific ad container selectors */
+.dark div[class*="ad-container"],
+.dark div[class*="ad-banner"],
+.dark div[class*="ad-sidebar"] {
+    background-color: #1e1e1e !important;
+}
+
+/* Target all divs with bg-gray-100 that contain ads */
+.dark div.bg-gray-100:has(.ad-container),
+.dark div.bg-gray-100:has(.ad-placeholder),
+.dark div.bg-gray-100:has([class*="ad-"]) {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* Fallback for any missed containers */
+.dark [class*="bg-gray-100"] {
+    background-color: #1e1e1e !important;
+}
+
+/* Override any white backgrounds in ad areas */
+.dark .ad-container *,
+.dark .ad-banner-top *,
+.dark .ad-banner-mid *,
+.dark .ad-banner-bottom *,
+.dark .ad-sidebar-top *,
+.dark .ad-sidebar-mid *,
+.dark .ad-sidebar-bottom * {
+    background-color: transparent !important;
+}
+
+/* Ultra-specific targeting for all possible ad containers */
+.dark div.w-full.bg-gray-100.rounded-lg.mb-8.overflow-hidden.flex.justify-center,
+.dark div.w-full.bg-gray-100.rounded-lg.my-8.overflow-hidden.flex.justify-center,
+.dark div.w-full.bg-gray-100.rounded-lg.my-6.overflow-hidden.flex.justify-center,
+.dark div.bg-gray-100.rounded-lg.shadow-md.p-2.mb-6.flex.justify-center {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* Target by v-if conditions and structure */
+.dark div[class*="bg-gray-100"][class*="rounded-lg"]:has(div[class*="ad-"]),
+.dark div[class*="bg-gray-100"][class*="rounded-lg"]:has(.ad-placeholder) {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* Force all gray backgrounds in dark mode */
+.dark .bg-gray-100,
+.dark .bg-gray-200 {
+    background-color: #1e1e1e !important;
+}
+
+/* Light mode ad containers - maintain original gray background */
+.bg-gray-100 {
+    background-color: #f5f5f5;
+}
+
+/* Ensure ad placeholders are dark */
+.dark .ad-placeholder {
+    background-color: #2a2a2a !important;
+    border-color: #444 !important;
+    color: #888 !important;
+}
+
+/* Light mode ad placeholders */
+.ad-placeholder {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+    color: #6b7280;
+}
+
+/* Ensure card images maintain proper aspect ratio */
+.bg-white img,
+.dark .bg-white img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+/* Card image containers */
+.bg-white .w-full.md\:w-2\/5 {
+    min-height: 192px; /* h-48 = 192px */
+}
+
+@media (min-width: 768px) {
+    .bg-white .w-full.md\:w-2\/5 {
+        min-height: auto;
+        height: auto;
+    }
+}
+
+/* Target specific ad container patterns */
+.dark div.bg-gray-100.rounded-lg:nth-child(n),
+.dark div.w-full.bg-gray-100:nth-child(n) {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* FORCE ALL bg-gray-100 elements in dark mode - NO EXCEPTIONS */
+.dark *[class*="bg-gray-100"]:not(.flex.min-h-screen) {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* Maintain ad container dimensions in dark mode */
+.dark .ad-container {
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+}
+
+/* Specific ad container sizing */
+.dark .ad-banner-top,
+.dark .ad-banner-mid,
+.dark .ad-banner-bottom {
+    width: 100% !important;
+    max-width: 728px !important;
+    height: 90px !important;
+    min-height: 90px !important;
+}
+
+.dark .ad-sidebar-top,
+.dark .ad-sidebar-mid,
+.dark .ad-sidebar-bottom {
+    width: 100% !important;
+    max-width: 300px !important;
+    height: 250px !important;
+    min-height: 250px !important;
+}
+
+.dark .ad-sidebar-left {
+    width: 160px !important;
+    height: 600px !important;
+    min-height: 600px !important;
+}
+
+/* Ensure ad placeholders maintain size */
+.dark .ad-placeholder {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: inherit !important;
+    min-height: inherit !important;
+    max-width: inherit !important;
+    max-height: inherit !important;
+    flex-shrink: 0 !important;
+}
+
+/* Prevent ad containers from collapsing */
+.dark div.bg-gray-100.rounded-lg.shadow-md.p-2.mb-6.flex.justify-center {
+    min-height: 266px !important; /* 250px + padding */
+    width: 100% !important;
+}
+
+.dark div.w-full.bg-gray-100.rounded-lg.mb-8.overflow-hidden.flex.justify-center,
+.dark div.w-full.bg-gray-100.rounded-lg.my-8.overflow-hidden.flex.justify-center,
+.dark div.w-full.bg-gray-100.rounded-lg.my-6.overflow-hidden.flex.justify-center {
+    min-height: 106px !important; /* 90px + padding */
+    width: 100% !important;
+}
+
+/* Force container dimensions */
+.dark .ad-container,
+.dark .ad-container > div {
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+/* Prevent content from overflowing containers */
+.dark .ad-container * {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure outer containers maintain proper sizing */
+.dark .lg\:col-span-1 .bg-gray-100.rounded-lg.shadow-md {
+    width: 100% !important;
+    min-height: 266px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    background-color: #1e1e1e !important;
+    border: 1px solid #333333 !important;
+}
+
+/* Banner containers sizing */
+.dark .w-full.bg-gray-100.rounded-lg {
+    width: 100% !important;
+    min-height: 106px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* Prevent flex shrinking */
+.dark .ad-container,
+.dark .ad-banner-top,
+.dark .ad-banner-mid,
+.dark .ad-banner-bottom,
+.dark .ad-sidebar-top,
+.dark .ad-sidebar-mid,
+.dark .ad-sidebar-bottom,
+.dark .ad-sidebar-left {
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+}
+
+/* Maintain aspect ratios */
+.dark .ad-placeholder.h-\[90px\] {
+    height: 90px !important;
+    min-height: 90px !important;
+}
+
+.dark .ad-placeholder.h-\[250px\] {
+    height: 250px !important;
+    min-height: 250px !important;
+}
+
+.dark .ad-placeholder.h-\[600px\] {
+    height: 600px !important;
+    min-height: 600px !important;
+}
+
+.dark .ad-placeholder.w-\[160px\] {
+    width: 160px !important;
+    min-width: 160px !important;
+}
+
+.dark .ad-placeholder.max-w-\[728px\] {
+    max-width: 728px !important;
+    width: 100% !important;
+}
+
+.dark .ad-placeholder.max-w-\[300px\] {
+    max-width: 300px !important;
+    width: 100% !important;
+}
+
+/* Dark mode background areas - main background */
+.dark .flex.min-h-screen.bg-gray-100 {
+    background-color: #121212;
+}
+
+/* Ensure layout containers inherit theme */
+.lg\:ml-64, .flex-1 {
+    background-color: inherit;
+}
+
+/* Ensure main layout containers have light background */
+.flex.flex-col.lg\:flex-row,
+.grid.grid-cols-1.lg\:grid-cols-3,
+.lg\:col-span-2,
+.lg\:col-span-1 {
+    background-color: transparent;
+}
+
+/* Allow template dark theme to work properly */
+.dark .bg-gray-100,
+.dark .bg-neutral-100 {
+    background-color: #121212;
+}
+
+/* Ensure proper theme inheritance */
+body {
+    background: inherit;
+}
+
+/* Theme override container */
+.theme-override {
+    background-color: inherit;
+}
+
+/* Inherit theme from template properly */
+html, body, #app, [data-v-app], .flex.min-h-screen {
+    background: inherit;
+    background-color: inherit;
+}
+
+/* Remove any potential overlays that break theme */
+::before, ::after {
+    background-color: transparent;
+}
+
+/* Ensure proper dark mode inheritance */
+.dark .bg-gray-100 {
+    background-color: #121212;
+}
+
+/* Ensure sidebar doesn't affect main content background */
+.lg\:ml-64 {
+    background-color: inherit;
+}
+
+/* Allow template background inheritance */
+.flex.min-h-screen.bg-gray-100 * {
+    background-color: inherit;
+}
+
+.w-full {
+    max-width: 100%;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ensure containers don't overflow */
+.container, .max-w-\[1400px\] {
+    max-width: 100vw;
+    overflow-x: hidden;
+    background-color: transparent;
+}
+
+/* Fix grid and flex containers */
+.grid, .flex {
+    min-width: 0;
+}
+
+/* Prevent any element from causing horizontal scroll */
+* {
+    max-width: 100%;
+}
+
+/* Specific fixes for mobile */
+@media (max-width: 1024px) {
+    .lg\:col-span-2, .lg\:col-span-1 {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .gap-8 {
+        gap: 1rem;
+    }
 }
 
 /* Only hide the left sidebar on screens smaller than 1280px */
