@@ -125,11 +125,11 @@ useHead({
     meta: [
         {
             name: 'description',
-            content: 'Política de Privacidade para GameDevBR'
+            content: 'Política de Privacidade para ProPlay News'
         },
         {
             name: 'keywords',
-            content: 'GameDevBR, Política de Privacidade, CMMV'
+            content: 'ProPlay News, Política de Privacidade, CMMV'
         }
     ]
 })
