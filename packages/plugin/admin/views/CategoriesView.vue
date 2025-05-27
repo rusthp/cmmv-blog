@@ -656,7 +656,11 @@ const loadAllCategoriesForDropdown = async () => {
         const response = await adminClient.categories.get(apiFilters)
 
         if (response && response.data) {
-            allCategoriesForDropdown.value = response.data || []
+            if (isEditing.value && categoryToEdit.value) {
+                allCategoriesForDropdown.value = response.data.filter(cat => cat.id !== categoryToEdit.value.id) || []
+            } else {
+                allCategoriesForDropdown.value = response.data || []
+            }
         } else {
             allCategoriesForDropdown.value = []
         }
