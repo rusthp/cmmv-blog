@@ -478,3 +478,94 @@ body {
     outline: 2px solid var(--focus-outline-color);
     outline-offset: 2px;
 }
+
+/* Otimizações para melhorar performance em PageSpeed */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Placeholder para carregamento progressivo de imagens */
+.progressive-img-container {
+    position: relative;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.progressive-img {
+    transition: filter 0.3s ease-out;
+    will-change: filter;
+}
+
+.progressive-img.blur-up {
+    filter: blur(5px);
+}
+
+.progressive-img.blur-up.lazyloaded {
+    filter: blur(0);
+}
+
+/* Otimizações para animações */
+@media (prefers-reduced-motion: no-preference) {
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Otimizações para fontes */
+@font-face {
+    font-family: 'System';
+    font-style: normal;
+    font-weight: 400;
+    src: local(".SFNSText-Regular"),
+         local(".HelveticaNeueDeskInterface-Regular"),
+         local(".LucidaGrandeUI"),
+         local("Segoe UI"),
+         local("Ubuntu"),
+         local("Roboto-Regular"),
+         local("DroidSans"),
+         local("Tahoma");
+    font-display: swap;
+}
+
+/* Layout otimizado com content-visibility para melhorar renderização */
+.optimize-rendering {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+}
+
+/* Remover efeitos custosos em dispositivos de baixa performance */
+@media (max-width: 768px) {
+    .skip-animation {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* Otimização para critical rendering path */
+.critical-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.critical-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-out;
+}

@@ -53,15 +53,19 @@
                                             </a>
                                         </div>
 
-                                        <img
-                                            :src="post.featureImage"
-                                            :alt="post.featureImageAlt || post.title"
-                                            class="featured-img md:block hidden"
-                                            width="890"
-                                            height="606"
-                                            loading="lazy"
-                                            :title="post.featureImageAlt || 'Imagem de destaque para ' + post.title"
-                                        />
+                                        <div class="progressive-img-container">
+                                            <img
+                                                :src="post.featureImage"
+                                                :alt="post.featureImageAlt || post.title"
+                                                class="featured-img progressive-img md:block hidden"
+                                                width="890"
+                                                height="606"
+                                                loading="lazy"
+                                                :title="post.featureImageAlt || 'Imagem de destaque para ' + post.title"
+                                                decoding="async"
+                                                fetchpriority="high"
+                                            />
+                                        </div>
 
                                         <p v-if="post.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center">{{
                                             post.featureImageCaption }}</p>
@@ -208,18 +212,20 @@
                                                 <article
                                                     v-for="relatedPost in relatedPosts"
                                                     :key="relatedPost.id"
-                                                    class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
+                                                    class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300 optimize-rendering"
                                                 >
                                                     <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                        <div class="h-48 overflow-hidden relative">
+                                                        <div class="h-48 overflow-hidden relative progressive-img-container">
                                                             <img
                                                                 v-if="relatedPost.featureImage"
                                                                 :src="relatedPost.featureImage"
                                                                 :alt="relatedPost.title"
-                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 progressive-img"
+                                                                loading="lazy"
+                                                                decoding="async"
                                                             />
                                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                                 </svg>
                                                             </div>

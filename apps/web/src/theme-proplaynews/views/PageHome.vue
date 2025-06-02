@@ -27,20 +27,22 @@
                 <div v-if="coverSettings.layoutType === 'full' || !coverSettings.layoutType" class="bg-white rounded-lg overflow-hidden shadow-md">
                     <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block">
                         <div class="relative h-[400px]">
-                            <img
+                            <OptimizedImage
                                 v-if="coverPosts.full && coverPosts.full.featureImage"
                                 :src="coverPosts.full.featureImage"
                                 :alt="coverPosts.full.title"
-                                class="w-full h-full object-cover"
-                                loading="lazy"
                                 width="890"
                                 height="606"
                                 :title="coverPosts.full.title"
                                 aria-label="Cover Image"
-                                fetchpriority="high"
+                                objectFit="cover"
+                                priority="high"
+                                :lazyLoad="false"
+                                :blur="true"
+                                class="w-full h-full"
                             />
                             <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
@@ -69,20 +71,22 @@
                              class="absolute w-full h-full transition-opacity duration-500 ease-in-out"
                              :class="{ 'opacity-100': currentCarouselIndex === index, 'opacity-0': currentCarouselIndex !== index }">
                             <a :href="`/post/${post.slug}`" class="block h-full">
-                                <img
+                                <OptimizedImage
                                     v-if="post.featureImage"
                                     :src="post.featureImage"
                                     :alt="post.title"
-                                    class="w-full h-full object-cover"
-                                    loading="lazy"
                                     width="890"
                                     height="606"
                                     :title="post.title"
                                     aria-label="Cover Image"
-                                    fetchpriority="high"
+                                    objectFit="cover"
+                                    priority="high"
+                                    :lazyLoad="index === 0 ? false : true"
+                                    :blur="true"
+                                    class="w-full h-full"
                                 />
                                 <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
@@ -507,7 +511,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount } from 'vue';
 import { useHead } from '@unhead/vue';
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
@@ -516,6 +520,8 @@ import { usePostsStore } from '../../store/posts';
 import { useMostAccessedPostsStore } from '../../store/mostaccessed';
 import { formatDate, stripHtml } from '../../composables/useUtils';
 import { useAds } from '../../composables/useAds';
+import OptimizedImage from '../components/OptimizedImage.vue';
+import LazyScript from '../components/LazyScript.vue';
 
 // Declare adsbygoogle for TypeScript
 declare global {
@@ -694,21 +700,32 @@ const prevCarouselSlide = () => {
     startCarouselInterval();
 };
 
-const headData = ref({
-    title: settings.value.title,
+const headData = computed(() => ({
+    title: settings.value['blog.title'],
     meta: [
-        { name: 'description', content: settings.value.description },
-        { name: 'keywords', content: settings.value.keywords },
+        { name: 'description', content: settings.value['blog.description'] },
         { property: 'og:type', content: 'website' },
-        { property: 'og:title', content: settings.value.title },
-        { property: 'og:description', content: settings.value.description },
-        { property: 'og:image', content: settings.value.logo }
+        { property: 'og:title', content: settings.value['blog.title'] },
+        { property: 'og:description', content: settings.value['blog.description'] },
+        { property: 'og:image', content: settings.value['blog.image'] },
+        { property: 'og:url', content: settings.value['blog.url'] },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: settings.value['blog.title'] },
+        { name: 'twitter:description', content: settings.value['blog.description'] },
+        { name: 'twitter:image', content: settings.value['blog.image'] },
+        { name: 'twitter:site', content: settings.value['blog.twitter'] ? `@${settings.value['blog.twitter']}` : '' },
+        { name: 'twitter:creator', content: settings.value['blog.twitter'] ? `@${settings.value['blog.twitter']}` : '' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
     ],
     link: [
-        { rel: 'canonical', href: settings.value.url },
-        { rel: 'alternate', href: `${settings.value.url}/feed`, type: 'application/rss+xml', title: settings.value.title }
+        { rel: 'canonical', href: settings.value['blog.url'] },
+        { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] },
+        // Adiciona preload para recursos críticos
+        { rel: 'preload', href: coverPosts.value.full?.featureImage || '', as: 'image', type: 'image/webp' },
+        { rel: 'modulepreload', href: '/src/theme-proplaynews/components/OptimizedImage.vue' },
+        { rel: 'modulepreload', href: '/src/theme-proplaynews/components/PerformanceManager.vue' }
     ]
-});
+}));
 
 useHead(headData);
 

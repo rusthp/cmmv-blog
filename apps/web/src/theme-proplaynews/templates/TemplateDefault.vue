@@ -376,6 +376,7 @@
     </div>
 
     <CookieConsent />
+    <PerformanceManager />
 </template>
 
 <script setup lang="ts">
@@ -386,6 +387,8 @@ import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 
 import CookieConsent from '../../components/CookieConsent.vue';
+import PerformanceManager from '../components/PerformanceManager.vue';
+import LazyScript from '../components/LazyScript.vue';
 
 const blogAPI = vue3.useBlog();
 const categoriesStore = useCategoriesStore();
@@ -419,7 +422,11 @@ useHead({
         { rel: 'preconnect', href: 'https://tpc.googlesyndication.com/' },
         { rel: 'preconnect', href: 'https://www.googletag.com/' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
-        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' }
+        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com', crossorigin: 'anonymous' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+        { rel: 'preconnect', href: 'https://platform.twitter.com', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/src/theme-proplaynews/assets/android-icon-96x96.png', as: 'image' }
     ],
 
     script: scripts
