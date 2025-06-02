@@ -5,19 +5,21 @@
                 <div class="flex-1">
                     <p class="text-sm md:text-base text-neutral-200">
                         This website uses cookies to enhance your browsing experience. By continuing to use this site, you consent to our use of cookies according to our
-                        <a href="/terms-of-privacy" class="text-blue-400 hover:text-blue-300 underline">Privacy Policy</a>.
+                        <a href="/terms-of-privacy" class="text-blue-400 hover:text-blue-300 underline" aria-label="Privacy Policy">Privacy Policy</a>.
                     </p>
                 </div>
                 <div class="flex flex-shrink-0 gap-3">
                     <button
                         @click="rejectCookies"
                         class="px-4 py-2 text-sm bg-transparent hover:bg-neutral-700 rounded-md border border-neutral-600 text-neutral-300 transition-colors cursor-pointer"
+                        aria-label="Decline cookies"
                     >
                         Decline
                     </button>
                     <button
                         @click="acceptCookies"
                         class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md text-white font-medium transition-colors cursor-pointer"
+                        aria-label="Accept cookies"
                     >
                         Accept
                     </button>
