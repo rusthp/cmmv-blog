@@ -518,38 +518,41 @@ img {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center !important;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: filter 0.3s ease-out;
 }
 
-/* Forçar object-fit nas imagens principais */
+/* Forçar object-fit apenas quando necessário */
 .featured-img,
 .w-full.h-full {
-    object-fit: cover !important;
-    object-position: center !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Containers de imagem devem ter dimensões específicas */
-.relative.h-\[400px\],
-.relative.h-\[350px\] {
-    background-color: #f3f4f6;
+    object-fit: cover;
+    object-position: center;
+    width: 100%;
+    height: 100%;
 }
 
 /* Garantir que OptimizedImage funcione corretamente */
 .progressive-img.object-cover {
-    object-fit: cover !important;
+    object-fit: cover;
 }
 
 .progressive-img.object-contain {
-    object-fit: contain !important;
+    object-fit: contain;
 }
 
 .progressive-img.object-fill {
-    object-fit: fill !important;
+    object-fit: fill;
+}
+
+.progressive-img.blur-up {
+    filter: blur(5px);
+}
+
+.progressive-img.blur-up.lazyloaded {
+    filter: blur(0);
 }
 
 /* Otimizações para animações */
@@ -616,58 +619,81 @@ img {
     transition: opacity 0.3s ease-out;
 }
 
-/* Setas de dropdown elegantes e funcionais */
-.main-nav .dropdown-toggle svg,
-nav .dropdown-toggle svg,
-.nav-container .dropdown-toggle svg {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    color: #2563eb !important;
-    stroke: #2563eb !important;
-    width: 16px !important;
-    height: 16px !important;
-    margin-left: 4px !important;
-    vertical-align: middle !important;
-    transition: all 0.2s ease !important;
+/* Setas de dropdown otimizadas para performance */
+.dropdown-toggle svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    color: #2563eb;
+    stroke: #2563eb;
+    transition: transform 0.2s ease;
+    vertical-align: middle;
 }
 
-.main-nav .dropdown-toggle svg path,
-nav .dropdown-toggle svg path,
-.nav-container .dropdown-toggle svg path {
-    stroke: #2563eb !important;
-    stroke-width: 2 !important;
-    fill: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+.dropdown-toggle svg path {
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
 }
 
-/* Estado hover */
-.main-nav .dropdown-toggle:hover svg,
-nav .dropdown-toggle:hover svg,
-.nav-container .dropdown-toggle:hover svg {
-    color: #1d4ed8 !important;
-    stroke: #1d4ed8 !important;
-    transform: scale(1.1) !important;
+.dropdown-toggle:hover svg {
+    color: #1d4ed8;
+    stroke: #1d4ed8;
+    transform: scale(1.1);
 }
 
-.main-nav .dropdown-toggle:hover svg path,
-nav .dropdown-toggle:hover svg path,
-.nav-container .dropdown-toggle:hover svg path {
-    stroke: #1d4ed8 !important;
+.dropdown-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+    color: #ef4444;
+    stroke: #ef4444;
 }
 
-/* Estado aberto (dropdown expandido) */
-.main-nav .dropdown-toggle[aria-expanded="true"] svg,
-nav .dropdown-toggle[aria-expanded="true"] svg,
-.nav-container .dropdown-toggle[aria-expanded="true"] svg {
-    transform: rotate(180deg) !important;
-    color: #ef4444 !important;
-    stroke: #ef4444 !important;
+/* Otimizações para PageSpeed e Performance */
+
+/* Preload critical fonts */
+@media (prefers-reduced-motion: no-preference) {
+    * {
+        scroll-behavior: smooth;
+    }
 }
 
-.main-nav .dropdown-toggle[aria-expanded="true"] svg path,
-nav .dropdown-toggle[aria-expanded="true"] svg path,
-.nav-container .dropdown-toggle[aria-expanded="true"] svg path {
-    stroke: #ef4444 !important;
+/* Otimizar animações para performance */
+.dropdown-toggle svg,
+.progressive-img {
+    will-change: auto;
+}
+
+/* Reduzir repaints em hover */
+.dropdown-toggle:hover svg {
+    will-change: transform, color;
+}
+
+.dropdown-toggle:not(:hover) svg {
+    will-change: auto;
+}
+
+/* Otimizar carregamento de imagens */
+.progressive-img {
+    content-visibility: auto;
+    contain-intrinsic-size: 400px;
+}
+
+/* Reduzir layout shifts */
+.progressive-img-container {
+    contain: layout style paint;
+}
+
+/* Melhorar rendering de texto */
+* {
+    text-rendering: optimizeSpeed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-rendering: optimizeLegibility;
+}
+
+/* Otimizar fontes para performance */
+body {
+    font-display: swap;
 }
