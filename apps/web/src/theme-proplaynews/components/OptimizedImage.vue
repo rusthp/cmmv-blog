@@ -1,5 +1,5 @@
 <template>
-  <div class="progressive-img-container" :style="containerStyle" :class="{ 'rounded': rounded }">
+  <div class="progressive-img-container relative overflow-hidden w-full h-full" :style="containerStyle" :class="{ 'rounded': rounded }">
     <img
       v-if="loaded"
       :src="src"
@@ -7,13 +7,14 @@
       :width="width"
       :height="height"
       :style="imageStyle"
-      class="progressive-img"
+      class="progressive-img absolute inset-0 w-full h-full"
       :class="{ 
         'rounded': rounded, 
         'blur-up': blur, 
         'lazyloaded': loaded && !loading,
         'object-cover': objectFit === 'cover',
-        'object-contain': objectFit === 'contain'
+        'object-contain': objectFit === 'contain',
+        'object-fill': objectFit === 'fill'
       }"
       ref="image"
       @load="onImageLoaded"
