@@ -31,11 +31,16 @@ textarea:focus-visible {
 
 /* Melhora o contraste para o texto em cores de fundo específicas */
 .text-gray-600 {
-    color: #4b5563; /* Mais escuro que o padrão para melhorar o contraste */
+    color: #374151 !important; /* Muito mais escuro para melhor contraste */
 }
 
 .dark .text-gray-600 {
     color: #d1d5db; /* Mais claro no modo escuro para melhorar o contraste */
+}
+
+/* Melhorar contraste do texto da navegação */
+.text-gray-900 {
+    color: #111827 !important; /* Preto quase puro para máximo contraste */
 }
 
 /* Melhoria de contraste para elementos interativos */
@@ -46,6 +51,20 @@ textarea:focus-visible {
 
 .post-content a:hover {
     color: var(--link-hover-color);
+}
+
+/* Garantir que ícones sociais tenham bom contraste */
+.text-gray-400 {
+    color: #6b7280 !important;
+}
+
+/* Melhorar contraste de texto em geral */
+.text-gray-700 {
+    color: #374151 !important;
+}
+
+.text-gray-800 {
+    color: #1f2937 !important;
 }
 
 /* Skip link para acessibilidade */
@@ -568,4 +587,60 @@ img {
     opacity: 1;
     visibility: visible;
     transition: opacity 0.3s ease-out;
+}
+
+/* Setas de dropdown elegantes e funcionais */
+.main-nav .dropdown-toggle svg,
+nav .dropdown-toggle svg,
+.nav-container .dropdown-toggle svg {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #2563eb !important;
+    stroke: #2563eb !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin-left: 4px !important;
+    vertical-align: middle !important;
+    transition: all 0.2s ease !important;
+}
+
+.main-nav .dropdown-toggle svg path,
+nav .dropdown-toggle svg path,
+.nav-container .dropdown-toggle svg path {
+    stroke: #2563eb !important;
+    stroke-width: 2 !important;
+    fill: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Estado hover */
+.main-nav .dropdown-toggle:hover svg,
+nav .dropdown-toggle:hover svg,
+.nav-container .dropdown-toggle:hover svg {
+    color: #1d4ed8 !important;
+    stroke: #1d4ed8 !important;
+    transform: scale(1.1) !important;
+}
+
+.main-nav .dropdown-toggle:hover svg path,
+nav .dropdown-toggle:hover svg path,
+.nav-container .dropdown-toggle:hover svg path {
+    stroke: #1d4ed8 !important;
+}
+
+/* Estado aberto (dropdown expandido) */
+.main-nav .dropdown-toggle[aria-expanded="true"] svg,
+nav .dropdown-toggle[aria-expanded="true"] svg,
+.nav-container .dropdown-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg) !important;
+    color: #ef4444 !important;
+    stroke: #ef4444 !important;
+}
+
+.main-nav .dropdown-toggle[aria-expanded="true"] svg path,
+nav .dropdown-toggle[aria-expanded="true"] svg path,
+.nav-container .dropdown-toggle[aria-expanded="true"] svg path {
+    stroke: #ef4444 !important;
 }

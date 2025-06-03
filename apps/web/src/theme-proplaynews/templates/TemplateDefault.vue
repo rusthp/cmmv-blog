@@ -52,7 +52,7 @@
                             <div class="categories hidden md:flex flex-wrap scrollbar-hide w-full md:w-auto">
                                 <a href="/" class="text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                                    <div v-if="mainNavCategories.childrenMap[category.id]" class="relative group">
+                                    <div v-if="mainNavCategories.childrenMap[category.id]?.length > 0" class="relative group">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
                                             class="dropdown-toggle text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
@@ -62,7 +62,7 @@
                                         >
                                             {{ category.name }}
                                             <svg 
-                                                class="ml-1 w-3 h-3 transition-transform duration-200" 
+                                                class="ml-1 w-4 h-4 transition-transform duration-200" 
                                                 :class="{'rotate-180': openDropdowns[category.id]}"
                                                 fill="none" 
                                                 stroke="currentColor" 
@@ -101,22 +101,22 @@
 
                             <!-- Ícones de redes sociais -->
                             <div class="hidden md:flex items-center space-x-4">
-                                <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors text-lg" aria-label="Facebook">
+                                <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors text-lg" aria-label="Facebook">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.twitter']" :href="`https://twitter.com/${settings['blog.twitter']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors text-lg" aria-label="Twitter">
+                                <a v-if="settings['blog.twitter']" :href="`https://twitter.com/${settings['blog.twitter']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors text-lg" aria-label="Twitter">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.instagram']" :href="`https://instagram.com/${settings['blog.instagram']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors text-lg" aria-label="Instagram">
+                                <a v-if="settings['blog.instagram']" :href="`https://instagram.com/${settings['blog.instagram']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors text-lg" aria-label="Instagram">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.youtube']" :href="`https://youtube.com/${settings['blog.youtube']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors text-lg" aria-label="YouTube">
+                                <a v-if="settings['blog.youtube']" :href="`https://youtube.com/${settings['blog.youtube']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors text-lg" aria-label="YouTube">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
                                     </svg>
@@ -132,7 +132,7 @@
                             <div class="flex flex-col gap-0.5">
                                 <a href="/" class="text-gray-900 px-3 py-1.5 font-bold text-sm uppercase tracking-wide rounded hover:bg-gray-100 transition-colors">Home</a>
                                 <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                                    <div v-if="mainNavCategories.childrenMap[category.id]" class="w-full">
+                                    <div v-if="mainNavCategories.childrenMap[category.id]?.length > 0" class="w-full">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
                                             class="dropdown-toggle flex items-center justify-between w-full text-gray-900 hover:bg-gray-100 rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide"
@@ -143,7 +143,7 @@
                                         >
                                             {{ category.name }}
                                             <svg 
-                                                class="ml-1 w-3 h-3 transition-transform duration-200" 
+                                                class="ml-2 w-5 h-5 transition-transform duration-200" 
                                                 :class="{'rotate-180': openDropdowns[category.id]}"
                                                 fill="none" 
                                                 stroke="currentColor" 
@@ -186,22 +186,22 @@
                         <!-- Redes sociais em dispositivos móveis -->
                         <div class="flex justify-center mt-3 md:hidden" v-show="mobileMenuOpen">
                             <div class="flex items-center space-x-6">
-                                <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors">
+                                <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.twitter']" :href="`https://twitter.com/${settings['blog.twitter']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors">
+                                <a v-if="settings['blog.twitter']" :href="`https://twitter.com/${settings['blog.twitter']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.instagram']" :href="`https://instagram.com/${settings['blog.instagram']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors">
+                                <a v-if="settings['blog.instagram']" :href="`https://instagram.com/${settings['blog.instagram']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                                     </svg>
                                 </a>
-                                <a v-if="settings['blog.youtube']" :href="`https://youtube.com/${settings['blog.youtube']}`" target="_blank" rel="noopener noreferrer" class="text-white hover:text-[#ff0030] transition-colors">
+                                <a v-if="settings['blog.youtube']" :href="`https://youtube.com/${settings['blog.youtube']}`" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-[#ff0030] transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
                                     </svg>
@@ -376,7 +376,6 @@
     </div>
 
     <CookieConsent />
-    <PerformanceManager />
 </template>
 
 <script setup lang="ts">
@@ -387,8 +386,6 @@ import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 
 import CookieConsent from '../../components/CookieConsent.vue';
-import PerformanceManager from '../components/PerformanceManager.vue';
-import LazyScript from '../components/LazyScript.vue';
 
 const blogAPI = vue3.useBlog();
 const categoriesStore = useCategoriesStore();
@@ -461,28 +458,18 @@ const mainNavCategories = computed(() => {
     const navCategories = categories.value?.filter((category: any) => category.mainNav) || [];
     navCategories.sort((a: any, b: any) => (a.mainNavIndex ?? 999) - (b.mainNavIndex ?? 999));
 
-    // Filtra categorias raiz (sem parentCategory)
     const rootCategories = navCategories.filter((cat: any) => !cat.parentCategory);
-    
-    // Cria mapa de subcategorias
-    const childrenMap = navCategories.reduce((map: Record<string, any[]>, category: any) => {
-        if (category.parentCategory) {
-            if (!map[category.parentCategory]) {
-                map[category.parentCategory] = [];
-            }
-            map[category.parentCategory].push(category);
-        }
-        return map;
-    }, {});
-
-    // Ordena subcategorias por mainNavIndex
-    Object.values(childrenMap).forEach(children => {
-        children.sort((a: any, b: any) => (a.mainNavIndex ?? 999) - (b.mainNavIndex ?? 999));
-    });
+    const childCategories = navCategories.filter((cat: any) => cat.parentCategory);
 
     return {
         rootCategories,
-        childrenMap
+        childrenMap: childCategories.reduce((map: Record<string, any[]>, child: any) => {
+            if (!map[child.parentCategory]) {
+                map[child.parentCategory] = [];
+            }
+            map[child.parentCategory].push(child);
+            return map;
+        }, {} as Record<string, any[]>),
     };
 });
 
@@ -490,12 +477,19 @@ const openDropdowns = ref<Record<string, boolean>>({});
 
 const toggleDropdown = (categoryId: string, event: Event) => {
     event.stopPropagation();
-    
-    // Atualiza o estado do dropdown
-    openDropdowns.value = {
-        ...openDropdowns.value,
-        [categoryId]: !openDropdowns.value[categoryId]
-    };
+    if (openDropdowns.value[categoryId]) {
+        openDropdowns.value = {
+            ...openDropdowns.value,
+            [categoryId]: false
+        };
+    } else {
+        const newDropdownState: Record<string, boolean> = {};
+        Object.keys(openDropdowns.value).forEach(key => {
+            newDropdownState[key] = false;
+        });
+        newDropdownState[categoryId] = true;
+        openDropdowns.value = newDropdownState;
+    }
 };
 
 const openSearchModal = () => {
