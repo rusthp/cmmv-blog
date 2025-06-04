@@ -15,7 +15,9 @@
             "../../packages/yt-aggregation/contracts",
             "../../packages/access-control/api",
             "../../packages/affiliate/api",
-            "../../packages/affiliate/contracts"
+            "../../packages/affiliate/contracts",
+            "../../packages/odds/api",
+            "../../packages/odds/contracts"
         ],
         "ignore": [
             ".generated",
@@ -50,7 +52,8 @@
         "cache-manager-fs-binary": "^1.0.4",
         "firebase-admin": "^13.4.0",
         "sharp": "^0.34.1",
-        "tsx": "^4.19.4"
+        "tsx": "^4.19.4",
+        "typeorm": "^0.3.24"
     },
     "devDependencies": {
         "tsconfig-paths": "^4.2.0"

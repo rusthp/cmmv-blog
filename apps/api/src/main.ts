@@ -10,6 +10,7 @@ import { RSSAggregationModule } from "@cmmv/rss-aggregation";
 import { YTAggregationModule } from "@cmmv/yt-aggregation";
 import { AIContentModule } from "@cmmv/ai-content";
 import { AffiliateModule } from "@cmmv/affiliate";
+import { OddsModule } from "@cmmv/odds";
 
 Application.create({
     httpAdapter: DefaultAdapter,
@@ -22,7 +23,8 @@ Application.create({
         RSSAggregationModule,
         YTAggregationModule,
         AIContentModule,
-        AffiliateModule
+        AffiliateModule,
+        OddsModule
     ],
     providers: [
         Repository,

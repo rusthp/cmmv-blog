@@ -61,7 +61,9 @@
             "@cmmv/yt-aggregation": ["../../packages/yt-aggregation/api"],
             "@cmmv/yt-aggregation/*": ["../../packages/yt-aggregation/api/*"],
             "@cmmv/affiliate": ["../../packages/affiliate/api"],
-            "@cmmv/affiliate/*": ["../../packages/affiliate/api/*"]
+            "@cmmv/affiliate/*": ["../../packages/affiliate/api/*"],
+            "@cmmv/odds": ["../../packages/odds/api"],
+            "@cmmv/odds/*": ["../../packages/odds/api/*"]
         }
     },
     "include": ["src/**/*", ".generated/**/*"],

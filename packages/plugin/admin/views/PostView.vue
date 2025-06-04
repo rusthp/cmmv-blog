@@ -2965,7 +2965,7 @@ function isFeatureImageUnprocessed() {
     if(!featureImage)
         return true;
 
-    if(featureImage.startsWith("https://static") || featureImage.startsWith("https://cdn"))
+    if(featureImage.startsWith("https://static"))
         return false;
 
     if(!featureImage.includes(window.location.hostname) &&

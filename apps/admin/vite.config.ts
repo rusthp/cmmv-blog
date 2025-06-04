@@ -158,7 +158,9 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
                 '@cmmv/yt-aggregation': path.resolve(__dirname, '../../packages/yt-aggregation/'),
                 '@cmmv/yt-aggregation/*': path.resolve(__dirname, '../../packages/yt-aggregation/*'),
                 '@cmmv/affiliate': path.resolve(__dirname, '../../packages/affiliate/'),
-                '@cmmv/affiliate/*': path.resolve(__dirname, '../../packages/affiliate/*')
+                '@cmmv/affiliate/*': path.resolve(__dirname, '../../packages/affiliate/*'),
+                '@cmmv/odds': path.resolve(__dirname, '../../packages/odds/'),
+                '@cmmv/odds/*': path.resolve(__dirname, '../../packages/odds/*')
             }
         },
         server: {

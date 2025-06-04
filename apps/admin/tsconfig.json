@@ -32,7 +32,9 @@
             "@cmmv/yt-aggregation": ["../../packages/yt-aggregation"],
             "@cmmv/yt-aggregation/*": ["../../packages/yt-aggregation/*"],
             "@cmmv/affiliate": ["../../packages/affiliate"],
-            "@cmmv/affiliate/*": ["../../packages/affiliate/*"]
+            "@cmmv/affiliate/*": ["../../packages/affiliate/*"],
+            "@cmmv/odds": ["../../packages/odds"],
+            "@cmmv/odds/*": ["../../packages/odds/*"]
         }
     },
     "include": ["src"],
