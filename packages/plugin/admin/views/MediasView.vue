@@ -76,6 +76,13 @@
                     </svg>
                     Process Images
                 </button>
+
+                <button @click="openThumbnailDialog" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Generate Thumbnails
+                </button>
             </div>
         </div>
 
@@ -468,6 +475,78 @@
             </div>
         </div>
 
+        <!-- Generate Thumbnails Dialog -->
+        <div v-if="showThumbnailDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+            style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
+                <div class="p-6 border-b border-neutral-700">
+                    <h3 class="text-lg font-medium text-white">Generate Missing Thumbnails</h3>
+                </div>
+                <div class="p-6">
+                    <div v-if="!isThumbnailProcessing">
+                        <p class="text-neutral-300 mb-4">
+                            This will scan for images that don't have thumbnails and generate them:
+                        </p>
+                        <ul class="list-disc pl-5 mb-4 text-neutral-300 space-y-1">
+                            <li>Find all images without thumbnails in the database</li>
+                            <li>Generate 16x16 WebP thumbnails for each image</li>
+                            <li>Upload to external storage or save locally as configured</li>
+                            <li>Update database records with thumbnail URLs</li>
+                        </ul>
+                        <p class="text-blue-500 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            This process is safe and will not modify existing thumbnails.
+                        </p>
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button @click="showThumbnailDialog = false"
+                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors">
+                                Cancel
+                            </button>
+                            <button @click="startThumbnailGeneration"
+                                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors">
+                                Generate Thumbnails
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-else>
+                        <div class="mb-4">
+                            <p class="text-white mb-2">{{ thumbnailStatus.message }}</p>
+
+                            <div class="w-full bg-neutral-700 rounded-full h-4 mb-2">
+                                <div class="bg-purple-600 h-4 rounded-full"
+                                    :style="{ width: `${thumbnailStatus.percentage || 0}%` }"></div>
+                            </div>
+
+                            <p class="text-neutral-400 text-sm">
+                                {{ thumbnailStatus.processed || 0 }} of {{ thumbnailStatus.total || 0 }} images processed ({{ thumbnailStatus.percentage || 0 }}%)
+                            </p>
+                        </div>
+
+                        <div class="bg-neutral-700 rounded-md p-3 mb-4" v-if="thumbnailResult">
+                            <h4 class="text-white mb-2 font-medium">Generation Results:</h4>
+                            <ul class="text-neutral-300 text-sm space-y-1">
+                                <li>Created: {{ thumbnailResult.created || 0 }} thumbnails</li>
+                                <li>Failed: {{ thumbnailResult.failed || 0 }} images</li>
+                                <li>Total processed: {{ thumbnailResult.processed || 0 }} images</li>
+                            </ul>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button
+                                @click="closeThumbnailDialog"
+                                :disabled="thumbnailStatus.status === 'processing'"
+                                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600 text-white rounded-md transition-colors">
+                                {{ thumbnailStatus.status === 'processing' ? 'Processing...' : 'Close' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Adicionar diálogo de edição de mídia -->
         <div v-if="showDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
             style="backdrop-filter: blur(4px);">
@@ -582,9 +661,11 @@ const mediaDialogType = ref('all')
 const showReprocessDialog = ref(false)
 const showCleanupDialog = ref(false)
 const showDuplicatesDialog = ref(false)
+const showThumbnailDialog = ref(false)
 const isReprocessing = ref(false)
 const isProcessing = ref(false)
 const isDuplicatesProcessing = ref(false)
+const isThumbnailProcessing = ref(false)
 const forceCleanup = ref(false)
 const reprocessStatus = ref({
     total: 0,
@@ -601,8 +682,24 @@ const reprocessStatus = ref({
         bytes_saved: 0
     }
 })
+const thumbnailStatus = ref({
+    total: 0,
+    processed: 0,
+    percentage: 0,
+    status: 'idle',
+    message: '',
+    details: {
+        scanned: 0,
+        added: 0,
+        removed: 0,
+        optimized: 0,
+        failed: 0,
+        bytes_saved: 0
+    }
+})
 const duplicatesResult = ref(null)
 const cleanupResult = ref(null)
+const thumbnailResult = ref(null)
 let progressInterval = null
 
 const showSearchDropdown = ref(false)
@@ -1286,6 +1383,148 @@ const closeDuplicatesDialog = () => {
 
         // Refresh the media list if cleanup completed
         if (reprocessStatus.value.status === 'completed') {
+            refreshData()
+        }
+    }
+}
+
+const openThumbnailDialog = () => {
+    showThumbnailDialog.value = true
+    isThumbnailProcessing.value = false
+    thumbnailResult.value = null
+    thumbnailStatus.value = {
+        total: 0,
+        processed: 0,
+        percentage: 0,
+        status: 'idle',
+        message: '',
+        details: {
+            scanned: 0,
+            added: 0,
+            removed: 0,
+            optimized: 0,
+            failed: 0,
+            bytes_saved: 0
+        }
+    }
+}
+
+const startThumbnailGeneration = async () => {
+    try {
+        isThumbnailProcessing.value = true
+        thumbnailStatus.value.status = 'processing'
+        thumbnailStatus.value.message = 'Starting thumbnail generation...'
+        thumbnailStatus.value.processed = 0
+        thumbnailStatus.value.total = 0
+        thumbnailStatus.value.percentage = 0
+        thumbnailStatus.value.details = {
+            scanned: 0,
+            added: 0,
+            removed: 0,
+            optimized: 0,
+            failed: 0,
+            bytes_saved: 0
+        }
+        thumbnailResult.value = null
+
+        // Clear any previous interval
+        if (progressInterval) {
+            clearInterval(progressInterval)
+            progressInterval = null
+        }
+
+        console.log('Starting progress polling for thumbnail generation...')
+
+        // Function to check progress
+        const checkProgress = async () => {
+            try {
+                console.log('Checking thumbnail generation progress...')
+                const progress = await adminClient.imports.getReprocessProgress()
+                console.log('Thumbnail progress update:', progress)
+
+                // Update state only if we have valid data
+                if (progress && typeof progress === 'object') {
+                    thumbnailStatus.value = {
+                        ...thumbnailStatus.value,
+                        ...progress
+                    }
+
+                    // Log for debugging
+                    console.log(`Thumbnail progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
+
+                    // Check if process completed
+                    if (progress.status === 'completed' || progress.status === 'error') {
+                        console.log('Thumbnail generation completed with status:', progress.status)
+                        if (progressInterval) {
+                            clearInterval(progressInterval)
+                            progressInterval = null
+                        }
+
+                        if (progress.status === 'completed') {
+                            showNotification('success', `Thumbnail generation completed: ${progress.details?.added || 0} thumbnails created.`)
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error getting thumbnail generation progress:', err)
+            }
+        }
+
+        // Check progress immediately
+        await checkProgress()
+
+        // Set up interval for regular checks
+        progressInterval = setInterval(checkProgress, 1000)
+
+        // Start thumbnail generation
+        console.log('Starting thumbnail generation...')
+        try {
+            const result = await adminClient.imports.generateMissingThumbnails()
+            console.log('Thumbnail generation completed:', result)
+
+            // Store result for display
+            thumbnailResult.value = result
+
+            // Check final progress after completion
+            await checkProgress()
+        } catch (err) {
+            console.error('Error during thumbnail generation:', err)
+            thumbnailStatus.value.status = 'error'
+            thumbnailStatus.value.message = `Error: ${err.message || 'Failed to generate thumbnails'}`
+
+            if (progressInterval) {
+                clearInterval(progressInterval)
+                progressInterval = null
+            }
+
+            showNotification('error', err.message || 'Failed to generate thumbnails')
+        }
+    } catch (err) {
+        console.error('Failed to start thumbnail generation:', err)
+        thumbnailStatus.value.status = 'error'
+        thumbnailStatus.value.message = err.message || 'Failed to start thumbnail generation'
+
+        if (progressInterval) {
+            clearInterval(progressInterval)
+            progressInterval = null
+        }
+
+        showNotification('error', err.message || 'Failed to generate thumbnails')
+    }
+}
+
+const closeThumbnailDialog = () => {
+    if (thumbnailStatus.value.status !== 'processing') {
+        showThumbnailDialog.value = false
+
+        // Ensure progress interval is cleared
+        if (progressInterval) {
+            clearInterval(progressInterval)
+            progressInterval = null
+        }
+
+        // Refresh the media list if thumbnail generation completed
+        if (thumbnailStatus.value.status === 'completed') {
             refreshData()
         }
     }

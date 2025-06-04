@@ -34,6 +34,12 @@ export class MediasContract extends AbstractContract {
         protoType: 'string',
         nullable: true
     })
+    thumbnail?: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
     alt?: string;
 
     @ContractField({

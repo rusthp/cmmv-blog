@@ -36,7 +36,9 @@ export class AffiliateNetworksContract extends AbstractContract {
 
     @ContractField({
         protoType: 'string',
-        nullable: true
+        nullable: true,
+        index: true,
+        unique: true
     })
     url!: string;
 

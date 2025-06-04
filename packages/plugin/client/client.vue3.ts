@@ -15,6 +15,38 @@ const PRELOADED_KEY = Symbol('preloaded');
 type FetchMap = Record<string, Promise<any>>;
 let ssrData: FetchMap = {};
 
+interface CacheEntry {
+    data: any;
+    timestamp: number;
+}
+
+const memoryCache: Map<string, CacheEntry> = new Map();
+const CACHE_DURATION = 15 * 60 * 1000;
+
+/**
+ * @description Clean expired cache entries
+ */
+const cleanExpiredCache = () => {
+    const now = Date.now();
+    for (const [key, entry] of memoryCache.entries()) {
+        if (now - entry.timestamp > CACHE_DURATION)
+            memoryCache.delete(key);
+    }
+};
+
+/**
+ * @description Check if a cache entry is still valid
+ * @param {string} key - The cache key
+ * @returns {boolean} If the cache is valid
+ */
+const isCacheValid = (key: string): boolean => {
+    const entry = memoryCache.get(key);
+    if (!entry) return false;
+
+    const now = Date.now();
+    return (now - entry.timestamp) < CACHE_DURATION;
+};
+
 /**
  * @description Get the environment variable
  * @param {string} key - The key of the environment variable
@@ -43,6 +75,15 @@ export const useApi = () => {
     const get = async <T>(path: string, key?: string) => {
         const cacheKey = key || `get:${path}`;
         const data = ref<T | null>(preloaded[cacheKey] ?? null);
+        cleanExpiredCache();
+
+        if (!isSSR && isCacheValid(cacheKey)) {
+            const cachedEntry = memoryCache.get(cacheKey);
+            if (cachedEntry) {
+                data.value = cachedEntry.data;
+                return { data };
+            }
+        }
 
         if (isSSR) {
             if (!globalThis.__SSR_DATA__) {
@@ -66,7 +107,16 @@ export const useApi = () => {
             try {
                 const response = await fetch(`${baseUrlFrontend}/${path}`);
                 const result = await response.json();
-                data.value = result?.result || result;
+                const resultData = result?.result || result;
+
+                data.value = resultData;
+
+                if (resultData !== null && resultData !== undefined) {
+                    memoryCache.set(cacheKey, {
+                        data: resultData,
+                        timestamp: Date.now()
+                    });
+                }
             } catch (error) {
                 console.error(`Error fetching ${path}:`, error);
             }
@@ -118,6 +168,15 @@ export const useApi = () => {
     const getAuth = async <T>(path: string, key?: string) => {
         const cacheKey = key || `get:${path}`;
         const data = ref<T | null>(preloaded[cacheKey] ?? null);
+        cleanExpiredCache();
+
+        if (!isSSR && isCacheValid(cacheKey)) {
+            const cachedEntry = memoryCache.get(cacheKey);
+            if (cachedEntry) {
+                data.value = cachedEntry.data;
+                return { data };
+            }
+        }
 
         try {
             const sessionData = sessionStorage.getItem('member');
@@ -132,7 +191,16 @@ export const useApi = () => {
             });
 
             const result = await response.json();
-            data.value = result.result || result;
+            const resultData = result.result || result;
+
+            data.value = resultData;
+
+            if (resultData !== null && resultData !== undefined && !isSSR) {
+                memoryCache.set(cacheKey, {
+                    data: resultData,
+                    timestamp: Date.now()
+                });
+            }
         } catch (error) {
             console.error(`Error fetching ${path}:`, error);
         }
@@ -163,7 +231,13 @@ export const useApi = () => {
         post,
         put,
         getAuth,
-        putAuth
+        putAuth,
+        clearCache: () => {
+            memoryCache.clear();
+        },
+        getCacheSize: () => {
+            return memoryCache.size;
+        }
     };
 };
 

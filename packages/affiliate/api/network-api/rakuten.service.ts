@@ -120,7 +120,28 @@ export class RakutenService extends NetworkApiAbstract {
         return dataReturn;
     }
 
+    /**
+     * Get the deeplink
+     * @param urlApi - The URL of the API
+     * @param metadata - The metadata
+     * @returns The deeplink
+     */
     async getDeeplink(urlApi: string, metadata: any){
+        const token = await this.generateToken(metadata);
+        const response = await fetch(urlApi, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                url: metadata.url,
+                advertiser_id: Number(metadata.campaignId)
+            })
+        });
 
+        const data = await response.json();
+        return data.advertiser.deep_link.deep_link_url;
     }
 }
