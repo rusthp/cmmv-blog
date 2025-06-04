@@ -110,7 +110,7 @@
                 <p class="mb-4 text-neutral-700">Atenderei prontamente a quaisquer perguntas, preocupações ou reclamações sobre sua privacidade. Entre em contato comigo conforme descrito abaixo.</p>
 
                 <h3 class="text-xl font-medium mt-6 mb-3 text-neutral-800">Como entrar em contato comigo</h3>
-                <p class="mb-4 text-neutral-700">Envie-me um e-mail para: <code class="px-1.5 py-0.5 bg-gray-100 rounded">invasaonerd@gmail.com</code>.</p>
+                <p class="mb-4 text-neutral-700">Envie-me um e-mail para: <code class="px-1.5 py-0.5 bg-gray-100 rounded">andre@cmmv.io</code>.</p>
                 <p class="mb-4 text-neutral-700">Esta política pode evoluir à medida que o CMMV cresce. Verifique o site ou repositório do CMMV para atualizações. Não reduzirei as proteções para informações previamente coletadas sem o seu consentimento.</p>
             </div>
         </div>
