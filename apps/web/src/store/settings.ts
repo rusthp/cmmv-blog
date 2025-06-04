@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 
-// Define store types
 interface SettingsState {
   data: Record<string, any> | null;
 }

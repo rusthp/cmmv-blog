@@ -35,4 +35,17 @@ async function main() {
     }
 }
 
-main();
+function waitForCMMVData() {
+    if (window.__CMMV_DATA__) {
+        main();
+    } else {
+        const checkInterval = setInterval(() => {
+            if (window.__CMMV_DATA__) {
+                clearInterval(checkInterval);
+                main();
+            }
+        }, 10);
+    }
+}
+
+waitForCMMVData();

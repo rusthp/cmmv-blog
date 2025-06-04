@@ -9,6 +9,7 @@ import { useSettingsStore } from './store/settings.js';
 import { useCategoriesStore } from "./store/categories.js";
 import { usePostsStore } from './store/posts.js';
 import { useMostAccessedPostsStore } from './store/mostaccessed.js';
+import { useCouponsStore } from './store/coupons.js';
 
 import App from './App.vue';
 
@@ -18,6 +19,8 @@ let settingsData: any;
 let categoriesData: any;
 let postsData: any;
 let mostAccessedPostsData: any;
+let featuredCouponsData: any;
+let top25CouponsData: any;
 
 export async function setup(){
     const urlQueries = new URLSearchParams({
@@ -64,11 +67,14 @@ export async function render(url: string) {
         const categoriesStore = useCategoriesStore();
         const postsStore = usePostsStore();
         const mostAccessedPostsStore = useMostAccessedPostsStore();
+        const couponsStore = useCouponsStore();
 
         settingsStore.setSettings(settingsData);
         categoriesStore.setCategories(categoriesData);
         postsStore.setPosts(postsData.result.posts);
         mostAccessedPostsStore.setMostAccessedPosts(mostAccessedPostsData);
+        couponsStore.setFeaturedCoupons(featuredCouponsData);
+        couponsStore.setTop25Coupons(top25CouponsData);
 
         const { router } = await useTheme();
         router.push(url);
@@ -106,7 +112,9 @@ export async function render(url: string) {
             settings: settingsData,
             categories: categoriesData,
             posts: postsData.result,
-            mostAccessedPosts: mostAccessedPostsData
+            mostAccessedPosts: mostAccessedPostsData,
+            featuredCoupons: featuredCouponsData,
+            top25Coupons: top25CouponsData
         }
     } catch (e: any) {
         console.error('Render error:', e);
