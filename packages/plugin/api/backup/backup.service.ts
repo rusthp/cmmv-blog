@@ -1,5 +1,4 @@
 import * as path from "node:path";
-import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as zlib from "node:zlib";
 import { cwd } from "node:process";
@@ -46,17 +45,20 @@ export class BackupService {
             const UserEntity = Repository.getEntity("UserEntity");
             const GroupsEntity = Repository.getEntity("GroupsEntity");
             const SettingsEntity = Repository.getEntity("SettingsEntity");
+
+            //CMS
             const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
             const AnalyticsSummaryEntity = Repository.getEntity("AnalyticsSummaryEntity");
             const CategoriesEntity = Repository.getEntity("CategoriesEntity");
-            const PostsEntity = Repository.getEntity("PostsEntity");
-            const PostsHistoryEntity = Repository.getEntity("PostsHistoryEntity");
             const CommentsEntity = Repository.getEntity("CommentsEntity");
             const CommentsLikesEntity = Repository.getEntity("CommentsLikesEntity");
             const MediasEntity = Repository.getEntity("MediasEntity");
             const MemberEntity = Repository.getEntity("MemberEntity");
             const MetaEntity = Repository.getEntity("MetaEntity");
+            const PostsEntity = Repository.getEntity("PostsEntity");
+            const PostsHistoryEntity = Repository.getEntity("PostsHistoryEntity");
             const ProfilesEntity = Repository.getEntity("ProfilesEntity");
+            const PromptsEntity = Repository.getEntity("PromptsEntity");
             const RedirectsEntity = Repository.getEntity("RedirectsEntity");
             const TagsEntity = Repository.getEntity("TagsEntity");
             const WhitelabelEntity = Repository.getEntity("WhitelabelEntity");
@@ -76,6 +78,8 @@ export class BackupService {
             const AffiliateAccountsEntity = Repository.getEntity("AffiliateAccountsEntity");
             const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
             const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
+            const AffiliateCategoriesEntity = Repository.getEntity("AffiliateCategoriesEntity");
+            const AffiliateCampaignsNetworksEntity = Repository.getEntity("AffiliateCampaignsNetworksEntity");
 
             const users = await Repository.findAll(UserEntity, { limit: 10000000000 });
             const groups = await Repository.findAll(GroupsEntity, { limit: 10000000000 });
@@ -91,6 +95,7 @@ export class BackupService {
             const members = await Repository.findAll(MemberEntity, { limit: 10000000000 });
             const meta = await Repository.findAll(MetaEntity, { limit: 10000000000 });
             const profiles = await Repository.findAll(ProfilesEntity, { limit: 10000000000 });
+            const prompts = await Repository.findAll(PromptsEntity, { limit: 10000000000 });
             const redirects = await Repository.findAll(RedirectsEntity, { limit: 10000000000 });
             const tags = await Repository.findAll(TagsEntity, { limit: 10000000000 });
             const whitelabel = await Repository.findAll(WhitelabelEntity, { limit: 10000000000 });
@@ -101,10 +106,13 @@ export class BackupService {
             const ytChannels = await Repository.findAll(YTChannelsEntity, { limit: 10000000000 });
             const ytVideos = await Repository.findAll(YTVideosEntity, { limit: 10000000000 });
 
+            //Affiliate
             const affiliateNetworks = await Repository.findAll(AffiliateNetworksEntity, { limit: 10000000000 });
             const affiliateAccounts = await Repository.findAll(AffiliateAccountsEntity, { limit: 10000000000 });
             const affiliateCampaigns = await Repository.findAll(AffiliateCampaignsEntity, { limit: 10000000000 });
             const affiliateCoupons = await Repository.findAll(AffiliateCouponsEntity, { limit: 10000000000 });
+            const affiliateCategories = await Repository.findAll(AffiliateCategoriesEntity, { limit: 10000000000 });
+            const affiliateCampaignsNetworks = await Repository.findAll(AffiliateCampaignsNetworksEntity, { limit: 10000000000 });
 
             const backupData = [
                 { name: "users.json", data: users },
@@ -121,6 +129,7 @@ export class BackupService {
                 { name: "members.json", data: members },
                 { name: "meta.json", data: meta },
                 { name: "profiles.json", data: profiles },
+                { name: "prompts.json", data: prompts },
                 { name: "redirects.json", data: redirects },
                 { name: "tags.json", data: tags },
                 { name: "whitelabel.json", data: whitelabel },
@@ -133,7 +142,9 @@ export class BackupService {
                 { name: "affiliate_networks.json", data: affiliateNetworks },
                 { name: "affiliate_accounts.json", data: affiliateAccounts },
                 { name: "affiliate_campaigns.json", data: affiliateCampaigns },
-                { name: "affiliate_coupons.json", data: affiliateCoupons }
+                { name: "affiliate_coupons.json", data: affiliateCoupons },
+                { name: "affiliate_categories.json", data: affiliateCategories },
+                { name: "affiliate_campaigns_networks.json", data: affiliateCampaignsNetworks }
             ];
 
             for (const item of backupData) {

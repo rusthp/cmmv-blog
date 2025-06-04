@@ -19,7 +19,6 @@ export default {
     dependencies: [
         "@cmmv/http",
         "@cmmv/repository",
-        "@cmmv/admin",
         "@cmmv/auth",
         "@cmmv/blog",
         "@cmmv/ai-content"

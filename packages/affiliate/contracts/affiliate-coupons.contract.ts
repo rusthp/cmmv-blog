@@ -91,7 +91,8 @@ export class AffiliateCouponsContract extends AbstractContract {
     @ContractField({
         protoType: 'boolean',
         nullable: false,
-        defaultValue: true
+        defaultValue: true,
+        index: true
     })
     active!: boolean;
 

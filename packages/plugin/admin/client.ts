@@ -156,6 +156,7 @@ export const useAdminClient = () => {
         cleanupDuplicatedImages: () => api.authRequest('cleanup-duplicated-images', 'POST'),
         getCleanupProgress: () => api.authRequest('cleanup-orphaned-media-progress', 'GET'),
         initCleanupProgress: () => api.authRequest('init-cleanup-progress', 'POST'),
+        generateMissingThumbnails: () => api.authRequest('generate-missing-thumbnails', 'POST'),
     };
 
     const images = {

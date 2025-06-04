@@ -24,7 +24,7 @@ export class CategoriesServiceTools {
             order: {
                 name: "ASC"
             },
-            select: ["id", "name", "slug", "active"]
+            select: ["id", "name", "slug", "active", "icon"]
         });
 
         return (categories) ? categories.data : [];

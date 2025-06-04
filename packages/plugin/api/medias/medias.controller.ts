@@ -110,4 +110,10 @@ export class MediasController {
     async importFromUrl(@Body() body: {url: string, alt: string, caption: string}) {
         return await this.mediasService.importFromUrl(body.url, body.alt, body.caption);
     }
+
+    @Post("generate-missing-thumbnails", { exclude: true })
+    @Auth("media:process")
+    async generateMissingThumbnails() {
+        return await this.mediasService.generateMissingThumbnails();
+    }
 }

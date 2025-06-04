@@ -2,7 +2,7 @@ import {
     Controller, Get, Param,
     CacheControl, ContentType,
     Raw, Put, Body, Res,
-    Query
+    Query, Post
 } from "@cmmv/http";
 
 import {
@@ -23,6 +23,25 @@ export class CampaignsControllerTools {
         return await this.campaignsService.updateCampaignLogo(campaignId, data.logo);
     }
 
+    @Post(":campaignId/generate-seo")
+    @Auth("affiliatecampaigns:update")
+    async generateSEOContent(@Param("campaignId") campaignId: string) {
+        return await this.campaignsService.generateSEOContent(campaignId);
+    }
+
+    @Post(":campaignId/start-seo-job")
+    @Auth("affiliatecampaigns:update")
+    async startSEOGenerationJob(@Param("campaignId") campaignId: string) {
+        const jobId = await this.campaignsService.startSEOGenerationJob(campaignId);
+        return { jobId, status: 'pending', message: 'SEO generation job started' };
+    }
+
+    @Get("job/:jobId/status")
+    @Auth("affiliatecampaigns:get")
+    async getAIJobStatus(@Param("jobId") jobId: string) {
+        return await this.campaignsService.getAIJobStatus(jobId);
+    }
+
     @Get("public")
     @ContentType("application/json")
     @CacheControl({
@@ -33,6 +52,18 @@ export class CampaignsControllerTools {
     @Raw()
     async getCampaignsPublicList(){
         return await this.campaignsService.getCampaignsPublicList();
+    }
+
+    @Get("public-with-counts")
+    @ContentType("application/json")
+    @CacheControl({
+        maxAge: 60 * 15,
+        sMaxAge: 60 * 15,
+        public: true
+    })
+    @Raw()
+    async getCampaignsPublicListWithCouponCounts(){
+        return await this.campaignsService.getCampaignsPublicListWithCouponCounts();
     }
 
     @Get("export")

@@ -35,6 +35,11 @@ export class BlogStorageService {
         }
     }
 
+    /**
+     * Upload a file to Cloudflare Spaces
+     * @param file - The file to upload
+     * @returns The file url
+     */
     private async uploadFileToCloudflare(file: IFile) {
         const spacesAccessKey = Config.get("blog.spacesAccessKey");
         const spacesSecretKey = Config.get("blog.spacesSecretKey");
@@ -72,6 +77,11 @@ export class BlogStorageService {
         }
     }
 
+    /**
+     * Upload a file to S3
+     * @param file - The file to upload
+     * @returns The file url
+     */
     private async uploadFileToS3(file: IFile) {
         const s3AccessKey = Config.get("blog.s3AccessKey");
         const s3SecretKey = Config.get("blog.s3SecretKey");
