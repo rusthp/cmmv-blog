@@ -26,7 +26,8 @@ export class AnalyticsAccessContract extends AbstractContract {
 
     @ContractField({
         protoType: 'string',
-        nullable: true
+        nullable: true,
+        index: true
     })
     postId?: string;
 

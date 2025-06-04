@@ -42,7 +42,8 @@ export class FeedChannelsContract extends AbstractContract {
     @ContractField({
         protoType: 'int32',
         nullable: false,
-        defaultValue: 1000 * 60 * 60 * 24 // 1 day
+        defaultValue: 1000 * 60 * 60 * 24,
+        index: true
     })
     intervalUpdate!: number;
 

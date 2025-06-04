@@ -53,6 +53,7 @@ export class PostsContract extends AbstractContract {
         objectType: 'string',
         entityType: 'UserContract',
         protoRepeated: true,
+        exclude: true,
     })
     authors: string[];
 
@@ -121,6 +122,7 @@ export class PostsContract extends AbstractContract {
         objectType: 'string',
         entityType: 'CategoriesEntity',
         protoRepeated: true,
+        exclude: true,
         link: [
             {
                 createRelationship: false,
@@ -215,14 +217,16 @@ export class PostsContract extends AbstractContract {
         nullable: true,
         objectType: 'string',
         protoRepeated: true,
-        array: true
+        array: true,
+        exclude: true,
     })
     tags?: string[];
 
     @ContractField({
         protoType: 'string',
         nullable: false,
-        defaultValue: 'post'
+        defaultValue: 'post',
+        exclude: true,
     })
     type: string;
 
@@ -230,7 +234,8 @@ export class PostsContract extends AbstractContract {
         protoType: 'string',
         nullable: false,
         defaultValue: 'draft',
-        index: true
+        index: true,
+        exclude: true,
     })
     status: string;
 
@@ -238,7 +243,9 @@ export class PostsContract extends AbstractContract {
         protoType: 'string',
         nullable: false,
         defaultValue: 'public',
-        index: true
+        readOnly: true,
+        index: true,
+        exclude: true,
     })
     visibility: string;
 
@@ -261,18 +268,20 @@ export class PostsContract extends AbstractContract {
     canonicalUrl?: string;
 
     @ContractField({
-        protoType: 'int64',
+        protoType: 'int',
         nullable: false,
         defaultValue: 0,
-        index: true
+        index: true,
+        exclude: true,
     })
     views: number;
 
     @ContractField({
-        protoType: 'int64',
+        protoType: 'int',
         nullable: false,
         defaultValue: 0,
-        index: true
+        index: true,
+        exclude: true,
     })
     comments: number;
 }

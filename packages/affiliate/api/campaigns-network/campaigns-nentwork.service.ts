@@ -1,4 +1,8 @@
-import { Service, Application } from "@cmmv/core";
+import {
+    Service, Application,
+    Cron, CronExpression
+} from "@cmmv/core";
+
 import { Repository } from "@cmmv/repository";
 
 import { AwinService } from "../network-api/awin.service";
@@ -6,9 +10,17 @@ import { AfilioService } from "../network-api/afilio.service";
 import { CityadsService } from "../network-api/cityads.service";
 import { LomadeeService } from "../network-api/lomadee.service";
 import { RakutenService } from "../network-api/rakuten.service";
+import { HasoffersService } from "../network-api/hasoffers.service";
+import { KwankoService } from "../network-api/kwanko.service";
 
 @Service()
 export class CampaignsNetworksToolsService {
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async getNetworkCampaignsCron(){
+        await this.getNetworkCampaigns();
+        await this.getCoupons();
+    }
+
     /**
      * Format the URL with the metadata
      * @param url - The URL to format
@@ -52,6 +64,16 @@ export class CampaignsNetworksToolsService {
                 docs: "https://developers.rakutenadvertising.com/documentation/en-GB/affiliate_apis",
                 version: "2.0.0",
                 service: () => Application.resolveProvider(RakutenService)
+            },
+            "Hasoffers": {
+                docs: "https://developers.tune.com/affiliate/",
+                version: "3.0.0",
+                service: () => Application.resolveProvider(HasoffersService)
+            },
+            "Kwanko": {
+                docs: "https://developers.kwanko.com/Kwanko/index.html",
+                version: "1.0.0",
+                service: () => Application.resolveProvider(KwankoService)
             }
         }
     }

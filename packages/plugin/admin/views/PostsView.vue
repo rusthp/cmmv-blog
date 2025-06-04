@@ -19,13 +19,13 @@
                     </svg>
                     Bulk Schedule
                 </button>
-                <!-- Adicionar botão para processamento em lote de imagens -->
+                <!-- Add button for batch image processing -->
                 <button @click="openBulkImageProcessDialog"
-                    class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Processar Imagens
+                    Process Images
                 </button>
                 <!-- Add search button with dropdown -->
                 <div class="relative">
@@ -135,7 +135,7 @@
                                 <span class="text-xs text-neutral-400">
                                     <template v-if="post.status === 'cron' && post.scheduledPublishDate">
                                         <span class="ml-2 text-blue-400 font-medium">
-                                            <i class="far fa-clock mr-1"></i> Será publicado em: {{ post.scheduledPublishDate }}
+                                            <i class="far fa-clock mr-1"></i> Will be published on: {{ post.scheduledPublishDate }}
                                         </span>
                                     </template>
                                     <template v-else>
@@ -206,12 +206,12 @@
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                         </button>
-                        <!-- Adicionar botão para processamento individual de imagem -->
-                        <button 
+                                                <!-- Add button for individual image processing -->
+                        <button
                             v-if="post.featureImage && isImageUnprocessed(post.featureImage)"
-                            @click="processImage(post.id)" 
-                            class="text-amber-400 hover:text-amber-300 p-1 cursor-pointer"
-                            title="Processar imagem"
+                            @click="processImage(post.id)"
+                            class="text-blue-400 hover:text-blue-300 p-1 cursor-pointer"
+                            title="Process image"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -326,12 +326,12 @@
                                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
-                                        <!-- Adicionar botão para processamento individual de imagem -->
-                                        <button 
+                                        <!-- Add button for individual image processing -->
+                                        <button
                                             v-if="post.featureImage && isImageUnprocessed(post.featureImage)"
-                                            @click="processImage(post.id)" 
-                                            class="text-amber-400 hover:text-amber-300 p-1 cursor-pointer"
-                                            title="Processar imagem"
+                                            @click="processImage(post.id)"
+                                            class="text-blue-400 hover:text-blue-300 p-1 cursor-pointer"
+                                            title="Process image"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -530,11 +530,11 @@
         </div>
     </div>
 
-    <!-- Adicionar diálogo de processamento em lote de imagens -->
+        <!-- Batch image processing dialog -->
     <div v-if="showBulkImageProcessDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
         <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
             <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white">Processamento em Lote de Imagens</h3>
+                <h3 class="text-lg font-medium text-white">Batch Image Processing</h3>
                 <button @click="closeBulkImageProcessDialog" class="text-neutral-400 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -544,17 +544,17 @@
             <div class="p-6">
                 <div class="mb-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-md font-medium text-white">Posts com Imagens Não Processadas</h4>
+                        <h4 class="text-md font-medium text-white">Posts with Unprocessed Images</h4>
                         <div class="flex items-center">
                             <input type="checkbox" id="selectAllImages" v-model="selectAllImages" @change="toggleSelectAllImages" class="mr-2 h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-neutral-600 bg-neutral-700">
-                            <label for="selectAllImages" class="text-sm text-neutral-300">Selecionar Todos</label>
+                            <label for="selectAllImages" class="text-sm text-neutral-300">Select All</label>
                         </div>
                     </div>
                     <div v-if="loadingPostsWithImages" class="py-4 flex justify-center">
                         <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                     <div v-else-if="postsWithUnprocessedImages.length === 0" class="py-4 text-center text-neutral-400">
-                        Todos os posts já possuem imagens processadas.
+                        All posts already have processed images.
                     </div>
                     <div v-else class="max-h-64 overflow-y-auto border border-neutral-700 rounded-md">
                         <div class="divide-y divide-neutral-700">
@@ -570,13 +570,13 @@
                                     {{ post.title }}
                                 </label>
                                 <div class="w-20 h-12 overflow-hidden rounded">
-                                    <img v-if="post.featureImage" :src="post.featureImage" alt="Imagem" class="w-full h-full object-cover">
+                                    <img v-if="post.featureImage" :src="post.featureImage" alt="Image" class="w-full h-full object-cover">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex justify-end space-x-3 mt-6">
                     <button
                         type="button"
@@ -584,12 +584,12 @@
                         class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
                         :disabled="imageProcessingLoading"
                     >
-                        Cancelar
+                        Cancel
                     </button>
                     <button
                         type="button"
                         @click="processBulkImages"
-                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                         :disabled="selectedPostsForImageProcess.length === 0 || imageProcessingLoading"
                     >
                         <span v-if="imageProcessingLoading" class="flex items-center">
@@ -597,46 +597,46 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Processando...
+                            Processing...
                         </span>
-                        <span v-else>Processar {{ selectedPostsForImageProcess.length }} Imagens</span>
+                        <span v-else>Process {{ selectedPostsForImageProcess.length }} Images</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Overlay de Progresso de Processamento -->
+            <!-- Processing Progress Overlay -->
             <div
                 v-if="imageProcessingLoading"
                 class="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-10 px-6"
             >
                 <div class="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-6">
                     <div class="text-center mb-4">
-                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-3"></div>
-                        <h3 class="text-lg font-medium text-white">Processando Imagens</h3>
-                        <p class="text-neutral-400 mt-1">Aguarde enquanto as imagens estão sendo processadas</p>
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-3"></div>
+                        <h3 class="text-lg font-medium text-white">Processing Images</h3>
+                        <p class="text-neutral-400 mt-1">Please wait while images are being processed</p>
                     </div>
 
-                    <!-- Barra de progresso -->
+                    <!-- Progress bar -->
                     <div class="w-full bg-neutral-700 rounded-full h-4 mb-3">
                         <div
-                            class="bg-amber-600 h-4 rounded-full transition-all duration-300 ease-out"
+                            class="bg-blue-600 h-4 rounded-full transition-all duration-300 ease-out"
                             :style="{ width: `${(imageProcessingProgress.completed / imageProcessingProgress.total) * 100}%` }"
                         ></div>
                     </div>
 
                     <div class="text-center text-sm text-neutral-300 mb-4">
-                        <span>{{ imageProcessingProgress.completed }} de {{ imageProcessingProgress.total }} imagens processadas</span>
+                        <span>{{ imageProcessingProgress.completed }} of {{ imageProcessingProgress.total }} images processed</span>
                     </div>
 
-                    <!-- Post sendo processado atualmente -->
+                    <!-- Currently processing post -->
                     <div v-if="imageProcessingProgress.currentPost" class="mb-4">
-                        <p class="text-sm text-neutral-400">Processando post:</p>
+                        <p class="text-sm text-neutral-400">Processing post:</p>
                         <p class="text-sm font-medium text-white truncate">{{ imageProcessingProgress.currentPost }}</p>
                     </div>
 
-                    <!-- Posts processados recentemente -->
+                    <!-- Recently processed posts -->
                     <div v-if="imageProcessingProgress.processedPosts.length > 0" class="mt-4">
-                        <p class="text-sm text-neutral-400 mb-2">Processados recentemente:</p>
+                        <p class="text-sm text-neutral-400 mb-2">Recently processed:</p>
                         <div class="max-h-32 overflow-y-auto">
                             <div v-for="(post, index) in imageProcessingProgress.processedPosts.slice().reverse().slice(0, 5)" :key="index"
                                 class="flex items-center py-1 border-b border-neutral-700 last:border-b-0">
@@ -650,21 +650,21 @@
                                 </div>
                                 <div class="flex-1 truncate text-sm">
                                     <span v-if="post.success" class="text-neutral-300">{{ post.title }}</span>
-                                    <span v-else class="text-amber-400">{{ post.title }} - Imagem original preservada</span>
+                                    <span v-else class="text-amber-400">{{ post.title }} - Original image preserved</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Adicionar resumo de falhas -->
+                    <!-- Summary of failures -->
                     <div v-if="imageProcessingProgress.failedPosts && imageProcessingProgress.failedPosts.length > 0" class="mt-4 bg-neutral-750 border border-amber-900/50 rounded-md p-3">
-                        <p class="text-sm text-amber-400 font-medium mb-2">Atenção: Imagens preservadas</p>
+                        <p class="text-sm text-amber-400 font-medium mb-2">Attention: Images preserved</p>
                         <p class="text-xs text-neutral-300 mb-2">
-                            {{ imageProcessingProgress.failedPosts.length }} imagens não puderam ser processadas, 
-                            mas foram preservadas em seus formatos originais.
+                            {{ imageProcessingProgress.failedPosts.length }} images could not be processed,
+                            but were preserved in their original formats.
                         </p>
                         <p class="text-xs text-neutral-400">
-                            As imagens antigas ou em formatos especiais foram mantidas para evitar a perda de conteúdo.
+                            Old images or special formats were kept to avoid content loss.
                         </p>
                     </div>
                 </div>
@@ -672,11 +672,11 @@
         </div>
     </div>
 
-    <!-- Adicionar diálogo de resultados do processamento -->
+        <!-- Image processing results dialog -->
     <div v-if="showImageProcessingResultsDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
         <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
             <div class="p-6 border-b border-neutral-700 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-white">Resultados do Processamento de Imagens</h3>
+                <h3 class="text-lg font-medium text-white">Image Processing Results</h3>
                 <button @click="showImageProcessingResultsDialog = false" class="text-neutral-400 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -690,80 +690,80 @@
                             <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold mr-3">
                                 <span>{{ processingResults.success.length }}</span>
                             </div>
-                            <span class="text-white">Imagens processadas com sucesso</span>
+                            <span class="text-white">Successfully processed images</span>
                         </div>
                         <div class="w-1/2 flex items-center">
                             <div class="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold mr-3">
                                 <span>{{ processingResults.failed.length }}</span>
                             </div>
-                            <span class="text-white">Imagens originais preservadas</span>
+                            <span class="text-white">Original images preserved</span>
                         </div>
                     </div>
 
-                    <!-- Tabs para alternar entre processados e preservados -->
+                    <!-- Tabs to switch between processed and preserved -->
                     <div class="border-b border-neutral-700 mb-4">
                         <div class="flex">
-                            <button 
+                            <button
                                 @click="activeResultTab = 'success'"
                                 class="px-4 py-2 font-medium text-sm"
                                 :class="activeResultTab === 'success' ? 'text-white border-b-2 border-green-500' : 'text-neutral-400 hover:text-white'"
                             >
-                                Processados
+                                Processed
                             </button>
-                            <button 
+                            <button
                                 @click="activeResultTab = 'failed'"
                                 class="px-4 py-2 font-medium text-sm"
                                 :class="activeResultTab === 'failed' ? 'text-white border-b-2 border-amber-500' : 'text-neutral-400 hover:text-white'"
                             >
-                                Preservados
+                                Preserved
                             </button>
                         </div>
                     </div>
 
-                    <!-- Lista de imagens processadas com sucesso -->
+                    <!-- List of successfully processed images -->
                     <div v-if="activeResultTab === 'success'" class="max-h-96 overflow-y-auto">
                         <div v-if="processingResults.success.length === 0" class="text-center py-6 text-neutral-400">
-                            Nenhuma imagem foi processada com sucesso.
+                            No images were successfully processed.
                         </div>
                         <div v-else class="space-y-3">
                             <div v-for="(post, index) in processingResults.success" :key="index" class="bg-neutral-750 p-3 rounded-md">
                                 <div class="flex items-center">
                                     <div class="mr-3 w-16 h-12 bg-neutral-700 rounded overflow-hidden flex-shrink-0">
-                                        <img v-if="post.newImage" :src="post.newImage" class="w-full h-full object-cover" alt="Nova imagem">
+                                        <img v-if="post.newImage" :src="post.newImage" class="w-full h-full object-cover" alt="New image">
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="text-sm font-medium text-white truncate">{{ post.title }}</h4>
-                                        <p class="text-xs text-green-400">Processada com sucesso</p>
+                                        <p class="text-xs text-green-400">Successfully processed</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Lista de imagens originais preservadas -->
+                    <!-- List of preserved original images -->
                     <div v-if="activeResultTab === 'failed'" class="max-h-96 overflow-y-auto">
                         <div v-if="processingResults.failed.length === 0" class="text-center py-6 text-neutral-400">
-                            Todas as imagens foram processadas com sucesso.
+                            All images were successfully processed.
                         </div>
                         <div v-else>
                             <div class="bg-amber-900/20 border border-amber-900/30 rounded-md p-3 mb-4">
-                                <p class="text-sm text-amber-400 font-medium">Informação importante</p>
+                                <p class="text-sm text-amber-400 font-medium">Important information</p>
                                 <p class="text-xs text-neutral-300 mt-1">
-                                    As imagens abaixo foram preservadas em seu formato original para evitar perda de conteúdo.
-                                    Elas continuarão funcionando normalmente, mas podem não se beneficiar de otimizações.
+                                    The images below were preserved in their original format to prevent content loss.
+                                    They will continue to work normally but may not benefit from optimizations.
                                 </p>
                             </div>
                             <div class="space-y-3">
                                 <div v-for="(post, index) in processingResults.failed" :key="index" class="bg-neutral-750 p-3 rounded-md">
                                     <div class="flex items-center">
                                         <div class="mr-3 w-16 h-12 bg-neutral-700 rounded overflow-hidden flex-shrink-0">
-                                            <img v-if="post.originalImage" :src="post.originalImage" class="w-full h-full object-cover" alt="Imagem original">
+                                            <img v-if="post.originalImage" :src="post.originalImage" class="w-full h-full object-cover" alt="Original image">
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <h4 class="text-sm font-medium text-white truncate">{{ post.title }}</h4>
-                                            <p class="text-xs text-amber-400">Imagem original preservada</p>
-                                            <p v-if="post.error && post.error !== 'Processamento falhou - imagem original preservada'" class="text-xs text-neutral-500 truncate mt-1">
-                                                Motivo: {{ post.error }}
+                                            <p class="text-xs text-amber-400">Original image preserved</p>
+                                            <p v-if="post.error && post.error !== 'Processing failed - original image preserved'" class="text-xs text-neutral-500 truncate mt-1">
+                                                Reason: {{ post.error }}
                                             </p>
                                         </div>
                                     </div>
@@ -772,14 +772,14 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex justify-end space-x-3 mt-4">
                     <button
                         type="button"
                         @click="showImageProcessingResultsDialog = false"
                         class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
                     >
-                        Fechar
+                        Close
                     </button>
                 </div>
             </div>
@@ -1461,7 +1461,7 @@ async function loadPostsWithUnprocessedImages() {
 
         if (response && response.posts) {
             // Filtrar posts que têm imagens não processadas
-            postsWithUnprocessedImages.value = response.posts.filter(post => 
+            postsWithUnprocessedImages.value = response.posts.filter(post =>
                 post.featureImage && isImageUnprocessed(post.featureImage)
             ).map(post => ({
                 ...post,
@@ -1499,22 +1499,22 @@ async function processImage(postId) {
     try {
         // Buscar o post por ID
         const postResponse = await adminClient.posts.getById(postId);
-        
+
         if (!postResponse || !postResponse.featureImage) {
             throw new Error('Post ou imagem não encontrada');
         }
-        
+
         const post = postResponse;
         const originalImageUrl = post.featureImage;
-        
+
         // Verificar se a imagem precisa ser processada
         if (!isImageUnprocessed(originalImageUrl)) {
             return; // Imagem já processada, nada a fazer
         }
-        
+
         let processedImageUrl = '';
         let success = false;
-        
+
         try {
             // Processar a imagem de acordo com seu tipo
             if (originalImageUrl.startsWith('data:')) {
@@ -1523,10 +1523,10 @@ async function processImage(postId) {
                 try {
                     const blob = await fetch(originalImageUrl).then(r => r.blob());
                     formData.append('file', blob, 'feature-image.jpg');
-                    
+
                     // Fazer upload para o servidor
                     const response = await adminClient.medias.upload(formData);
-                    
+
                     if (response && response.url) {
                         processedImageUrl = response.url;
                         success = true;
@@ -1545,7 +1545,7 @@ async function processImage(postId) {
                         alt: post.featureImageAlt || '',
                         caption: post.featureImageCaption || ''
                     });
-                    
+
                     if (response && response.url) {
                         processedImageUrl = response.url;
                         success = true;
@@ -1557,14 +1557,14 @@ async function processImage(postId) {
                     // Mantém a imagem original
                 }
             }
-            
+
             // Verificar resultado do processamento
             if (!success || !processedImageUrl) {
                 console.warn(`Processamento falhou para imagem: ${originalImageUrl.substring(0, 50)}... - Mantendo original`);
                 // Registramos a falha mas não atualizamos a imagem para não perder a referência original
                 return false;
             }
-            
+
             // Atualizar o post com a nova URL da imagem apenas se o processamento foi bem-sucedido
             const updateData = {
                 post: {
@@ -1581,17 +1581,17 @@ async function processImage(postId) {
                         : []
                 }
             };
-            
+
             await adminClient.posts.save(updateData);
-            
+
             showNotification('success', 'Imagem processada com sucesso');
-            
+
             // Atualizar a lista de posts
             const postIndex = posts.value.findIndex(p => p.id === postId);
             if (postIndex !== -1) {
                 posts.value[postIndex].featureImage = processedImageUrl;
             }
-            
+
             return true;
         } catch (processingError) {
             console.error('Erro no processamento de imagem:', processingError);
@@ -1707,13 +1707,13 @@ async function processBulkImages() {
 
         imageProcessingLoading.value = false;
         closeBulkImageProcessDialog();
-        
+
         // Mostrar o diálogo de resultados
         if (processingResults.value.success.length > 0 || processingResults.value.failed.length > 0) {
             activeResultTab.value = processingResults.value.failed.length > 0 ? 'failed' : 'success';
             showImageProcessingResultsDialog.value = true;
         }
-        
+
         loadPosts(); // Refresh the main posts list
     } catch (error) {
         console.error('Falha ao processar imagens em lote:', error);

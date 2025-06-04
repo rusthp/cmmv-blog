@@ -120,14 +120,16 @@ export class AuthorProfileContract extends AbstractContract {
     @ContractField({
         protoType: 'string',
         nullable: true,
-        defaultValue: 'en'
+        defaultValue: 'en',
+        exclude: true,
     })
     locale?: string;
 
     @ContractField({
         protoType: 'string',
         nullable: true,
-        defaultValue: 'public'
+        defaultValue: 'public',
+        exclude: true,
     })
     visibility?: string;
 
@@ -159,14 +161,16 @@ export class AuthorProfileContract extends AbstractContract {
     @ContractField({
         protoType: 'boolean',
         nullable: true,
-        defaultValue: true
+        defaultValue: true,
+        exclude: true,
     })
     mentionNotifications?: boolean;
 
     @ContractField({
         protoType: 'boolean',
         nullable: true,
-        defaultValue: true
+        defaultValue: true,
+        exclude: true,
     })
     recommendationNotifications?: boolean;
 }

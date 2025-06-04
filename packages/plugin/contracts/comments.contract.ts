@@ -81,7 +81,8 @@ export class CommentsContract extends AbstractContract {
         protoType: 'string',
         nullable: false,
         defaultValue: 'published',
-        index: true
+        index: true,
+        exclude: true,
     })
     status: string;
 

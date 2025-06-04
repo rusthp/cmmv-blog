@@ -91,7 +91,8 @@ export class YTVideosContract extends AbstractContract {
     @ContractField({
         protoType: 'int32',
         nullable: true,
-        defaultValue: 0
+        defaultValue: 0,
+        index: true,
     })
     durationSeconds!: number;
 

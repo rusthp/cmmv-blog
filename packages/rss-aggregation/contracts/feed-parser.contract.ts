@@ -63,6 +63,7 @@ export class FeedParserContract extends AbstractContract {
     @ContractField({
         protoType: 'string',
         nullable: true,
+        index: true,
     })
     category: string;
 
