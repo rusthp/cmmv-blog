@@ -4,7 +4,7 @@
             <div class="bg-white rounded-lg px-4 sm:px-6 py-8">
                 <h1 class="text-3xl font-bold mb-6 text-neutral-900">Política de Privacidade</h1>
                 <a id="privacy" title="Privacidade"></a>
-                <p class="mb-4 text-neutral-700">A política de privacidade que você concorda ao usar o software e serviços CMMV.</p>
+                <p class="mb-4 text-neutral-700">A política de privacidade que você concorda ao usar o software e serviços CMMV no Invasão Nerd.</p>
                 <p class="mb-6 text-neutral-700"><strong>Última atualização em 25 de março de 2025</strong></p>
 
                 <h2 class="text-2xl font-semibold mt-8 mb-4 text-neutral-800">Resumo</h2>
@@ -110,7 +110,7 @@
                 <p class="mb-4 text-neutral-700">Atenderei prontamente a quaisquer perguntas, preocupações ou reclamações sobre sua privacidade. Entre em contato comigo conforme descrito abaixo.</p>
 
                 <h3 class="text-xl font-medium mt-6 mb-3 text-neutral-800">Como entrar em contato comigo</h3>
-                <p class="mb-4 text-neutral-700">Envie-me um e-mail para: <code class="px-1.5 py-0.5 bg-gray-100 rounded">andre@cmmv.io</code>.</p>
+                <p class="mb-4 text-neutral-700">Envie-me um e-mail para: <code class="px-1.5 py-0.5 bg-gray-100 rounded">invasaonerd@gmail.com</code>.</p>
                 <p class="mb-4 text-neutral-700">Esta política pode evoluir à medida que o CMMV cresce. Verifique o site ou repositório do CMMV para atualizações. Não reduzirei as proteções para informações previamente coletadas sem o seu consentimento.</p>
             </div>
         </div>
@@ -121,15 +121,15 @@
 import { useHead } from '@unhead/vue';
 
 useHead({
-    title: 'Política de Privacidade',
+    title: 'Política de Privacidade - Invasão Nerd',
     meta: [
         {
             name: 'description',
-            content: 'Política de Privacidade para GameDevBR'
+            content: 'Política de Privacidade do Invasão Nerd e CMMV'
         },
         {
             name: 'keywords',
-            content: 'GameDevBR, Política de Privacidade, CMMV'
+            content: 'Invasão Nerd, Política de Privacidade, CMMV, Cultura Nerd, Geek'
         }
     ]
 })
