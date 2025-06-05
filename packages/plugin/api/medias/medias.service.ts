@@ -2,8 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { cwd } from "node:process";
-import sharp from "sharp";
-import { v4 as uuidv4 } from "uuid";
+import * as sharp from "sharp";
 
 import {
     AbstractService,
@@ -120,7 +119,9 @@ export class MediasService extends AbstractService {
         if(!fs.existsSync(mediasPath))
             await fs.mkdirSync(mediasPath, { recursive: true });
 
-        format = format.toLowerCase(); //bugfix
+        // Ignoramos o formato solicitado e usamos sempre webp
+        const originalFormat = format.toLowerCase();
+        format = "webp"; // Forçamos sempre webp para armazenamento
         let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
 
         if(apiUrl.endsWith("/"))
@@ -142,44 +143,56 @@ export class MediasService extends AbstractService {
             try {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
                 const buffer = Buffer.from(base64Data, 'base64');
-                
-                // Process image: resize and convert to webp
-                let processor = sharp(buffer);
-                const originalMetadata = await processor.metadata();
 
-                if (originalMetadata.width && originalMetadata.width > maxWidth) {
-                    processor = processor.resize({ width: maxWidth, withoutEnlargement: true });
+                //@ts-ignore
+                let processor = sharp(buffer);
+                const metadata = await processor.metadata();
+                
+                // Otimizar a imagem antes de enviá-la para o storage
+                if (metadata.width && metadata.width > maxWidth) {
+                    //@ts-ignore
+                    const aspectRatio = metadata.width / metadata.height;
+                    const newHeight = Math.round(maxWidth / aspectRatio);
+
+                    processor = processor.resize(maxWidth, newHeight, {
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    });
                 }
 
-                const processedBuffer = await processor.webp({
+                // Sempre converter para WebP independente do formato original
+                processor = processor.webp({
                     quality: 70,
                     lossless: false,
-                    // @ts-ignore
+                    //@ts-ignore
                     reductionEffort: 6
-                }).toBuffer();
-                const processedMetadata = await sharp(processedBuffer).metadata();
+                });
                 
-                const filename = `${uuidv4()}.webp`;
-
+                // Obter o buffer otimizado para upload
+                const optimizedBuffer = await processor.toBuffer();
+                
+                // Fazer upload do arquivo otimizado (sempre webp)
                 const uploadedFile = await blogStorageService.uploadFile({
-                    buffer: processedBuffer,
-                    originalname: filename,
-                    mimetype: 'image/webp'
+                    buffer: optimizedBuffer,
+                    originalname: `${imageHash}.webp`,
+                    mimetype: `image/webp`
                 });
 
                 if(uploadedFile){
-                    const thumbFilename = `${path.parse(filename).name}_thumb.webp`;
-                    const thumbnailBuffer = await sharp(processedBuffer)
+                    //@ts-ignore
+                    const thumbnailBuffer = await sharp(buffer)
                         .resize(16, 16, {
                             fit: 'cover',
                             position: 'center'
                         })
-                        .webp({ quality: 60 })
+                        .webp({ quality: 80 })
                         .toBuffer();
 
+                    const cleanThumbnailBuffer = Buffer.from(new Uint8Array(thumbnailBuffer));
+
                     const uploadedThumbnail = await blogStorageService.uploadFile({
-                        buffer: thumbnailBuffer,
-                        originalname: thumbFilename,
+                        buffer: cleanThumbnailBuffer,
+                        originalname: `${imageHash}_thumb.webp`,
                         mimetype: 'image/webp'
                     });
 
@@ -188,12 +201,8 @@ export class MediasService extends AbstractService {
 
                     if(media){
                         await Repository.updateOne(MediasEntity, { sha1: imageHash }, {
-                            filepath: uploadedFile.url,
-                            thumbnail: uploadedThumbnail?.url || null,
-                            format: 'webp',
-                            width: processedMetadata.width,
-                            height: processedMetadata.height,
-                            size: processedMetadata.size
+                            url: uploadedFile.url,
+                            thumbnail: uploadedThumbnail?.url || null
                         });
                     }
                     else{
@@ -201,12 +210,13 @@ export class MediasService extends AbstractService {
                             sha1: imageHash,
                             filepath: uploadedFile.url,
                             name: image,
-                            format: 'webp',
-                            width: processedMetadata.width,
-                            height: processedMetadata.height,
+                            format: 'webp', // Sempre webp como formato final
+                            originalFormat: originalFormat, // Preservamos o formato original como informação
+                            width: metadata.width,
+                            height: metadata.height,
                             alt: alt,
                             caption: caption,
-                            size: processedMetadata.size,
+                            size: optimizedBuffer.length,
                             thumbnail: uploadedThumbnail?.url || null
                         });
                     }
@@ -214,23 +224,20 @@ export class MediasService extends AbstractService {
                     return uploadedFile.url;
                 }
 
-                // Fallback to local storage if blogStorageService is not configured or fails
-                const localFilenameWithHash = `${imageHash}.webp`;
-                const localFileFullPath = path.join(mediasPath, localFilenameWithHash);
-                
-                await sharp(processedBuffer).toFile(localFileFullPath);
+                // A otimização já foi feita antes do upload
+                // Como estamos forçando webp, não precisamos fazer mais nada aqui
 
                 const MediasEntity = Repository.getEntity("MediasEntity");
                 const media = await Repository.findOne(MediasEntity, { sha1: imageHash });
 
                 if(!media){
-                    if (processedMetadata.width && processedMetadata.height && processedMetadata.width > 0 && processedMetadata.height > 0) {
-                        const localThumbFilename = `${imageHash}_thumb.webp`;
-                        const thumbnailPath = path.join(mediasPath, localThumbFilename);
+                    if (metadata.width && metadata.height && metadata.width > 0 && metadata.height > 0) {
+                        const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
                         let thumbnailUrl: string | null = null;
 
                         try {
-                            const thumbnailBuffer = await sharp(processedBuffer)
+                            //@ts-ignore
+                            const thumbnailBuffer = await sharp(buffer)
                                 .resize(16, 16, {
                                     fit: 'cover',
                                     position: 'center'
@@ -238,35 +245,37 @@ export class MediasService extends AbstractService {
                                 .webp({ quality: 80 })
                                 .toBuffer();
 
-                            await fs.promises.writeFile(thumbnailPath, thumbnailBuffer);
-                            thumbnailUrl = `${apiUrl}/images/${localThumbFilename}`;
+                            await fs.writeFileSync(thumbnailPath, thumbnailBuffer);
+                            thumbnailUrl = `${apiUrl}/images/${imageHash}_thumb.webp`;
                         } catch (thumbnailError) {
                             console.error('Error creating thumbnail:', thumbnailError);
                         }
 
                         await Repository.insert(MediasEntity, {
                             sha1: imageHash,
-                            filepath: localFileFullPath,
+                            filepath: imageFullpath,
                             name: image,
-                            format: 'webp',
-                            width: processedMetadata.width,
-                            height: processedMetadata.height,
+                            format: 'webp', // Sempre webp como formato final
+                            originalFormat: originalFormat, // Preservamos o formato original
+                            width: metadata.width,
+                            height: metadata.height,
                             alt: alt,
                             caption: caption,
-                            size: processedMetadata.size,
+                            size: metadata.size,
                             thumbnail: thumbnailUrl
                         });
                     } else {
-                        console.error(`Invalid image dimensions (${processedMetadata.width}x${processedMetadata.height}) for ${localFileFullPath}`);
+                        console.error(`Invalid image dimensions (${metadata.width}x${metadata.height}) for ${imageFullpath}`);
                         return null;
                     }
                 } else if (!media.thumbnail) {
-                    const localThumbFilename = `${imageHash}_thumb.webp`;
-                    const thumbnailPath = path.join(mediasPath, localThumbFilename);
+                    // Create thumbnail for existing media that doesn't have one
+                    const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
                     let thumbnailUrl: string | null = null;
 
                     try {
-                        const thumbnailBuffer = await sharp(processedBuffer)
+                        //@ts-ignore
+                        const thumbnailBuffer = await sharp(buffer)
                             .resize(16, 16, {
                                 fit: 'cover',
                                 position: 'center'
@@ -274,9 +283,10 @@ export class MediasService extends AbstractService {
                             .webp({ quality: 80 })
                             .toBuffer();
 
-                        await fs.promises.writeFile(thumbnailPath, thumbnailBuffer);
-                        thumbnailUrl = `${apiUrl}/images/${localThumbFilename}`;
+                        await fs.writeFileSync(thumbnailPath, thumbnailBuffer);
+                        thumbnailUrl = `${apiUrl}/images/${imageHash}_thumb.webp`;
 
+                        // Update existing media with thumbnail
                         await Repository.update(MediasEntity, { sha1: imageHash }, {
                             thumbnail: thumbnailUrl
                         });
@@ -284,10 +294,8 @@ export class MediasService extends AbstractService {
                         console.error('Error creating thumbnail for existing media:', thumbnailError);
                     }
                 }
-                
-                const finalImageUrl = `${apiUrl}/images/${localFilenameWithHash}`;
-                return finalImageUrl.toLowerCase();
 
+                await processor.toFile(imageFullpath);
             } catch (error) {
                 console.error('Error processing image:', error);
                 return null;
