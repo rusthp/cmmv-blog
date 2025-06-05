@@ -3,7 +3,7 @@ export const formatDate = (timestamp: string) => {
 
     try {
         const date = new Date(timestamp);
-        return new Intl.DateTimeFormat('en-US', {
+        return new Intl.DateTimeFormat('pt-BR', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'

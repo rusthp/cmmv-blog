@@ -2,7 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { cwd } from "node:process";
-import * as sharp from "sharp";
+import sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
 
 import {
     AbstractService,
@@ -141,32 +142,39 @@ export class MediasService extends AbstractService {
             try {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
                 const buffer = Buffer.from(base64Data, 'base64');
-
-                //@ts-ignore
+                
+                // Process image: resize and convert to webp
                 let processor = sharp(buffer);
-                const metadata = await processor.metadata();
+                const originalMetadata = await processor.metadata();
+
+                if (originalMetadata.width && originalMetadata.width > maxWidth) {
+                    processor = processor.resize({ width: maxWidth, withoutEnlargement: true });
+                }
+
+                const processedBuffer = await processor.webp({ quality: 80 }).toBuffer();
+                const processedMetadata = await sharp(processedBuffer).metadata();
+                
+                const filename = `${uuidv4()}.webp`;
 
                 const uploadedFile = await blogStorageService.uploadFile({
-                    buffer: buffer,
-                    originalname: `${imageHash}.${format}`,
-                    mimetype: `image/${format}`
+                    buffer: processedBuffer,
+                    originalname: filename,
+                    mimetype: 'image/webp'
                 });
 
                 if(uploadedFile){
-                    //@ts-ignore
-                    const thumbnailBuffer = await sharp(buffer)
+                    const thumbFilename = `${path.parse(filename).name}_thumb.webp`;
+                    const thumbnailBuffer = await sharp(processedBuffer)
                         .resize(16, 16, {
                             fit: 'cover',
                             position: 'center'
                         })
-                        .webp({ quality: 80 })
+                        .webp({ quality: 60 })
                         .toBuffer();
 
-                    const cleanThumbnailBuffer = Buffer.from(new Uint8Array(thumbnailBuffer));
-
                     const uploadedThumbnail = await blogStorageService.uploadFile({
-                        buffer: cleanThumbnailBuffer,
-                        originalname: `${imageHash}_thumb.webp`,
+                        buffer: thumbnailBuffer,
+                        originalname: thumbFilename,
                         mimetype: 'image/webp'
                     });
 
@@ -175,8 +183,12 @@ export class MediasService extends AbstractService {
 
                     if(media){
                         await Repository.updateOne(MediasEntity, { sha1: imageHash }, {
-                            url: uploadedFile.url,
-                            thumbnail: uploadedThumbnail?.url || null
+                            filepath: uploadedFile.url,
+                            thumbnail: uploadedThumbnail?.url || null,
+                            format: 'webp',
+                            width: processedMetadata.width,
+                            height: processedMetadata.height,
+                            size: processedMetadata.size
                         });
                     }
                     else{
@@ -184,12 +196,12 @@ export class MediasService extends AbstractService {
                             sha1: imageHash,
                             filepath: uploadedFile.url,
                             name: image,
-                            format: format,
-                            width: metadata.width,
-                            height: metadata.height,
+                            format: 'webp',
+                            width: processedMetadata.width,
+                            height: processedMetadata.height,
                             alt: alt,
                             caption: caption,
-                            size: metadata.size,
+                            size: processedMetadata.size,
                             thumbnail: uploadedThumbnail?.url || null
                         });
                     }
@@ -197,68 +209,23 @@ export class MediasService extends AbstractService {
                     return uploadedFile.url;
                 }
 
-                if (metadata.width && metadata.width > maxWidth) {
-                    //@ts-ignore
-                    const aspectRatio = metadata.width / metadata.height;
-                    const newHeight = Math.round(maxWidth / aspectRatio);
-
-                    processor = processor.resize(maxWidth, newHeight, {
-                        fit: 'inside',
-                        withoutEnlargement: true
-                    });
-                }
-
-                switch (format.toLowerCase()) {
-                    case 'webp':
-                        processor = processor.webp({
-                            quality: 70,
-                            lossless: false,
-                            //@ts-ignore
-                            reductionEffort: 6
-                        });
-                        break;
-                    case 'jpeg':
-                    case 'jpg':
-                        processor = processor.jpeg({
-                            quality: 70,
-                            progressive: true
-                        });
-                        break;
-                    case 'png':
-                        processor = processor.png({
-                            compressionLevel: 9,
-                            progressive: false,
-                            adaptiveFiltering: true
-                        });
-                        break;
-                    case 'avif':
-                        processor = processor.avif({
-                            quality: 70,
-                            lossless: false,
-                            effort: 7
-                        });
-                        break;
-                    default:
-                        processor = processor.webp({
-                            quality: 70,
-                            lossless: false,
-                            //@ts-ignore
-                            reductionEffort: 6
-                        });
-                        break;
-                }
+                // Fallback to local storage if blogStorageService is not configured or fails
+                const localFilenameWithHash = `${imageHash}.webp`;
+                const localFileFullPath = path.join(mediasPath, localFilenameWithHash);
+                
+                await sharp(processedBuffer).toFile(localFileFullPath);
 
                 const MediasEntity = Repository.getEntity("MediasEntity");
                 const media = await Repository.findOne(MediasEntity, { sha1: imageHash });
 
                 if(!media){
-                    if (metadata.width && metadata.height && metadata.width > 0 && metadata.height > 0) {
-                        const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
+                    if (processedMetadata.width && processedMetadata.height && processedMetadata.width > 0 && processedMetadata.height > 0) {
+                        const localThumbFilename = `${imageHash}_thumb.webp`;
+                        const thumbnailPath = path.join(mediasPath, localThumbFilename);
                         let thumbnailUrl: string | null = null;
 
                         try {
-                            //@ts-ignore
-                            const thumbnailBuffer = await sharp(buffer)
+                            const thumbnailBuffer = await sharp(processedBuffer)
                                 .resize(16, 16, {
                                     fit: 'cover',
                                     position: 'center'
@@ -266,36 +233,35 @@ export class MediasService extends AbstractService {
                                 .webp({ quality: 80 })
                                 .toBuffer();
 
-                            await fs.writeFileSync(thumbnailPath, thumbnailBuffer);
-                            thumbnailUrl = `${apiUrl}/images/${imageHash}_thumb.webp`;
+                            await fs.promises.writeFile(thumbnailPath, thumbnailBuffer);
+                            thumbnailUrl = `${apiUrl}/images/${localThumbFilename}`;
                         } catch (thumbnailError) {
                             console.error('Error creating thumbnail:', thumbnailError);
                         }
 
                         await Repository.insert(MediasEntity, {
                             sha1: imageHash,
-                            filepath: imageFullpath,
+                            filepath: localFileFullPath,
                             name: image,
-                            format: format,
-                            width: metadata.width,
-                            height: metadata.height,
+                            format: 'webp',
+                            width: processedMetadata.width,
+                            height: processedMetadata.height,
                             alt: alt,
                             caption: caption,
-                            size: metadata.size,
+                            size: processedMetadata.size,
                             thumbnail: thumbnailUrl
                         });
                     } else {
-                        console.error(`Invalid image dimensions (${metadata.width}x${metadata.height}) for ${imageFullpath}`);
+                        console.error(`Invalid image dimensions (${processedMetadata.width}x${processedMetadata.height}) for ${localFileFullPath}`);
                         return null;
                     }
                 } else if (!media.thumbnail) {
-                    // Create thumbnail for existing media that doesn't have one
-                    const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
+                    const localThumbFilename = `${imageHash}_thumb.webp`;
+                    const thumbnailPath = path.join(mediasPath, localThumbFilename);
                     let thumbnailUrl: string | null = null;
 
                     try {
-                        //@ts-ignore
-                        const thumbnailBuffer = await sharp(buffer)
+                        const thumbnailBuffer = await sharp(processedBuffer)
                             .resize(16, 16, {
                                 fit: 'cover',
                                 position: 'center'
@@ -303,10 +269,9 @@ export class MediasService extends AbstractService {
                             .webp({ quality: 80 })
                             .toBuffer();
 
-                        await fs.writeFileSync(thumbnailPath, thumbnailBuffer);
-                        thumbnailUrl = `${apiUrl}/images/${imageHash}_thumb.webp`;
+                        await fs.promises.writeFile(thumbnailPath, thumbnailBuffer);
+                        thumbnailUrl = `${apiUrl}/images/${localThumbFilename}`;
 
-                        // Update existing media with thumbnail
                         await Repository.update(MediasEntity, { sha1: imageHash }, {
                             thumbnail: thumbnailUrl
                         });
@@ -314,8 +279,10 @@ export class MediasService extends AbstractService {
                         console.error('Error creating thumbnail for existing media:', thumbnailError);
                     }
                 }
+                
+                const finalImageUrl = `${apiUrl}/images/${localFilenameWithHash}`;
+                return finalImageUrl.toLowerCase();
 
-                await processor.toFile(imageFullpath);
             } catch (error) {
                 console.error('Error processing image:', error);
                 return null;
