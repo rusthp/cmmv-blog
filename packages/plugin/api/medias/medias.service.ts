@@ -103,7 +103,7 @@ export class MediasService extends AbstractService {
     async getImageUrl(
         image: string,
         format: string = "webp",
-        maxWidth: number = 1024,
+        maxWidth: number = 1280, // Padrão agora é 1280 (formato 16:9 com altura 720)
         alt: string = "",
         caption: string = ""
     ) {
@@ -119,7 +119,9 @@ export class MediasService extends AbstractService {
         if(!fs.existsSync(mediasPath))
             await fs.mkdirSync(mediasPath, { recursive: true });
 
-        format = format.toLowerCase(); //bugfix
+        // Ignoramos o formato solicitado e usamos sempre webp
+        const originalFormat = format.toLowerCase();
+        format = "webp"; // Forçamos sempre webp para armazenamento
         let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
 
         if(apiUrl.endsWith("/"))
@@ -145,11 +147,36 @@ export class MediasService extends AbstractService {
                 //@ts-ignore
                 let processor = sharp(buffer);
                 const metadata = await processor.metadata();
+                
+                // Otimizar a imagem antes de enviá-la para o storage e padronizar para 1280x720
+                // Constantes para o formato padrão 16:9
+                const targetWidth = 1280;
+                const targetHeight = 720;
+                
+                // Redimensionar para o formato padrão 1280x720 (16:9)
+                processor = processor.resize({
+                    width: targetWidth,
+                    height: targetHeight,
+                    fit: 'cover', // Usa 'cover' para preencher completamente e cortar o excesso
+                    position: 'center' // Centraliza a imagem para corte equilibrado
+                });
 
+                // Sempre converter para WebP independente do formato original
+                processor = processor.webp({
+                    quality: 70,
+                    lossless: false,
+                    //@ts-ignore
+                    reductionEffort: 6
+                });
+                
+                // Obter o buffer otimizado para upload
+                const optimizedBuffer = await processor.toBuffer();
+                
+                // Fazer upload do arquivo otimizado (sempre webp)
                 const uploadedFile = await blogStorageService.uploadFile({
-                    buffer: buffer,
-                    originalname: `${imageHash}.${format}`,
-                    mimetype: `image/${format}`
+                    buffer: optimizedBuffer,
+                    originalname: `${imageHash}.webp`,
+                    mimetype: `image/webp`
                 });
 
                 if(uploadedFile){
@@ -184,12 +211,13 @@ export class MediasService extends AbstractService {
                             sha1: imageHash,
                             filepath: uploadedFile.url,
                             name: image,
-                            format: format,
+                            format: 'webp', // Sempre webp como formato final
+                            originalFormat: originalFormat, // Preservamos o formato original como informação
                             width: metadata.width,
                             height: metadata.height,
                             alt: alt,
                             caption: caption,
-                            size: metadata.size,
+                            size: optimizedBuffer.length,
                             thumbnail: uploadedThumbnail?.url || null
                         });
                     }
@@ -197,56 +225,8 @@ export class MediasService extends AbstractService {
                     return uploadedFile.url;
                 }
 
-                if (metadata.width && metadata.width > maxWidth) {
-                    //@ts-ignore
-                    const aspectRatio = metadata.width / metadata.height;
-                    const newHeight = Math.round(maxWidth / aspectRatio);
-
-                    processor = processor.resize(maxWidth, newHeight, {
-                        fit: 'inside',
-                        withoutEnlargement: true
-                    });
-                }
-
-                switch (format.toLowerCase()) {
-                    case 'webp':
-                        processor = processor.webp({
-                            quality: 70,
-                            lossless: false,
-                            //@ts-ignore
-                            reductionEffort: 6
-                        });
-                        break;
-                    case 'jpeg':
-                    case 'jpg':
-                        processor = processor.jpeg({
-                            quality: 70,
-                            progressive: true
-                        });
-                        break;
-                    case 'png':
-                        processor = processor.png({
-                            compressionLevel: 9,
-                            progressive: false,
-                            adaptiveFiltering: true
-                        });
-                        break;
-                    case 'avif':
-                        processor = processor.avif({
-                            quality: 70,
-                            lossless: false,
-                            effort: 7
-                        });
-                        break;
-                    default:
-                        processor = processor.webp({
-                            quality: 70,
-                            lossless: false,
-                            //@ts-ignore
-                            reductionEffort: 6
-                        });
-                        break;
-                }
+                // A otimização já foi feita antes do upload
+                // Como estamos forçando webp, não precisamos fazer mais nada aqui
 
                 const MediasEntity = Repository.getEntity("MediasEntity");
                 const media = await Repository.findOne(MediasEntity, { sha1: imageHash });
@@ -276,7 +256,8 @@ export class MediasService extends AbstractService {
                             sha1: imageHash,
                             filepath: imageFullpath,
                             name: image,
-                            format: format,
+                            format: 'webp', // Sempre webp como formato final
+                            originalFormat: originalFormat, // Preservamos o formato original
                             width: metadata.width,
                             height: metadata.height,
                             alt: alt,
