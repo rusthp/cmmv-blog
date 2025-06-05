@@ -21,7 +21,7 @@
                         </a>
                     </div>
 
-                    <img :src="page.featureImage" :alt="page.featureImageAlt || page.title" class="featured-img w-full h-auto object-cover rounded-lg" />
+                    <OptimizedImage :src="page.featureImage" :alt="page.featureImageAlt || page.title" class="featured-img w-full h-auto object-cover rounded-lg imgix-lazy" priority="high" icon-size="lg" />
                     <p v-if="page.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center">{{ page.featureImageCaption }}</p>
                 </div>
 
@@ -112,6 +112,7 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue';
+import OptimizedImage from '../../components/OptimizedImage.vue';
 import { useSettingsStore } from '../../store/settings';
 
 const settingsStore = useSettingsStore();

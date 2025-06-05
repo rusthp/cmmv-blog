@@ -26,7 +26,7 @@
                         <!-- Feature Image -->
                         <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
                             <div v-if="post.featureImage" class="relative aspect-video overflow-hidden rounded-lg">
-                                <img :src="post.featureImage" :alt="post.featureImageAlt || post.title" class="w-full h-full object-cover" />
+                                <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title" class="w-full h-full object-cover imgix-lazy" :hover="true" icon-size="lg" />
                             </div>
                         </a>
 
@@ -106,6 +106,7 @@ import { useRoute } from 'vue-router';
 import { useHead } from '@unhead/vue';
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
+import OptimizedImage from '../../components/OptimizedImage.vue';
 
 import {
     formatDate, stripHtml

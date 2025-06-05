@@ -1,4 +1,7 @@
-import { createServer, loadEnv } from 'vite';
+import {
+    createServer, loadEnv,
+} from 'vite';
+
 import { transformHtmlTemplate } from '@unhead/vue/server';
 import { useSettingsStore } from './src/store/settings.js';
 
@@ -11,6 +14,20 @@ import * as mime from 'mime-types';
 
 const env = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), 'VITE');
 const fileCache = new Map<string, { buffer: Buffer, etag: string, mtime: number }>();
+
+interface PageCacheEntry {
+    html: string;
+    compressedVersions: {
+        gzip?: Buffer;
+        br?: Buffer;
+        uncompressed: string;
+    };
+    timestamp: number;
+    headers: Record<string, string>;
+}
+
+const pageCache = new Map<string, PageCacheEntry>();
+const PAGE_CACHE_DURATION = 30 * 60 * 1000;
 
 const compressHtml = (html: string, acceptEncoding: string = ''): { data: Buffer | string, encoding: string | null } => {
     if (acceptEncoding.includes('br')) {
@@ -119,8 +136,13 @@ const serveStaticFile = async (req: http.IncomingMessage, res: http.ServerRespon
 let serverInstance: http.Server | null = null;
 
 async function bootstrap() {
+    const isDev = process.env.NODE_ENV !== 'production';
+
     const vite = await createServer({
-        server: { middlewareMode: true },
+        server: {
+            middlewareMode: true,
+            hmr: isDev ? true : false
+        },
         appType: 'custom'
     });
 
@@ -261,13 +283,13 @@ async function bootstrap() {
             template = fs.readFileSync(path.resolve('dist/index.html'), 'utf-8');
             const mod = await (new Function('return import("./entry-server.js")')());
             render = mod.render;
-        } else {
+        } else if(vite) {
             template = fs.readFileSync(path.resolve('index.html'), 'utf-8');
             const { render: devRender } = await vite.ssrLoadModule('/src/entry-server.ts');
             render = devRender;
         }
 
-        vite.middlewares(req, res, async () => {
+        vite?.middlewares(req, res, async () => {
             try {
                 if (/\.\w+$/.test(url)) {
                     res.statusCode = 404;
@@ -294,20 +316,28 @@ async function bootstrap() {
                 const serializedData = JSON.stringify(ssrData).replace(/</g, '\\u003c');
                 const dataScript = `<script>window.__CMMV_DATA__ = ${serializedData};</script>${piniaScript}`;
 
-                template = await transformHtmlTemplate(head, template.replace(`<div id="app"></div>`, `
-                    <div id="app">${appHtml}</div>
-                    ${dataScript}
-                `));
+                template = await transformHtmlTemplate(head, template.replace(`<div id="app"></div>`, `<div id="app">${appHtml}</div>${dataScript}`));
 
                 template = template.replace("<analytics />", settings["blog.analyticsCode"] || "").replace("<analytics>", settings["blog.analyticsCode"] || "");
                 template = template.replace("<custom-js />", settings["blog.customJs"] || "").replace("<custom-js>", settings["blog.customJs"] || "");
                 template = template.replace("<custom-css />", settings["blog.customCss"] || "").replace("<custom-css>", settings["blog.customCss"] || "");
 
+                if (process.env.NODE_ENV === 'production') {
+                    template = template.replace(/<script[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
+                    template = template.replace(/<script[^>]*type="[^"]*"[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
+                }
+
                 for(const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
-                res.setHeader('Content-Type', 'text/html');
-                res.setHeader('Cache-Control', `public, max-age=900`);
+                const responseHeaders = {
+                    'Content-Type': 'text/html',
+                    'Cache-Control': 'public, max-age=900'
+                };
+
+                Object.entries(responseHeaders).forEach(([key, value]) => {
+                    res.setHeader(key, value);
+                });
 
                 const compressed = compressHtml(template, acceptEncoding as string);
 
@@ -325,7 +355,7 @@ async function bootstrap() {
 
     const port = env.VITE_SSR_PORT || 5001;
 
-    // @ts-ignore - Ignoring TypeScript error for the interface difference
+    // @ts-ignore
     serverInstance = server.listen(port, "0.0.0.0", () => {
         console.log(`🚀 SSR server running at http://localhost:${port}`);
     });

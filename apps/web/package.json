@@ -23,10 +23,12 @@
         "vite": "^6.2.3",
         "vite-plugin-compression": "^0.5.1",
         "vite-plugin-minify": "^2.1.0",
+        "vite-plugin-pwa": "^1.0.0",
         "vitest": "^3.0.9"
     },
     "dependencies": {
         "@cmmv/blog": "workspace:*",
+        "@cmmv/newsletter": "workspace:*",
         "@tailwindcss/vite": "^4.1.4",
         "@unhead/vue": "^2.0.5",
         "compression-webpack-plugin": "^11.1.0",

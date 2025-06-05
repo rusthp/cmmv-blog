@@ -66,6 +66,30 @@ export class CampaignsControllerTools {
         return await this.campaignsService.getCampaignsPublicListWithCouponCounts();
     }
 
+    @Get("public/:slug")
+    @ContentType("application/json")
+    @CacheControl({
+        maxAge: 60 * 15,
+        sMaxAge: 60 * 15,
+        public: true
+    })
+    @Raw()
+    async getCampaignBySlug(@Param("slug") slug: string){
+        return await this.campaignsService.getCampaignBySlug(slug);
+    }
+
+    @Get("public/search")
+    @ContentType("application/json")
+    @CacheControl({
+        maxAge: 60 * 5,
+        sMaxAge: 60 * 5,
+        public: true
+    })
+    @Raw()
+    async searchCampaignsPublic(@Query("q") query: string){
+        return await this.campaignsService.searchCampaigns(query);
+    }
+
     @Get("export")
     async export(@Res() response: any, @Query("token") token: string){
         if(token !== process.env.API_SIGNATURE)

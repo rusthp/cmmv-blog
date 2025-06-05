@@ -17,7 +17,9 @@
             "../../packages/affiliate/api",
             "../../packages/affiliate/contracts",
             "../../packages/odds/api",
-            "../../packages/odds/contracts"
+            "../../packages/odds/contracts",
+            "../../packages/newsletter/api",
+            "../../packages/newsletter/contracts"
         ],
         "ignore": [
             ".generated",
@@ -49,6 +51,7 @@
         "@cmmv/repository": "latest",
         "@cmmv/rss-aggregation": "workspace:rss-aggregation",
         "@cmmv/yt-aggregation": "workspace:yt-aggregation",
+        "@cmmv/newsletter": "workspace:newsletter",
         "cache-manager-fs-binary": "^1.0.4",
         "firebase-admin": "^13.4.0",
         "sharp": "^0.34.1",

@@ -1,5 +1,8 @@
 import { Service, Application, Config, Logger } from "@cmmv/core";
-import { Repository } from "@cmmv/repository";
+import {
+    Repository,
+    MoreThanOrEqual
+} from "@cmmv/repository";
 //@ts-ignore
 import { MediasService } from "@cmmv/blog";
 //@ts-ignore
@@ -521,9 +524,11 @@ Respond only with the HTML formatted text using Tailwind CSS classes, without JS
             active: true,
             limit: 10000
         }, [], {
+            order: {
+                highlight: "DESC"
+            },
             select: [
-                "id", "name", "logo", "description", "highlight", "slug", "categories",
-                "seoTitle", "seoSubtitle", "seoSmallText", "seoLongText"
+                "id", "name", "logo", "highlight", "slug"
             ]
         });
 
@@ -563,6 +568,93 @@ Respond only with the HTML formatted text using Tailwind CSS classes, without JS
 
             return (a.name || "").localeCompare(b.name || "");
         });
+
+        return campaignsWithCounts;
+    }
+
+    /**
+     * Get a campaign by its slug
+     * @param slug The slug of the campaign
+     * @returns The campaign
+     */
+    async getCampaignBySlug(slug: string) {
+        const CampaignEntity = Repository.getEntity("AffiliateCampaignsEntity");
+        const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
+        const campaign = await Repository.findOne(CampaignEntity, {
+            slug,
+            active: true
+        });
+
+        if (!campaign)
+            throw new Error(`Campaign with slug ${slug} not found`);
+
+        const coupons = await Repository.findAll(AffiliateCouponsEntity, {
+            campaign: campaign.id,
+            active: true,
+            expiration: MoreThanOrEqual(new Date(Date.now() - 60 * 60 * 24 * 60 * 1000)),
+            limit: 100
+        }, [], {
+            order: {
+                expiration: "DESC"
+            },
+            select: [
+                "type", "typeDiscount", "title", "description",
+                "code", "expiration", "deeplink", "views"
+            ]
+        });
+
+        return {
+            id: campaign.id,
+            name: campaign.name,
+            logo: campaign.logo,
+            description: campaign.description,
+            seoTitle: campaign.seoTitle,
+            seoSubtitle: campaign.seoSubtitle,
+            seoSmallText: campaign.seoSmallText,
+            seoLongText: campaign.seoLongText,
+            coupons: coupons?.data || []
+        };
+    }
+
+    /**
+     * Search for campaigns by name
+     * @param query The query to search for
+     * @returns The campaigns that match the query
+     */
+    async searchCampaigns(query: string) {
+        const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
+
+        const campaignsResult = await Repository.findAll(AffiliateCampaignsEntity, {
+            search: query,
+            searchField: "name",
+            active: true,
+            limit: 10,
+        }, [], {
+            select: [
+                "id", "name", "logo", "slug"
+            ]
+        });
+
+        if (!campaignsResult || campaignsResult.data.length === 0)
+            return [];
+
+        const couponsService = Application.resolveProvider(CouponsServiceTools);
+        const campaignsWithCounts = [];
+
+        for (const campaign of campaignsResult.data) {
+            try {
+                const couponCountResponse = await couponsService.getCouponsCountByCampaignId(campaign.id);
+                campaignsWithCounts.push({
+                    ...campaign,
+                    couponCount: couponCountResponse?.count || 0
+                });
+            } catch (err) {
+                campaignsWithCounts.push({
+                    ...campaign,
+                    couponCount: 0
+                });
+            }
+        }
 
         return campaignsWithCounts;
     }

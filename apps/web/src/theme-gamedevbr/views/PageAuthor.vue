@@ -11,7 +11,7 @@
             <div v-else>
                 <div class="w-full bg-neutral-100 relative">
                     <div v-if="author.coverImage" class="h-72 md:h-96 overflow-hidden rounded-t-lg">
-                        <img :src="author.coverImage" alt="" class="w-full h-full object-cover">
+                        <OptimizedImage :src="author.coverImage" alt="" class="w-full h-full object-cover imgix-lazy" priority="high" icon-size="lg" />
                     </div>
                     <div class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-black/30 to-transparent"></div>
                 </div>
@@ -20,7 +20,7 @@
                     <div class="p-6 pt-20 md:p-8 md:pt-20 md:pb-6 items-center justify-center">
                         <div class="absolute left-1/2 -translate-x-1/2 -top-16 flex items-center justify-center">
                             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
-                                <img v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover" />
+                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="128" height="128" icon-size="lg" />
                                 <div v-else class="w-full h-full flex items-center justify-center bg-[#0a5d28] text-white text-3xl font-bold">
                                     {{ authorInitials }}
                                 </div>
@@ -100,7 +100,7 @@
 
                             <div class="flex items-center p-4 border-b border-neutral-100">
                                 <div class="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 mr-3">
-                                    <img v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover" />
+                                    <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="40" height="40" icon-size="sm" />
                                     <div v-else class="w-full h-full flex items-center justify-center bg-[#0a5d28] text-white font-bold text-sm">
                                         {{ authorInitials }}
                                     </div>
@@ -116,7 +116,7 @@
                                     :href="`/post/${post.slug}`"
                                     aria-label="Ler mais sobre este post"
                                 >
-                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-64 object-cover hover:opacity-95 transition-opacity">
+                                    <OptimizedImage :src="post.featureImage" :alt="post.title" class="w-full h-64 object-cover hover:opacity-95 transition-opacity imgix-lazy" :hover="true" icon-size="md" />
                                 </a>
                             </div>
 
@@ -185,6 +185,7 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
+import OptimizedImage from '../../components/OptimizedImage.vue';
 import { useSettingsStore } from '../../store/settings';
 
 import {
@@ -236,8 +237,7 @@ const headData = computed(() => ({
         { property: 'og:url', content: pageUrl.value },
     ],
     link: [
-        { rel: 'canonical', href: pageUrl.value },
-        { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
+        { rel: 'canonical', href: pageUrl.value }
     ]
 }))
 

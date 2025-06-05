@@ -26,7 +26,16 @@
                         <!-- Feature Image -->
                         <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
                             <div v-if="post.featureImage" class="relative aspect-video overflow-hidden rounded-lg">
-                                <img :src="post.featureImage" :alt="post.featureImageAlt || post.title" class="w-full h-full object-cover" />
+                                <OptimizedImage
+                                    :src="post.featureImage"
+                                    :alt="post.featureImageAlt || post.title"
+                                    class="w-full h-full object-cover imgix-lazy"
+                                    loading="lazy"
+                                    width="768"
+                                    height="432"
+                                    :hover="true"
+                                    icon-size="lg"
+                                />
                             </div>
                         </a>
 
@@ -101,11 +110,12 @@
 
 <script setup lang="ts">
 //@ts-nocheck
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
+import OptimizedImage from '../../components/OptimizedImage.vue';
 
 import {
     formatDate, stripHtml
@@ -155,8 +165,7 @@ const headData = ref({
         { property: 'og:url', content: pageUrl.value }
     ],
     link: [
-        { rel: 'canonical', href: pageUrl.value },
-        { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
+        { rel: 'canonical', href: pageUrl.value }
     ]
 })
 
@@ -214,95 +223,3 @@ onUnmounted(() => {
     }
 });
 </script>
-
-<style scoped>
-.article-container {
-    max-width: 48rem;
-    margin: 0 auto;
-}
-
-.post-content :deep(img) {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 1rem 0;
-}
-
-.post-content :deep(iframe) {
-    max-width: 100%;
-    border-radius: 4px;
-    margin: 1rem 0;
-}
-
-.post-content :deep(table) {
-    max-width: 100%;
-    overflow-x: auto;
-    display: block;
-    border-collapse: collapse;
-    margin: 1rem 0;
-}
-
-.post-content :deep(table td),
-.post-content :deep(table th) {
-    border: 1px solid #e5e5e5;
-    padding: 0.5rem;
-}
-
-.post-content :deep(pre) {
-    max-width: 100%;
-    overflow-x: auto;
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 4px;
-    margin: 1rem 0;
-}
-
-.post-content :deep(code) {
-    white-space: pre-wrap;
-    word-break: break-word;
-    background-color: #f5f5f5;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.9em;
-}
-
-.post-content :deep(blockquote) {
-    border-left: 4px solid #0a5d28;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #666;
-}
-
-.post-content :deep(h2),
-.post-content :deep(h3),
-.post-content :deep(h4),
-.post-content :deep(h5),
-.post-content :deep(h6) {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-}
-
-.post-content :deep(p) {
-    margin-bottom: 1rem;
-    line-height: 1.7;
-}
-
-.post-content :deep(ul),
-.post-content :deep(ol) {
-    margin: 1rem 0;
-    padding-left: 2rem;
-}
-
-.post-content :deep(li) {
-    margin-bottom: 0.5rem;
-}
-
-.post-content :deep(a) {
-    color: #0a5d28;
-    text-decoration: underline;
-}
-
-.post-content :deep(a:hover) {
-    color: #064019;
-}
-</style>

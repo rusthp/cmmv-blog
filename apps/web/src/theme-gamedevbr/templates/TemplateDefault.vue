@@ -395,7 +395,6 @@ import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
-
 import CookieConsent from '../../components/CookieConsent.vue';
 
 const blogAPI = vue3.useBlog();
@@ -405,7 +404,14 @@ const settingsStore = useSettingsStore();
 const settings = ref<any>(settingsStore.getSettings);
 
 const scripts = computed(() => {
-    const baseScripts = [];
+    const baseScripts = [
+        {
+            src: '/imgix-min.js?v=0.0.6',
+            type: 'text/javascript',
+            async: true,
+            defer: true
+        }
+    ];
     return [...baseScripts, ...settingsStore.googleAnalyticsScripts];
 });
 
@@ -429,8 +435,11 @@ useHead({
         { rel: 'preconnect', href: 'https://securepubads.g.doubleclick.net/' },
         { rel: 'preconnect', href: 'https://tpc.googlesyndication.com/' },
         { rel: 'preconnect', href: 'https://www.googletag.com/' },
+        { rel: 'preconnect', href: 'https://static.gamedevbr.com.br/' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
-        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' }
+        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
+        { rel: 'dns-prefetch', href: 'https://static.gamedevbr.com.br/' },
+        { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
     ],
 
     script: scripts

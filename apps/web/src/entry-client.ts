@@ -5,6 +5,9 @@ import { useTheme } from './composables/useTheme.js';
 import App from './App.vue';
 import './style.css';
 
+console.warn = (msg) => { return; };
+console.error = (msg) => { return; };
+
 declare global {
     interface Window {
         __CMMV_DATA__: Record<string, any>;
@@ -12,40 +15,43 @@ declare global {
     }
 }
 
-async function main() {
-    try{
-        const head = createHead();
-        const app = createSSRApp(App)
-        const pinia = createPiniaInstance();
-        const preloadedData = window.__CMMV_DATA__ || {};
+try{
+    async function main() {
+        try{
+            const head = createHead();
+            const app = createSSRApp(App)
+            const pinia = createPiniaInstance();
+            const preloadedData = window.__CMMV_DATA__ || {};
 
-        app.provide('preloaded', preloadedData)
-        app.use(head)
-        app.use(pinia);
+            app.provide('preloaded', preloadedData)
+            app.use(head)
+            app.use(pinia);
 
-        if ((window as any).__PINIA__)
-            pinia.state.value = (window as any).__PINIA__;
+            if ((window as any).__PINIA__)
+                pinia.state.value = (window as any).__PINIA__;
 
-        const { router } = await useTheme();
-        app.use(router);
-        router.isReady().then(() => app.mount('#app', true))
+            const { router } = await useTheme();
+            app.use(router);
+            router.isReady().then(() => app.mount('#app', true))
+        }
+        catch(error){
+            console.error(error);
+        }
     }
-    catch(error){
-        console.error(error);
+
+    function waitForCMMVData() {
+        if (window.__CMMV_DATA__) {
+            main();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (window.__CMMV_DATA__) {
+                    clearInterval(checkInterval);
+                    main();
+                }
+            }, 10);
+        }
     }
+
+    waitForCMMVData();
 }
-
-function waitForCMMVData() {
-    if (window.__CMMV_DATA__) {
-        main();
-    } else {
-        const checkInterval = setInterval(() => {
-            if (window.__CMMV_DATA__) {
-                clearInterval(checkInterval);
-                main();
-            }
-        }, 10);
-    }
-}
-
-waitForCMMVData();
+catch(error){}

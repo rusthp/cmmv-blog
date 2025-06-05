@@ -3,11 +3,11 @@
         <!-- Header -->
         <header class="bg-indigo-600 shadow-md fixed top-0 left-0 right-0 z-50">
             <div class="container mx-auto px-4">
-                <div class="flex items-center justify-between py-4">
+                <div class="flex items-center justify-between py-4 max-w-[1200px] mx-auto">
                     <!-- Logo -->
                     <div class="flex items-center">
                         <a href="/" class="text-2xl font-bold text-white">
-                            CupomNaHora
+                            <img src="/src/theme-cupomnahora/assets/Logo-1.png" width="100" height="24" alt="Logo" title="Logo">
                         </a>
                     </div>
 
@@ -17,12 +17,117 @@
                             <input type="text" placeholder="Buscar lojas ou cupons..."
                                    class="w-full py-2 px-4 border bg-white border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                    v-model="searchQuery"
-                                   @input="debouncedSearch">
+                                   @input="debouncedSearch"
+                                   @focus="onSearchFocus"
+                                   @blur="onSearchBlur">
                             <button class="absolute right-3 top-2 text-gray-500" @click="openSearchModal">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </button>
+
+                            <!-- Autocomplete Dropdown -->
+                            <div v-if="showAutocomplete" class="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                                <!-- Loading State -->
+                                <div v-if="isSearching" class="p-4 text-center">
+                                    <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-600 mx-auto"></div>
+                                    <p class="text-sm text-gray-500 mt-2">Buscando...</p>
+                                </div>
+
+                                <!-- Featured Stores (quando campo focado sem busca) -->
+                                <div v-else-if="searchQuery.trim().length === 0" class="p-4">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Lojas em Destaque</h4>
+                                    <div class="space-y-2">
+                                        <a v-for="store in featuredStores.slice(0, 6)" :key="store.id"
+                                           :href="`/desconto/${store.slug}`"
+                                           class="flex items-center p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                           @click="closeAutocomplete">
+                                            <div class="w-8 h-8 flex-shrink-0 mr-3">
+                                                <img v-if="store.logo" :src="store.logo" :alt="store.name" class="w-full h-full object-contain rounded">
+                                                <div v-else class="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow">
+                                                <h5 class="text-sm font-medium text-gray-900">{{ store.name }}</h5>
+                                                <p class="text-xs text-gray-500">{{ store.couponCount || 0 }} cupons disponíveis</p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Search Results -->
+                                <div v-else-if="searchQuery.trim().length > 1">
+                                    <!-- No Results -->
+                                    <div v-if="searchResults.length === 0 && searchCampaigns.length === 0" class="p-4 text-center text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p class="text-sm">Nenhum resultado encontrado</p>
+                                    </div>
+
+                                    <!-- Store Results -->
+                                    <div v-if="searchCampaigns.length > 0" class="border-b border-gray-100">
+                                        <div class="p-3 bg-gray-50">
+                                            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Lojas</h4>
+                                        </div>
+                                        <div class="p-2">
+                                            <a v-for="store in searchCampaigns.slice(0, 4)" :key="store.id"
+                                               :href="`/desconto/${store.slug}`"
+                                               class="flex items-center p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                               @click="closeAutocomplete">
+                                                <div class="w-8 h-8 flex-shrink-0 mr-3">
+                                                    <img v-if="store.logo" :src="store.logo" :alt="store.name" class="w-full h-full object-contain rounded">
+                                                    <div v-else class="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow">
+                                                    <h5 class="text-sm font-medium text-gray-900">{{ store.name }}</h5>
+                                                    <p class="text-xs text-gray-500">{{ store.couponCount || 0 }} cupons</p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Blog Results -->
+                                    <div v-if="searchResults.length > 0">
+                                        <div class="p-3 bg-gray-50">
+                                            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Artigos</h4>
+                                        </div>
+                                        <div class="p-2">
+                                            <a v-for="post in searchResults.slice(0, 3)" :key="post.id"
+                                               :href="`/post/${post.slug}`"
+                                               class="flex items-center p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                               @click="closeAutocomplete">
+                                                <div class="w-8 h-8 flex-shrink-0 mr-3">
+                                                    <img v-if="post.featureImage" :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover rounded">
+                                                    <div v-else class="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow">
+                                                    <h5 class="text-sm font-medium text-gray-900 line-clamp-1">{{ post.title }}</h5>
+                                                    <p class="text-xs text-gray-500">{{ formatDate(post.publishedAt || post.updatedAt) }}</p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- View All Results -->
+                                    <div v-if="(searchResults.length > 3 || searchCampaigns.length > 4)" class="p-3 border-t border-gray-100">
+                                        <button @click="openSearchModal" class="w-full text-center text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                            Ver todos os resultados ({{ searchResults.length + searchCampaigns.length }})
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -30,19 +135,17 @@
                     <nav class="hidden md:flex items-center space-x-4">
                         <a href="/desconto" class="text-white hover:text-indigo-200">Lojas</a>
                         <a href="/cupom" class="text-white hover:text-indigo-200">Categorias</a>
-                        <a href="/ajuda" class="text-white hover:text-indigo-200">Ajuda</a>
                         <a href="/blog" class="text-white hover:text-indigo-200">Blog</a>
-                        <a href="/login" class="bg-indigo-800 text-white px-4 py-2 rounded-full hover:bg-indigo-700">Entrar</a>
                     </nav>
 
                     <!-- Mobile Menu Button -->
                     <div class="md:hidden flex items-center space-x-3">
-                        <button @click="openSearchModal" class="text-gray-700 hover:text-indigo-600" title="Search" aria-label="Search">
+                        <button @click="openSearchModal" class="text-white hover:text-indigo-200" title="Search" aria-label="Search">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </button>
-                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-700" title="Navbar" aria-label="Navbar">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-white" title="Navbar" aria-label="Navbar">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path v-if="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                 <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -54,40 +157,9 @@
                 <!-- Mobile Menu -->
                 <div v-show="mobileMenuOpen" class="md:hidden py-3 border-t border-gray-200">
                     <div class="flex flex-col gap-1">
-                        <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                            <div v-if="mainNavCategories.childrenMap[category.id]" class="w-full">
-                                <button
-                                    @click="(e) => toggleDropdown(category.id, e)"
-                                    class="dropdown-toggle flex items-center justify-between w-full text-gray-700 hover:text-indigo-600 rounded px-3 py-2 text-sm"
-                                    :class="{'text-indigo-600': openDropdowns[category.id]}"
-                                >
-                                    {{ category.name }}
-                                    <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                                <div v-show="openDropdowns[category.id]" class="pl-4 py-1 bg-gray-50 rounded mt-1">
-                                    <a
-                                        v-for="child in mainNavCategories.childrenMap[category.id]"
-                                        :key="child.id"
-                                        :href="`/category/${child.slug}`"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:text-indigo-600 rounded"
-                                    >
-                                        {{ child.name }}
-                                    </a>
-                                </div>
-                            </div>
-                            <a
-                                v-else
-                                :href="`/category/${category.slug}`"
-                                class="block text-gray-700 hover:text-indigo-600 rounded px-3 py-2 text-sm"
-                            >
-                                {{ category.name }}
-                            </a>
-                        </template>
-                        <a href="/cashback" class="block text-gray-700 hover:text-indigo-600 rounded px-3 py-2 text-sm">Cashback</a>
-                        <a href="/blog" class="block text-gray-700 hover:text-indigo-600 rounded px-3 py-2 text-sm">Blog</a>
-                        <a href="/login" class="block bg-indigo-600 text-white rounded px-3 py-2 text-sm mt-2 mx-3">Entrar</a>
+                        <a href="/desconto" class="block text-white hover:text-indigo-200 rounded px-3 py-2 text-sm">Lojas</a>
+                        <a href="/cupom" class="block text-white hover:text-indigo-200 rounded px-3 py-2 text-sm">Categorias</a>
+                        <a href="/blog" class="block text-white hover:text-indigo-200 rounded px-3 py-2 text-sm">Blog</a>
                     </div>
                 </div>
             </div>
@@ -105,10 +177,50 @@
             <div class="container mx-auto px-4 text-center">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Receba as melhores ofertas</h2>
                 <p class="text-gray-600 mb-6 max-w-lg mx-auto">Assine nossa newsletter e receba cupons exclusivos diretamente no seu e-mail.</p>
-                <div class="max-w-md mx-auto flex">
-                    <input type="email" placeholder="Seu e-mail" class="flex-grow py-3 px-4 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button class="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700">Assinar</button>
+
+                <div v-if="newsletterSubmitted" class="max-w-md mx-auto bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <p class="text-green-700">{{ newsletterMessage }}</p>
+                    </div>
                 </div>
+
+                <div v-if="newsletterError" class="max-w-md mx-auto bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-red-700">{{ newsletterError }}</p>
+                    </div>
+                </div>
+
+                <form @submit.prevent="subscribeNewsletter" class="max-w-md mx-auto flex">
+                    <input
+                        type="email"
+                        v-model="newsletterEmail"
+                        placeholder="Seu e-mail"
+                        class="flex-grow py-3 px-4 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                    >
+                    <button
+                        type="submit"
+                        class="bg-indigo-600 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-700"
+                        :disabled="isSubscribing"
+                    >
+                        <span v-if="isSubscribing">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Aguarde...
+                        </span>
+                        <span v-else>Assinar</span>
+                    </button>
+                </form>
+
+                <p class="text-xs text-gray-500 mt-4">Ao se inscrever, você concorda com nossa <a href="/terms-of-privacy" class="text-indigo-600 underline">política de privacidade</a>.</p>
             </div>
         </section>
 
@@ -139,39 +251,15 @@
                         </div>
                     </div>
 
-                    <!-- Links Úteis -->
-                    <div>
-                        <h3 class="text-xl font-bold mb-4">Links Úteis</h3>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white">Como funciona</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Cashback</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Blog</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Perguntas frequentes</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Contato</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Categorias -->
-                    <div>
-                        <h3 class="text-xl font-bold mb-4">Categorias</h3>
-                        <ul class="space-y-2">
-                            <li v-for="category in categoriesColumns[0].slice(0, 5)" :key="category.id">
-                                <a :href="`/category/${category.slug}`" class="text-gray-400 hover:text-white">
-                                    {{ category.name }}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
                     <!-- Lojas Populares -->
                     <div>
-                        <h3 class="text-xl font-bold mb-4">Lojas Populares</h3>
+                        <h3 class="text-xl font-bold mb-4">Lojas Recentes</h3>
                         <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white">Amazon</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Magalu</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Shopee</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">AliExpress</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white">Americanas</a></li>
+                            <li v-for="campaign in recentCampaigns.slice(0, 10)" :key="campaign.id">
+                                <a :href="`/desconto/${campaign.slug}`" class="text-gray-400 hover:text-white">
+                                    {{ campaign.name }}
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -231,7 +319,7 @@
                                         <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
                                     </div>
 
-                                    <div v-else-if="searchResults.length === 0 && searchQuery.length > 1" class="py-8 text-center text-gray-600">
+                                    <div v-else-if="searchResults.length === 0 && searchCampaigns.length === 0 && searchQuery.length > 1" class="py-8 text-center text-gray-600">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
@@ -239,33 +327,62 @@
                                     </div>
 
                                     <div v-else-if="searchQuery.length > 1" class="space-y-4">
-                                        <p v-if="searchResults.length > 0" class="text-sm text-gray-500 mb-2">
-                                            {{ searchResults.length }} resultado{{ searchResults.length !== 1 ? 's' : '' }} encontrado{{ searchResults.length !== 1 ? 's' : '' }}
+                                        <p v-if="searchResults.length > 0 || searchCampaigns.length > 0" class="text-sm text-gray-500 mb-2">
+                                            {{ searchResults.length + searchCampaigns.length }} resultado{{ (searchResults.length + searchCampaigns.length) !== 1 ? 's' : '' }} encontrado{{ (searchResults.length + searchCampaigns.length) !== 1 ? 's' : '' }}
                                         </p>
-                                        <a
-                                            v-for="post in searchResults"
-                                            :key="post.id"
-                                            :href="`/post/${post.slug}`"
-                                            class="block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                                        >
-                                            <div class="flex flex-col sm:flex-row">
-                                                <div v-if="post.featureImage" class="w-full sm:w-32 h-40 sm:h-24 flex-shrink-0">
-                                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
-                                                </div>
-                                                <div class="p-4 flex-grow">
-                                                    <h4 class="font-bold text-gray-900 mb-1">{{ post.title }}</h4>
-                                                    <p v-if="post.excerpt" class="text-sm text-gray-600 line-clamp-2">
-                                                        {{ post.excerpt }}
-                                                    </p>
-                                                    <div class="mt-2 text-xs text-gray-500 flex items-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                        {{ formatDate(post.publishedAt || post.updatedAt) }}
+
+                                        <!-- Resultados de Lojas -->
+                                        <div v-if="searchCampaigns.length > 0" class="mb-6">
+                                            <h4 class="text-lg font-medium text-gray-700 mb-3 border-b pb-2">Lojas</h4>
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                <a v-for="campaign in searchCampaigns" :key="campaign.id"
+                                                   :href="`/desconto/${campaign.slug}`"
+                                                   class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-md transition-all"
+                                                   :class="{'border-indigo-200 bg-indigo-50': campaign.highlight}">
+                                                    <div class="text-center">
+                                                        <div class="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                                                            <img v-if="campaign.logo" :src="campaign.logo" :alt="campaign.name" class="max-w-full max-h-full">
+                                                            <div v-else class="w-12 h-12 bg-gray-200 flex items-center justify-center rounded-full">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        <h3 class="text-sm font-medium text-gray-800 line-clamp-2">{{ campaign.name }}</h3>
+                                                        <p class="text-xs text-gray-500">{{ campaign.couponCount || 0 }} cupons</p>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <!-- Resultados de Posts -->
+                                        <div v-if="searchResults.length > 0" class="mb-6">
+                                            <h4 class="text-lg font-medium text-gray-700 mb-3 border-b pb-2">Artigos do Blog</h4>
+                                            <a
+                                                v-for="post in searchResults"
+                                                :key="post.id"
+                                                :href="`/post/${post.slug}`"
+                                                class="block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow mb-3"
+                                            >
+                                                <div class="flex flex-col sm:flex-row">
+                                                    <div v-if="post.featureImage" class="w-full sm:w-32 h-40 sm:h-24 flex-shrink-0">
+                                                        <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
+                                                    </div>
+                                                    <div class="p-4 flex-grow">
+                                                        <h4 class="font-bold text-gray-900 mb-1">{{ post.title }}</h4>
+                                                        <p v-if="post.excerpt" class="text-sm text-gray-600 line-clamp-2">
+                                                            {{ post.excerpt }}
+                                                        </p>
+                                                        <div class="mt-2 text-xs text-gray-500 flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
+                                                            {{ formatDate(post.publishedAt || post.updatedAt) }}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </a>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -274,25 +391,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- Cupom Modal -->
+        <CouponScratchModal
+            :visible="isScratchModalOpen"
+            :coupon="selectedCouponForScratch"
+            @close="closeScratchModal" />
     </div>
 
     <CookieConsent />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
-import { useCategoriesStore } from '../../store/categories';
-
+import { useCampaignsStore } from '../../store/campaigns';
+import { useCouponsStore } from '../../store/coupons';
+import { vue3 as affiliateVue3 } from '@cmmv/affiliate/client';
+import { useRoute } from 'vue-router';
+import CouponScratchModal from '../components/CouponScratchModal.vue';
 import CookieConsent from '../../components/CookieConsent.vue';
+import { vue3 as newsletterVue3 } from '@cmmv/newsletter/client';
 
 const blogAPI = vue3.useBlog();
-const categoriesStore = useCategoriesStore();
+const affiliateAPI = affiliateVue3.useAffiliate();
 const settingsStore = useSettingsStore();
-
+const campaignsStore = useCampaignsStore();
+const couponsStore = useCouponsStore();
+const route = useRoute();
 const settings = ref<any>(settingsStore.getSettings);
+const campaigns = ref<any[]>(campaignsStore.getCampaigns || []);
+
+const recentCampaigns = computed(() => {
+    if (!campaigns.value || campaigns.value.length === 0) return [];
+    // Ordenar por couponCount (quantidade de cupons) como critério de "popularidade"
+    return [...campaigns.value]
+        .filter(campaign => campaign.couponCount > 0)
+        .sort((a, b) => (b.couponCount || 0) - (a.couponCount || 0))
+        .slice(0, 10);
+});
 
 const scripts = computed(() => {
     const baseScripts = [];
@@ -305,12 +444,12 @@ useHead({
     link: [
         {
             rel: 'stylesheet',
-            href: 'https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css'
+            href: '/src/theme-cupomnahora/style.css?v=2'
         },
         {
             rel: 'icon',
             type: 'image/ico',
-            href: '/favicon.ico'
+            href: '/src/theme-cupomnahora/favicon.ico?v=2'
         },
         { rel: 'preconnect', href: 'https://www.googletagmanager.com/' },
         { rel: 'preconnect', href: 'https://www.google-analytics.com/' },
@@ -319,69 +458,28 @@ useHead({
         { rel: 'preconnect', href: 'https://securepubads.g.doubleclick.net/' },
         { rel: 'preconnect', href: 'https://tpc.googlesyndication.com/' },
         { rel: 'preconnect', href: 'https://www.googletag.com/' },
+        { rel: 'preconnect', href: 'https://static.cupomnahora.com.br/' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
-        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' }
-    ],
-
-    script: [
-        {
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js',
-            defer: true
-        },
-        //...scripts
+        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
+        { rel: 'dns-prefetch', href: 'https://static.cupomnahora.com.br/' }
     ]
 })
 
 const searchModalOpen = ref(false);
 const searchQuery = ref('');
 const searchResults = ref<any[]>([]);
+const searchCampaigns = ref<any[]>([]);
 const isSearching = ref(false);
 const searchTimeout = ref<any>(null);
 const searchInput = ref<HTMLInputElement | null>(null);
 const mobileMenuOpen = ref(false);
-
-const categories = ref<any[]>(categoriesStore.getCategories || []);
-
-const mainNavCategories = computed(() => {
-    const navCategories = categories.value?.filter((category: any) => category.mainNav) || [];
-    navCategories.sort((a: any, b: any) => (a.mainNavIndex ?? 999) - (b.mainNavIndex ?? 999));
-
-    const rootCategories = navCategories.filter((cat: any) => !cat.parentCategory);
-    const childCategories = navCategories.filter((cat: any) => cat.parentCategory);
-
-    return {
-        rootCategories,
-        childrenMap: childCategories.reduce((map: Record<string, any[]>, child: any) => {
-            if (!map[child.parentCategory]) {
-                map[child.parentCategory] = [];
-            }
-            map[child.parentCategory].push(child);
-            return map;
-        }, {} as Record<string, any[]>),
-    };
-});
-
-const openDropdowns = ref<Record<string, boolean>>({});
-
-const toggleDropdown = (categoryId: string, event: Event) => {
-    event.stopPropagation();
-    if (openDropdowns.value[categoryId]) {
-        openDropdowns.value = {
-            ...openDropdowns.value,
-            [categoryId]: false
-        };
-    } else {
-        const newDropdownState: Record<string, boolean> = {};
-        Object.keys(openDropdowns.value).forEach(key => {
-            newDropdownState[key] = false;
-        });
-        newDropdownState[categoryId] = true;
-        openDropdowns.value = newDropdownState;
-    }
-};
+const showAutocomplete = ref(false);
+const featuredStores = ref<any[]>([]);
+const autocompleteBlurTimeout = ref<any>(null);
 
 const openSearchModal = () => {
     searchModalOpen.value = true;
+    closeAutocomplete();
     setTimeout(() => {
         searchInput.value?.focus();
     }, 100);
@@ -391,40 +489,93 @@ const closeSearchModal = () => {
     searchModalOpen.value = false;
     searchQuery.value = '';
     searchResults.value = [];
+    searchCampaigns.value = [];
 };
 
 const debouncedSearch = () => {
-    if (searchTimeout.value) {
+    if (searchTimeout.value)
         clearTimeout(searchTimeout.value);
-    }
 
     searchTimeout.value = setTimeout(() => {
         performSearch();
     }, 300);
 };
 
+const onSearchFocus = () => {
+    if (autocompleteBlurTimeout.value)
+        clearTimeout(autocompleteBlurTimeout.value);
+
+    showAutocomplete.value = true;
+    loadFeaturedStores();
+};
+
+const onSearchBlur = () => {
+    autocompleteBlurTimeout.value = setTimeout(() => {
+        showAutocomplete.value = false;
+    }, 150);
+};
+
+const closeAutocomplete = () => {
+    showAutocomplete.value = false;
+    if (autocompleteBlurTimeout.value) {
+        clearTimeout(autocompleteBlurTimeout.value);
+    }
+};
+
+const loadFeaturedStores = async () => {
+    if (featuredStores.value.length === 0) {
+        try {
+            const campaigns = await affiliateAPI.campaigns.getAllWithCouponCounts();
+
+            if (campaigns && Array.isArray(campaigns)) {
+                featuredStores.value = campaigns
+                    .filter((campaign: any) => campaign.active !== false)
+                    .sort((a: any, b: any) => {
+                        if (a.highlight && !b.highlight) return -1;
+                        if (!a.highlight && b.highlight) return 1;
+                        return (b.couponCount || 0) - (a.couponCount || 0);
+                    })
+                    .slice(0, 8);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar lojas em destaque:', error);
+            featuredStores.value = [];
+        }
+    }
+};
+
 const performSearch = async () => {
     if (searchQuery.value.trim().length < 2) {
         searchResults.value = [];
+        searchCampaigns.value = [];
         return;
     }
 
     isSearching.value = true;
 
     try {
-        const response = await blogAPI.posts.search(searchQuery.value);
+        const query = searchQuery.value.trim();
+        const postPromise = blogAPI.posts.search(query);
+        const campaignsPromise = affiliateAPI.campaigns.searchCampaigns(query);
+        const [postResponse, campaignsResponse] = await Promise.all([postPromise, campaignsPromise]);
 
-        if (Array.isArray(response)) {
-            searchResults.value = response;
-        } else if (response && typeof response === 'object') {
-            const typedResponse = response as { posts?: any[] };
+        if (Array.isArray(postResponse)) {
+            searchResults.value = postResponse;
+        } else if (postResponse && typeof postResponse === 'object') {
+            const typedResponse = postResponse as { posts?: any[] };
             searchResults.value = Array.isArray(typedResponse.posts) ? typedResponse.posts : [];
         } else {
             searchResults.value = [];
         }
+
+        if (campaignsResponse && Array.isArray(campaignsResponse)) {
+            searchCampaigns.value = campaignsResponse;
+        } else {
+            searchCampaigns.value = [];
+        }
     } catch (error) {
-        console.error('Search error:', error);
         searchResults.value = [];
+        searchCampaigns.value = [];
     } finally {
         isSearching.value = false;
     }
@@ -441,7 +592,7 @@ const formatDate = (dateString: string) => {
 };
 
 const categoriesColumns = computed(() => {
-    const allCategories = categories.value;
+    const allCategories: any[] = [];
     const columnSize = Math.ceil(allCategories.length / 3);
 
     return [
@@ -451,49 +602,121 @@ const categoriesColumns = computed(() => {
     ];
 });
 
-onMounted(async () => {
-    await Promise.all([
-        (async () => {
-            if (!categories.value.length) {
-                try {
-                    const categoriesResponse = await blogAPI.categories.getAll();
-                    if (categoriesResponse) {
-                        categories.value = categoriesResponse;
+const isScratchModalOpen = ref(false);
+const selectedCouponForScratch = ref<any | null>(null);
+
+const checkCouponInUrl = async () => {
+    const displayCode = route.query.display;
+
+    if (displayCode && typeof displayCode === 'string') {
+        try {
+            let foundCoupon: any = null;
+            let relatedCampaign: any = null;
+
+            if (couponsStore.getFeaturedCoupons.length > 0)
+                foundCoupon = couponsStore.getFeaturedCoupons.find(c => c.code === displayCode);
+
+            if (!foundCoupon && couponsStore.getTop25Coupons.length > 0)
+                foundCoupon = couponsStore.getTop25Coupons.find(c => c.code === displayCode);
+
+            if (!foundCoupon) {
+                const campaigns = campaignsStore.getCampaigns || [];
+                for (const campaign of campaigns) {
+                    const campaignCoupons = couponsStore.getCampaignCoupons(campaign.id);
+                    if (campaignCoupons && campaignCoupons.length > 0) {
+                        foundCoupon = campaignCoupons.find(c => c.code === displayCode);
+                        if (foundCoupon) {
+                            relatedCampaign = campaign;
+                            break;
+                        }
                     }
-                } catch (err) {
-                    console.error('Failed to load categories:', err);
                 }
             }
-        })()
-    ]);
 
-    document.addEventListener('click', closeDropdownsOnClickOutside);
-});
+            if (foundCoupon) {
+                if (!foundCoupon.campaignName || !foundCoupon.campaignLogo) {
+                    if (!relatedCampaign) {
+                        const campaigns = campaignsStore.getCampaigns || [];
+                        relatedCampaign = campaigns.find(c => c.id === foundCoupon.campaignId);
+                    }
 
-onBeforeUnmount(() => {
-    document.removeEventListener('click', closeDropdownsOnClickOutside);
-});
-
-const closeDropdownsOnClickOutside = (event: Event) => {
-    const dropdownElements = document.querySelectorAll('.dropdown-menu');
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    let clickedInsideDropdown = false;
-
-    dropdownElements.forEach(el => {
-        if (el.contains(event.target as Node)) {
-            clickedInsideDropdown = true;
+                    selectedCouponForScratch.value = {
+                        ...foundCoupon,
+                        campaignName: relatedCampaign?.name || 'Loja',
+                        campaignLogo: relatedCampaign?.logo || null
+                    };
+                } else {
+                    selectedCouponForScratch.value = foundCoupon;
+                }
+                isScratchModalOpen.value = true;
+            }
+        } catch (error) {
+            console.error('Erro ao processar código do cupom:', error);
         }
-    });
-
-    dropdownToggles.forEach(el => {
-        if (el.contains(event.target as Node)) {
-            clickedInsideDropdown = true;
-        }
-    });
-
-    if (!clickedInsideDropdown) {
-        openDropdowns.value = {};
     }
+};
+
+const closeScratchModal = () => {
+    isScratchModalOpen.value = false;
+    selectedCouponForScratch.value = null;
+};
+
+onMounted(async () => {
+    await checkCouponInUrl();
+});
+
+const newsletterAPI = newsletterVue3.useNewsletter();
+const newsletterEmail = ref('');
+const newsletterSubmitted = ref(false);
+const newsletterMessage = ref('');
+const newsletterError = ref('');
+const isSubscribing = ref(false);
+
+const subscribeNewsletter = async () => {
+    if (!newsletterEmail.value || !isValidEmail(newsletterEmail.value)) {
+        newsletterError.value = 'Por favor, informe um e-mail válido.';
+        return;
+    }
+
+    try {
+        newsletterError.value = '';
+        isSubscribing.value = true;
+        const emailToSubmit = newsletterEmail.value;
+
+        const response = await fetch('/api/newsletter/subscribers/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: emailToSubmit,
+                source: 'footer'
+            })
+        });
+
+        if (response.ok) {
+            newsletterSubmitted.value = true;
+            newsletterMessage.value = 'Obrigado! Você foi inscrito com sucesso.';
+            newsletterEmail.value = '';
+
+            setTimeout(() => {
+                newsletterSubmitted.value = false;
+            }, 5000);
+        } else {
+            throw new Error('Falha na requisição');
+        }
+
+    } catch (error) {
+        console.error('Newsletter subscription error:', error);
+        newsletterError.value = 'Não foi possível processar sua inscrição. Tente novamente.';
+    } finally {
+        isSubscribing.value = false;
+    }
+};
+
+const isValidEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
 };
 </script>
 
@@ -513,5 +736,25 @@ const closeDropdownsOnClickOutside = (event: Event) => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.autocomplete-dropdown {
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.autocomplete-item:hover {
+    background: linear-gradient(90deg, rgba(67, 56, 202, 0.05), rgba(99, 102, 241, 0.05));
+}
+
+input[type="text"]:focus + button svg {
+    color: #4338ca;
 }
 </style>

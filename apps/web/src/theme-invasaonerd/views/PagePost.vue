@@ -9,18 +9,6 @@
             </div>
 
             <div v-else>
-                <!-- Top AdSense Banner -->
-                <div v-if="adSettings.enableAds && adSettings.articlePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center h-[400px]">
-                    <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
-                        <div v-html="getAdHtml('header')"></div>
-                    </div>
-                    <div class="ad-container ad-banner-top py-2 px-4" v-else>
-                        <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                            <span>Anúncio</span>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Main Content Layout -->
                 <div class="flex flex-col lg:flex-row gap-8">
                     <!-- Main Content Area -->
@@ -39,16 +27,18 @@
                                             </a>
                                         </div>
 
-                                        <img
-                                            :src="post.featureImage"
-                                            :alt="post.featureImageAlt || post.title"
-                                            class="featured-img md:block hidden"
-                                            width="890"
-                                            height="606"
-                                            loading="lazy"
-                                            title="Imagem de destaque"
-                                            aria-label="Imagem de destaque"
-                                        />
+                                                                <OptimizedImage
+                            :src="post.featureImage"
+                            :alt="post.featureImageAlt || post.title"
+                            class="featured-img imgix-lazy md:block hidden"
+                            width="890"
+                            height="606"
+                            loading="lazy"
+                            priority="high"
+                            icon-size="lg"
+                            title="Imagem de destaque"
+                            aria-label="Imagem de destaque"
+                        />
 
                                         <p v-if="post.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center">{{
                                             post.featureImageCaption }}</p>
@@ -108,8 +98,8 @@
                                             <!-- Author Avatar -->
                                             <div
                                                 class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow">
-                                                <img v-if="author.image" :src="author.image" :alt="author.name"
-                                                    class="w-full h-full object-cover" width="44" height="44" />
+                                                                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name"
+                                    class="w-full h-full object-cover imgix-lazy" width="44" height="44" icon-size="sm" />
                                                 <div v-else
                                                     class="w-full h-full flex items-center justify-center bg-[#000] text-white font-bold text-lg">
                                                     {{ authorInitials }}
@@ -238,12 +228,14 @@
                                                 >
                                                     <a :href="`/post/${relatedPost.slug}`" class="block">
                                                         <div class="h-48 overflow-hidden relative">
-                                                            <img
-                                                                v-if="relatedPost.featureImage"
-                                                                :src="relatedPost.featureImage"
-                                                                :alt="relatedPost.title"
-                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                                            />
+                                                                                                        <OptimizedImage
+                                                v-if="relatedPost.featureImage"
+                                                :src="relatedPost.featureImage"
+                                                :alt="relatedPost.title"
+                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                                :hover="true"
+                                                icon-size="md"
+                                            />
                                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -300,30 +292,6 @@
 
                             <!-- Right Column (Widgets + Ads) -->
                             <div class="lg:col-span-1">
-                                <!-- AdSense Rectangle (Top) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden">
-                                    <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
-                                        <div v-html="getAdHtml('sidebarTop')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-top" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- AdSense Rectangle (Middle) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarMid" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden">
-                                    <div class="ad-container ad-sidebar-mid" v-if="getAdHtml('sidebarMid')">
-                                        <div v-html="getAdHtml('sidebarMid')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-mid" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <!-- Share Widget -->
                                 <div class="bg-white rounded-lg shadow-md p-5 mb-6">
                                     <h2 class="text-xl font-bold mb-4 pb-2 text-[#ff0030] border-b-2 border-[#000] inline-block">
@@ -402,7 +370,7 @@
                                 </div>
 
                                 <!-- Popular Posts Widget -->
-                                <div v-if="popularPosts && popularPosts.length > 0" class="bg-white rounded-lg shadow-md p-5 mb-6">
+                                <div v-if="popularPosts && popularPosts.length > 0" class="bg-white rounded-lg shadow-md p-5 mb-6 hidden md:block">
                                     <h2 class="text-xl font-bold mb-4 pb-2 text-[#ff0030] border-b-2 border-[#000] inline-block">
                                         Mais Populares
                                     </h2>
@@ -415,12 +383,15 @@
                                         >
                                             <div class="w-20 h-16 flex-shrink-0 overflow-hidden rounded-md">
                                                 <a :href="`/post/${popularPost.slug}`">
-                                                    <img
-                                                        v-if="popularPost.image || popularPost.featureImage"
-                                                        :src="popularPost.image || popularPost.featureImage"
-                                                        :alt="popularPost.title"
-                                                        class="w-full h-full object-cover"
-                                                    />
+                                                                                            <OptimizedImage
+                                            v-if="popularPost.image || popularPost.featureImage"
+                                            :src="popularPost.image || popularPost.featureImage"
+                                            :alt="popularPost.title"
+                                            class="w-full h-full object-cover imgix-lazy"
+                                            width="80"
+                                            height="64"
+                                            icon-size="sm"
+                                        />
                                                     <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -462,18 +433,6 @@
                                         </li>
                                     </ul>
                                 </div>
-
-                                <!-- AdSense Rectangle (Bottom) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center">
-                                    <div class="ad-container ad-sidebar-bottom" v-if="getAdHtml('sidebarBottom')">
-                                        <div v-html="getAdHtml('sidebarBottom')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-bottom" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -497,6 +456,7 @@ import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client'
 import { formatDate, stripHtml } from '../../composables/useUtils'
 import CommentSection from '../../components/CommentSection.vue'
+import OptimizedImage from '../../components/OptimizedImage.vue'
 import { useSettingsStore } from '../../store/settings';
 import { usePostsStore } from '../../store/posts';
 import { useCategoriesStore } from '../../store/categories';
@@ -591,13 +551,9 @@ const adSettings = computed(() => {
         taboolaJsCode: rawSettings['blog.taboolaJsCode'] || '',
     };
 
-    // Log for debugging
-    console.log('adSenseSidebarLeft value in PagePost:', rawSettings['blog.adSenseSidebarLeft']);
-
     return result;
 });
 
-// Helper to get appropriate ad HTML based on position
 const getAdHtml = (position) => {
     if (!adSettings.value.enableAds) return '';
 
@@ -719,7 +675,6 @@ function processPostContent(content) {
 
     let processedContent = content;
 
-    // Replace Twitter/X URLs with embed code
     twitterUrlPatterns.forEach(pattern => {
         processedContent = processedContent.replace(pattern, (match, p1, username, tweetId) => {
             // Create Twitter embed HTML
@@ -731,7 +686,6 @@ function processPostContent(content) {
         });
     });
 
-    // Replace Reddit URLs with embed code
     redditUrlPatterns.forEach(pattern => {
         processedContent = processedContent.replace(pattern, (match, p1, subreddit, postId, commentId) => {
             // Create Reddit embed HTML
@@ -743,14 +697,12 @@ function processPostContent(content) {
         });
     });
 
-    // Load Twitter script if content has Twitter embeds
     if (!isSSR && (processedContent.includes('twitter-tweet') || processedContent.includes('twitter-embed'))) {
         setTimeout(() => {
             loadTwitterScript();
         }, 100);
     }
 
-    // Load Reddit script if content has Reddit embeds
     if (!isSSR && processedContent.includes('reddit-embed')) {
         setTimeout(() => {
             loadRedditScript();
@@ -1423,6 +1375,15 @@ const sidebarLeftAdContainer = ref(null);
 @media (max-width: 1280px) {
     .ad-sidebar-left {
         display: none;
+    }
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
     }
 }
 </style>

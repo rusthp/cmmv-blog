@@ -37,6 +37,10 @@ import {
     AffiliateNetworksModule
 } from './networks/networks.module';
 
+import {
+    AffiliateSitemapModule
+} from './sitemap/sitemap.module';
+
 export const AffiliateModule = new Module('affiliate', {
     contracts: [
         AffiliateNetworksContract,
@@ -53,6 +57,7 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateCampaignsNetworksModule,
         AffiliateNetworkApiModule,
         AffiliateDeeplinkModule,
-        AffiliateNetworksModule
+        AffiliateNetworksModule,
+        AffiliateSitemapModule
     ]
 });
