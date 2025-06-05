@@ -29,9 +29,10 @@
                         <div class="relative h-[400px]">
                             <img
                                 v-if="coverPosts.full && coverPosts.full.featureImage"
-                                :src="coverPosts.full.featureImage"
+                                :src="getThumbnailUrl(coverPosts.full.featureImage)"
+                                :data-src="coverPosts.full.featureImage"
                                 :alt="coverPosts.full.title"
-                                class="w-full h-full object-cover"
+                                class="w-full h-full object-cover lazy-image"
                                 loading="lazy"
                                 width="890"
                                 height="606"
@@ -71,9 +72,10 @@
                             <a :href="`/post/${post.slug}`" class="block h-full">
                                 <img
                                     v-if="post.featureImage"
-                                    :src="post.featureImage"
+                                    :src="getThumbnailUrl(post.featureImage)"
+                                    :data-src="post.featureImage"
                                     :alt="post.title"
-                                    class="w-full h-full object-cover"
+                                    class="w-full h-full object-cover lazy-image"
                                     loading="lazy"
                                     width="890"
                                     height="606"
@@ -139,9 +141,10 @@
                             <div class="relative h-full">
                                 <img
                                     v-if="coverPosts.splitMain && coverPosts.splitMain.featureImage"
-                                    :src="coverPosts.splitMain.featureImage"
+                                    :src="getThumbnailUrl(coverPosts.splitMain.featureImage)"
+                                    :data-src="coverPosts.splitMain.featureImage"
                                     :alt="coverPosts.splitMain.title"
-                                    class="w-full h-full object-cover"
+                                    class="w-full h-full object-cover lazy-image"
                                     loading="lazy"
                                     width="890"
                                     height="606"
@@ -177,9 +180,10 @@
                                 <div class="relative h-full">
                                     <img
                                         v-if="post.featureImage"
-                                        :src="post.featureImage"
+                                        :src="getThumbnailUrl(post.featureImage)"
+                                        :data-src="post.featureImage"
                                         :alt="post.title"
-                                        class="w-full h-full object-cover"
+                                        class="w-full h-full object-cover lazy-image"
                                     />
                                     <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,9 +214,10 @@
                             <div class="relative h-[350px]">
                                 <img
                                     v-if="post.featureImage"
-                                    :src="post.featureImage"
+                                    :src="getThumbnailUrl(post.featureImage)"
+                                    :data-src="post.featureImage"
                                     :alt="post.title"
-                                    class="w-full h-full object-cover"
+                                    class="w-full h-full object-cover lazy-image"
                                     loading="lazy"
                                     width="890"
                                     height="606"
@@ -279,9 +284,10 @@
                                         <div class="h-48 overflow-hidden relative">
                                             <img
                                                 v-if="post.featureImage"
-                                                :src="post.featureImage"
+                                                :src="getThumbnailUrl(post.featureImage)"
+                                                :data-src="post.featureImage"
                                                 :alt="post.title"
-                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 lazy-image"
                                             />
                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -340,9 +346,10 @@
                                             <div class="h-48 overflow-hidden relative">
                                                 <img
                                                     v-if="post.featureImage"
-                                                    :src="post.featureImage"
+                                                    :src="getThumbnailUrl(post.featureImage)"
+                                                    :data-src="post.featureImage"
                                                     :alt="post.title"
-                                                    class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                                    class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 lazy-image"
                                                 />
                                                 <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -426,9 +433,10 @@
                                             <a :href="`/post/${post.slug}`">
                                                 <img
                                                     v-if="post.image"
-                                                    :src="post.image"
+                                                    :src="getThumbnailUrl(post.image)"
+                                                    :data-src="post.image"
                                                     :alt="post.title"
-                                                    class="w-full h-full object-cover"
+                                                    class="w-full h-full object-cover lazy-image"
                                                 />
                                                 <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -529,6 +537,83 @@ const categoriesStore = useCategoriesStore();
 const postsStore = usePostsStore();
 const mostAccessedStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog();
+
+// Lazy loading setup
+let lazyLoadObserver: IntersectionObserver | null = null;
+
+/**
+ * Get thumbnail URL by adding _thumb to the filename and forcing .webp format
+ */
+const getThumbnailUrl = (originalUrl: string): string => {
+    if (!originalUrl) return originalUrl;
+
+    if (originalUrl.includes('_thumb')) return originalUrl;
+    if (originalUrl.startsWith('data:')) return originalUrl;
+
+    const lastDotIndex = originalUrl.lastIndexOf('.');
+
+    if (lastDotIndex === -1)
+        return originalUrl + '_thumb.webp';
+
+    const beforeExtension = originalUrl.substring(0, lastDotIndex);
+    return `${beforeExtension}_thumb.webp`;
+};
+
+/**
+ * Initialize lazy loading observer
+ */
+const initLazyLoading = () => {
+    if (!('IntersectionObserver' in window)) return;
+
+    lazyLoadObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                const img = entry.target as HTMLImageElement;
+                const fullSrc = img.dataset.src;
+
+                if (fullSrc && fullSrc !== img.src) {
+                    const newImg = new Image();
+                    newImg.onload = () => {
+                        img.src = fullSrc;
+                        img.classList.add('loaded');
+                    };
+                    newImg.onerror = () => {
+                        img.classList.add('error');
+                    };
+                    newImg.src = fullSrc;
+                }
+
+                lazyLoadObserver?.unobserve(img);
+            }
+        });
+    }, {
+        rootMargin: '50px 0px',
+        threshold: 0.1
+    });
+
+    const observeLazyImages = () => {
+        const lazyImages = document.querySelectorAll('img.lazy-image');
+        lazyImages.forEach((img) => {
+            lazyLoadObserver?.observe(img);
+        });
+    };
+
+    setTimeout(observeLazyImages, 100);
+
+    watch([posts, popularPosts], () => {
+        setTimeout(observeLazyImages, 100);
+    }, { deep: true });
+};
+
+/**
+ * Cleanup lazy loading observer
+ */
+const cleanupLazyLoading = () => {
+    if (lazyLoadObserver) {
+        lazyLoadObserver.disconnect();
+        lazyLoadObserver = null;
+    }
+};
 
 // State
 const rawSettings = computed(() => settingsStore.getSettings);
@@ -835,6 +920,7 @@ onMounted(async () => {
     // Load ad scripts and sidebar left ad
     loadAdScripts();
     loadSidebarLeftAd(sidebarLeftAdContainer.value);
+    initLazyLoading();
 });
 
 onUnmounted(() => {
@@ -843,6 +929,7 @@ onUnmounted(() => {
         observer.value.disconnect();
     }
     stopCarouselInterval();
+    cleanupLazyLoading();
 });
 
 watch(() => settings.value['blog.cover'], () => {
@@ -871,6 +958,40 @@ watch(() => settings.value['blog.cover'], () => {
 @media (max-width: 1280px) {
     .ad-sidebar-left {
         display: none;
+    }
+}
+
+/* Lazy loading styles */
+.lazy-image {
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0.8;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+}
+
+.lazy-image.error {
+    opacity: 0.7;
+    filter: grayscale(0.2);
+}
+
+img {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.lazy-image:not(.loaded):not(.error) {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
     }
 }
 </style>

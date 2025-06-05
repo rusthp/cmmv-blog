@@ -39,6 +39,15 @@ export class PostsController {
         return this.postsPublicService.getAllPosts(queries, req);
     }
 
+    @Get("posts/public", {
+        exclude: true
+    })
+    @Cache("posts:getAll")
+    @CacheControl({ maxAge: 3600, public: true })
+    async getPostsPublic(@Queries() queries: any, @Req() req: any) {
+        return this.postsPublicService.getAllPostsPublic(queries, req);
+    }
+
     @Get("pages", {
         contract: Application.getContract("PostsContract"),
         schema: RouterSchema.GetAll,

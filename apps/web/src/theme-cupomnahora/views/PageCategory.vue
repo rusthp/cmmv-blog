@@ -157,6 +157,12 @@ const headData = ref({
     link: [
         { rel: 'canonical', href: pageUrl.value },
         { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
+    ],
+    script: [
+        {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js',
+            defer: true
+        },
     ]
 })
 

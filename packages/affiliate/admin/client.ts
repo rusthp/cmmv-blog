@@ -60,6 +60,12 @@ export const useAffiliateClient = () => {
         },
         getCouponsWithAI: async (campaignId: string) => {
             return api.authRequest(`affiliate/campaigns/ai/${campaignId}`, "GET");
+        },
+        getCampaignBySlug: async (slug: string) => {
+            return api.authRequest(`affiliate/campaigns/public/${slug}`, "GET");
+        },
+        searchCampaigns: async (query: string) => {
+            return api.authRequest(`affiliate/campaigns/search?query=${query}`, "GET");
         }
     }
 

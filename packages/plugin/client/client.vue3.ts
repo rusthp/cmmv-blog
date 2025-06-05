@@ -300,7 +300,7 @@ export const useBlog = () => {
                 offset: offset.toString()
             }).toString();
 
-            const { data } = await api.get<any[]>(`blog/posts?${urlQueries}`, "posts");
+            const { data } = await api.get<any[]>(`blog/posts/public?${urlQueries}`, "posts");
             return data.value || [];
         },
         search: async (query: string) => {

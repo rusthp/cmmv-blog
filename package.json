@@ -71,11 +71,8 @@
         "clean": "pnpm run clean:packages > /dev/null 2>&1"
     },
     "devDependencies": {
-        "eslint": "^9.27.0",
+        "eslint": "^9.28.0",
         "prettier": "^3.5.3",
-        "turbo": "^2.5.3"
-    },
-    "dependencies": {
-        "@vueuse/core": "^13.2.0"
+        "turbo": "^2.5.4"
     }
 }

@@ -9,9 +9,7 @@
             </div>
 
             <div v-else>
-                <!-- Main Content Layout -->
                 <div class="flex flex-col">
-                    <!-- Main Content Area -->
                     <div class="flex-grow">
                         <div class="bg-white rounded-lg p-4 relative">
                             <div class="w-full mx-auto overflow-hidden">
@@ -710,10 +708,9 @@ const loadDisqusComments = () => {
 
         const disqusShortname = settings.value['blog.disqusShortname'];
         if (!disqusShortname) {
-            console.error('Disqus shortname is not set');
-            if (document.body.contains(commentsContainer)) {
+            if (document.body.contains(commentsContainer))
                 commentsContainer.innerHTML = '<p class="text-center text-red-500 py-4">O sistema de comentários do Disqus não está configurado corretamente.</p>';
-            }
+
             return;
         }
 

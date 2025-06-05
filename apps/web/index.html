@@ -8,6 +8,13 @@
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
         <custom-css />
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/service-worker.js');
+                });
+            }
+        </script>
     </head>
     <body class="bg-neutral-50 dark:bg-neutral-900 overflow-x-hidden">
         <div id="app"></div>
@@ -16,6 +23,7 @@
         <script>
             (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
+
         <analytics />
         <custom-js />
     </body>

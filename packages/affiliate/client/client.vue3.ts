@@ -53,6 +53,17 @@ export const useAffiliate = () => {
         getAllWithCouponCounts: async () => {
             const { data } = await api.get<any[]>("affiliate/campaigns/public-with-counts", "campaigns_with_counts");
             return data.value || [];
+        },
+        searchCampaigns: async (query: string) => {
+            if (!query || query.trim().length < 2) {
+                return [];
+            }
+            const { data } = await api.get<any[]>(`affiliate/campaigns/public/search?q=${encodeURIComponent(query.trim())}`, `campaigns_search_${query}`);
+            return data.value || [];
+        },
+        getBySlug: async (slug: string) => {
+            const { data } = await api.get<any[]>(`affiliate/campaigns/public/${slug}`, `campaign`);
+            return data.value || [];
         }
     };
 
@@ -94,6 +105,18 @@ export const useAffiliate = () => {
             } catch (error) {
                 console.error(`Failed to fetch coupons for campaign ${campaignId}:`, error);
                 return [];
+            }
+        },
+        incrementView: async (couponId: string) => {
+            if (!couponId) {
+                return { success: false };
+            }
+            try {
+                const { data } = await api.post("affiliate/coupons/increment-view", { couponId });
+                return data.value || { success: false };
+            } catch (error) {
+                console.error(`Failed to increment view count for coupon ${couponId}:`, error);
+                return { success: false };
             }
         }
     };

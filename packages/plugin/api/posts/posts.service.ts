@@ -209,6 +209,161 @@ export class PostsPublicService {
     }
 
     /**
+     * Get all posts public
+     * @param {any} queries - The queries
+     * @param {any} req - The request
+     * @returns {Promise<any>}
+     */
+    async getAllPostsPublic(queries: any, req: any, admin: boolean = false) {
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const ProfilesEntity = Repository.getEntity("ProfilesEntity");
+        const CategoriesEntity = Repository.getEntity("CategoriesEntity");
+
+        delete queries.t;
+
+        if(queries.limit > 100)
+            throw new Error("The limit must be less than 100");
+
+        const sortFields = ["publishedAt", "createdAt", "updatedAt", "comments", "views"];
+
+        if(queries.sortBy && !sortFields.includes(queries.sortBy))
+            throw new Error("The sortBy must be one of the following: " + sortFields.join(", "));
+
+        if(queries.sort && !["ASC", "DESC"].includes(queries.sort.toUpperCase()) && queries.status !== undefined)
+            throw new Error("The sort must be one of the following: ASC, DESC");
+
+        if(queries.status !== "published" && queries.status !== "" && queries.status !== undefined && !admin)
+            throw new Error("The status must be one of the following: published");
+
+        let sortOptions = {
+            sortBy: "publishedAt",
+            sort: "DESC"
+        };
+
+        if (!queries.status || queries.status === "") {
+            sortOptions = {
+                sortBy: "status",
+                sort: "ASC"
+            };
+        }
+
+        const posts = await Repository.findAll(PostsEntity, {
+            ...queries,
+            type: "post",
+            deleted: false
+        }, [], {
+            select: [
+                "id", "title", "slug",
+                "authors", "author", "featureImage", "publishedAt",
+                "updatedAt", "createdAt", "comments", "views"
+            ],
+            order: {
+                publishedAt: "DESC",
+                status: "ASC",
+                autoPublishAt: "DESC",
+
+            }
+        });
+
+        let authors: any[] = [];
+        let categories: any[] = [];
+
+        if(posts){
+            let userIdsIn: string[] = [];
+            let categoryIdsIn: string[] = [];
+
+            for (const post of posts.data) {
+                if (post.status === 'cron' && post.autoPublishAt)
+                    post.scheduledPublishDate = new Date(post.autoPublishAt).toLocaleString();
+
+                userIdsIn = [...userIdsIn, ...post.authors];
+
+                if(post.author !== "current-user-id")
+                    userIdsIn.push(post.author);
+
+                if(post.categories && post.categories.length > 0){
+                    categoryIdsIn = [...categoryIdsIn, ...post.categories];
+
+                    const categoriesData = await Repository.findAll(CategoriesEntity, {
+                        id: In(post.categories),
+                        limit: 100
+                    }, [], {
+                        select: [ "id", "name", "slug", "description" ]
+                    });
+
+                    post.categories = (categoriesData) ? categoriesData.data : [];
+                }
+
+                if(post.featureImage){
+                    post.featureImage = await this.mediasService.getImageUrl(
+                        post.featureImage,
+                        "webp",
+                        1200,
+                        post.featureImageAlt,
+                        post.featureImageCaption
+                    );
+                }
+            }
+
+            //@ts-ignore
+            const usersIn = [...new Set(userIdsIn)];
+            //@ts-ignore
+            const categoryIn = [...new Set(categoryIdsIn)];
+
+            const authorsData = await Repository.findAll(ProfilesEntity, {
+                user: In(usersIn),
+                limit: 100
+            }, [], {
+                select: [
+                    'id', 'user', 'name', 'slug', 'image', 'coverImage',
+                    'bio', 'website', 'location', 'facebook', 'twitter', 'locale',
+                    'visibility', 'metaTitle', 'metaDescription', 'lastSeen',
+                    'commentNotifications', 'mentionNotifications', 'recommendationNotifications'
+                ]
+            });
+
+            if(authorsData){
+                for(const author of authorsData.data){
+                    author.image = await this.mediasService.getImageUrl(
+                        author.image,
+                        "webp",
+                        128,
+                        author.name,
+                        author.name
+                    );
+
+                    author.coverImage = await this.mediasService.getImageUrl(
+                        author.coverImage,
+                        "webp",
+                        1024,
+                        author.name,
+                        author.name
+                    );
+                }
+            }
+
+            authors = (authorsData) ? authorsData.data : [];
+
+            const categoriesData = await Repository.findAll(CategoriesEntity, {
+                id: In(categoryIn),
+                limit: 100
+            }, [], {
+                select: [ "id", "name", "slug", "description" ]
+            });
+
+            categories = (categoriesData) ? categoriesData.data : [];
+        }
+
+        return {
+            posts: (posts) ? posts.data : [],
+            count: (posts) ? posts.count : 0,
+            pagination: (posts) ? posts.pagination : null,
+            authors,
+            categories
+        };
+    }
+
+    /**
      * Get all pages
      * @param {any} queries - The queries
      * @param {any} req - The request
@@ -319,10 +474,10 @@ export class PostsPublicService {
             if (!currentId) continue;
 
             // Fetch the full category object to inspect its structure
-            const category: CategoryWithParent | null = await Repository.findOne(CategoriesEntity, 
-                { id: currentId } 
+            const category: CategoryWithParent | null = await Repository.findOne(CategoriesEntity,
+                { id: currentId }
             );
-            
+
             // CRUCIAL LOG: Inspect the structure of the fetched category object
             this.logger.log(`Fetched category object for ID ${currentId}: ${JSON.stringify(category)}`);
 

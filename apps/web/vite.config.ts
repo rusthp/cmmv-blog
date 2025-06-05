@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue';
 import type { IncomingMessage } from 'http';
 import { unheadVueComposablesImports } from '@unhead/vue'
 import AutoImport from 'unplugin-auto-import/vite'
-import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
+import { VitePWA } from 'vite-plugin-pwa';
 //@ts-ignore
 import tailwindcss from '@tailwindcss/vite';
 
@@ -30,12 +30,12 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [
             vue(),
+            VitePWA({ registerType: 'autoUpdate' }),
             AutoImport({
                 imports: [
                   unheadVueComposablesImports,
                 ],
             }),
-            ViteImageOptimizer(),
             tailwindcss(),
         ],
         ssr: {
@@ -46,6 +46,17 @@ export default defineConfig(({ mode }) => {
             outDir: 'dist',
             rollupOptions: {
                 input: path.resolve(__dirname, 'index.html'),
+            },
+            manualChunks(id: string) {
+                if (id.includes('node_modules')) {
+                    if (id.includes('vue-router'))
+                        return 'vendor-vue-router';
+
+                    if (id.includes('vue'))
+                        return 'vendor-vue';
+
+                    return 'vendor';
+                }
             }
         },
         resolve: {
@@ -54,7 +65,11 @@ export default defineConfig(({ mode }) => {
                 '@cmmv/blog': path.resolve(__dirname, '../../packages/plugin/'),
                 '@cmmv/blog/*': path.resolve(__dirname, '../../packages/plugin/*'),
                 '@cmmv/affiliate': path.resolve(__dirname, '../../packages/affiliate/'),
-                '@cmmv/affiliate/*': path.resolve(__dirname, '../../packages/affiliate/*')
+                '@cmmv/affiliate/*': path.resolve(__dirname, '../../packages/affiliate/*'),
+                '@cmmv/odds': path.resolve(__dirname, '../../packages/odds/'),
+                '@cmmv/odds/*': path.resolve(__dirname, '../../packages/odds/*'),
+                '@cmmv/newsletter': path.resolve(__dirname, '../../packages/newsletter/'),
+                '@cmmv/newsletter/*': path.resolve(__dirname, '../../packages/newsletter/*')
             },
         },
         server: {

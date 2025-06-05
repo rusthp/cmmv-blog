@@ -33,11 +33,13 @@
                 <div class="bg-white rounded-lg overflow-hidden shadow-md">
                     <a :href="`/post/${featuredPost.slug}`" class="block">
                         <div class="relative h-[400px]">
-                            <img
+                            <OptimizedImage
                                 v-if="featuredPost.featureImage"
                                 :src="featuredPost.featureImage"
                                 :alt="featuredPost.title"
-                                class="w-full h-full object-cover"
+                                class="w-full h-full object-cover imgix-lazy"
+                                priority="high"
+                                icon-size="lg"
                             />
                             <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,11 +83,13 @@
                             >
                                 <a :href="`/post/${post.slug}`" class="block">
                                     <div class="h-48 overflow-hidden relative">
-                                        <img
+                                        <OptimizedImage
                                             v-if="post.featureImage"
                                             :src="post.featureImage"
                                             :alt="post.title"
-                                            class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                            class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                            :hover="true"
+                                            icon-size="md"
                                         />
                                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,11 +135,13 @@
                             >
                                 <a :href="`/post/${post.slug}`" class="block">
                                     <div class="h-48 overflow-hidden relative">
-                                        <img
+                                        <OptimizedImage
                                             v-if="post.featureImage"
                                             :src="post.featureImage"
                                             :alt="post.title"
-                                            class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                                            class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                            :hover="true"
+                                            icon-size="md"
                                         />
                                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,10 +199,13 @@
                             >
                                 <div class="w-20 h-16 flex-shrink-0 overflow-hidden rounded-md">
                                     <a :href="`/post/${post.slug}`">
-                                        <img
+                                        <OptimizedImage
                                             :src="post.featureImage || post.image || '/placeholder-image.jpg'"
                                             :alt="post.title"
-                                            class="w-full h-full object-cover"
+                                            class="w-full h-full object-cover imgix-lazy"
+                                            width="80"
+                                            height="64"
+                                            icon-size="sm"
                                         />
                                     </a>
                                 </div>
@@ -248,6 +257,7 @@ import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 import { usePostsStore } from '../../store/posts';
 import { useMostAccessedPostsStore } from '../../store/mostaccessed';
+import OptimizedImage from '../../components/OptimizedImage.vue';
 import { formatDate, stripHtml } from '../../composables/useUtils';
 
 const settingsStore = useSettingsStore();
@@ -564,6 +574,19 @@ watch(() => settings.value['blog.cover'], () => {
 @media (max-width: 768px) {
     .featured-post {
         height: 300px;
+    }
+}
+
+img {
+    transition: opacity 0.2s ease-in-out;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
     }
 }
 </style>

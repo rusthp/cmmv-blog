@@ -63,7 +63,9 @@
             "@cmmv/affiliate": ["../../packages/affiliate/api"],
             "@cmmv/affiliate/*": ["../../packages/affiliate/api/*"],
             "@cmmv/odds": ["../../packages/odds/api"],
-            "@cmmv/odds/*": ["../../packages/odds/api/*"]
+            "@cmmv/odds/*": ["../../packages/odds/api/*"],
+            "@cmmv/newsletter": ["../../packages/newsletter/api"],
+            "@cmmv/newsletter/*": ["../../packages/newsletter/api/*"]
         }
     },
     "include": ["src/**/*", ".generated/**/*"],

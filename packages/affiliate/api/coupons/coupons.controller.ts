@@ -1,7 +1,7 @@
 import {
     Controller, Get, Param,
     CacheControl, ContentType,
-    Raw, Res, Query
+    Raw, Res, Query, Post, Body
 } from "@cmmv/http";
 
 import {
@@ -95,5 +95,11 @@ export class CouponsControllerTools {
         });
 
         response.res.end(data);
+    }
+
+    @Post("increment-view")
+    @ContentType('application/json')
+    async incrementCouponView(@Body() body: { couponId: string }) {
+        return await this.couponsService.incrementCouponView(body.couponId);
     }
 }
