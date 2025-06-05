@@ -210,14 +210,39 @@
                         </p>
                     </div>
                     <div class="md:w-1/2 w-full">
-                        <form class="flex w-full">
+                        <div v-if="newsletterSubmitted" class="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <p class="text-green-700">{{ newsletterMessage }}</p>
+                            </div>
+                        </div>
+
+                        <div v-if="newsletterError" class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-red-700">{{ newsletterError }}</p>
+                            </div>
+                        </div>
+
+                        <form @submit.prevent="subscribeNewsletter" class="flex w-full">
                             <label for="newsletter-email" class="sr-only">Seu email</label>
-                            <input id="newsletter-email" type="email" placeholder="Seu email"
+                            <input id="newsletter-email" v-model="newsletterEmail" type="email" placeholder="Seu email"
                                 class="flex-grow px-4 py-3 rounded-l-md border-0 bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                                 aria-required="true"
                             >
-                            <button type="submit" class="bg-slate-700 text-white font-medium px-6 py-3 rounded-r-md hover:bg-slate-600 transition-colors whitespace-nowrap">
-                                Assinar
+                            <button type="submit" class="bg-slate-700 text-white font-medium px-6 py-3 rounded-r-md hover:bg-slate-600 transition-colors whitespace-nowrap" :disabled="isSubscribing">
+                                <span v-if="isSubscribing">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Aguarde...
+                                </span>
+                                <span v-else>Assinar</span>
                             </button>
                         </form>
                     </div>
@@ -422,10 +447,9 @@ import { vue3 } from '@cmmv/blog/client';
 import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
-//import { useDarkMode } from '../../composables/useUtils';
 import { useDarkMode } from '../../composables/useDarkMode';
-//import { onClickOutside } from '@vueuse/core';
 import CookieConsent from '../../components/CookieConsent.vue';
+import { vue3 as newsletterVue3 } from '@cmmv/newsletter/client';
 
 const blogAPI = vue3.useBlog();
 const categoriesStore = useCategoriesStore();
@@ -503,6 +527,60 @@ const mainNavCategories = computed(() => {
         }, {} as Record<string, any[]>),
     };
 });
+
+// Newsletter functionality
+const newsletterEmail = ref('');
+const newsletterSubmitted = ref(false);
+const newsletterMessage = ref('');
+const newsletterError = ref('');
+const isSubscribing = ref(false);
+
+const subscribeNewsletter = async () => {
+    if (!newsletterEmail.value || !isValidEmail(newsletterEmail.value)) {
+        newsletterError.value = 'Por favor, informe um e-mail válido.';
+        return;
+    }
+
+    try {
+        newsletterError.value = '';
+        isSubscribing.value = true;
+        const emailToSubmit = newsletterEmail.value;
+
+        const response = await fetch('/api/newsletter/subscribers/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: emailToSubmit,
+                source: 'footer'
+            })
+        });
+
+        if (response.ok) {
+            newsletterSubmitted.value = true;
+            newsletterMessage.value = 'Obrigado! Você foi inscrito com sucesso.';
+            newsletterEmail.value = '';
+
+            setTimeout(() => {
+                newsletterSubmitted.value = false;
+            }, 5000);
+        } else {
+            throw new Error('Falha na requisição');
+        }
+
+    } catch (error) {
+        console.error('Newsletter subscription error:', error);
+        newsletterError.value = 'Não foi possível processar sua inscrição. Tente novamente.';
+    } finally {
+        isSubscribing.value = false;
+    }
+};
+
+const isValidEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+};
 
 const openDropdowns = ref<Record<string, boolean>>({});
 
