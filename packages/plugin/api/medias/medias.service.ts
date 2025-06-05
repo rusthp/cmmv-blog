@@ -151,7 +151,12 @@ export class MediasService extends AbstractService {
                     processor = processor.resize({ width: maxWidth, withoutEnlargement: true });
                 }
 
-                const processedBuffer = await processor.webp({ quality: 80 }).toBuffer();
+                const processedBuffer = await processor.webp({
+                    quality: 70,
+                    lossless: false,
+                    // @ts-ignore
+                    reductionEffort: 6
+                }).toBuffer();
                 const processedMetadata = await sharp(processedBuffer).metadata();
                 
                 const filename = `${uuidv4()}.webp`;
