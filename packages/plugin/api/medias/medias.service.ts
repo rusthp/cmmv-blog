@@ -103,7 +103,7 @@ export class MediasService extends AbstractService {
     async getImageUrl(
         image: string,
         format: string = "webp",
-        maxWidth: number = 1024,
+        maxWidth: number = 1280, // Padrão agora é 1280 (formato 16:9 com altura 720)
         alt: string = "",
         caption: string = ""
     ) {
@@ -148,17 +148,18 @@ export class MediasService extends AbstractService {
                 let processor = sharp(buffer);
                 const metadata = await processor.metadata();
                 
-                // Otimizar a imagem antes de enviá-la para o storage
-                if (metadata.width && metadata.width > maxWidth) {
-                    //@ts-ignore
-                    const aspectRatio = metadata.width / metadata.height;
-                    const newHeight = Math.round(maxWidth / aspectRatio);
-
-                    processor = processor.resize(maxWidth, newHeight, {
-                        fit: 'inside',
-                        withoutEnlargement: true
-                    });
-                }
+                // Otimizar a imagem antes de enviá-la para o storage e padronizar para 1280x720
+                // Constantes para o formato padrão 16:9
+                const targetWidth = 1280;
+                const targetHeight = 720;
+                
+                // Redimensionar para o formato padrão 1280x720 (16:9)
+                processor = processor.resize({
+                    width: targetWidth,
+                    height: targetHeight,
+                    fit: 'cover', // Usa 'cover' para preencher completamente e cortar o excesso
+                    position: 'center' // Centraliza a imagem para corte equilibrado
+                });
 
                 // Sempre converter para WebP independente do formato original
                 processor = processor.webp({
