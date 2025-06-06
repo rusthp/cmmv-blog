@@ -40,7 +40,7 @@
                             />
                             <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                 <div v-if="coverPosts.full && coverPosts.full.categories && coverPosts.full.categories.length > 0" class="mb-2">
-                                    <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                    <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                         {{ coverPosts.full.categories[0].name }}
                                     </span>
                                 </div>
@@ -419,27 +419,6 @@
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Categories Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]">
-                                    Categorias
-                                </h2>
-
-                                <ul class="space-y-2">
-                                    <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
-                                        <a
-                                            :href="`/category/${category.slug}`"
-                                            class="flex justify-between items-center text-gray-700 hover:text-[#dc2626] transition-colors"
-                                        >
-                                            {{ category.name }}
-                                            <span class="bg-[#dc2626] text-white px-2 py-1 rounded-full text-xs font-medium">
-                                                {{ category.postCount }}
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
                             </div>
 
                             <!-- AdSense Rectangle (Bottom) -->

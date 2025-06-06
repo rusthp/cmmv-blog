@@ -123,7 +123,7 @@ export const useSettingsStore = defineStore('settings', {
         },
 
         faviconUrl: (state) => {
-            return state.data?.['blog.favicon'] || '/src/theme-default/favicon.ico';
+            return state.data?.['blog.favicon'] || '/src/theme-centralotaku2/favicon.ico';
         }
     },
 })
