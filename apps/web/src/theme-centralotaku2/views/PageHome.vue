@@ -34,7 +34,7 @@
                                 aria-label="Cover Image"
                                 width="890"
                                 height="606"
-                                loading="lazy"
+                                
                                 priority="high"
                                 icon-size="lg"
                             />
@@ -70,7 +70,7 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                    
                                     priority="high"
                                     icon-size="lg"
                                 />
@@ -135,7 +135,7 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                  
                                     priority="high"
                                     icon-size="lg"
                                 />
@@ -163,7 +163,7 @@
                                     <OptimizedImage
                                         :src="post.featureImage"
                                         :alt="post.title"
-                                        loading="lazy"
+                                        
                                         icon-size="md"
                                     />
                                     <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
@@ -195,7 +195,7 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                    
                                     priority="high"
                                     icon-size="lg"
                                 />
@@ -253,7 +253,7 @@
                                                 :alt="post.title"
                                                 width="360"
                                                 height="192"
-                                                loading="lazy"
+                                                
                                                 priority="high"
                                                 :hover="true"
                                                 icon-size="md"
@@ -312,7 +312,7 @@
                                                     :alt="post.title"
                                                     width="360"
                                                     height="192"
-                                                    loading="lazy"
+                                                    
                                                     :hover="true"
                                                     icon-size="md"
                                                 />
@@ -393,7 +393,7 @@
                                                     :alt="post.title"
                                                     width="80"
                                                     height="64"
-                                                    loading="lazy"
+                                                    
                                                     icon-size="sm"
                                                 />
                                             </a>

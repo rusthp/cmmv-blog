@@ -262,7 +262,7 @@
                                     >
                                         <div class="flex flex-col sm:flex-row">
                                             <div v-if="post.featureImage" class="w-full sm:w-32 h-40 sm:h-24 flex-shrink-0">
-                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
+                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover"/>
                                             </div>
                                             <div class="p-4 flex-grow">
                                                 <h4 class="font-bold text-neutral-900 dark:text-white mb-1" v-html="highlightSearchTerm(post.title, searchQuery)"></h4>
@@ -305,7 +305,7 @@
                                     >
                                         <div class="flex flex-col sm:flex-row">
                                             <div v-if="post.featureImage" class="w-full sm:w-36 h-48 sm:h-28 relative flex-shrink-0">
-                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
+                                                <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover"/>
                                                 <div v-if="post.categories && post.categories.length > 0"
                                                      class="absolute top-0 left-0 bg-red-600 text-white text-xs px-2 py-1 m-1 rounded">
                                                     {{ post.categories[0].name }}
