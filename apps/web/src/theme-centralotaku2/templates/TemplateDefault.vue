@@ -61,9 +61,9 @@
         <div class="container mx-auto px-4 max-w-[1200px]">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
                 <!-- Sobre -->
-                <div>
+                <div class="md:col-span-2">
                     <h3 class="text-xl font-bold mb-4">{{ settings['blog.title'] }}</h3>
-                    <p class="text-neutral-400 mb-4">{{ settings['blog.description'] }}</p>
+                    <p class="text-neutral-400 mb-4 max-w-xl">{{ settings['blog.description'] }}</p>
                     <div class="flex space-x-4">
                         <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" class="text-neutral-400 hover:text-white" aria-label="Facebook">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -77,36 +77,11 @@
                     </div>
                 </div>
 
-                <!-- Categorias -->
-                <div>
-                    <h3 class="text-xl font-bold mb-4">Categorias</h3>
-                    <ul class="space-y-2">
-                        <li v-for="category in categories.slice(0, 6)" :key="category.id">
-                            <a :href="`/category/${category.slug}`" class="text-neutral-400 hover:text-white">
-                                {{ category.name }}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Links -->
-                <div>
-                    <h3 class="text-xl font-bold mb-4">Links</h3>
-                    <ul class="space-y-2">
-                         <li><a href="/blog" class="text-neutral-400 hover:text-white">Blog</a></li>
-                         <li><a href="/contact" class="text-neutral-400 hover:text-white">Contato</a></li>
-                         <li><a href="/about" class="text-neutral-400 hover:text-white">Sobre</a></li>
-                    </ul>
-                </div>
             </div>
 
             <div class="border-t border-neutral-700 pt-6">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <p class="text-neutral-400 mb-4 md:mb-0">&copy; {{ new Date().getFullYear() }} {{ settings['blog.title'] }}. Todos os direitos reservados.</p>
-                    <div class="flex space-x-6">
-                        <a href="/terms-of-service" class="text-neutral-400 hover:text-white text-sm">Termos de uso</a>
-                        <a href="/terms-of-privacy" class="text-neutral-400 hover:text-white text-sm">Política de privacidade</a>
-                    </div>
                 </div>
             </div>
         </div>
