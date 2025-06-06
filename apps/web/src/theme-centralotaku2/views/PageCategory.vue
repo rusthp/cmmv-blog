@@ -77,23 +77,24 @@
                 </div>
 
                 <!-- No posts state -->
-                <div v-else-if="!loading && posts.length === 0" class="text-center py-16">
+                <div v-else-if="!loading && posts.length === 0" class="text-center py-16" role="status" aria-live="polite">
                     <h2 class="text-2xl font-bold mb-2 dark:text-white">No posts found in this category</h2>
                     <p class="text-gray-600 dark:text-gray-400">Check back later for new content!</p>
                 </div>
 
                 <!-- Loading more indicator -->
-                <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
+                <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6" role="status" aria-live="polite">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500" aria-hidden="true"></div>
+                    <span class="sr-only">Carregando mais posts...</span>
                 </div>
 
                 <!-- No more posts indicator -->
-                <div v-if="!hasMorePosts && posts.length > 0 && !loadingMore" class="mt-8 text-center py-4 text-gray-500 dark:text-gray-400">
+                <div v-if="!hasMorePosts && posts.length > 0 && !loadingMore" class="mt-8 text-center py-4 text-gray-500 dark:text-gray-400" aria-live="polite">
 
                 </div>
 
                 <!-- Intersection observer target -->
-                <div ref="observerTarget" class="h-4 w-full"></div>
+                <div ref="observerTarget" class="h-4 w-full" aria-hidden="true"></div>
             </div>
         </div>
     </div>

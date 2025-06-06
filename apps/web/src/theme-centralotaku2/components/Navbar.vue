@@ -1,9 +1,12 @@
 <template>
     <button
         @click="toggle"
-        class="fixed top-4 left-4 z-50 p-2 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm rounded-md shadow-lg focus:outline-none lg:hidden cursor-pointer"
+        class="fixed top-4 left-4 z-50 p-2 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm rounded-md shadow-lg focus:outline-none focus:ring-2 focus:ring-red-600 lg:hidden cursor-pointer"
+        aria-label="Menu de navegação"
+        :aria-expanded="sidebarOpen ? 'true' : 'false'"
+        aria-controls="main-menu"
     >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-neutral-700 dark:text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-neutral-700 dark:text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path v-if="sidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
@@ -12,10 +15,13 @@
     <aside
         class="fixed inset-y-0 left-0 w-64 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 z-20 transform transition-transform duration-300 ease-in-out"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+        id="main-menu"
+        role="navigation"
+        aria-label="Menu principal"
     >
         <div class="h-full flex flex-col">
             <div class="p-4 border-b border-neutral-200 dark:border-neutral-800" v-if="settings">
-                <a href="/" class="flex flex-col items-center">
+                <a href="/" class="flex flex-col items-center" aria-label="Ir para página inicial">
                     <img
                         v-if="settings['blog.logo']"
                         :src="settings['blog.logo']"
@@ -28,8 +34,9 @@
 
                 <div class="mt-4 flex items-center justify-center gap-2">
                     <a v-if="settings['blog.facebook']" :href="`https://facebook.com/${settings['blog.facebook']}`" target="_blank" rel="noopener noreferrer" title="Facebook"
-                        class="flex items-center justify-center p-2 text-neutral-600 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 rounded-md transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        class="flex items-center justify-center p-2 text-neutral-600 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                        aria-label="Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
                     </a>
@@ -67,17 +74,17 @@
                     <div v-if="isLoggedIn" class="flex items-center space-x-3">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center mt-1">
-                                <a href="/member/profile" class="text-sm text-red-500 hover:underline">Profile</a>
+                                <a href="/member/profile" class="text-sm text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded">Profile</a>
                                 <span class="text-neutral-400 dark:text-neutral-500 mx-2">|</span>
-                                <button @click="logout" class="text-sm text-red-500 hover:underline">Sign Out</button>
+                                <button @click="logout" class="text-sm text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded">Sign Out</button>
                             </div>
                         </div>
                     </div>
                     <div v-else class="flex items-center justify-center">
                         <div class="flex space-x-2">
-                            <a href="/member/login" class="text-sm text-red-500 hover:underline">Sign In</a>
+                            <a href="/member/login" class="text-sm text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded">Sign In</a>
                             <span class="text-neutral-400 dark:text-neutral-600">|</span>
-                            <a href="/member/register" class="text-sm text-neutral-700 dark:text-neutral-300 hover:text-red-500 dark:hover:text-red-500 hover:underline">Register</a>
+                            <a href="/member/register" class="text-sm text-neutral-700 dark:text-neutral-300 hover:text-red-500 dark:hover:text-red-500 hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded">Register</a>
                         </div>
                     </div>
                 </div>
@@ -86,9 +93,11 @@
             <div class="flex-1 overflow-y-auto p-4">
                 <button
                     @click="openSearchModal"
-                    class="w-full flex items-center p-3 mb-6 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-neutral-50 dark:focus:ring-offset-neutral-950"
+                    class="w-full flex items-center p-3 mb-6 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-neutral-50 dark:focus:ring-offset-neutral-950"
+                    aria-label="Abrir busca"
+                    aria-haspopup="dialog"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <span class="text-neutral-700 dark:text-neutral-300">Search</span>
@@ -96,19 +105,20 @@
 
                 <!-- Categorias -->
                 <div class="mb-6">
-                    <h2 class="text-sm font-semibold mb-3 text-red-600 dark:text-red-500 uppercase tracking-wider flex items-center justify-between">
+                    <h2 class="text-sm font-semibold mb-3 text-red-600 dark:text-red-500 uppercase tracking-wider flex items-center justify-between" id="categories-heading">
                         <span>Categorias</span>
                     </h2>
                     
                     <!-- Lista de categorias em estilo dropdown -->
-                    <div class="space-y-1">
+                    <div class="space-y-1" role="navigation" aria-labelledby="categories-heading">
                         <div v-for="category in mainCategories" :key="category.id" class="bg-neutral-100 dark:bg-neutral-900 rounded-md overflow-hidden">
                             <!-- Categoria pai -->
                             <div class="group">
                                 <div class="flex items-center justify-between p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors">
                                     <a 
                                         :href="`/category/${category.slug}`" 
-                                        class="text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-500 flex-grow truncate"
+                                        class="text-neutral-700 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-500 flex-grow truncate focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+                                        :aria-expanded="openedCategories[category.id] ? 'true' : 'false'"
                                     >
                                         {{ category.name }} 
                                         <span class="text-xs text-neutral-500 dark:text-neutral-400">({{ category.postCount }})</span>
@@ -117,7 +127,10 @@
                                     <button 
                                         v-if="hasChildren(category)" 
                                         @click.stop.prevent="toggleCategory(category.id)"
-                                        class="p-1 rounded-md focus:outline-none text-neutral-500 hover:text-red-500"
+                                        class="p-1 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-neutral-500 hover:text-red-500"
+                                        :aria-expanded="openedCategories[category.id] ? 'true' : 'false'"
+                                        :aria-controls="`subcategory-${category.id}`"
+                                        :aria-label="openedCategories[category.id] ? `Fechar subcategorias de ${category.name}` : `Abrir subcategorias de ${category.name}`"
                                     >
                                         <svg 
                                             xmlns="http://www.w3.org/2000/svg" 
@@ -126,6 +139,7 @@
                                             viewBox="0 0 24 24" 
                                             fill="none" 
                                             stroke="currentColor"
+                                            aria-hidden="true"
                                         >
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                         </svg>
@@ -136,12 +150,15 @@
                                 <div 
                                     v-if="hasChildren(category) && openedCategories[category.id]" 
                                     class="pl-2 ml-2 border-l border-neutral-200 dark:border-neutral-700"
+                                    :id="`subcategory-${category.id}`"
+                                    role="group"
+                                    :aria-label="`Subcategorias de ${category.name}`"
                                 >
                                     <a 
                                         v-for="child in getCategoryChildren(category)" 
                                         :key="child.id"
                                         :href="`/category/${child.slug}`"
-                                        class="flex items-center p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800/50 text-neutral-700 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-500 transition-colors text-sm"
+                                        class="flex items-center p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800/50 text-neutral-700 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-500 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
                                     >
                                         {{ child.name }}
                                         <span class="text-xs text-neutral-500 dark:text-neutral-500 ml-1">({{ child.postCount }})</span>
@@ -154,11 +171,11 @@
             </div>
 
             <div class="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 flex justify-center">
-                <a href="/terms-of-service" class="px-2 py-1 text-xs text-neutral-500 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 transition-colors">
+                <a href="/terms-of-service" class="px-2 py-1 text-xs text-neutral-500 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded">
                     Terms of Service
                 </a>
                 <span class="text-neutral-400 dark:text-neutral-600 self-center mx-1">|</span>
-                <a href="/terms-of-privacy" class="px-2 py-1 text-xs text-neutral-500 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 transition-colors">
+                <a href="/terms-of-privacy" class="px-2 py-1 text-xs text-neutral-500 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded">
                     Privacy Policy
                 </a>
             </div>
