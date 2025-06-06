@@ -138,7 +138,7 @@
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="coverPosts.splitMain && coverPosts.splitMain.categories && coverPosts.splitMain.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ coverPosts.splitMain.categories[0].name }}
                                         </span>
                                     </div>
@@ -165,7 +165,7 @@
                                     />
                                     <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                         <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                            <span class="bg-[#dc2626] text-[#333] px-2 py-1 rounded-md text-xs font-medium">
+                                            <span class="bg-[#dc2626] text-[#ffffff] px-2 py-1 rounded-md text-xs font-medium">
                                                 {{ post.categories[0].name }}
                                             </span>
                                         </div>
@@ -198,7 +198,7 @@
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
