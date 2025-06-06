@@ -14,7 +14,7 @@
                         v-for="category in page.categories"
                         :key="category.id"
                         :href="`/category/${category.slug}`"
-                        class="px-3 py-1 bg-blue-600 bg-opacity-85 text-white text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all"
+                        class="px-3 py-1 bg-red-500 bg-opacity-85 text-white text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all"
                     >
                         {{ category.name }}
                     </a>

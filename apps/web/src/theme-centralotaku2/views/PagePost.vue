@@ -12,7 +12,7 @@
                 <div v-if="post.featureImage" class="post-featured-image relative overflow-hidden rounded-lg max-h-[400px]">
                     <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
                         <a v-for="category in post.categories" :key="category.id" :href="`/category/${category.slug}`"
-                            class="px-3 py-1 bg-blue-600 bg-opacity-85 text-white text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all">
+                            class="px-3 py-1 bg-red-500 bg-opacity-85 text-white text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all">
                             {{ category.name }}
                         </a>
                     </div>
@@ -165,7 +165,7 @@
                             <img v-if="author.image" :src="author.image" :alt="author.name"
                                 class="w-full h-full object-cover" />
                             <div v-else
-                                class="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold text-lg">
+                                class="w-full h-full flex items-center justify-center bg-red-500 text-white font-bold text-lg">
                                 {{ authorInitials }}
                             </div>
                         </div>
