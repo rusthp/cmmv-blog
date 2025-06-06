@@ -5,7 +5,7 @@
                 <!-- Cabeçalho com imagem -->
                 <div class="relative">
                     <div class="absolute -left-6 -top-6 w-32 h-32 transform rotate-12">
-                        <img src="/src/theme-centralotaku2/assets/11907549-removebg-preview.png" alt="Luffy - One Piece" class="w-full h-full object-contain" @error="handleImageError" />
+                        <img src="/src/theme-centralotaku2/assets/11907549-removebg-preview.webp" alt="Luffy - One Piece" class="w-full h-full object-contain" @error="handleImageError" />
                     </div>
                     <div class="pt-3 pb-1 px-4 text-center">
                         <h3 class="text-xl font-bold text-white ml-24 text-shadow">Aventura dos Cookies! 🍪</h3>

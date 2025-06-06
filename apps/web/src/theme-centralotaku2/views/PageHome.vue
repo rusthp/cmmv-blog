@@ -686,7 +686,9 @@ const loadPosts = async () => {
         const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response) {
-            posts.value = response.posts;
+            // Atualizar o store com os posts
+            postsStore.setPosts(response.posts);
+            posts.value = postsStore.getPosts;
 
             pagination.value = {
                 total: response.meta?.pagination?.total || 0,
@@ -722,10 +724,12 @@ const loadMorePosts = async () => {
         loadingMore.value = true;
         currentPage.value++;
 
-        const response: any = await blogAPI.posts.getAll(posts.value.length);
+        const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response && response.posts && response.posts.length > 0) {
-            posts.value = [...posts.value, ...response.posts];
+            // Usar a função addPosts do store para evitar duplicações
+            postsStore.addPosts(response.posts);
+            posts.value = postsStore.getPosts;
 
             pagination.value = {
                 total: response.meta?.pagination?.total || 0,
