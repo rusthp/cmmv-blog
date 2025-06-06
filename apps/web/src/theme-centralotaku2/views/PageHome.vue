@@ -6,7 +6,7 @@
             </svg>
             <h2 class="text-2xl font-bold mb-2 text-gray-800">Erro ao carregar posts</h2>
             <p class="text-gray-600 mb-4">Não foi possível carregar os posts. Por favor, tente novamente.</p>
-            <button @click="loadPosts" class="px-4 py-2 bg-[#ef4444] text-white rounded-md hover:bg-[#c83e3e] transition-colors">
+            <button @click="loadPosts" class="px-4 py-2 bg-[#dc2626] text-white rounded-md hover:bg-[#dc2626] transition-colors">
                 Tentar novamente
             </button>
         </div>
@@ -40,15 +40,15 @@
                             />
                             <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                 <div v-if="coverPosts.full && coverPosts.full.categories && coverPosts.full.categories.length > 0" class="mb-2">
-                                    <span class="bg-[#c83e3e] text-[#FFFFFF] px-3 py-1 rounded-md text-sm font-medium">
+                                    <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
                                         {{ coverPosts.full.categories[0].name }}
                                     </span>
                                 </div>
-                                <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
-                                <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)] bg-black/25 p-2 rounded max-w-2xl">
+                                <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
+                                <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                     {{ coverPosts.full.excerpt || stripHtml(coverPosts.full.content).substring(0, 150) + '...' }}
                                 </p>
-                                <span class="inline-block bg-[#c83e3e] hover:bg-[#b13838] text-white px-4 py-2 rounded-md transition-colors">
+                                <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-4 py-2 rounded-md transition-colors">
                                     Continuar lendo
                                 </span>
                             </div>
@@ -76,7 +76,7 @@
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#c83e3e] text-[#FFFFFF] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
@@ -84,7 +84,7 @@
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#c83e3e] hover:bg-[#b13838] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -138,7 +138,7 @@
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="coverPosts.splitMain && coverPosts.splitMain.categories && coverPosts.splitMain.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#c83e3e] text-[#FFFFFF] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ coverPosts.splitMain.categories[0].name }}
                                         </span>
                                     </div>
@@ -146,7 +146,7 @@
                                     <p v-if="coverPosts.splitMain" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ coverPosts.splitMain.excerpt || stripHtml(coverPosts.splitMain.content).substring(0, 150) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#c83e3e] hover:bg-[#b13838] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -165,12 +165,12 @@
                                     />
                                     <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                         <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                            <span class="bg-[#c83e3e] text-[#FFFFFF] px-2 py-1 rounded-md text-xs font-medium">
+                                            <span class="bg-[#dc2626] text-[#333] px-2 py-1 rounded-md text-xs font-medium">
                                                 {{ post.categories[0].name }}
                                             </span>
                                         </div>
                                         <h3 class="text-base font-bold mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h3>
-                                        <span class="text-sm text-white hover:text-[#ef4444] transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
+                                        <span class="text-sm text-white hover:text-[#dc2626] transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
                                             Continuar lendo &rarr;
                                         </span>
                                     </div>
@@ -198,7 +198,7 @@
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#c83e3e] text-[#FFFFFF] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
@@ -206,7 +206,7 @@
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#c83e3e] hover:bg-[#b13838] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -233,89 +233,7 @@
                 <div class="flex-grow">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-2">
-                            <!-- Popular Posts Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-8 hidden lg:block">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#c83e3e] border-b-2 border-[#ef4444] flex items-center">
-                                    <span class="mr-2" aria-hidden="true">🔥</span> Mais Populares
-                                </h2>
-
-                                <div class="relative overflow-hidden -mx-2">
-                                    <div class="py-2 flex items-start">
-                                        <!-- Carousel Container -->
-                                        <div
-                                            class="flex transition-transform duration-500 ease-in-out cursor-grab active:cursor-grabbing select-none"
-                                            :style="{ transform: `translateX(-${currentPopularIndex * 100}%)` }"
-                                            @mousedown="startPopularDrag"
-                                            @touchstart="startPopularDrag"
-                                            @mousemove="onPopularDrag"
-                                            @touchmove="onPopularDrag"
-                                            @mouseup="endPopularDrag"
-                                            @touchend="endPopularDrag"
-                                            @mouseleave="endPopularDrag"
-                                            @dragstart.prevent
-                                        >
-                                            <!-- Carousel Slide -->
-                                            <div
-                                                v-for="post in popularPosts"
-                                                :key="post.id"
-                                                class="w-full flex-shrink-0 px-2"
-                                            >
-                                                <div class="flex flex-col gap-2">
-                                                    <div class="w-full h-auto flex-shrink-0 overflow-hidden rounded-md">
-                                                        <a :href="`/post/${post.slug}`" class="block w-full h-full">
-                                                            <OptimizedImage
-                                                                :src="post.image || post.featureImage"
-                                                                :alt="post.title"
-                                                                width="112"
-                                                                height="60"
-                                                                loading="lazy"
-                                                                icon-size="sm"
-                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                                                            />
-                                                        </a>
-                                                    </div>
-                                                    <div class="flex-grow">
-                                                        <a :href="`/post/${post.slug}`" class="block group">
-                                                            <h4 class="text-sm font-semibold text-gray-800 group-hover:text-[#c83e3e] transition-colors line-clamp-2">
-                                                                {{ post.title }}
-                                                            </h4>
-                                                        </a>
-                                                        <span class="text-xs text-gray-500 mt-1 block">
-                                                            {{ formatDate(post.publishedAt) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Carousel Controls -->
-                                    <template v-if="popularPosts.length > 1">
-                                        <div class="absolute top-0 bottom-0 -left-1 flex items-center">
-                                            <button @click="prevPopularSlide" class="bg-black/30 hover:bg-black/50 text-white p-1 rounded-full focus:outline-none z-10 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                                            </button>
-                                        </div>
-                                        <div class="absolute top-0 bottom-0 -right-1 flex items-center">
-                                            <button @click="nextPopularSlide" class="bg-black/30 hover:bg-black/50 text-white p-1 rounded-full focus:outline-none z-10 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </div>
-                                <!-- Carousel Indicators -->
-                                <div v-if="popularPosts.length > 1" class="flex justify-center space-x-2 pt-3">
-                                    <button
-                                        v-for="(_, index) in popularPosts"
-                                        :key="index"
-                                        @click="setPopularSlide(index)"
-                                        class="w-2.5 h-2.5 rounded-full transition-colors focus:outline-none"
-                                        :class="{ 'bg-[#c83e3e]': currentPopularIndex === index, 'bg-gray-300 hover:bg-gray-400': currentPopularIndex !== index }"
-                                    ></button>
-                                </div>
-                            </div>
-                            
-                            <h2 class="text-xl font-bold mb-6 pb-2 text-[#c83e3e] border-b-2 border-[#ef4444]">
+                            <h2 class="text-xl font-bold mb-6 pb-2 text-[#dc2626] border-b-2 border-[#FFFF]">
                                 Últimas Notícias
                             </h2>
 
@@ -338,7 +256,7 @@
                                                 icon-size="md"
                                             />
                                             <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2">
-                                                <span class="bg-[#c83e3e] text-[#FFFFFF] px-2 py-1 rounded-md text-xs font-medium">
+                                                <span class="bg-[#dc2626] text-[#ffff] px-2 py-1 rounded-md text-xs font-medium">
                                                     {{ post.categories[0].name }}
                                                 </span>
                                             </div>
@@ -346,7 +264,7 @@
                                     </a>
                                     <div class="p-4">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#c83e3e] transition-colors line-clamp-2">
+                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
                                                 {{ post.title }}
                                             </h3>
                                         </a>
@@ -374,7 +292,7 @@
                             </div>
 
                             <div v-if="posts.length > (featuredPost ? 5 : 4)">
-                                <h2 class="text-xl font-bold mb-6 pb-2 text-[#c83e3e] border-b-2 border-[#ef4444]">
+                                <h2 class="text-xl font-bold mb-6 pb-2 text-[#dc2626] border-b-2 border-[#FFFF]">
                                     Mais Conteúdo
                                 </h2>
 
@@ -396,7 +314,7 @@
                                                     icon-size="md"
                                                 />
                                                 <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2">
-                                                    <span class="bg-[#c83e3e] text-[#FFFFFF] px-2 py-1 rounded-md text-xs font-medium">
+                                                    <span class="bg-[#dc2626] text-[#ffffff] px-2 py-1 rounded-md text-xs font-medium">
                                                         {{ post.categories[0].name }}
                                                     </span>
                                                 </div>
@@ -404,7 +322,7 @@
                                         </a>
                                         <div class="p-4">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#c83e3e] transition-colors line-clamp-2">
+                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
                                                     {{ post.title }}
                                                 </h3>
                                             </a>
@@ -432,7 +350,7 @@
                             </div>
 
                             <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
-                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#c83e3e]"></div>
+                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#dc2626]"></div>
                                 <span class="ml-3 text-gray-600">Carregando mais posts...</span>
                             </div>
 
@@ -453,6 +371,44 @@
                                 </div>
                             </div>
 
+                            <!-- Popular Posts Widget -->
+                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]">
+                                    Mais Populares
+                                </h2>
+
+                                <div class="space-y-4">
+                                    <div
+                                        v-for="post in popularPosts"
+                                        :key="post.id"
+                                        class="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
+                                    >
+                                        <div class="w-20 h-16 flex-shrink-0 overflow-hidden rounded-md">
+                                            <a :href="`/post/${post.slug}`">
+                                                <OptimizedImage
+                                                    :src="post.image"
+                                                    :alt="post.title"
+                                                    width="80"
+                                                    height="64"
+                                                    loading="lazy"
+                                                    icon-size="sm"
+                                                />
+                                            </a>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <a :href="`/post/${post.slug}`" class="block">
+                                                <h4 class="text-sm font-semibold text-gray-800 hover:text-[#dc2626] transition-colors line-clamp-2">
+                                                    {{ post.title }}
+                                                </h4>
+                                            </a>
+                                            <span class="text-xs text-gray-500 mt-1 block">
+                                                {{ formatDate(post.publishedAt) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- AdSense Rectangle (Middle) -->
                             <div class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
                                 <div class="ad-container ad-sidebar-mid" v-if="getAdHtml('sidebarMid')">
@@ -467,7 +423,7 @@
 
                             <!-- Categories Widget -->
                             <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#c83e3e] border-b-2 border-[#ef4444]">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]">
                                     Categorias
                                 </h2>
 
@@ -475,10 +431,10 @@
                                     <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                                         <a
                                             :href="`/category/${category.slug}`"
-                                            class="flex justify-between items-center text-gray-700 hover:text-[#c83e3e] transition-colors"
+                                            class="flex justify-between items-center text-gray-700 hover:text-[#dc2626] transition-colors"
                                         >
                                             {{ category.name }}
-                                            <span class="bg-[#c83e3e] text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            <span class="bg-[#dc2626] text-white px-2 py-1 rounded-full text-xs font-medium">
                                                 {{ category.postCount }}
                                             </span>
                                         </a>
@@ -551,12 +507,7 @@ const settings = computed<Record<string, any>>(() => {
 });
 const categories = ref<any[]>(categoriesStore.getCategories || []);
 const posts = ref<any[]>(postsStore.getPosts || []);
-const popularPosts = computed(() => {
-    const mostAccessed = mostAccessedStore.getMostAccessedPosts || [];
-    // Fallback to latest posts if no most accessed data, excluding potential cover posts
-    const popular = mostAccessed.length > 0 ? mostAccessed : posts.value.slice(1, 6);
-    return popular.slice(0, 5);
-});
+const popularPosts = ref<any[]>(mostAccessedStore.getMostAccessedPosts || []);
 const loading = ref(true);
 const loadingMore = ref(false);
 const error = ref(null);
@@ -566,13 +517,6 @@ const observerTarget = ref<HTMLElement | null>(null);
 const observer = ref<IntersectionObserver | null>(null);
 const currentCarouselIndex = ref(0);
 const carouselInterval = ref<number | null>(null);
-
-const currentPopularIndex = ref(0);
-const popularInterval = ref<number | null>(null);
-const isPopularDragging = ref(false);
-const popularDragStartX = ref(0);
-const popularDragCurrentX = ref(0);
-
 const sidebarLeftAdContainer = ref<HTMLElement | null>(null);
 const hydrated = ref(false);
 
@@ -704,90 +648,6 @@ const prevCarouselSlide = () => {
         currentCarouselIndex.value = (currentCarouselIndex.value - 1 + coverPosts.value.carousel.length) % coverPosts.value.carousel.length;
     }
     startCarouselInterval();
-};
-
-const startPopularInterval = () => {
-    if (popularPosts.value.length > 1) {
-        popularInterval.value = window.setInterval(() => {
-            nextPopularSlideAuto();
-        }, 7000);
-    }
-};
-
-const stopPopularInterval = () => {
-    if (popularInterval.value) {
-        clearInterval(popularInterval.value);
-        popularInterval.value = null;
-    }
-};
-
-const nextPopularSlideAuto = () => {
-    if (popularPosts.value.length > 0) {
-        const maxIndex = popularPosts.value.length - 1;
-        currentPopularIndex.value = (currentPopularIndex.value + 1) % (maxIndex + 1);
-    }
-};
-
-const nextPopularSlide = () => {
-    stopPopularInterval();
-    if (popularPosts.value.length > 0) {
-        const maxIndex = popularPosts.value.length - 1;
-        currentPopularIndex.value = currentPopularIndex.value < maxIndex ? currentPopularIndex.value + 1 : 0;
-    }
-    startPopularInterval();
-};
-
-const prevPopularSlide = () => {
-    stopPopularInterval();
-    if (popularPosts.value.length > 0) {
-        const maxIndex = popularPosts.value.length - 1;
-        currentPopularIndex.value = currentPopularIndex.value > 0 ? currentPopularIndex.value - 1 : maxIndex;
-    }
-    startPopularInterval();
-};
-
-const setPopularSlide = (index: number) => {
-    stopPopularInterval();
-    currentPopularIndex.value = index;
-    startPopularInterval();
-};
-
-const startPopularDrag = (e: MouseEvent | TouchEvent) => {
-    if (popularPosts.value.length <= 1) return;
-    isPopularDragging.value = true;
-    stopPopularInterval();
-    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
-    popularDragStartX.value = clientX;
-    popularDragCurrentX.value = clientX;
-    e.preventDefault();
-};
-
-const onPopularDrag = (e: MouseEvent | TouchEvent) => {
-    if (!isPopularDragging.value) return;
-    const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
-    popularDragCurrentX.value = clientX;
-    e.preventDefault();
-};
-
-const endPopularDrag = () => {
-    if (!isPopularDragging.value) return;
-
-    const dragDistance = popularDragCurrentX.value - popularDragStartX.value;
-    const threshold = 50;
-
-    if (Math.abs(dragDistance) > threshold) {
-        if (dragDistance > 0) {
-            // Dragged right, go previous
-            const maxIndex = popularPosts.value.length - 1;
-            currentPopularIndex.value = currentPopularIndex.value > 0 ? currentPopularIndex.value - 1 : maxIndex;
-        } else {
-            // Dragged left, go next
-            const maxIndex = popularPosts.value.length - 1;
-            currentPopularIndex.value = currentPopularIndex.value < maxIndex ? currentPopularIndex.value + 1 : 0;
-        }
-    }
-    isPopularDragging.value = false;
-    startPopularInterval();
 };
 
 const headData = ref({
@@ -933,7 +793,6 @@ onMounted(async () => {
     hydrated.value = true;
     setupIntersectionObserver();
     startCarouselInterval();
-    startPopularInterval();
     loadAdScripts();
     loadSidebarLeftAd(sidebarLeftAdContainer.value);
 
@@ -947,7 +806,6 @@ onUnmounted(() => {
     }
 
     stopCarouselInterval();
-    stopPopularInterval();
 });
 
 watch(() => settings.value['blog.cover'], () => {
