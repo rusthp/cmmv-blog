@@ -1,3 +1,30 @@
+/* OTIMIZAÇÕES CRITICAL PARA PAGESPEED */
+
+/* Font preloading - Critical performance optimization */
+@font-face {
+    font-family: 'System';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap; /* CRUCIAL para evitar FOIT/FOUT */
+    src: local("system-ui"),
+         local("-apple-system"),
+         local("BlinkMacSystemFont"),
+         local("Segoe UI"),
+         local("Roboto"),
+         local("Oxygen"),
+         local("Ubuntu"),
+         local("Cantarell"),
+         local("Fira Sans"),
+         local("Droid Sans"),
+         local("Helvetica Neue"),
+         sans-serif;
+}
+
+/* Critical CSS: Force font-display swap on all text */
+* {
+    font-display: swap !important;
+}
+
 :root {
     --bg-color: #ffffff;
     --text-color: #333333;
@@ -592,10 +619,44 @@ img {
     font-display: swap;
 }
 
+/* OTIMIZAÇÃO CRÍTICA COM CONTENT-VISIBILITY */
+
 /* Layout otimizado com content-visibility para melhorar renderização */
 .optimize-rendering {
     content-visibility: auto;
-    contain-intrinsic-size: 0 500px;
+    contain-intrinsic-size: 0 400px;
+    contain: layout style paint;
+}
+
+/* Aplicar content-visibility em seções críticas */
+.post-content {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 600px;
+}
+
+/* Otimizar widgets da sidebar */
+.bg-white.rounded-lg.shadow-md {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 300px;
+}
+
+/* Otimizar cards de posts */
+article.bg-white {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 350px;
+    contain: layout style;
+}
+
+/* Otimizar seções de ads */
+.ad-container {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 200px;
+}
+
+/* Critical rendering path - priorizar conteúdo above-the-fold */
+.post-title,
+.featured-img {
+    content-visibility: visible;
 }
 
 /* Remover efeitos custosos em dispositivos de baixa performance */
@@ -658,19 +719,50 @@ img {
     }
 }
 
-/* Otimizar animações para performance */
-.dropdown-toggle svg,
-.progressive-img {
+/* OTIMIZAÇÕES CRÍTICAS DE ANIMAÇÃO PARA INP */
+
+/* Usar transform3d para aceleração de hardware */
+.hover\:scale-105:hover {
+    transform: scale3d(1.05, 1.05, 1) !important;
+    will-change: transform;
+}
+
+/* Otimizar transições para performance */
+.transition-transform {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.transition-colors {
+    transition: color 0.15s ease-out !important;
+}
+
+.transition-shadow {
+    transition: box-shadow 0.15s ease-out !important;
+}
+
+/* Reduzir repaints - will-change apenas quando necessário */
+.dropdown-toggle svg {
     will-change: auto;
 }
 
-/* Reduzir repaints em hover */
 .dropdown-toggle:hover svg {
-    will-change: transform, color;
+    will-change: transform;
+    transition: transform 0.15s ease-out;
 }
 
 .dropdown-toggle:not(:hover) svg {
     will-change: auto;
+}
+
+/* Otimizar animações custosas para dispositivos lentos */
+@media (max-width: 768px) {
+    .hover\:scale-105:hover {
+        transform: none !important;
+    }
+    
+    .transition-transform {
+        transition: none !important;
+    }
 }
 
 /* Otimizar carregamento de imagens */
@@ -679,21 +771,103 @@ img {
     contain-intrinsic-size: 400px;
 }
 
-/* Reduzir layout shifts */
+/* OTIMIZAÇÕES CRÍTICAS PARA CLS (CUMULATIVE LAYOUT SHIFT) */
+
+/* Reduzir layout shifts - CRÍTICO para Core Web Vitals */
 .progressive-img-container {
     contain: layout style paint;
+    position: relative;
+    overflow: hidden;
 }
 
-/* Melhorar rendering de texto */
+/* Garantir dimensões para todas as imagens */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    /* Reservar espaço para evitar layout shift */
+    aspect-ratio: attr(width) / attr(height);
+}
+
+/* Container de imagem com aspect ratio definido */
+.h-48 {
+    min-height: 192px; /* Garantir altura mínima */
+}
+
+.h-16 {
+    min-height: 64px; /* Garantir altura mínima */
+}
+
+/* Placeholder para imagens que não carregaram */
+.bg-gray-200 {
+    background-color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Otimizar skeleton loading */
+.ad-placeholder {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* OTIMIZAÇÕES CRÍTICAS DE RENDERING */
+
+/* Otimizar rendering de texto para performance */
 * {
     text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
+/* Títulos com rendering otimizado */
 h1, h2, h3, h4, h5, h6 {
     text-rendering: optimizeLegibility;
-}
-
-/* Otimizar fontes para performance */
-body {
     font-display: swap;
 }
+
+/* Body com configurações críticas de performance */
+body {
+    font-display: swap;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    /* Forçar aceleração de hardware */
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+/* Remover outline em produção (manter acessibilidade) */
+:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+/* Otimizar scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Estilos globais para categorias */
+.bg-\[\#ff0030\] {
+  display: inline-block;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+

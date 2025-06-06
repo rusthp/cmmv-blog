@@ -46,26 +46,25 @@
                                     <h1 class="post-title text-neutral-900 text-3xl md:text-4xl font-bold break-words mb-4">{{ post.title }}</h1>
 
                                     <div v-if="post.featureImage" class="post-featured-image relative overflow-hidden rounded-lg max-h-[400px]">
-                                        <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+                                        <div class="absolute top-4 left-8 z-10 flex flex-wrap gap-2">
                                             <a v-for="category in post.categories" :key="category.id" :href="`/category/${category.slug}`"
-                                                class="px-3 py-1 bg-[#ff0030] text-white text-sm font-medium rounded-full shadow-sm hover:bg-[#cc0027] transition-all">
+                                                class="px-3 py-1 bg-[#ff0030] text-white text-xs font-medium rounded-full shadow-sm hover:bg-[#cc0027] transition-all whitespace-nowrap mb-2">
                                                 {{ category.name }}
                                             </a>
                                         </div>
 
-                                        <div class="progressive-img-container">
-                                            <img
-                                                :src="post.featureImage"
-                                                :alt="post.featureImageAlt || post.title"
-                                                class="featured-img progressive-img md:block hidden"
-                                                width="890"
-                                                height="606"
-                                                loading="lazy"
-                                                :title="post.featureImageAlt || 'Imagem de destaque para ' + post.title"
-                                                decoding="async"
-                                                fetchpriority="high"
-                                            />
-                                        </div>
+                                        <img
+                                            :src="post.featureImage"
+                                            :alt="post.featureImageAlt || post.title"
+                                            class="featured-img w-full h-full object-cover"
+                                            width="890"
+                                            height="400"
+                                            loading="eager"
+                                            fetchpriority="high"
+                                            :title="post.featureImageAlt || 'Imagem de destaque para ' + post.title"
+                                            decoding="async"
+                                            style="aspect-ratio: 890/400;"
+                                        />
 
                                         <p v-if="post.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center">{{
                                             post.featureImageCaption }}</p>
@@ -126,7 +125,7 @@
                                             <div
                                                 class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow">
                                                 <img v-if="author.image" :src="author.image" :alt="`Foto de ${author.name}`"
-                                                    class="w-full h-full object-cover" width="44" height="44" />
+                                                    class="w-full h-full object-cover" width="44" height="44" loading="lazy" decoding="async" />
                                                 <div v-else
                                                     class="w-full h-full flex items-center justify-center bg-[#000] text-white font-bold text-lg"
                                                     aria-label="Iniciais do autor">
@@ -220,7 +219,7 @@
                                                                 v-if="relatedPost.featureImage"
                                                                 :src="relatedPost.featureImage"
                                                                 :alt="relatedPost.title"
-                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 progressive-img"
+                                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                                                                 loading="lazy"
                                                                 decoding="async"
                                                             />
@@ -229,8 +228,8 @@
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                                 </svg>
                                                             </div>
-                                                            <div v-if="relatedPost.categories && relatedPost.categories.length > 0" class="absolute top-2 left-2">
-                                                                <span class="bg-[#ff0030] text-white px-2 py-1 rounded-md text-xs font-medium">
+                                                            <div v-if="relatedPost.categories && relatedPost.categories.length > 0" class="absolute top-2 left-6 flex flex-wrap">
+                                                                <span class="bg-[#ff0030] text-white px-2 py-0.5 rounded-md text-xs font-medium truncate max-w-[180px]">
                                                                     {{ relatedPost.categories[0].name }}
                                                                 </span>
                                                             </div>
@@ -1358,8 +1357,10 @@ const sidebarLeftAdContainer = ref(null);
 }
 
 .featured-img {
-    width: 100%;
+    opacity: 1;
+    height: auto;
     max-height: 500px;
+    width: 100%;
     object-fit: cover;
     border-radius: 8px;
 }
@@ -1394,5 +1395,10 @@ const sidebarLeftAdContainer = ref(null);
     .ad-sidebar-left {
         display: none;
     }
+}
+
+.category-container {
+    max-width: calc(100% - 2rem);
+    padding-right: 1rem;
 }
 </style>

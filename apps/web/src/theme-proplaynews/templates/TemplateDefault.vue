@@ -55,7 +55,8 @@
                                     <div v-if="mainNavCategories.childrenMap[category.id]?.length > 0" class="relative group">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
-                                            class="dropdown-toggle text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center"
+                                            type="button"
+                                            class="dropdown-toggle text-gray-900 px-3 py-1.5 mr-2 font-bold text-sm uppercase tracking-wide md:text-base rounded hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center cursor-pointer"
                                             :class="{'bg-gray-100': openDropdowns[category.id]}"
                                             :aria-expanded="openDropdowns[category.id] ? 'true' : 'false'"
                                             :aria-controls="`dropdown-menu-${category.id}`"
@@ -135,7 +136,8 @@
                                     <div v-if="mainNavCategories.childrenMap[category.id]?.length > 0" class="w-full">
                                         <button
                                             @click="(e) => toggleDropdown(category.id, e)"
-                                            class="dropdown-toggle flex items-center justify-between w-full text-gray-900 hover:bg-gray-100 rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide"
+                                            type="button"
+                                            class="dropdown-toggle flex items-center justify-between w-full text-gray-900 hover:bg-gray-100 rounded px-3 py-1.5 text-sm font-bold uppercase tracking-wide cursor-pointer"
                                             :class="{'bg-gray-100': openDropdowns[category.id]}"
                                             :aria-expanded="openDropdowns[category.id] ? 'true' : 'false'"
                                             :aria-controls="`mobile-dropdown-menu-${category.id}`"
@@ -476,20 +478,22 @@ const mainNavCategories = computed(() => {
 const openDropdowns = ref<Record<string, boolean>>({});
 
 const toggleDropdown = (categoryId: string, event: Event) => {
+    event.preventDefault();
     event.stopPropagation();
-    if (openDropdowns.value[categoryId]) {
-        openDropdowns.value = {
-            ...openDropdowns.value,
-            [categoryId]: false
-        };
-    } else {
-        const newDropdownState: Record<string, boolean> = {};
-        Object.keys(openDropdowns.value).forEach(key => {
-            newDropdownState[key] = false;
+    
+    const newState = { ...openDropdowns.value };
+    newState[categoryId] = !openDropdowns.value[categoryId];
+    
+    // Fechar outros dropdowns quando abrir um novo
+    if (newState[categoryId]) {
+        Object.keys(newState).forEach(key => {
+            if (key !== categoryId) {
+                newState[key] = false;
+            }
         });
-        newDropdownState[categoryId] = true;
-        openDropdowns.value = newDropdownState;
     }
+    
+    openDropdowns.value = newState;
 };
 
 const openSearchModal = () => {
