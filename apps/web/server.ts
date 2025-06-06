@@ -296,6 +296,31 @@ async function bootstrap() {
                     return res.end(`Not found: ${url}`);
                 }
 
+                const isProd = process.env.NODE_ENV === 'production';
+                const cacheKey = url;
+
+                if (isProd && req.method === 'GET') {
+                    const cached = pageCache.get(cacheKey);
+                    if (cached && (Date.now() - cached.timestamp < PAGE_CACHE_DURATION)) {
+                        const ifNoneMatch = req.headers['if-none-match'] || '';
+                        if (ifNoneMatch === cached.headers.ETag) {
+                            res.writeHead(304);
+                            return res.end();
+                        }
+
+                        const acceptEncoding = req.headers['accept-encoding'] || '';
+                        Object.entries(cached.headers).forEach(([key, value]) => res.setHeader(key, value));
+                        const compressed = compressHtml(cached.html, acceptEncoding);
+                        if (compressed.encoding) {
+                            res.setHeader('Content-Encoding', compressed.encoding);
+                            res.setHeader('Vary', 'Accept-Encoding');
+                        }
+                        res.writeHead(200);
+                        res.end(compressed.data);
+                        return;
+                    }
+                }
+
                 template = await vite.transformIndexHtml(url, template);
 
                 const {
@@ -318,9 +343,131 @@ async function bootstrap() {
 
                 template = await transformHtmlTemplate(head, template.replace(`<div id="app"></div>`, `<div id="app">${appHtml}</div>${dataScript}`));
 
-                template = template.replace("<analytics />", settings["blog.analyticsCode"] || "").replace("<analytics>", settings["blog.analyticsCode"] || "");
-                template = template.replace("<custom-js />", settings["blog.customJs"] || "").replace("<custom-js>", settings["blog.customJs"] || "");
-                template = template.replace("<custom-css />", settings["blog.customCss"] || "").replace("<custom-css>", settings["blog.customCss"] || "");
+                let analyticsCode = settings["blog.analyticsCode"] || "";
+                
+                analyticsCode = analyticsCode
+                    .replace(/<script(.*?)>/g, (match) => {
+                        if (match.includes('defer') || match.includes('async')) {
+                            return match;
+                        }
+                        if (match.includes('googletagmanager')) {
+                            return match.replace('<script', '<script defer');
+                        }
+                        return match.replace('<script', '<script async');
+                    });
+                
+                template = template
+                    .replace("<analytics />", analyticsCode)
+                    .replace("<analytics>", analyticsCode);
+                
+                let customJs = settings["blog.customJs"] || "";
+                customJs = customJs
+                    .replace(/<script(.*?)>/g, (match) => {
+                        if (match.includes('defer') || match.includes('async')) {
+                            return match;
+                        }
+                        return match.replace('<script', '<script defer');
+                    });
+                
+                template = template
+                    .replace("<custom-js />", customJs)
+                    .replace("<custom-js>", customJs);
+                
+                template = template
+                    .replace("<custom-css />", settings["blog.customCss"] || "")
+                    .replace("<custom-css>", settings["blog.customCss"] || "");
+
+                // Adicionar script para carregamento sob demanda de anúncios
+                if (analyticsCode.includes('googlesyndication') || customJs.includes('googlesyndication')) {
+                    const lazyLoadAdsScript = `
+<script>
+// Função para carregar scripts de anúncios sob demanda
+function loadAdScripts() {
+  // Verifica se os scripts já foram carregados
+  if (window.adScriptsLoaded) return;
+  
+  // Marcar como carregado para evitar carregamentos duplicados
+  window.adScriptsLoaded = true;
+  
+  // Função para carregar script
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  
+  // Carregar scripts de anúncios quando necessário
+  if (document.querySelector('.adsbygoogle')) {
+    loadScript('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
+  }
+}
+
+// Carregar anúncios quando a página estiver ociosa ou quando o usuário interagir
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => loadAdScripts());
+} else {
+  setTimeout(loadAdScripts, 3000);
+}
+
+// Carregar também na interação do usuário
+document.addEventListener('scroll', function lazyLoadOnScroll() {
+  loadAdScripts();
+  document.removeEventListener('scroll', lazyLoadOnScroll);
+}, {passive: true});
+</script>`;
+
+                    template = template.replace('</body>', lazyLoadAdsScript + '</body>');
+                }
+
+                // Otimizar carregamento do Google Tag Manager
+                if (analyticsCode.includes('googletagmanager') || customJs.includes('googletagmanager')) {
+                    // Extrair o ID do GTM (formato G-XXXXXXXX ou GTM-XXXXXXX)
+                    const gtmIdMatch = (analyticsCode + customJs).match(/['"](G-[A-Z0-9]+|GTM-[A-Z0-9]+)['"]/);
+                    if (gtmIdMatch && gtmIdMatch[1]) {
+                        const gtmId = gtmIdMatch[1];
+                        // Substituir o código original por um carregamento otimizado
+                        const optimizedGtmScript = `
+<script>
+// Carregamento otimizado do Google Tag Manager
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gtmId}', {'send_page_view': false});
+
+// Carregar o script completo do GTM quando a página estiver ociosa
+function loadGtm() {
+  if (window.gtmLoaded) return;
+  window.gtmLoaded = true;
+  
+  const script = document.createElement('script');
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=${gtmId}';
+  script.defer = true;
+  document.head.appendChild(script);
+  
+  // Enviar pageview depois que o script for carregado
+  script.onload = function() {
+    gtag('event', 'page_view');
+  };
+}
+
+// Carregar GTM quando o navegador estiver ocioso ou após 3 segundos
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => loadGtm());
+} else {
+  setTimeout(loadGtm, 3000);
+}
+</script>`;
+
+                        // Remover scripts originais do GTM
+                        template = template.replace(new RegExp(`<script[^>]*googletagmanager[^>]*>[\\s\\S]*?</script>`, 'g'), '');
+                        template = template.replace('</head>', optimizedGtmScript + '</head>');
+                    }
+                }
 
                 if (process.env.NODE_ENV === 'production') {
                     template = template.replace(/<script[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
@@ -330,20 +477,30 @@ async function bootstrap() {
                 for(const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
-                const responseHeaders = {
-                    'Content-Type': 'text/html',
-                    'Cache-Control': 'public, max-age=900'
-                };
-
-                Object.entries(responseHeaders).forEach(([key, value]) => {
-                    res.setHeader(key, value);
-                });
+                if (isProd && req.method === 'GET') {
+                    const etag = crypto.createHash('md5').update(template).digest('hex');
+                    const headers = {
+                        'Content-Type': 'text/html',
+                        'Cache-Control': `public, max-age=${Math.round(PAGE_CACHE_DURATION / 1000)}`,
+                        'ETag': etag
+                    };
+                    pageCache.set(cacheKey, {
+                        html: template,
+                        timestamp: Date.now(),
+                        headers: headers,
+                        compressedVersions: { uncompressed: template }
+                    });
+                    Object.entries(headers).forEach(([key, value]) => res.setHeader(key, value));
+                } else {
+                    res.setHeader('Content-Type', 'text/html');
+                    res.setHeader('Cache-Control', 'no-cache');
+                }
 
                 const compressed = compressHtml(template, acceptEncoding as string);
-
-                if (compressed.encoding)
+                if (compressed.encoding) {
                     res.setHeader('Content-Encoding', compressed.encoding);
-
+                    res.setHeader('Vary', 'Accept-Encoding');
+                }
                 res.end(compressed.data);
             } catch (e) {
                 vite.ssrFixStacktrace(e as Error);

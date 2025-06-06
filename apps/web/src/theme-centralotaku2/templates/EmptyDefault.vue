@@ -9,12 +9,12 @@ useHead({
     link: [
         {
             rel: 'stylesheet',
-            href: '/src/theme-default/style.css'
+            href: '/src/theme-centralotaku2/style.css'
         },
         {
             rel: 'icon',
             type: 'image/ico',
-            href: '/src/theme-default/favicon.ico'
+            href: '/src/theme-centralotaku2/favicon.ico'
         }
     ],
     script: []

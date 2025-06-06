@@ -34,13 +34,13 @@
                                 aria-label="Cover Image"
                                 width="890"
                                 height="606"
-                                loading="lazy"
+                                
                                 priority="high"
                                 icon-size="lg"
                             />
                             <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                 <div v-if="coverPosts.full && coverPosts.full.categories && coverPosts.full.categories.length > 0" class="mb-2">
-                                    <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                    <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                         {{ coverPosts.full.categories[0].name }}
                                     </span>
                                 </div>
@@ -70,7 +70,7 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                    
                                     priority="high"
                                     icon-size="lg"
                                 />
@@ -93,28 +93,31 @@
 
                         <!-- Carousel Controls -->
                         <div class="absolute top-0 bottom-0 left-0 flex items-center">
-                            <button @click="prevCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none z-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button @click="prevCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none focus:ring-2 focus:ring-red-500 z-10" aria-label="Slide anterior">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
                             </button>
                         </div>
                         <div class="absolute top-0 bottom-0 right-0 flex items-center">
-                            <button @click="nextCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none z-10">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button @click="nextCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-red-500 z-10" aria-label="Próximo slide">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
 
                         <!-- Carousel Indicators -->
-                        <div class="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 z-10">
+                        <div class="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 z-10" role="tablist" aria-label="Controles do carrossel">
                             <button
                                 v-for="(_, index) in coverPosts.carousel"
                                 :key="index"
                                 @click="currentCarouselIndex = index"
-                                class="w-3 h-3 rounded-full bg-white/50 focus:outline-none"
+                                class="w-3 h-3 rounded-full bg-white/50 focus:outline-none focus:ring-2 focus:ring-red-500"
                                 :class="{ 'bg-white': currentCarouselIndex === index }"
+                                role="tab"
+                                :aria-selected="currentCarouselIndex === index"
+                                :aria-label="`Slide ${index + 1}`"
                             ></button>
                         </div>
                     </div>
@@ -132,13 +135,13 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                  
                                     priority="high"
                                     icon-size="lg"
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="coverPosts.splitMain && coverPosts.splitMain.categories && coverPosts.splitMain.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ coverPosts.splitMain.categories[0].name }}
                                         </span>
                                     </div>
@@ -160,12 +163,12 @@
                                     <OptimizedImage
                                         :src="post.featureImage"
                                         :alt="post.title"
-                                        loading="lazy"
+                                        
                                         icon-size="md"
                                     />
                                     <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                         <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                            <span class="bg-[#dc2626] text-[#333] px-2 py-1 rounded-md text-xs font-medium">
+                                            <span class="bg-[#dc2626] text-[#ffffff] px-2 py-1 rounded-md text-xs font-medium">
                                                 {{ post.categories[0].name }}
                                             </span>
                                         </div>
@@ -192,13 +195,13 @@
                                     aria-label="Cover Image"
                                     width="890"
                                     height="606"
-                                    loading="lazy"
+                                    
                                     priority="high"
                                     icon-size="lg"
                                 />
                                 <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                        <span class="bg-[#dc2626] text-[#333] px-3 py-1 rounded-md text-sm font-medium">
+                                        <span class="bg-[#dc2626] text-[#ffffff] px-3 py-1 rounded-md text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
@@ -250,7 +253,7 @@
                                                 :alt="post.title"
                                                 width="360"
                                                 height="192"
-                                                loading="lazy"
+                                                
                                                 priority="high"
                                                 :hover="true"
                                                 icon-size="md"
@@ -309,7 +312,7 @@
                                                     :alt="post.title"
                                                     width="360"
                                                     height="192"
-                                                    loading="lazy"
+                                                    
                                                     :hover="true"
                                                     icon-size="md"
                                                 />
@@ -360,7 +363,7 @@
                         <!-- Right Column (Widgets + Ads) -->
                         <div class="lg:col-span-1 min-w-[300px]">
                             <!-- AdSense Rectangle (Top) -->
-                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
+                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]" aria-label="Publicidade" aria-hidden="true">
                                 <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
                                     <div v-html="getAdHtml('sidebarTop')"></div>
                                 </div>
@@ -373,24 +376,24 @@
 
                             <!-- Popular Posts Widget -->
                             <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]" id="popular-posts">
                                     Mais Populares
                                 </h2>
 
-                                <div class="space-y-4">
+                                <div class="space-y-4" aria-labelledby="popular-posts">
                                     <div
                                         v-for="post in popularPosts"
                                         :key="post.id"
                                         class="flex gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
                                     >
                                         <div class="w-20 h-16 flex-shrink-0 overflow-hidden rounded-md">
-                                            <a :href="`/post/${post.slug}`">
+                                            <a :href="`/post/${post.slug}`" :aria-label="'Ver post: ' + post.title">
                                                 <OptimizedImage
                                                     :src="post.image"
                                                     :alt="post.title"
                                                     width="80"
                                                     height="64"
-                                                    loading="lazy"
+                                                    
                                                     icon-size="sm"
                                                 />
                                             </a>
@@ -419,27 +422,6 @@
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Categories Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]">
-                                    Categorias
-                                </h2>
-
-                                <ul class="space-y-2">
-                                    <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
-                                        <a
-                                            :href="`/category/${category.slug}`"
-                                            class="flex justify-between items-center text-gray-700 hover:text-[#dc2626] transition-colors"
-                                        >
-                                            {{ category.name }}
-                                            <span class="bg-[#dc2626] text-white px-2 py-1 rounded-full text-xs font-medium">
-                                                {{ category.postCount }}
-                                            </span>
-                                        </a>
-                                    </li>
-                                </ul>
                             </div>
 
                             <!-- AdSense Rectangle (Bottom) -->
@@ -704,7 +686,9 @@ const loadPosts = async () => {
         const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response) {
-            posts.value = response.posts;
+            // Atualizar o store com os posts
+            postsStore.setPosts(response.posts);
+            posts.value = postsStore.getPosts;
 
             pagination.value = {
                 total: response.meta?.pagination?.total || 0,
@@ -740,10 +724,12 @@ const loadMorePosts = async () => {
         loadingMore.value = true;
         currentPage.value++;
 
-        const response: any = await blogAPI.posts.getAll(posts.value.length);
+        const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response && response.posts && response.posts.length > 0) {
-            posts.value = [...posts.value, ...response.posts];
+            // Usar a função addPosts do store para evitar duplicações
+            postsStore.addPosts(response.posts);
+            posts.value = postsStore.getPosts;
 
             pagination.value = {
                 total: response.meta?.pagination?.total || 0,
