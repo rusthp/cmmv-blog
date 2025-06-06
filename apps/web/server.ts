@@ -296,6 +296,31 @@ async function bootstrap() {
                     return res.end(`Not found: ${url}`);
                 }
 
+                const isProd = process.env.NODE_ENV === 'production';
+                const cacheKey = url;
+
+                if (isProd && req.method === 'GET') {
+                    const cached = pageCache.get(cacheKey);
+                    if (cached && (Date.now() - cached.timestamp < PAGE_CACHE_DURATION)) {
+                        const ifNoneMatch = req.headers['if-none-match'] || '';
+                        if (ifNoneMatch === cached.headers.ETag) {
+                            res.writeHead(304);
+                            return res.end();
+                        }
+
+                        const acceptEncoding = req.headers['accept-encoding'] || '';
+                        Object.entries(cached.headers).forEach(([key, value]) => res.setHeader(key, value));
+                        const compressed = compressHtml(cached.html, acceptEncoding);
+                        if (compressed.encoding) {
+                            res.setHeader('Content-Encoding', compressed.encoding);
+                            res.setHeader('Vary', 'Accept-Encoding');
+                        }
+                        res.writeHead(200);
+                        res.end(compressed.data);
+                        return;
+                    }
+                }
+
                 template = await vite.transformIndexHtml(url, template);
 
                 const {
@@ -452,20 +477,30 @@ if ('requestIdleCallback' in window) {
                 for(const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
-                const responseHeaders = {
-                    'Content-Type': 'text/html',
-                    'Cache-Control': 'public, max-age=900'
-                };
-
-                Object.entries(responseHeaders).forEach(([key, value]) => {
-                    res.setHeader(key, value);
-                });
+                if (isProd && req.method === 'GET') {
+                    const etag = crypto.createHash('md5').update(template).digest('hex');
+                    const headers = {
+                        'Content-Type': 'text/html',
+                        'Cache-Control': `public, max-age=${Math.round(PAGE_CACHE_DURATION / 1000)}`,
+                        'ETag': etag
+                    };
+                    pageCache.set(cacheKey, {
+                        html: template,
+                        timestamp: Date.now(),
+                        headers: headers,
+                        compressedVersions: { uncompressed: template }
+                    });
+                    Object.entries(headers).forEach(([key, value]) => res.setHeader(key, value));
+                } else {
+                    res.setHeader('Content-Type', 'text/html');
+                    res.setHeader('Cache-Control', 'no-cache');
+                }
 
                 const compressed = compressHtml(template, acceptEncoding as string);
-
-                if (compressed.encoding)
+                if (compressed.encoding) {
                     res.setHeader('Content-Encoding', compressed.encoding);
-
+                    res.setHeader('Vary', 'Accept-Encoding');
+                }
                 res.end(compressed.data);
             } catch (e) {
                 vite.ssrFixStacktrace(e as Error);
