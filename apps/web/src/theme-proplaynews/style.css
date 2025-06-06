@@ -21,8 +21,8 @@
 }
 
 /* Critical CSS: Force font-display swap on all text */
-* {
-    font-display: swap !important;
+body, h1, h2, h3, h4, h5, h6, p, span, a {
+    font-display: swap;
 }
 
 :root {
@@ -525,12 +525,7 @@ body {
     outline-offset: 2px;
 }
 
-/* Otimizações para melhorar performance em PageSpeed */
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
+
 
 /* Placeholder para carregamento progressivo de imagens */
 .progressive-img-container {
@@ -604,20 +599,7 @@ img {
 }
 
 /* Otimizações para fontes */
-@font-face {
-    font-family: 'System';
-    font-style: normal;
-    font-weight: 400;
-    src: local(".SFNSText-Regular"),
-         local(".HelveticaNeueDeskInterface-Regular"),
-         local(".LucidaGrandeUI"),
-         local("Segoe UI"),
-         local("Ubuntu"),
-         local("Roboto-Regular"),
-         local("DroidSans"),
-         local("Tahoma");
-    font-display: swap;
-}
+
 
 /* OTIMIZAÇÃO CRÍTICA COM CONTENT-VISIBILITY */
 
@@ -651,6 +633,43 @@ article.bg-white {
 .ad-container {
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 24px; /* Garantir espaço entre anúncios e outros elementos */
+}
+
+/* Garantir que o widget Mais Populares tenha z-index adequado e espaçamento */
+.bg-white.rounded-lg.shadow-md {
+    position: relative;
+    z-index: 2;
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+/* Especificamente para anúncios sidebar evitarem sobreposição */
+.ad-sidebar-top,
+.ad-sidebar-mid,
+.ad-sidebar-bottom,
+.ad-sidebar-left {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    margin-top: 24px;
+}
+
+/* Garantir que elementos de conteúdo tenham prioridade visual sobre anúncios */
+.bg-white.rounded-lg.shadow-md h2 {
+    position: relative;
+    z-index: 3;
+}
+
+/* Evitar overflow de anúncios */
+.ad-container iframe,
+.ad-container ins {
+    max-width: 100% !important;
+    overflow: hidden;
 }
 
 /* Critical rendering path - priorizar conteúdo above-the-fold */
@@ -722,22 +741,22 @@ article.bg-white {
 /* OTIMIZAÇÕES CRÍTICAS DE ANIMAÇÃO PARA INP */
 
 /* Usar transform3d para aceleração de hardware */
-.hover\:scale-105:hover {
-    transform: scale3d(1.05, 1.05, 1) !important;
+.scale-hover:hover {
+    transform: scale3d(1.05, 1.05, 1);
     will-change: transform;
 }
 
 /* Otimizar transições para performance */
 .transition-transform {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .transition-colors {
-    transition: color 0.15s ease-out !important;
+    transition: color 0.15s ease-out;
 }
 
 .transition-shadow {
-    transition: box-shadow 0.15s ease-out !important;
+    transition: box-shadow 0.15s ease-out;
 }
 
 /* Reduzir repaints - will-change apenas quando necessário */
@@ -756,19 +775,19 @@ article.bg-white {
 
 /* Otimizar animações custosas para dispositivos lentos */
 @media (max-width: 768px) {
-    .hover\:scale-105:hover {
-        transform: none !important;
+    .scale-hover:hover {
+        transform: none;
     }
     
     .transition-transform {
-        transition: none !important;
+        transition: none;
     }
 }
 
 /* Otimizar carregamento de imagens */
 .progressive-img {
     content-visibility: auto;
-    contain-intrinsic-size: 400px;
+    contain-intrinsic-size: 0 400px;
 }
 
 /* OTIMIZAÇÕES CRÍTICAS PARA CLS (CUMULATIVE LAYOUT SHIFT) */
@@ -785,8 +804,6 @@ img {
     max-width: 100%;
     height: auto;
     display: block;
-    /* Reservar espaço para evitar layout shift */
-    aspect-ratio: attr(width) / attr(height);
 }
 
 /* Container de imagem com aspect ratio definido */
@@ -861,13 +878,286 @@ html {
 }
 
 /* Estilos globais para categorias */
-.bg-\[\#ff0030\] {
+/* Estilos para categorias */
+.category-tag {
   display: inline-block;
   max-width: 180px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Proteção específica para widget Mais Populares contra sobreposição de anúncios */
+.bg-white.rounded-lg.shadow-md:has(h2:contains("Mais Populares")),
+.bg-white.rounded-lg.shadow-md h2[class*="border-b-2"]:contains("Mais Populares") {
+    isolation: isolate;
+    position: relative;
+    z-index: 10;
+    clear: both;
+}
+
+/* Alternativa mais específica para garantir proteção do widget Mais Populares */
+.bg-white.rounded-lg.shadow-md {
+    contain: layout style;
+    isolation: isolate;
+}
+
+/* Garantir que anúncios não interfiram com texto de títulos */
+.text-xl.font-bold.mb-4 {
+    position: relative;
+    z-index: 5;
+    background: white;
+    padding: 8px 0;
+}
+
+/* Melhor controle de layout para sidebar */
+.space-y-4 {
+    position: relative;
+    z-index: 4;
+}
+
+/* Proteção específica e robusta para o widget Mais Populares */
+.widget-mais-populares {
+    position: relative !important;
+    z-index: 15 !important;
+    isolation: isolate;
+    contain: layout style paint;
+    clear: both;
+    margin: 32px 0 !important;
+    background: white !important;
+    border: 1px solid rgba(0,0,0,0.1);
+    overflow: visible;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.titulo-mais-populares {
+    position: relative !important;
+    z-index: 16 !important;
+    background: white;
+    padding: 8px 0;
+    margin-bottom: 16px !important;
+}
+
+.lista-mais-populares {
+    position: relative !important;
+    z-index: 15 !important;
+    background: white;
+    padding: 8px 0;
+}
+
+/* Garantir espaçamento extra entre anúncios e o widget */
+.ad-container + .widget-mais-populares,
+.widget-mais-populares + .ad-container {
+    margin-top: 40px !important;
+}
+
+/* Proteção específica contra overflow de anúncios */
+.ad-container,
+.ad-container * {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    contain: size layout style;
+}
+
+/* Controle específico para anúncios AdSense e outros dinâmicos */
+.ad-container ins,
+.ad-container iframe,
+.ad-container script,
+.ad-container [id*="google_ads"],
+.ad-container [class*="adsbygoogle"] {
+    max-width: 300px !important;
+    max-height: 600px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Garantir que elementos após o widget Mais Populares tenham espaçamento adequado */
+.widget-mais-populares + * {
+    margin-top: 32px !important;
+}
+
+/* Media query para dispositivos móveis - proteção extra */
+@media (max-width: 768px) {
+    .widget-mais-populares {
+        margin: 24px 0 !important;
+        padding: 16px !important;
+        z-index: 20 !important;
+    }
+    
+    .ad-container {
+        max-height: 400px !important;
+        overflow: hidden !important;
+    }
+}
+
+/* PROTEÇÃO GLOBAL CONTRA SOBREPOSIÇÃO DE ANÚNCIOS */
+
+/* Proteger todos os widgets da sidebar */
+.bg-white.rounded-lg.shadow-md,
+.bg-white.rounded-lg,
+.bg-white {
+    position: relative !important;
+    z-index: 10 !important;
+    isolation: isolate;
+    contain: layout style;
+    background: white !important;
+    margin-bottom: 32px !important;
+}
+
+/* Proteger especificamente widgets de categorias */
+.bg-white.rounded-lg.shadow-md h2,
+.bg-white.rounded-lg h2,
+.text-xl.font-bold {
+    position: relative !important;
+    z-index: 12 !important;
+    background: white !important;
+    padding: 8px 0 !important;
+}
+
+/* Proteger listas de categorias e outros elementos de navegação */
+ul.space-y-2,
+.space-y-2,
+.space-y-4 {
+    position: relative !important;
+    z-index: 11 !important;
+    background: white;
+    padding: 8px 0;
+}
+
+/* Controle mais rigoroso de anúncios Google */
+ins.adsbygoogle,
+.adsbygoogle,
+[id*="google_ads"],
+[class*="google-ads"],
+.ad-container iframe[src*="google"],
+.ad-container ins,
+iframe[src*="googleads"],
+iframe[src*="googlesyndication"] {
+    max-width: 300px !important;
+    max-height: 250px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Garantir que anúncios não se expandam além do container */
+.ad-container {
+    max-width: 300px !important;
+    max-height: 600px !important;
+    overflow: hidden !important;
+    margin: 24px auto !important;
+    border-radius: 8px;
+    background: #f5f5f5;
+    padding: 8px;
+    contain: size layout style paint;
+}
+
+/* Proteger área de conteúdo principal */
+.lg\\:col-span-1 {
+    position: relative !important;
+    z-index: 5 !important;
+    isolation: isolate;
+}
+
+/* Força isolamento para prevenir vazamentos visuais */
+.lg\\:grid-cols-3 > div,
+.grid > div {
+    isolation: isolate;
+    contain: layout style;
+}
+
+/* Proteção específica para elementos de interface críticos */
+.category-tag,
+.bg-\\[\\#ff0030\\],
+.text-white.px-2.py-1.rounded-full {
+    position: relative !important;
+    z-index: 15 !important;
+    isolation: isolate;
+}
+
+/* Anúncios auto-ads do Google - controle mais rigoroso */
+script[src*="adsbygoogle"],
+script[src*="googlesyndication"] + *,
+.adsbygoogle-noablate {
+    contain: size layout style paint !important;
+    max-width: 300px !important;
+    max-height: 250px !important;
+    overflow: hidden !important;
+    z-index: 1 !important;
+}
+
+/* PROTEÇÃO CONTRA ANÚNCIOS DINÂMICOS E AUTO-ADS */
+
+/* Interceptar anúncios que são inseridos dinamicamente */
+body ins[style*="display"],
+div[id*="google_ads_iframe"],
+div[id*="google_ads_div"],
+.google-auto-placed {
+    max-width: 300px !important;
+    max-height: 250px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 1 !important;
+    margin: 16px auto !important;
+    border-radius: 8px;
+    contain: size layout style paint !important;
+}
+
+/* Forçar contenção para qualquer iframe de anúncio */
+iframe[src*="google"],
+iframe[src*="doubleclick"],
+iframe[name*="google_ads"] {
+    max-width: 300px !important;
+    max-height: 250px !important;
+    overflow: hidden !important;
+    contain: size layout style paint !important;
+    border-radius: 8px;
+}
+
+/* Proteção adicional para widgets da sidebar */
+.lg\\:col-span-1 > div {
+    position: relative !important;
+    z-index: 10 !important;
+    isolation: isolate;
+    margin-bottom: 24px !important;
+}
+
+/* Garantir que elementos críticos sempre fiquem visíveis */
+h1, h2, h3, h4, h5, h6,
+.text-xl, .text-lg, .text-base,
+nav, .nav, header, .header,
+ul, ol, li {
+    position: relative !important;
+    z-index: 8 !important;
+    background: inherit;
+}
+
+/* Proteção específica para contadores de categoria */
+.bg-\\[\\#ff0030\\].text-white,
+.rounded-full.text-xs,
+span[class*="bg-"] {
+    position: relative !important;
+    z-index: 16 !important;
+    isolation: isolate;
+}
+
+/* Regra de emergência - ocultar anúncios que ultrapassem limites */
+.ad-container > * {
+    max-width: 300px !important;
+    max-height: 600px !important;
+}
+
+/* Anúncios que podem aparecer fora do container */
+body > ins,
+body > div[id*="google"] {
+    max-width: 300px !important;
+    max-height: 250px !important;
+    margin: 16px auto !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
 

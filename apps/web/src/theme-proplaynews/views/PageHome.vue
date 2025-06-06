@@ -423,12 +423,12 @@
                             </div>
 
                             <!-- Popular Posts Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-gray-800 border-b-2 border-[#ff0030] inline-block">
+                            <div class="bg-white rounded-lg shadow-md p-5 mb-6 widget-mais-populares">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-gray-800 border-b-2 border-[#ff0030] inline-block titulo-mais-populares">
                                     Mais Populares
                                 </h2>
 
-                                <div class="space-y-4">
+                                <div class="space-y-4 lista-mais-populares">
                                     <div
                                         v-for="post in popularPosts"
                                         :key="post.id"
@@ -856,14 +856,14 @@ const getAuthor = (post: any) => {
     return post.authors.find((author: any) => author.id === post.author);
 };
 
-onMounted(async () => {
-    loading.value = false;
-    setupIntersectionObserver();
-    startCarouselInterval();
-
-    // Load ad scripts and sidebar left ad
+onMounted(() => {
     loadAdScripts();
-    loadSidebarLeftAd(sidebarLeftAdContainer.value);
+    loadSidebarLeftAd();
+    setupInfiniteScroll();
+    setupCarousel();
+    
+    // Set up mutation observer to control dynamic ads
+    setupAdMutationObserver();
 });
 
 onUnmounted(() => {
@@ -878,6 +878,67 @@ watch(() => settings.value['blog.cover'], () => {
     stopCarouselInterval();
     startCarouselInterval();
 }, { deep: true });
+
+const setupAdMutationObserver = () => {
+    // Create mutation observer to control dynamic ads
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) { // Element node
+                    // Check if it's an ad element
+                    if (
+                        node.tagName === 'INS' && 
+                        (node.className.includes('adsbygoogle') || node.style.display)
+                    ) {
+                        controlAdElement(node);
+                    }
+                    
+                    // Check for iframe ads
+                    if (node.tagName === 'IFRAME' && 
+                        (node.src.includes('google') || node.src.includes('doubleclick'))
+                    ) {
+                        controlAdElement(node);
+                    }
+                    
+                    // Check for div containers with ad IDs
+                    if (node.tagName === 'DIV' && 
+                        (node.id.includes('google_ads') || node.className.includes('google'))
+                    ) {
+                        controlAdElement(node);
+                    }
+                    
+                    // Recursively check child nodes
+                    const adElements = node.querySelectorAll('ins.adsbygoogle, iframe[src*="google"], div[id*="google_ads"]');
+                    adElements.forEach(controlAdElement);
+                }
+            });
+        });
+    });
+
+    // Start observing
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+};
+
+const controlAdElement = (element) => {
+    // Apply size constraints and positioning
+    element.style.maxWidth = '300px';
+    element.style.maxHeight = '250px';
+    element.style.overflow = 'hidden';
+    element.style.position = 'relative';
+    element.style.zIndex = '1';
+    element.style.margin = '16px auto';
+    element.style.borderRadius = '8px';
+    element.style.contain = 'size layout style paint';
+    
+    // Ensure the element doesn't interfere with content
+    if (element.parentElement) {
+        element.parentElement.style.isolation = 'isolate';
+        element.parentElement.style.contain = 'layout style';
+    }
+};
 </script>
 
 <style scoped>
