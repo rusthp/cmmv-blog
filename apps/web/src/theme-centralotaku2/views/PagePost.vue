@@ -21,7 +21,7 @@
                         :src="post.featureImage"
                         :alt="post.featureImageAlt || post.title"
                         class="featured-img"
-                        loading="lazy"
+                        
                         width="1060"
                         height="400"
                         :title="post.title"

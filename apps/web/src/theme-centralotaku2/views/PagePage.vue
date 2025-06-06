@@ -25,7 +25,7 @@
                     :src="page.featureImage"
                     :alt="page.featureImageAlt || page.title"
                     class="featured-img md:block hidden"
-                    loading="lazy"
+                    
                     width="890"
                     height="606"
                     :title="page.title"
