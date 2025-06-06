@@ -10,7 +10,7 @@ Config.assign({
         host: process.env.HOST || '0.0.0.0',
         port: process.env.PORT || 5000,
         cors: {
-            origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5000'],
+            origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5001'],
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'refresh-token', 'signature'],
             credentials: true
