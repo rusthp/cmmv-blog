@@ -1,6 +1,13 @@
 <template>
     <div class="w-full max-w-[1200px] mx-auto px-4">
-        <div v-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
+        <!-- Loading State -->
+        <div v-if="loading && posts.length === 0" class="text-center py-16 bg-white rounded-lg shadow-md">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ff0030] mx-auto mb-4"></div>
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">Carregando posts...</h2>
+            <p class="text-gray-600">Aguarde um momento</p>
+        </div>
+
+        <div v-else-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -12,7 +19,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="posts.length === 0" class="text-center py-16 bg-white rounded-lg shadow-md">
+        <div v-else-if="!loading && posts.length === 0" class="text-center py-16 bg-white rounded-lg shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -38,7 +45,9 @@
                                 objectFit="cover"
                                 priority="high"
                                 :lazyLoad="false"
-                                :blur="true"
+                                :blur="false"
+                                loading="eager"
+                                fetchpriority="high"
                                 class="w-full h-full"
                             />
                             <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
@@ -565,7 +574,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useHead } from '@unhead/vue';
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
@@ -795,10 +804,7 @@ const headData = computed(() => ({
     link: [
         { rel: 'canonical', href: settings.value['blog.url'] },
         { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] },
-        // Adiciona preload para recursos críticos apenas se existirem
-        ...(coverPosts.value.full?.featureImage ? [
-            { rel: 'preload', href: coverPosts.value.full.featureImage, as: 'image', type: 'image/webp' }
-        ] : []),
+        // Preload condicional removido para evitar warnings
         { rel: 'modulepreload', href: '/src/theme-proplaynews/components/OptimizedImage.vue' },
         { rel: 'modulepreload', href: '/src/theme-proplaynews/components/PerformanceManager.vue' }
     ]
@@ -839,6 +845,25 @@ const loadPosts = async () => {
         loading.value = true;
         error.value = null;
 
+        // Check cache first for instant loading
+        const cacheKey = `posts_home_${currentPage.value}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
+        
+        if (cachedData) {
+            const cached = JSON.parse(cachedData);
+            // Check if cache is still fresh (5 minutes)
+            if (Date.now() - cached.timestamp < 300000) {
+                posts.value = cached.posts;
+                pagination.value = cached.pagination;
+                hasMorePosts.value = cached.hasMorePosts;
+                loading.value = false;
+                
+                // Load fresh data in background
+                loadFreshDataInBackground();
+                return;
+            }
+        }
+
         const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response) {
@@ -852,16 +877,18 @@ const loadPosts = async () => {
 
             hasMorePosts.value = posts.value.length < response.count;
 
-            if (!categories.value.length) {
-                try {
-                    const categoriesResponse = await blogAPI.categories.getAll();
-                    if (categoriesResponse) {
-                        categories.value = categoriesResponse;
-                    }
-                } catch (err) {
-                    console.error('Failed to load categories:', err);
-                }
-            }
+            // Cache the data for next visit
+            const cacheKey = `posts_home_${currentPage.value}`;
+            const cacheData = {
+                posts: posts.value,
+                pagination: pagination.value,
+                hasMorePosts: hasMorePosts.value,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+
+            // Load categories from cache or API
+            await loadCategoriesOptimized();
 
             // Load all categories for subcategories section
             if (!allCategories.value.length) {
@@ -891,6 +918,59 @@ const loadPosts = async () => {
         error.value = err;
     } finally {
         loading.value = false;
+    }
+};
+
+const loadFreshDataInBackground = async () => {
+    try {
+        const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
+        if (response && response.posts) {
+            // Update with fresh data silently
+            const cacheKey = `posts_home_${currentPage.value}`;
+            const cacheData = {
+                posts: response.posts,
+                pagination: {
+                    total: response.meta?.pagination?.total || 0,
+                    limit: response.meta?.pagination?.limit || 12,
+                    offset: response.meta?.pagination?.offset || 0
+                },
+                hasMorePosts: response.posts.length < response.count,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        }
+    } catch (err) {
+        // Silent fail for background updates
+        console.warn('Background update failed:', err);
+    }
+};
+
+const loadCategoriesOptimized = async () => {
+    if (categories.value.length > 0) return;
+    
+    // Check cache first
+    const cachedCategories = sessionStorage.getItem('categories_cache');
+    if (cachedCategories) {
+        const cached = JSON.parse(cachedCategories);
+        if (Date.now() - cached.timestamp < 600000) { // 10 minutes cache
+            categories.value = cached.categories;
+            return;
+        }
+    }
+    
+    try {
+        const categoriesResponse = await blogAPI.categories.getAll();
+        if (categoriesResponse) {
+            categories.value = categoriesResponse;
+            
+            // Cache categories
+            sessionStorage.setItem('categories_cache', JSON.stringify({
+                categories: categoriesResponse,
+                timestamp: Date.now()
+            }));
+        }
+    } catch (err) {
+        console.error('Failed to load categories:', err);
     }
 };
 
@@ -952,16 +1032,16 @@ const getAuthor = (post: any) => {
 };
 
 onMounted(() => {
-    loadAdScripts();
-    loadSidebarLeftAd();
-    // setupIntersectionObserver(); // Desabilitado na home para manter footer visível
-    setupCarousel();
-    
-    // Set up mutation observer to control dynamic ads
-    setupAdMutationObserver();
-    
-    // Initialize page
+    // Load critical content first
     loadPosts();
+    
+    // Load non-critical content after initial render
+    nextTick(() => {
+        loadAdScripts();
+        loadSidebarLeftAd();
+        setupCarousel();
+        setupAdMutationObserver();
+    });
 });
 
 onUnmounted(() => {

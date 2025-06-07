@@ -480,8 +480,7 @@ useHead({
             type: 'image/ico',
             href: '/src/theme-proplaynews/favicon.ico?v=3'
         },
-        // Preloads para recursos críticos
-        { rel: 'preload', href: '/src/theme-proplaynews/assets/android-icon-96x96.png', as: 'image' },
+        // Preconnects para recursos críticos
         { rel: 'preconnect', href: 'https://www.googletagmanager.com/' },
         { rel: 'preconnect', href: 'https://www.google-analytics.com/' },
         { rel: 'preconnect', href: 'https://www.googletag.com/' },
@@ -489,6 +488,8 @@ useHead({
         { rel: 'preconnect', href: 'https://securepubads.g.doubleclick.net/' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
         { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
+        { rel: 'dns-prefetch', href: 'https://images.unsplash.com' },
+        { rel: 'dns-prefetch', href: 'https://cdn.jsdelivr.net' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com', crossorigin: 'anonymous' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' }
     ],
