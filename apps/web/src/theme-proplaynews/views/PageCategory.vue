@@ -12,7 +12,6 @@
                 <header class="border-b border-neutral-200 pb-6 mb-8 text-center">
                     <h1 class="text-4xl font-bold text-neutral-900 mb-3">{{ category?.name || 'Categoria' }}</h1>
                     <p v-if="category?.description" class="text-lg text-neutral-600 mb-4">{{ category.description }}</p>
-                    <p class="text-sm text-neutral-500">{{ posts.length }} de {{ totalPosts }} posts</p>
                 </header>
 
                 <!-- Initial loading state -->

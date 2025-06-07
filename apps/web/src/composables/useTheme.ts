@@ -6,7 +6,13 @@ export async function useTheme() {
     const routerModules = import.meta.glob('../theme-*/router.ts');
 
     if(isSSR){
-        let theme = settingsStore.getSetting('blog.theme', import.meta.env.VITE_DEFAULT_THEME);
+        let theme = settingsStore.getSetting('blog.theme', null);
+        
+        // Se não tem tema definido, usar proplaynews como padrão fixo
+        if (!theme) {
+            theme = 'proplaynews';
+        }
+        
         const importFn = routerModules[`../theme-${theme}/router.ts`];
         //@ts-ignore
         const { createRouter } = await importFn();
@@ -15,7 +21,18 @@ export async function useTheme() {
     }
     else{
         const pinia = (window as any).__PINIA__;
-        let theme = pinia?.settings?.data?.["blog.theme"] || import.meta.env.VITE_DEFAULT_THEME;
+        let theme = pinia?.settings?.data?.["blog.theme"];
+        
+        // Se não tem tema definido no pinia, tentar buscar do settingsStore
+        if (!theme) {
+            theme = settingsStore.getSetting('blog.theme', null);
+        }
+        
+        // Último fallback para proplaynews
+        if (!theme) {
+            theme = 'proplaynews';
+        }
+        
         const importFn = routerModules[`../theme-${theme}/router.ts`];
         //@ts-ignore
         const { createRouter } = await importFn();
