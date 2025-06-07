@@ -249,6 +249,48 @@
                 </div>
             </section>
 
+            <!-- Subcategories Section -->
+            <section v-if="hasSubcategories" class="mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold mb-6 pb-3 text-gray-800 border-b-2 border-[#ff0030] inline-block">
+                        Explore por Categoria
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <template v-for="category in categoriesWithChildren" :key="category.id">
+                            <!-- Parent Category Card -->
+                            <div class="subcategory-card bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
+                                <a :href="`/category/${category.slug}`" class="block">
+                                    <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#ff0030] transition-colors">
+                                        {{ category.name }}
+                                    </h3>
+                                    <span class="text-sm text-gray-600 mb-3 block">
+                                        {{ category.postCount }} {{ category.postCount === 1 ? 'post' : 'posts' }}
+                                    </span>
+                                </a>
+                                
+                                <!-- Subcategories -->
+                                <div v-if="categoryChildren[category.id] && categoryChildren[category.id].length > 0" class="mt-3 pt-3 border-t border-gray-200">
+                                    <div class="flex flex-wrap gap-2">
+                                        <a 
+                                            v-for="subcategory in categoryChildren[category.id].slice(0, 4)" 
+                                            :key="subcategory.id"
+                                            :href="`/category/${subcategory.slug}`"
+                                            class="subcategory-tag bg-white text-gray-700 px-3 py-1 rounded-full text-xs font-medium hover:bg-[#ff0030] hover:text-white"
+                                        >
+                                            {{ subcategory.name }}
+                                        </a>
+                                        <span v-if="categoryChildren[category.id].length > 4" class="text-xs text-gray-500 px-2 py-1">
+                                            +{{ categoryChildren[category.id].length - 4 }} mais
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </section>
+
             <!-- Top AdSense Banner -->
             <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
                 <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
@@ -404,8 +446,8 @@
                                 <span class="ml-3 text-gray-600">Carregando mais posts...</span>
                             </div>
 
-                            <!-- Infinite Scroll Observer Target -->
-                            <div ref="observerTarget" class="h-4 w-full"></div>
+                            <!-- Infinite Scroll Observer Target (Desabilitado para manter footer visível) -->
+                            <!-- <div ref="observerTarget" class="h-4 w-full"></div> -->
                         </div>
 
                         <!-- Right Column (Widgets + Ads) -->
@@ -565,6 +607,10 @@ const settings = computed<Record<string, any>>(() => {
 const categories = ref<any[]>(categoriesStore.getCategories || []);
 const posts = ref<any[]>(postsStore.getPosts || []);
 const popularPosts = ref<any[]>(mostAccessedStore.getMostAccessedPosts || []);
+
+// Categories data for subcategories section  
+const allCategories = ref<any[]>([]);
+const categoryChildren = ref<Record<string, any[]>>({});
 const loading = ref(true);
 const loadingMore = ref(false);
 const error = ref(null);
@@ -601,7 +647,13 @@ const hasCoverConfig = computed(() => {
 });
 
 const coverPosts = computed(() => {
-    if (!posts.value.length) return {};
+    if (!posts.value || !posts.value.length) return {
+        full: null,
+        carousel: [],
+        splitMain: null,
+        splitSide: [],
+        dual: []
+    };
 
     const result: any = {
         full: posts.value[0],
@@ -696,6 +748,17 @@ const stopCarouselInterval = () => {
     }
 };
 
+// Subcategories computed properties
+const categoriesWithChildren = computed(() => {
+    return allCategories.value.filter(category => 
+        !category.parent && categoryChildren.value[category.id]?.length > 0
+    );
+});
+
+const hasSubcategories = computed(() => {
+    return categoriesWithChildren.value.length > 0;
+});
+
 const nextCarouselSlide = () => {
     stopCarouselInterval();
     if (coverPosts.value.carousel?.length) {
@@ -732,8 +795,10 @@ const headData = computed(() => ({
     link: [
         { rel: 'canonical', href: settings.value['blog.url'] },
         { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] },
-        // Adiciona preload para recursos críticos
-        { rel: 'preload', href: coverPosts.value.full?.featureImage || '', as: 'image', type: 'image/webp' },
+        // Adiciona preload para recursos críticos apenas se existirem
+        ...(coverPosts.value.full?.featureImage ? [
+            { rel: 'preload', href: coverPosts.value.full.featureImage, as: 'image', type: 'image/webp' }
+        ] : []),
         { rel: 'modulepreload', href: '/src/theme-proplaynews/components/OptimizedImage.vue' },
         { rel: 'modulepreload', href: '/src/theme-proplaynews/components/PerformanceManager.vue' }
     ]
@@ -797,6 +862,29 @@ const loadPosts = async () => {
                     console.error('Failed to load categories:', err);
                 }
             }
+
+            // Load all categories for subcategories section
+            if (!allCategories.value.length) {
+                try {
+                    const allCategoriesResponse = await blogAPI.categories.getAll();
+                    if (allCategoriesResponse) {
+                        allCategories.value = allCategoriesResponse;
+                        
+                        // Organize categories by parent-child relationship
+                        categoryChildren.value = {};
+                        allCategoriesResponse.forEach(category => {
+                            if (category.parent) {
+                                if (!categoryChildren.value[category.parent]) {
+                                    categoryChildren.value[category.parent] = [];
+                                }
+                                categoryChildren.value[category.parent].push(category);
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to load all categories:', err);
+                }
+            }
         }
     } catch (err: any) {
         console.error('Failed to load posts:', err);
@@ -851,6 +939,13 @@ const setupIntersectionObserver = () => {
     }
 };
 
+const setupCarousel = () => {
+    // Initialize carousel if layout is set to carousel
+    if (coverSettings.value.layoutType === 'carousel') {
+        startCarouselInterval();
+    }
+};
+
 const getAuthor = (post: any) => {
     if (!post.authors || !post.authors.length) return null;
     return post.authors.find((author: any) => author.id === post.author);
@@ -859,11 +954,14 @@ const getAuthor = (post: any) => {
 onMounted(() => {
     loadAdScripts();
     loadSidebarLeftAd();
-    setupInfiniteScroll();
+    // setupIntersectionObserver(); // Desabilitado na home para manter footer visível
     setupCarousel();
     
     // Set up mutation observer to control dynamic ads
     setupAdMutationObserver();
+    
+    // Initialize page
+    loadPosts();
 });
 
 onUnmounted(() => {

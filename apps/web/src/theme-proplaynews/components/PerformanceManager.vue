@@ -29,6 +29,20 @@ const setupLazyLoading = () => {
       }
     });
   }
+  
+  // Adicionar suporte para srcset responsivo em imagens normais
+  document.querySelectorAll('img:not([srcset])').forEach(img => {
+    if (img.src && !img.srcset && !img.closest('.progressive-img-container')) {
+      const src = img.src;
+      if (src.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        // Apenas aplicar em imagens que não são SVG ou ícones
+        if (img.naturalWidth > 200) {
+          const width = img.naturalWidth || 1000;
+          img.setAttribute('decoding', 'async');
+        }
+      }
+    }
+  });
 };
 
 // Preload apenas links críticos
@@ -40,7 +54,7 @@ const preloadCriticalPages = () => {
   let preloadCount = 0;
   
   mainNavLinks.forEach(link => {
-    if (preloadCount < 3 && link.hostname === window.location.hostname) {
+    if (preloadCount < 3 && link.hostname === window.location.hostname && link.href && link.href.trim() !== '') {
       const preloadLink = document.createElement('link');
       preloadLink.rel = 'prefetch';
       preloadLink.href = link.href;

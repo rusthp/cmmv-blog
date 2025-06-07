@@ -1,41 +1,31 @@
 <template>
     <ClientOnly>
         <div v-if="!cookiesAccepted" class="fixed bottom-4 right-4 z-50 max-w-md transform transition-all duration-500 ease-in-out" :class="{ 'translate-y-full opacity-0': isHidden, 'translate-y-0 opacity-100': !isHidden }">
-            <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-2xl overflow-hidden border-2 border-yellow-400">
-                <!-- Cabeçalho com imagem -->
-                <div class="relative">
-                    <div class="absolute -left-6 -top-6 w-32 h-32 transform rotate-12">
-                        <img src="/src/theme-centralotaku2/assets/11907549-removebg-preview.webp" alt="Luffy - One Piece" class="w-full h-full object-contain" @error="handleImageError" />
-                    </div>
-                    <div class="pt-3 pb-1 px-4 text-center">
-                        <h3 class="text-xl font-bold text-white ml-24 text-shadow">Aventura dos Cookies! 🍪</h3>
-                    </div>
-                </div>
-                
-                <!-- Opção alternativa com emoji caso a imagem não carregue -->
-                <div v-if="imageError" class="absolute -left-2 -top-2 w-24 h-24 flex items-center justify-center">
-                    <div class="text-4xl anime-bounce">🏴‍☠️</div>
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                <!-- Cabeçalho -->
+                <div class="bg-gray-800 py-3 px-4">
+                    <h3 class="text-lg font-semibold text-white">Aviso de Cookies</h3>
                 </div>
                 
                 <!-- Conteúdo -->
-                <div class="p-4 pt-0 bg-white rounded-b-lg">
-                    <p class="text-sm md:text-base text-neutral-700 mb-4">
-                        Ei, nakama! <span class="inline-block animate-pulse">⚓</span> Este site usa cookies para melhorar sua aventura de navegação! Ao continuar usando este site, você concorda com nossos cookies de acordo com nossa
-                        <a href="/terms-of-privacy" class="text-red-600 hover:text-red-500 font-bold underline">Política de Privacidade</a>.
+                <div class="p-4">
+                    <p class="text-sm text-gray-700 mb-4">
+                        Este site usa cookies para melhorar sua experiência de navegação. Ao continuar usando este site, você concorda com o uso de cookies de acordo com nossa
+                        <a href="/terms-of-privacy" class="text-blue-600 hover:text-blue-500 underline">Política de Privacidade</a>.
                     </p>
                     
                     <div class="flex justify-end gap-3 mt-2">
                         <button
                             @click="rejectCookies"
-                            class="px-4 py-2 text-sm bg-neutral-200 hover:bg-neutral-300 rounded-full border border-neutral-300 text-neutral-700 transition-all hover:scale-105 font-medium cursor-pointer"
+                            class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 transition-colors font-medium"
                         >
-                            Recusar ❌
+                            Recusar
                         </button>
                         <button
                             @click="acceptCookies"
-                            class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 rounded-full text-white font-bold transition-all hover:scale-105 hover:shadow-lg cursor-pointer"
+                            class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-md text-white font-medium transition-colors"
                         >
-                            Aceitar! ✨
+                            Aceitar
                         </button>
                     </div>
                 </div>
@@ -50,7 +40,6 @@ import ClientOnly from './ClientOnly.vue';
 
 const cookiesAccepted = ref(false);
 const isHidden = ref(true);
-const imageError = ref(false);
 
 // Check localStorage on mount
 onMounted(() => {
@@ -91,45 +80,4 @@ function hideWithAnimation() {
         cookiesAccepted.value = true;
     }, 500);
 }
-
-function handleImageError() {
-    imageError.value = true;
-}
 </script>
-
-<style scoped>
-.text-shadow {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.anime-bounce {
-    animation: bounce 1s infinite alternate;
-}
-
-@keyframes bounce {
-    0% {
-        transform: translateY(0) rotate(0deg);
-    }
-    100% {
-        transform: translateY(-10px) rotate(10deg);
-    }
-}
-
-/* Animação para a imagem do Luffy */
-img[alt="Luffy - One Piece"] {
-    animation: luffy-animation 3s infinite alternate;
-    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes luffy-animation {
-    0% {
-        transform: translateY(0) rotate(5deg) scale(1);
-    }
-    50% {
-        transform: translateY(-5px) rotate(8deg) scale(1.05);
-    }
-    100% {
-        transform: translateY(-2px) rotate(12deg) scale(1.02);
-    }
-}
-</style>

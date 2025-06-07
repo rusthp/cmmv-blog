@@ -21,8 +21,8 @@
 }
 
 /* Critical CSS: Force font-display swap on all text */
-body, h1, h2, h3, h4, h5, h6, p, span, a {
-    font-display: swap;
+* {
+    font-display: swap !important;
 }
 
 :root {
@@ -525,7 +525,12 @@ body {
     outline-offset: 2px;
 }
 
-
+/* Otimizações para melhorar performance em PageSpeed */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
 
 /* Placeholder para carregamento progressivo de imagens */
 .progressive-img-container {
@@ -599,7 +604,20 @@ body {
 }
 
 /* Otimizações para fontes */
-
+@font-face {
+    font-family: 'System';
+    font-style: normal;
+    font-weight: 400;
+    src: local(".SFNSText-Regular"),
+         local(".HelveticaNeueDeskInterface-Regular"),
+         local(".LucidaGrandeUI"),
+         local("Segoe UI"),
+         local("Ubuntu"),
+         local("Roboto-Regular"),
+         local("DroidSans"),
+         local("Tahoma");
+    font-display: swap;
+}
 
 /* OTIMIZAÇÃO CRÍTICA COM CONTENT-VISIBILITY */
 
@@ -633,43 +651,6 @@ article.bg-white {
 .ad-container {
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
-    position: relative;
-    z-index: 1;
-    margin-bottom: 24px; /* Garantir espaço entre anúncios e outros elementos */
-}
-
-/* Garantir que o widget Mais Populares tenha z-index adequado e espaçamento */
-.bg-white.rounded-lg.shadow-md {
-    position: relative;
-    z-index: 2;
-    margin-top: 24px;
-    margin-bottom: 24px;
-}
-
-/* Especificamente para anúncios sidebar evitarem sobreposição */
-.ad-sidebar-top,
-.ad-sidebar-mid,
-.ad-sidebar-bottom,
-.ad-sidebar-left {
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-    border-radius: 8px;
-    margin-bottom: 24px;
-    margin-top: 24px;
-}
-
-/* Garantir que elementos de conteúdo tenham prioridade visual sobre anúncios */
-.bg-white.rounded-lg.shadow-md h2 {
-    position: relative;
-    z-index: 3;
-}
-
-/* Evitar overflow de anúncios */
-.ad-container iframe,
-.ad-container ins {
-    max-width: 100% !important;
-    overflow: hidden;
 }
 
 /* Critical rendering path - priorizar conteúdo above-the-fold */
@@ -741,22 +722,22 @@ article.bg-white {
 /* OTIMIZAÇÕES CRÍTICAS DE ANIMAÇÃO PARA INP */
 
 /* Usar transform3d para aceleração de hardware */
-.scale-hover:hover {
-    transform: scale3d(1.05, 1.05, 1);
+.hover\:scale-105:hover {
+    transform: scale3d(1.05, 1.05, 1) !important;
     will-change: transform;
 }
 
 /* Otimizar transições para performance */
 .transition-transform {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .transition-colors {
-    transition: color 0.15s ease-out;
+    transition: color 0.15s ease-out !important;
 }
 
 .transition-shadow {
-    transition: box-shadow 0.15s ease-out;
+    transition: box-shadow 0.15s ease-out !important;
 }
 
 /* Reduzir repaints - will-change apenas quando necessário */
@@ -775,19 +756,19 @@ article.bg-white {
 
 /* Otimizar animações custosas para dispositivos lentos */
 @media (max-width: 768px) {
-    .scale-hover:hover {
-        transform: none;
+    .hover\:scale-105:hover {
+        transform: none !important;
     }
     
     .transition-transform {
-        transition: none;
+        transition: none !important;
     }
 }
 
 /* Otimizar carregamento de imagens */
 .progressive-img {
     content-visibility: auto;
-    contain-intrinsic-size: 0 400px;
+    contain-intrinsic-size: 400px;
 }
 
 /* OTIMIZAÇÕES CRÍTICAS PARA CLS (CUMULATIVE LAYOUT SHIFT) */
@@ -804,6 +785,8 @@ img {
     max-width: 100%;
     height: auto;
     display: block;
+    /* Reservar espaço para evitar layout shift */
+    aspect-ratio: attr(width) / attr(height);
 }
 
 /* Container de imagem com aspect ratio definido */
@@ -878,8 +861,7 @@ html {
 }
 
 /* Estilos globais para categorias */
-/* Estilos para categorias */
-.category-tag {
+.bg-\[\#ff0030\] {
   display: inline-block;
   max-width: 180px;
   white-space: nowrap;
@@ -888,276 +870,279 @@ html {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* Proteção específica para widget Mais Populares contra sobreposição de anúncios */
-.bg-white.rounded-lg.shadow-md:has(h2:contains("Mais Populares")),
-.bg-white.rounded-lg.shadow-md h2[class*="border-b-2"]:contains("Mais Populares") {
-    isolation: isolate;
-    position: relative;
-    z-index: 10;
-    clear: both;
+/* Estilos para seção de subcategorias na homepage */
+.subcategory-card {
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
 }
 
-/* Alternativa mais específica para garantir proteção do widget Mais Populares */
-.bg-white.rounded-lg.shadow-md {
-    contain: layout style;
-    isolation: isolate;
+.subcategory-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Garantir que anúncios não interfiram com texto de títulos */
-.text-xl.font-bold.mb-4 {
-    position: relative;
-    z-index: 5;
-    background: white;
-    padding: 8px 0;
+.subcategory-tag {
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
 }
 
-/* Melhor controle de layout para sidebar */
-.space-y-4 {
-    position: relative;
-    z-index: 4;
+.subcategory-tag:hover {
+  transform: scale(1.05);
 }
 
-/* Proteção específica e robusta para o widget Mais Populares */
-.widget-mais-populares {
-    position: relative !important;
-    z-index: 15 !important;
-    isolation: isolate;
-    contain: layout style paint;
-    clear: both;
-    margin: 32px 0 !important;
-    background: white !important;
-    border: 1px solid rgba(0,0,0,0.1);
-    overflow: visible;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+/* Paginação personalizada */
+.pagination-button {
+  transition: all 0.2s ease;
 }
 
-.titulo-mais-populares {
-    position: relative !important;
-    z-index: 16 !important;
-    background: white;
-    padding: 8px 0;
-    margin-bottom: 16px !important;
+.pagination-button:hover {
+  transform: scale(1.05);
 }
 
-.lista-mais-populares {
-    position: relative !important;
-    z-index: 15 !important;
-    background: white;
-    padding: 8px 0;
+.pagination-button.active {
+  background-color: #ff0030 !important;
+  color: white !important;
+  border-color: #ff0030 !important;
 }
 
-/* Garantir espaçamento extra entre anúncios e o widget */
-.ad-container + .widget-mais-populares,
-.widget-mais-populares + .ad-container {
-    margin-top: 40px !important;
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* Proteção específica contra overflow de anúncios */
-.ad-container,
-.ad-container * {
-    max-width: 100% !important;
-    overflow: hidden !important;
-    contain: size layout style;
+/* Cards de posts otimizados */
+.post-card {
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
 }
 
-/* Controle específico para anúncios AdSense e outros dinâmicos */
-.ad-container ins,
-.ad-container iframe,
-.ad-container script,
-.ad-container [id*="google_ads"],
-.ad-container [class*="adsbygoogle"] {
-    max-width: 300px !important;
-    max-height: 600px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    z-index: 1 !important;
+.post-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #ff0030;
 }
 
-/* Garantir que elementos após o widget Mais Populares tenham espaçamento adequado */
-.widget-mais-populares + * {
-    margin-top: 32px !important;
+.post-card .post-image {
+  transition: transform 0.3s ease;
 }
 
-/* Media query para dispositivos móveis - proteção extra */
-@media (max-width: 768px) {
-    .widget-mais-populares {
-        margin: 24px 0 !important;
-        padding: 16px !important;
-        z-index: 20 !important;
+.post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+/* Adiciona estilos para exibir dropdowns no hover em desktop */
+@media (min-width: 768px) {
+  .group:hover .dropdown-menu {
+    display: block !important;
+  }
+}
+
+/* Estilos para o sistema de busca */
+.search-modal-backdrop {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.search-input {
+    caret-color: #3b82f6;
+}
+
+.search-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-results {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.search-results::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-results::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.search-highlight {
+    background-color: #fef3c7;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.search-keyboard-hint {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Animações para a busca */
+@keyframes search-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.search-loading {
+    animation: search-pulse 1.5s ease-in-out infinite;
+}
+
+/* Animação de entrada do modal */
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.search-modal-enter {
+    animation: modal-fade-in 0.2s ease-out;
+}
+
+/* Melhorias para line-clamp */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Animação pulse sutil para a lupa */
+@keyframes pulse-subtle {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+.animate-pulse-subtle {
+    animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+/* Lupa flutuante para mobile */
+.floating-search-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 40;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.floating-search-button:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+}
+
+.floating-search-button:active {
+    transform: scale(0.95);
+}
+
+/* Esconder em desktop */
+@media (min-width: 768px) {
+    .floating-search-button {
+        display: none;
+    }
+}
+
+/* Navegação responsiva */
+.categories {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.categories::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile navigation scroll */
+@media (max-width: 1023px) {
+    .categories {
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        padding-right: 40px;
     }
     
-    .ad-container {
-        max-height: 400px !important;
-        overflow: hidden !important;
+    .categories > * {
+        flex-shrink: 0;
     }
 }
 
-/* PROTEÇÃO GLOBAL CONTRA SOBREPOSIÇÃO DE ANÚNCIOS */
-
-/* Proteger todos os widgets da sidebar */
-.bg-white.rounded-lg.shadow-md,
-.bg-white.rounded-lg,
-.bg-white {
-    position: relative !important;
-    z-index: 10 !important;
-    isolation: isolate;
-    contain: layout style;
-    background: white !important;
-    margin-bottom: 32px !important;
+/* Desktop navigation */
+@media (min-width: 1024px) {
+    .categories {
+        overflow-x: visible;
+        flex-wrap: wrap;
+        padding-right: 0;
+    }
 }
 
-/* Proteger especificamente widgets de categorias */
-.bg-white.rounded-lg.shadow-md h2,
-.bg-white.rounded-lg h2,
-.text-xl.font-bold {
-    position: relative !important;
-    z-index: 12 !important;
-    background: white !important;
-    padding: 8px 0 !important;
+/* Melhorar visibilidade da lupa principal */
+.search-icon svg {
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));
 }
 
-/* Proteger listas de categorias e outros elementos de navegação */
-ul.space-y-2,
-.space-y-2,
-.space-y-4 {
-    position: relative !important;
-    z-index: 11 !important;
-    background: white;
-    padding: 8px 0;
+.search-icon:hover svg {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1));
 }
 
-/* Controle mais rigoroso de anúncios Google */
-ins.adsbygoogle,
-.adsbygoogle,
-[id*="google_ads"],
-[class*="google-ads"],
-.ad-container iframe[src*="google"],
-.ad-container ins,
-iframe[src*="googleads"],
-iframe[src*="googlesyndication"] {
-    max-width: 300px !important;
-    max-height: 250px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    z-index: 1 !important;
+/* Destacar mais a lupa com stroke mais grosso */
+.search-icon svg circle {
+    stroke-width: 3.5 !important;
 }
 
-/* Garantir que anúncios não se expandam além do container */
-.ad-container {
-    max-width: 300px !important;
-    max-height: 600px !important;
-    overflow: hidden !important;
-    margin: 24px auto !important;
-    border-radius: 8px;
-    background: #f5f5f5;
-    padding: 8px;
-    contain: size layout style paint;
+.search-icon svg path {
+    stroke-width: 4 !important;
 }
 
-/* Proteger área de conteúdo principal */
-.lg\\:col-span-1 {
-    position: relative !important;
-    z-index: 5 !important;
-    isolation: isolate;
+/* Efeito de brilho na lupa */
+.search-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: subtle-glow 2s ease-in-out infinite alternate;
 }
 
-/* Força isolamento para prevenir vazamentos visuais */
-.lg\\:grid-cols-3 > div,
-.grid > div {
-    isolation: isolate;
-    contain: layout style;
-}
-
-/* Proteção específica para elementos de interface críticos */
-.category-tag,
-.bg-\\[\\#ff0030\\],
-.text-white.px-2.py-1.rounded-full {
-    position: relative !important;
-    z-index: 15 !important;
-    isolation: isolate;
-}
-
-/* Anúncios auto-ads do Google - controle mais rigoroso */
-script[src*="adsbygoogle"],
-script[src*="googlesyndication"] + *,
-.adsbygoogle-noablate {
-    contain: size layout style paint !important;
-    max-width: 300px !important;
-    max-height: 250px !important;
-    overflow: hidden !important;
-    z-index: 1 !important;
-}
-
-/* PROTEÇÃO CONTRA ANÚNCIOS DINÂMICOS E AUTO-ADS */
-
-/* Interceptar anúncios que são inseridos dinamicamente */
-body ins[style*="display"],
-div[id*="google_ads_iframe"],
-div[id*="google_ads_div"],
-.google-auto-placed {
-    max-width: 300px !important;
-    max-height: 250px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    z-index: 1 !important;
-    margin: 16px auto !important;
-    border-radius: 8px;
-    contain: size layout style paint !important;
-}
-
-/* Forçar contenção para qualquer iframe de anúncio */
-iframe[src*="google"],
-iframe[src*="doubleclick"],
-iframe[name*="google_ads"] {
-    max-width: 300px !important;
-    max-height: 250px !important;
-    overflow: hidden !important;
-    contain: size layout style paint !important;
-    border-radius: 8px;
-}
-
-/* Proteção adicional para widgets da sidebar */
-.lg\\:col-span-1 > div {
-    position: relative !important;
-    z-index: 10 !important;
-    isolation: isolate;
-    margin-bottom: 24px !important;
-}
-
-/* Garantir que elementos críticos sempre fiquem visíveis */
-h1, h2, h3, h4, h5, h6,
-.text-xl, .text-lg, .text-base,
-nav, .nav, header, .header,
-ul, ol, li {
-    position: relative !important;
-    z-index: 8 !important;
-    background: inherit;
-}
-
-/* Proteção específica para contadores de categoria */
-.bg-\\[\\#ff0030\\].text-white,
-.rounded-full.text-xs,
-span[class*="bg-"] {
-    position: relative !important;
-    z-index: 16 !important;
-    isolation: isolate;
-}
-
-/* Regra de emergência - ocultar anúncios que ultrapassem limites */
-.ad-container > * {
-    max-width: 300px !important;
-    max-height: 600px !important;
-}
-
-/* Anúncios que podem aparecer fora do container */
-body > ins,
-body > div[id*="google"] {
-    max-width: 300px !important;
-    max-height: 250px !important;
-    margin: 16px auto !important;
-    display: block !important;
-    position: relative !important;
-    z-index: 1 !important;
+@keyframes subtle-glow {
+    0% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.8); }
+    100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
 }
 
 
