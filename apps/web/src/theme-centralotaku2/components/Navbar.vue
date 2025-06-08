@@ -55,6 +55,13 @@
                         </svg>
                     </a>
 
+                    <a v-if="settings['blog.telegram']" :href="`https://t.me/${settings['blog.telegram']}`" target="_blank" rel="noopener noreferrer" title="Telegram"
+                        class="flex items-center justify-center p-2 text-neutral-600 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zm-6.465-3.192c-.379.12-3.447 1.446-9.582 4.105-.138.054-.32.183-.32.183-.106.051-.14.134-.14.234 0 .21.167.31.167.31l.955.417c.424.194.854.142 1.204-.108l.148-.112 2.462-1.601c.21-.114.255-.134.358-.029 0 0 .356.287 1.306 1.435.36.434.571.646.948.646.507 0 .741-.362.825-.484l.797-1.704c.214-.46.025-1.067-.908-1.356l-4.568-1.765c-.505-.204-1.068-.012-1.241.643l-.476 1.38c-.122.352.167.663.484.604l1.453-.303"/>
+                        </svg>
+                    </a>
+
                     <a v-if="settings['blog.linkedin']" :href="`https://linkedin.com/in/${settings['blog.linkedin']}`" target="_blank" rel="noopener noreferrer" title="LinkedIn"
                         class="flex items-center justify-center p-2 text-neutral-600 hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-500 rounded-md transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
