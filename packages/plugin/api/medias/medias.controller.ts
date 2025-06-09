@@ -87,6 +87,12 @@ export class MediasController {
         return await this.mediasService.initializeProgress("cleanup");
     }
 
+    @Post("init-unused-images-progress", { exclude: true })
+    @Auth("media:process")
+    async initUnusedImagesProgress() {
+        return await this.mediasService.initUnusedImagesProgress();
+    }
+
     @Post("cleanup-duplicated-images", { exclude: true })
     @Auth("media:process")
     async cleanupDuplicatedImages() {
@@ -115,5 +121,24 @@ export class MediasController {
     @Auth("media:process")
     async generateMissingThumbnails() {
         return await this.mediasService.generateMissingThumbnails();
+    }
+
+    @Post("cleanup-unused-images", { exclude: true })
+    @Auth("media:process")
+    async cleanupUnusedImages(@Body() body: {dryRun?: boolean} = {}) {
+        return await this.mediasService.cleanupUnusedImages(body.dryRun || false);
+    }
+
+    @Post("delete-unused-images", { exclude: true })
+    @Auth("media:process")
+    async deleteUnusedImages() {
+        console.log("Executing deleteUnusedImages endpoint - performing actual deletion");
+        return await this.mediasService.cleanupUnusedImages(false);
+    }
+
+    @Get("cleanup-unused-images-progress", { exclude: true })
+    @Auth("media:process")
+    async getUnusedImagesProgress() {
+        return await this.mediasService.getUnusedImagesProgress();
     }
 }

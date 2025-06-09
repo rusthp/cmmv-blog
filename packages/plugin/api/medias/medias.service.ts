@@ -39,6 +39,22 @@ export class MediasService extends AbstractService {
     };
 
     /**
+     * Track progress for unused images cleanup
+     */
+    private static unusedImagesProgress = {
+        total: 0,
+        processed: 0,
+        status: 'idle',
+        message: '',
+        details: {
+            scanned: 0,
+            identified: 0,
+            removed: 0,
+            failed: 0
+        }
+    };
+
+    /**
      * Get the current progress of reprocessing
      * @returns Progress information
      */
@@ -57,6 +73,27 @@ export class MediasService extends AbstractService {
     }
 
     /**
+     * Get the current progress of unused images cleanup
+     * @returns Progress information
+     */
+    async getUnusedImagesProgress() {
+        const progress = MediasService.unusedImagesProgress;
+        const percentage = progress.total > 0
+            ? Math.round((progress.processed / progress.total) * 100)
+            : 0;
+
+        // Log para depuração
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] Returning progress: ${progress.processed}/${progress.total} (${percentage}%) - Status: ${progress.status}`);
+
+        return {
+            ...progress,
+            percentage,
+            timestamp
+        };
+    }
+
+    /**
      * Initialize progress tracker with a specific operation
      * @param operation The name of the operation (e.g., "cleaning", "reprocessing")
      * @param totalItems The expected total number of items to process (can be updated later)
@@ -70,6 +107,30 @@ export class MediasService extends AbstractService {
         return {
             success: true,
             message: `Progress tracker initialized for ${operation}`
+        };
+    }
+
+    /**
+     * Initialize unused images progress tracker
+     * @returns Success indicator
+     */
+    async initUnusedImagesProgress() {
+        MediasService.unusedImagesProgress = {
+            total: 0,
+            processed: 0,
+            status: 'idle',
+            message: 'Initializing unused images scan...',
+            details: {
+                scanned: 0,
+                identified: 0,
+                removed: 0,
+                failed: 0
+            }
+        };
+
+        return {
+            success: true,
+            message: `Progress tracker initialized for unused images cleanup`
         };
     }
 
@@ -107,6 +168,7 @@ export class MediasService extends AbstractService {
         alt: string = "",
         caption: string = ""
     ) {
+        try {
         if(!image)
             return null;
 
@@ -136,17 +198,33 @@ export class MediasService extends AbstractService {
             const isValidImage = /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/.test(image);
 
             if (!isValidImage) {
-                console.error('Invalid image format provided');
+                    console.error('Invalid image format provided:', image.substring(0, 50) + '...');
                 return null;
             }
 
             try {
                 const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+                    if (!base64Data || base64Data.length === 0) {
+                        console.error('Empty base64 data');
+                        return null;
+                    }
+                    
                 const buffer = Buffer.from(base64Data, 'base64');
+                    if (buffer.length === 0) {
+                        console.error('Empty buffer after base64 conversion');
+                        return null;
+                    }
 
                 //@ts-ignore
                 let processor = sharp(buffer);
                 const metadata = await processor.metadata();
+                    
+                    if (!metadata) {
+                        console.error('Failed to get image metadata');
+                        return null;
+                    }
+                    
+                    console.log(`Processing image: format=${metadata.format}, size=${buffer.length}, dimensions=${metadata.width}x${metadata.height}`);
                 
                 // Otimizar a imagem antes de enviá-la para o storage e padronizar para 1280x720
                 // Constantes para o formato padrão 16:9
@@ -171,8 +249,14 @@ export class MediasService extends AbstractService {
                 
                 // Obter o buffer otimizado para upload
                 const optimizedBuffer = await processor.toBuffer();
+                    
+                    if (optimizedBuffer.length === 0) {
+                        console.error('Empty optimized buffer');
+                        return null;
+                    }
                 
                 // Fazer upload do arquivo otimizado (sempre webp)
+                    console.log(`Uploading image: ${imageHash}.webp (${optimizedBuffer.length} bytes)`);
                 const uploadedFile = await blogStorageService.uploadFile({
                     buffer: optimizedBuffer,
                     originalname: `${imageHash}.webp`,
@@ -180,6 +264,8 @@ export class MediasService extends AbstractService {
                 });
 
                 if(uploadedFile){
+                        console.log(`Image uploaded successfully: ${uploadedFile.url}`);
+                        
                     //@ts-ignore
                     const thumbnailBuffer = await sharp(buffer)
                         .resize(16, 16, {
@@ -223,7 +309,12 @@ export class MediasService extends AbstractService {
                     }
 
                     return uploadedFile.url;
+                    } else {
+                        console.error('Upload failed: no file returned from storage service');
                 }
+                    
+                    // Fallback para armazenamento local
+                    console.log('Falling back to local storage');
 
                 // A otimização já foi feita antes do upload
                 // Como estamos forçando webp, não precisamos fazer mais nada aqui
@@ -233,6 +324,11 @@ export class MediasService extends AbstractService {
 
                 if(!media){
                     if (metadata.width && metadata.height && metadata.width > 0 && metadata.height > 0) {
+                            console.log(`Saving image locally: ${imageFullpath}`);
+                            
+                            // Salvar o arquivo localmente
+                            await fs.writeFileSync(imageFullpath, optimizedBuffer);
+                            
                         const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
                         let thumbnailUrl: string | null = null;
 
@@ -265,18 +361,33 @@ export class MediasService extends AbstractService {
                             size: metadata.size,
                             thumbnail: thumbnailUrl
                         });
+                            
+                            console.log(`Image saved locally: ${imageUrl}`);
                     } else {
                         console.error(`Invalid image dimensions (${metadata.width}x${metadata.height}) for ${imageFullpath}`);
                         return null;
                     }
-                } else if (!media.thumbnail) {
+                    }
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    return null;
+                }
+            } else {
+                // Verificar se existe um registro na base de dados para esta imagem
+                const MediasEntity = Repository.getEntity("MediasEntity");
+                const media = await Repository.findOne(MediasEntity, { sha1: imageHash });
+                
+                if (media && !media.thumbnail) {
                     // Create thumbnail for existing media that doesn't have one
                     const thumbnailPath = path.join(mediasPath, `${imageHash}_thumb.webp`);
                     let thumbnailUrl: string | null = null;
 
                     try {
+                        // Ler o arquivo existente para criar o thumbnail
+                        const existingBuffer = fs.readFileSync(imageFullpath);
+                        
                         //@ts-ignore
-                        const thumbnailBuffer = await sharp(buffer)
+                        const thumbnailBuffer = await sharp(existingBuffer)
                             .resize(16, 16, {
                                 fit: 'cover',
                                 position: 'center'
@@ -291,19 +402,19 @@ export class MediasService extends AbstractService {
                         await Repository.update(MediasEntity, { sha1: imageHash }, {
                             thumbnail: thumbnailUrl
                         });
+                        
+                        console.log(`Created thumbnail for existing image: ${thumbnailUrl}`);
                     } catch (thumbnailError) {
                         console.error('Error creating thumbnail for existing media:', thumbnailError);
                     }
+                    }
                 }
 
-                await processor.toFile(imageFullpath);
+            return imageUrl.toLowerCase();
             } catch (error) {
-                console.error('Error processing image:', error);
+            console.error('Error processing image URL:', error);
                 return null;
             }
-        }
-
-        return imageUrl.toLowerCase();
     }
 
     /**
@@ -1512,6 +1623,244 @@ export class MediasService extends AbstractService {
             console.error('Error during thumbnail generation:', error);
             MediasService.reprocessProgress.status = 'error';
             MediasService.reprocessProgress.message = `Error: ${error.message || 'Unknown error during thumbnail generation'}`;
+
+            throw error;
+        }
+    }
+
+    /**
+     * Clean up images not associated with any posts
+     * This identifies and removes images that are not used in any post content
+     * @param dryRun If true, only identifies unused images without deleting them
+     * @returns Statistics about the cleanup operation
+     */
+    async cleanupUnusedImages(dryRun: boolean = false) {
+        // Reset the unused images progress, not the reprocessing progress
+        MediasService.unusedImagesProgress = {
+            total: 0,
+            processed: 0,
+            status: 'processing',
+            message: 'Scanning for unused images...',
+            details: {
+                scanned: 0,
+                identified: 0,
+                removed: 0,
+                failed: 0
+            }
+        };
+
+        const MediasEntity = Repository.getEntity("MediasEntity");
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const blogStorageService = Application.resolveProvider(BlogStorageService);
+
+        try {
+            // Get all media records
+            const allMediasResult = await Repository.findAll(MediasEntity, {
+                limit: 10000
+            });
+            const allMedias = allMediasResult?.data || [];
+
+            if (allMedias.length === 0) {
+                MediasService.unusedImagesProgress.status = 'completed';
+                MediasService.unusedImagesProgress.message = 'No media records found in database.';
+
+                return {
+                    success: true,
+                    message: "No media records found in database.",
+                    identified: 0,
+                    removed: 0
+                };
+            }
+
+            MediasService.unusedImagesProgress.message = `Found ${allMedias.length} media records. Checking for usage in posts...`;
+            MediasService.unusedImagesProgress.total = allMedias.length;
+            MediasService.unusedImagesProgress.processed = 0;
+
+            // Get all posts
+            const posts = await Repository.findAll(PostsEntity, { 
+                limit: 10000,
+                type: In(["post", "page"]) 
+            });
+            
+            const allContents = posts?.data?.map((post: any) => post.content || '').join(' ') || '';
+
+            const unusedMedias: any[] = [];
+            const usedMedias: any[] = [];
+
+            // Check each media to see if it's used in any content
+            for (let i = 0; i < allMedias.length; i++) {
+                const media = allMedias[i];
+                MediasService.unusedImagesProgress.processed = i + 1;
+
+                if (i % 100 === 0 || i === allMedias.length - 1) {
+                    MediasService.unusedImagesProgress.message = `Checking media: ${i+1} of ${allMedias.length}`;
+                }
+
+                const mediaUrl = media.url || media.filepath;
+                
+                // Skip if no URL to check
+                if (!mediaUrl) {
+                    usedMedias.push(media);
+                    continue;
+                }
+
+                // Considerar usado se for imagem de perfil de autor ou outras imagens do sistema
+                if (mediaUrl.includes('/profile/') || mediaUrl.includes('_thumb.webp')) {
+                    usedMedias.push(media);
+                    continue;
+                }
+
+                // Verificações mais robustas para imagens nos conteúdos
+                let isUsed = false;
+                
+                // Obter apenas o nome do arquivo para comparação mais flexível
+                const filename = mediaUrl.split('/').pop();
+                
+                if (filename) {
+                    // Verificar diferentes formatos possíveis: URL completa, caminho relativo, nome de arquivo
+                    isUsed = allContents.includes(mediaUrl) || 
+                             allContents.includes(filename) || 
+                             allContents.includes(`"${mediaUrl}"`) || 
+                             allContents.includes(`'${mediaUrl}'`) || 
+                             allContents.includes(`src="${mediaUrl}"`) || 
+                             allContents.includes(`src='${mediaUrl}'`) ||
+                             allContents.includes(`src="${filename}"`) ||
+                             allContents.includes(`src='${filename}'`);
+                }
+                
+                if (isUsed) {
+                    usedMedias.push(media);
+                } else {
+                    unusedMedias.push(media);
+                }
+            }
+
+            MediasService.unusedImagesProgress.details.scanned = allMedias.length;
+            MediasService.unusedImagesProgress.details.identified = unusedMedias.length;
+            MediasService.unusedImagesProgress.message = `Found ${unusedMedias.length} unused images out of ${allMedias.length} total.`;
+
+            // If this is just a dry run, return stats without deleting
+            if (dryRun) {
+                MediasService.unusedImagesProgress.status = 'completed';
+                return {
+                    success: true,
+                    message: `Identified ${unusedMedias.length} unused images out of ${allMedias.length} total.`,
+                    identified: unusedMedias.length,
+                    removed: 0,
+                    dryRun: true,
+                    unusedMedias: unusedMedias.map(m => ({
+                        id: m.id,
+                        url: m.url || m.filepath,
+                        format: m.format
+                    }))
+                };
+            }
+
+            // Proceed with deletion if not a dry run
+            MediasService.unusedImagesProgress.message = `Removing ${unusedMedias.length} unused images...`;
+            let removedCount = 0;
+            let failedCount = 0;
+
+            for (let i = 0; i < unusedMedias.length; i++) {
+                const media = unusedMedias[i];
+                let storageDeleted = false;
+                let databaseDeleted = false;
+                
+                try {
+                    // First try to delete from storage (cloud or local)
+                    try {
+                        // Delete from cloud storage if URL indicates it's stored there
+                        if (media.filepath && media.filepath.startsWith('https://')) {
+                            try {
+                                // @ts-ignore - Ignorar verificação de tipo para o método deleteFile
+                                await blogStorageService.deleteFile(media.filepath);
+                                console.log(`Deleted from cloud storage: ${media.filepath}`);
+                            } catch (storageError) {
+                                console.error(`Failed to delete from cloud storage: ${media.filepath}`, storageError);
+                                // Continue with the process even if cloud deletion fails
+                            }
+                        }
+                        
+                        // Delete local file if it exists
+                        if (media.filepath && fs.existsSync(media.filepath)) {
+                            await fs.promises.unlink(media.filepath);
+                            console.log(`Deleted local file: ${media.filepath}`);
+                        }
+                        
+                        // Delete thumbnail if it exists
+                        if (media.thumbnail) {
+                            // If thumbnail is on cloud storage
+                            if (media.thumbnail.startsWith('https://')) {
+                                try {
+                                    // @ts-ignore - Ignorar verificação de tipo para o método deleteFile
+                                    await blogStorageService.deleteFile(media.thumbnail);
+                                    console.log(`Deleted thumbnail from cloud: ${media.thumbnail}`);
+                                } catch (thumbError) {
+                                    console.error(`Failed to delete thumbnail from cloud: ${media.thumbnail}`, thumbError);
+                                    // Continue with the process even if thumbnail deletion fails
+                                }
+                            } else {
+                                // Try to delete local thumbnail
+                                const mediasPath = path.join(cwd(), "medias", "images");
+                                const thumbFilename = `${media.sha1}_thumb.webp`;
+                                const thumbPath = path.join(mediasPath, thumbFilename);
+                                
+                                if (fs.existsSync(thumbPath)) {
+                                    await fs.promises.unlink(thumbPath);
+                                    console.log(`Deleted local thumbnail: ${thumbPath}`);
+                                }
+                            }
+                        }
+                        
+                        storageDeleted = true;
+                    } catch (storageError) {
+                        console.error(`Error deleting media files for ID ${media.id}:`, storageError);
+                        // Continue to database deletion even if storage deletion fails
+                    }
+                    
+                    // Second, delete from database - Critical step
+                    try {
+                        // Delete database record - Must succeed for consistent data
+                        await Repository.delete(MediasEntity, { id: media.id });
+                        console.log(`Deleted database record for ID ${media.id}`);
+                        databaseDeleted = true;
+                    } catch (dbError) {
+                        console.error(`Failed to delete database record for ID ${media.id}:`, dbError);
+                        throw dbError; // Re-throw to mark this item as failed
+                    }
+                    
+                    // If we reach here, both operations succeeded or at least database deletion succeeded
+                    removedCount++;
+                    MediasService.unusedImagesProgress.details.removed = removedCount;
+                    
+                    if (i % 10 === 0 || i === unusedMedias.length - 1) {
+                        MediasService.unusedImagesProgress.message = `Removed ${removedCount} of ${unusedMedias.length} unused images...`;
+                    }
+                    
+                } catch (error) {
+                    failedCount++;
+                    MediasService.unusedImagesProgress.details.failed = failedCount;
+                    console.error(`Error processing media ${media.id} for deletion (storage deleted: ${storageDeleted}, database deleted: ${databaseDeleted}):`, error);
+                }
+            }
+
+            const resultMessage = `Cleanup completed: ${removedCount} unused images removed from ${allMedias.length} total images. ${failedCount} items failed.`;
+            MediasService.unusedImagesProgress.status = 'completed';
+            MediasService.unusedImagesProgress.message = resultMessage;
+
+            return {
+                success: true,
+                message: resultMessage,
+                identified: unusedMedias.length,
+                removed: removedCount,
+                failed: failedCount,
+                total: allMedias.length
+            };
+
+        } catch (error: any) {
+            console.error('Error during cleanup of unused images:', error);
+            MediasService.unusedImagesProgress.status = 'error';
+            MediasService.unusedImagesProgress.message = `Error: ${error.message || 'Unknown error during cleanup'}`;
 
             throw error;
         }
