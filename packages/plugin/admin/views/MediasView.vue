@@ -70,20 +70,6 @@
                     Refresh
                 </button>
 
-                <button @click="openReprocessDialog" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Process Images
-                </button>
-
-                <button @click="openThumbnailDialog" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Generate Thumbnails
-                </button>
-
                 <button @click="openBulkDeleteDialog" :disabled="selectedMedias.size === 0" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -91,12 +77,50 @@
                     Delete Selected ({{ selectedMedias.size }})
                 </button>
 
-                <button @click="openDeleteAllDialog" class="px-2.5 py-1 bg-red-800 hover:bg-red-900 text-white text-xs font-medium rounded-md transition-colors flex items-center border border-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Delete All Media
-                </button>
+                <!-- More actions dropdown -->
+                <div class="relative" data-more-actions-toggle>
+                    <button
+                        @click="toggleMoreActionsDropdown"
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        More
+                    </button>
+                    <!-- More actions dropdown menu -->
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-52 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="openReprocessDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Process Images
+                            </button>
+                            <button
+                                @click="openThumbnailDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Generate Thumbnails
+                            </button>
+                            <button
+                                @click="openDeleteAllDialog"
+                                class="w-full px-4 py-2 text-left text-sm text-red-300 hover:bg-neutral-700 hover:text-red-200 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                Delete All Media
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1093,6 +1117,9 @@ let progressInterval = null
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
 
+// More actions dropdown
+const showMoreActionsDropdown = ref(false)
+
 // Bulk delete functionality
 const selectedMedias = ref(new Set())
 const showBulkDeleteDialog = ref(false)
@@ -1124,6 +1151,10 @@ function clearSearch() {
     filters.value.page = 1
     loadMedias()
     showSearchDropdown.value = false
+}
+
+function toggleMoreActionsDropdown() {
+    showMoreActionsDropdown.value = !showMoreActionsDropdown.value
 }
 
 // Bulk delete functions
@@ -1247,6 +1278,7 @@ function closeBulkDeleteDialog() {
 
 // Delete all functions
 async function openDeleteAllDialog() {
+    showMoreActionsDropdown.value = false
     try {
         // Get total count of all medias
         const response = await adminClient.medias.get({ limit: 1, offset: 0 })
@@ -1700,6 +1732,7 @@ watch(() => route.query, (newQuery) => {
 }, { deep: true })
 
 const openReprocessDialog = () => {
+    showMoreActionsDropdown.value = false
     showReprocessDialog.value = true
     isReprocessing.value = false
     reprocessStatus.value = {
@@ -2106,6 +2139,7 @@ const closeDuplicatesDialog = () => {
 }
 
 const openThumbnailDialog = () => {
+    showMoreActionsDropdown.value = false
     showThumbnailDialog.value = true
     isThumbnailProcessing.value = false
     thumbnailResult.value = null
@@ -2251,11 +2285,19 @@ onMounted(() => {
     initializeFromUrl()
     loadMedias()
 
-    // Close search dropdown when clicking outside
+    // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        if (showSearchDropdown.value && !e.target.closest('.relative')
-            && e.target !== document.querySelector('button[data-search-toggle]')) {
+        const target = e.target
+        
+        // Close search dropdown
+        if (showSearchDropdown.value && !target.closest('[data-search-toggle]') 
+            && !target.closest('.absolute')) {
             showSearchDropdown.value = false
+        }
+        
+        // Close more actions dropdown
+        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
+            showMoreActionsDropdown.value = false
         }
     })
 })

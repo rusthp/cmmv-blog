@@ -799,15 +799,12 @@ const route = useRoute()
 const adminClient = useAdminClient()
 const loading = ref(false)
 const posts = ref([])
-
-// Search dropdown functionality
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
 
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
 
-    // Focus the search input when dropdown opens
     if (showSearchDropdown.value) {
         nextTick(() => {
             searchInput.value?.focus()
@@ -822,7 +819,6 @@ const endIndex = computed(() => startIndex.value + itemsPerPage)
 const totalPosts = ref(0)
 const blogUrl = ref('');
 
-// Create a pagination object to match the component's expected format
 const pagination = computed(() => ({
     current: currentPage.value,
     lastPage: totalPages.value,
@@ -845,7 +841,6 @@ const loadBlogUrl = async () => {
     }
 };
 
-// Add notification system
 const notification = ref({
     show: false,
     type: 'success',
@@ -866,7 +861,6 @@ const showNotification = (type, message) => {
     }, notification.value.duration)
 }
 
-// Replace the loadPosts function
 async function loadPosts() {
     try {
         loading.value = true
@@ -932,7 +926,6 @@ const filters = ref({
     category: ''
 })
 
-// Add URL parameter handling for pagination
 const handlePageChange = (newPage) => {
     currentPage.value = newPage;
     updateUrlParams();
@@ -942,85 +935,62 @@ const handlePageChange = (newPage) => {
 const updateUrlParams = () => {
     const query = { ...route.query };
 
-    // Update page parameter
-    if (currentPage.value === 1) {
+    if (currentPage.value === 1)
         delete query.page;
-    } else {
+    else
         query.page = currentPage.value.toString();
-    }
 
-    // Update search parameter
-    if (!searchQuery.value) {
+    if (!searchQuery.value)
         delete query.search;
-    } else {
+    else
         query.search = searchQuery.value;
-    }
 
-    // Update status parameter
-    if (!filters.value.status) {
+    if (!filters.value.status)
         delete query.status;
-    } else {
+    else
         query.status = filters.value.status;
-    }
 
-    // Replace URL without navigating
     router.replace({ query });
 }
 
 const initializeFromUrl = () => {
     const { query } = route;
 
-    // Set page from URL
-    if (query.page) {
+    if (query.page)
         currentPage.value = parseInt(query.page) || 1;
-    }
 
-    // Set search query from URL
-    if (query.search) {
+    if (query.search)
         searchQuery.value = query.search;
-    }
 
-    // Set status filter from URL
-    if (query.status) {
+    if (query.status)
         filters.value.status = query.status;
-    }
 }
 
-// Modify the watcher for searchQuery
 watch(searchQuery, (newValue) => {
-    // Reset to page 1
     currentPage.value = 1
 
-    // If there's a search term, switch to "All" status to find post in any status
-    if (newValue && newValue.trim() !== '') {
+    if (newValue && newValue.trim() !== '')
         filters.value.status = ''
-    }
 
     updateUrlParams()
     loadPosts()
 })
 
-// Remove searchQuery from the combined watcher to avoid double updates
 watch([filters], () => {
     loadPosts()
 }, { deep: true })
 
-// Add a watcher specifically for status filter changes
 watch(() => filters.value.status, (newStatus) => {
-    // Reset to page 1
     currentPage.value = 1
     updateUrlParams()
 }, { immediate: false })
 
-// Keep the existing watch for currentPage
 watch(currentPage, () => {
     updateUrlParams()
     loadPosts()
 })
 
-// Add watcher for URL changes
 watch(() => route.query, (newQuery, oldQuery) => {
-    // Only update if there's an actual change to prevent loops
     if (JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
         initializeFromUrl();
         loadPosts();
@@ -1174,20 +1144,16 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// Add a refresh function
 function refreshData() {
     loadPosts();
 }
 
 function setStatusFilter(status) {
-    // Clear search when changing status filter
     if (searchQuery.value.trim() !== '') {
         searchQuery.value = ''
     }
 
     filters.value.status = status
-    // No need to set currentPage, update URL or load posts here
-    // The watchers will handle that
 }
 
 function clearSearch() {
@@ -1196,7 +1162,6 @@ function clearSearch() {
     loadPosts()
 }
 
-// Add new variables for bulk scheduling
 const showBulkScheduleDialog = ref(false)
 const draftPosts = ref([])
 const loadingDraftPosts = ref(false)
@@ -1212,7 +1177,6 @@ const schedulingProgress = ref({
     processedPosts: []
 })
 
-// Add these new functions for bulk scheduling
 function openBulkScheduleDialog() {
     showBulkScheduleDialog.value = true
     loadingDraftPosts.value = true
@@ -1241,8 +1205,6 @@ async function loadDraftPosts() {
 
         if (response && response.posts) {
             draftPosts.value = response.posts
-
-            // Initialize scheduled times
             updateAllScheduleTimes()
         } else {
             draftPosts.value = []
@@ -1265,7 +1227,6 @@ function toggleSelectAllDrafts() {
     }
 }
 
-// Watch selectedDraftPosts to update selectAllDrafts state
 watch(selectedDraftPosts, (newVal) => {
     selectAllDrafts.value = newVal.length > 0 && newVal.length === draftPosts.value.length
 })
@@ -1276,7 +1237,6 @@ async function applyBulkSchedule() {
     try {
         bulkScheduleLoading.value = true
 
-        // Reset and initialize progress tracking
         schedulingProgress.value = {
             total: selectedDraftPosts.value.length,
             completed: 0,
@@ -1288,24 +1248,17 @@ async function applyBulkSchedule() {
 
         for (const postId of selectedDraftPosts.value) {
             try {
-                // Update current post in progress
                 const post = draftPosts.value.find(p => p.id === postId)
                 schedulingProgress.value.currentPost = post ? post.title : postId
-
-                // Get the post details
                 const postDetails = await adminClient.posts.getById(postId)
-
-                // Get the scheduled time from our stored values
                 const scheduledTimeStr = postScheduleTimes.value[postId]
                 const scheduledTime = new Date(scheduledTimeStr)
 
-                // Update the post to scheduled status with the calculated time
                 const updateData = {
                     post: {
                         ...postDetails,
                         status: 'cron',
                         autoPublishAt: scheduledTime.getTime(),
-                        // Garantir que categories e tags estejam no formato correto
                         categories: postDetails.categories
                             ? postDetails.categories.map(cat => (typeof cat === 'object' && cat.id != null) ? cat.id : cat).filter(id => id != null)
                             : [],
@@ -1325,12 +1278,9 @@ async function applyBulkSchedule() {
                 }
 
                 results.push(result)
-
-                // Update progress
                 schedulingProgress.value.completed++
                 schedulingProgress.value.processedPosts.push(result)
             } catch (err) {
-                console.error(`Failed to schedule post ${postId}:`, err)
                 const failedResult = {
                     id: postId,
                     title: draftPosts.value.find(p => p.id === postId)?.title || postId,
@@ -1343,18 +1293,16 @@ async function applyBulkSchedule() {
             }
         }
 
-        // Count successes
         const successCount = results.filter(r => r.success).length
 
-        if (successCount === selectedDraftPosts.value.length) {
+        if (successCount === selectedDraftPosts.value.length)
             showNotification('success', `Successfully scheduled ${successCount} posts`)
-        } else {
+        else
             showNotification('warning', `Scheduled ${successCount} out of ${selectedDraftPosts.value.length} posts`)
-        }
 
         bulkScheduleLoading.value = false
         closeBulkScheduleDialog()
-        loadPosts() // Refresh the main posts list
+        loadPosts()
     } catch (error) {
         console.error('Failed to apply bulk scheduling:', error)
         bulkScheduleLoading.value = false
@@ -1362,22 +1310,17 @@ async function applyBulkSchedule() {
     }
 }
 
-// Let's modify the updateAllScheduleTimes function to correctly update times
 function updateAllScheduleTimes() {
-    // Start 30 minutes from now
     let baseTime = new Date()
     baseTime.setMinutes(baseTime.getMinutes() + 30)
 
     const intervalMinutes = parseInt(scheduleInterval.value)
     const newScheduleTimes = {}
 
-    // Track which posts have been manually edited
     const manuallyEdited = {}
     const oldTimes = {...postScheduleTimes.value}
 
-    // Calculate time for each post
     draftPosts.value.forEach((post, index) => {
-        // Calculate new time based on position in the list
         const postTime = new Date(baseTime.getTime() + (index * intervalMinutes * 60 * 1000))
         newScheduleTimes[post.id] = formatDateTimeForInput(postTime)
     })
@@ -1385,16 +1328,12 @@ function updateAllScheduleTimes() {
     postScheduleTimes.value = newScheduleTimes
 }
 
-// Let's also make the watch function more explicit
 watch(scheduleInterval, (newInterval, oldInterval) => {
     console.log(`Interval changed from ${oldInterval} to ${newInterval}`)
-    // When interval changes, recalculate all times
     updateAllScheduleTimes()
 }, { immediate: false })
 
-// Add a watch for selectedDraftPosts to ensure times are updated when posts are selected
 watch(selectedDraftPosts, () => {
-    // Make sure all selected posts have times
     for (const postId of selectedDraftPosts.value) {
         if (!postScheduleTimes.value[postId]) {
             updateAllScheduleTimes()
@@ -1403,11 +1342,9 @@ watch(selectedDraftPosts, () => {
     }
 })
 
-// Add a helper function to format dates for datetime-local input
 function formatDateTimeForInput(date) {
     if (!date) return ''
 
-    // Format to YYYY-MM-DDThh:mm
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
@@ -1417,7 +1354,6 @@ function formatDateTimeForInput(date) {
     return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
-// Add new variables for bulk image processing
 const showBulkImageProcessDialog = ref(false)
 const postsWithUnprocessedImages = ref([])
 const loadingPostsWithImages = ref(false)
@@ -1429,10 +1365,9 @@ const imageProcessingProgress = ref({
     completed: 0,
     currentPost: null,
     processedPosts: [],
-    failedPosts: [] // Adicionar lista de posts que falharam
+    failedPosts: []
 })
 
-// Add these new functions for bulk image processing
 function openBulkImageProcessDialog() {
     showBulkImageProcessDialog.value = true
     loadingPostsWithImages.value = true
@@ -1452,15 +1387,13 @@ async function loadPostsWithUnprocessedImages() {
         loadingPostsWithImages.value = true;
 
         const response = await adminClient.posts.get({
-            limit: 100, // Aumentar o limite ou implementar paginação se necessário
-            // status: 'published', // Removido para buscar de todos os status
+            limit: 100,
             status: 'draft' || 'cron',
             sortBy: 'createdAt',
             sort: 'desc'
         });
 
         if (response && response.posts) {
-            // Filtrar posts que têm imagens não processadas
             postsWithUnprocessedImages.value = response.posts.filter(post =>
                 post.featureImage && isImageUnprocessed(post.featureImage)
             ).map(post => ({
@@ -1489,42 +1422,32 @@ function toggleSelectAllImages() {
     }
 }
 
-// Watch selectedPostsForImageProcess to update selectAllImages state
 watch(selectedPostsForImageProcess, (newVal) => {
     selectAllImages.value = newVal.length > 0 && newVal.length === postsWithUnprocessedImages.value.length
 })
 
-// Update the processImage function to implement safety mechanisms
 async function processImage(postId) {
     try {
-        // Buscar o post por ID
         const postResponse = await adminClient.posts.getById(postId);
 
-        if (!postResponse || !postResponse.featureImage) {
+        if (!postResponse || !postResponse.featureImage)
             throw new Error('Post ou imagem não encontrada');
-        }
 
         const post = postResponse;
         const originalImageUrl = post.featureImage;
 
-        // Verificar se a imagem precisa ser processada
-        if (!isImageUnprocessed(originalImageUrl)) {
-            return; // Imagem já processada, nada a fazer
-        }
+        if (!isImageUnprocessed(originalImageUrl))
+            return;
 
         let processedImageUrl = '';
         let success = false;
 
         try {
-            // Processar a imagem de acordo com seu tipo
             if (originalImageUrl.startsWith('data:')) {
-                // Converter imagem base64 para blob
                 const formData = new FormData();
                 try {
                     const blob = await fetch(originalImageUrl).then(r => r.blob());
                     formData.append('file', blob, 'feature-image.jpg');
-
-                    // Fazer upload para o servidor
                     const response = await adminClient.medias.upload(formData);
 
                     if (response && response.url) {
@@ -1535,11 +1458,9 @@ async function processImage(postId) {
                     }
                 } catch (uploadError) {
                     console.error('Erro ao processar imagem base64:', uploadError);
-                    // Mantém a imagem original
                 }
             } else if (originalImageUrl.includes('://')) {
                 try {
-                    // Importar imagem de URL externa
                     const response = await adminClient.medias.importFromUrl({
                         url: originalImageUrl,
                         alt: post.featureImageAlt || '',
@@ -1554,25 +1475,17 @@ async function processImage(postId) {
                     }
                 } catch (importError) {
                     console.error('Erro ao importar imagem externa:', importError);
-                    // Mantém a imagem original
                 }
             }
 
-            // Verificar resultado do processamento
-            if (!success || !processedImageUrl) {
-                console.warn(`Processamento falhou para imagem: ${originalImageUrl.substring(0, 50)}... - Mantendo original`);
-                // Registramos a falha mas não atualizamos a imagem para não perder a referência original
+            if (!success || !processedImageUrl)
                 return false;
-            }
 
-            // Atualizar o post com a nova URL da imagem apenas se o processamento foi bem-sucedido
             const updateData = {
                 post: {
                     ...post,
                     featureImage: processedImageUrl,
-                    // Guardar a URL original como backup em um campo de metadados
                     originalFeatureImage: originalImageUrl,
-                    // Garantir que categories e tags estejam no formato correto
                     categories: post.categories
                         ? post.categories.map(cat => (typeof cat === 'object' && cat.id != null) ? cat.id : cat).filter(id => id != null)
                         : [],
@@ -1583,64 +1496,47 @@ async function processImage(postId) {
             };
 
             await adminClient.posts.save(updateData);
-
-            showNotification('success', 'Imagem processada com sucesso');
-
-            // Atualizar a lista de posts
             const postIndex = posts.value.findIndex(p => p.id === postId);
-            if (postIndex !== -1) {
+
+            if (postIndex !== -1)
                 posts.value[postIndex].featureImage = processedImageUrl;
-            }
 
             return true;
         } catch (processingError) {
-            console.error('Erro no processamento de imagem:', processingError);
-            // Não alterar a imagem original em caso de erro no processamento
             return false;
         }
     } catch (err) {
-        console.error(`Falha ao processar imagem para o post ${postId}:`, err);
-        showNotification('error', `Falha ao processar imagem: ${err.message}`);
-        // Não lançar erro para evitar interrupção do processamento em lote
         return false;
     }
 }
 
-// Process multiple images in bulk with safety mechanisms
 async function processBulkImages() {
     if (selectedPostsForImageProcess.value.length === 0) return;
 
     try {
         imageProcessingLoading.value = true;
-
-        // Reset and initialize progress tracking
         imageProcessingProgress.value = {
             total: selectedPostsForImageProcess.value.length,
             completed: 0,
             currentPost: null,
             processedPosts: [],
-            failedPosts: [] // Adicionar lista de posts que falharam
+            failedPosts: []
         };
 
-        // Reset dos resultados
         processingResults.value = {
             success: [],
             failed: []
         };
 
         const results = [];
-        const failedImages = []; // Lista para registrar imagens que não puderam ser processadas
+        const failedImages = [];
 
         for (const postId of selectedPostsForImageProcess.value) {
             try {
-                // Update current post in progress
                 const post = postsWithUnprocessedImages.value.find(p => p.id === postId);
                 imageProcessingProgress.value.currentPost = post ? post.title : postId;
-
-                // Process the image
                 const processResult = await processImage(postId);
 
-                // Se processou com sucesso, obter a nova URL da imagem
                 if (processResult === true) {
                     const updatedPost = await adminClient.posts.getById(postId);
                     const result = {
@@ -1653,7 +1549,6 @@ async function processBulkImages() {
                     processingResults.value.success.push(result);
                     imageProcessingProgress.value.processedPosts.push(result);
                 } else {
-                    // Registrar falha mas preservar a imagem original
                     const failedResult = {
                         id: postId,
                         title: post.title,
@@ -1668,7 +1563,6 @@ async function processBulkImages() {
                     imageProcessingProgress.value.failedPosts.push(failedResult);
                 }
 
-                // Update progress
                 imageProcessingProgress.value.completed++;
             } catch (err) {
                 console.error(`Falha ao processar imagem para o post ${postId}:`, err);
@@ -1688,7 +1582,6 @@ async function processBulkImages() {
             }
         }
 
-        // Count successes
         const successCount = results.filter(r => r.success).length;
         const failedCount = failedImages.length;
 
@@ -1700,21 +1593,18 @@ async function processBulkImages() {
             showNotification('warning', `Processadas ${successCount} de ${selectedPostsForImageProcess.value.length} imagens. ${failedCount} imagens não puderam ser processadas mas foram preservadas.`);
         }
 
-        // Registrar no console as imagens que falharam para referência
-        if (failedImages.length > 0) {
+        if (failedImages.length > 0)
             console.log('Imagens que não puderam ser processadas (preservadas):', failedImages);
-        }
 
         imageProcessingLoading.value = false;
         closeBulkImageProcessDialog();
 
-        // Mostrar o diálogo de resultados
         if (processingResults.value.success.length > 0 || processingResults.value.failed.length > 0) {
             activeResultTab.value = processingResults.value.failed.length > 0 ? 'failed' : 'success';
             showImageProcessingResultsDialog.value = true;
         }
 
-        loadPosts(); // Refresh the main posts list
+        loadPosts();
     } catch (error) {
         console.error('Falha ao processar imagens em lote:', error);
         imageProcessingLoading.value = false;
@@ -1722,7 +1612,6 @@ async function processBulkImages() {
     }
 }
 
-// Add a helper function to check if an image is unprocessed
 function isImageUnprocessed(imageUrl) {
     if(!imageUrl)
         return false;
@@ -1745,7 +1634,6 @@ function isImageUnprocessed(imageUrl) {
     return false;
 }
 
-// Adicionar variáveis para o diálogo de resultados
 const showImageProcessingResultsDialog = ref(false)
 const activeResultTab = ref('success')
 const processingResults = ref({
