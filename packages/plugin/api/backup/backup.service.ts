@@ -6,22 +6,31 @@ import { promisify } from "node:util";
 
 import {
     Service, Cron,
-    CronExpression, Logger
+    CronExpression, Logger,
+    Application, Config
 } from "@cmmv/core";
 
 import {
     Repository
 } from "@cmmv/repository";
+import { MediasService } from "../medias/medias.service";
+import { BlogStorageService } from "../storage/storage.service";
 
 @Service('blog_backup')
 export class BackupService {
     private readonly gzip = promisify(zlib.gzip);
+
+    constructor(
+        private readonly mediasService: MediasService,
+        private readonly storageService: BlogStorageService
+    ) {}
 
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async handleCronBackup() {
         await this.backupDatabase.call(this);
         await this.clearOldBackups.call(this);
     }
+    /** */
 
     /**
      * Backup the database
@@ -355,5 +364,469 @@ export class BackupService {
             throw new Error("Backup file not found");
 
         return fs.createReadStream(filePath);
+    }
+
+    /**
+     * Create a backup of specific medias before deletion
+     * @param mediaIds - Array of media IDs to backup
+     * @returns Backup information
+     */
+    async backupMediasBeforeDeletion(mediaIds: string[]) {
+        const mediasPath = path.join(cwd(), "medias", "backup");
+        const imagesPath = path.join(cwd(), "medias", "images");
+
+        if (!fs.existsSync(mediasPath))
+            fs.mkdirSync(mediasPath, { recursive: true });
+
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+        const backupPrefix = `medias_backup_${timestamp}`;
+        const backupDirPath = path.join(mediasPath, backupPrefix);
+
+        if (!fs.existsSync(backupDirPath))
+            fs.mkdirSync(backupDirPath, { recursive: true });
+
+        try {
+            const MediasEntity = Repository.getEntity("MediasEntity");
+            const blogStorageService = Application.resolveProvider(BlogStorageService);
+            
+            // Get media records that will be deleted
+            const medias: any[] = [];
+            const downloadedFiles: string[] = [];
+            let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
+            
+            if (apiUrl.endsWith("/"))
+                apiUrl = apiUrl.slice(0, -1);
+
+            for (const id of mediaIds) {
+                const media = await Repository.findOne(MediasEntity, { id });
+                if (media) {
+                    medias.push(media);
+
+                    // Download/copy image file
+                    let imageBuffer: Buffer | null = null;
+                    let filename = '';
+
+                    if (media.filepath && fs.existsSync(media.filepath)) {
+                        // Local file
+                        imageBuffer = fs.readFileSync(media.filepath);
+                        filename = path.basename(media.filepath);
+                    } else if (media.filepath && media.filepath.startsWith('http')) {
+                        // Remote file - download it
+                        try {
+                            console.log(`Downloading ${media.filepath} for backup...`);
+                            const response = await fetch(media.filepath);
+                            if (response.ok) {
+                                const arrayBuffer = await response.arrayBuffer();
+                                imageBuffer = Buffer.from(arrayBuffer);
+                                filename = `${media.sha1}.${media.format}`;
+                            }
+                        } catch (error) {
+                            console.error(`Failed to download ${media.filepath}:`, error);
+                        }
+                    } else if (media.sha1 && media.format) {
+                        // Try to find by hash
+                        const hashFilePath = path.join(imagesPath, `${media.sha1}.${media.format}`);
+                        if (fs.existsSync(hashFilePath)) {
+                            imageBuffer = fs.readFileSync(hashFilePath);
+                            filename = `${media.sha1}.${media.format}`;
+                        }
+                    }
+
+                    if (imageBuffer && filename) {
+                        const backupFilePath = path.join(backupDirPath, filename);
+                        fs.writeFileSync(backupFilePath, imageBuffer);
+                        downloadedFiles.push(filename);
+
+                        // Also backup thumbnail if exists
+                        if (media.thumbnail) {
+                            let thumbnailBuffer: Buffer | null = null;
+                            let thumbnailFilename = '';
+
+                            if (media.thumbnail.startsWith('http')) {
+                                try {
+                                    const response = await fetch(media.thumbnail);
+                                    if (response.ok) {
+                                        const arrayBuffer = await response.arrayBuffer();
+                                        thumbnailBuffer = Buffer.from(arrayBuffer);
+                                        thumbnailFilename = `${media.sha1}_thumb.webp`;
+                                    }
+                                } catch (error) {
+                                    console.error(`Failed to download thumbnail ${media.thumbnail}:`, error);
+                                }
+                            } else {
+                                const localThumbnailPath = media.thumbnail.replace(/.*\/images\//, path.join(cwd(), "medias", "images") + "/");
+                                if (fs.existsSync(localThumbnailPath)) {
+                                    thumbnailBuffer = fs.readFileSync(localThumbnailPath);
+                                    thumbnailFilename = path.basename(localThumbnailPath);
+                                }
+                            }
+
+                            if (thumbnailBuffer && thumbnailFilename) {
+                                const backupThumbnailPath = path.join(backupDirPath, thumbnailFilename);
+                                fs.writeFileSync(backupThumbnailPath, thumbnailBuffer);
+                                downloadedFiles.push(thumbnailFilename);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Save medias database records as JSON
+            const mediasDataPath = path.join(backupDirPath, 'medias_records.json');
+            fs.writeFileSync(mediasDataPath, JSON.stringify(medias, null, 2));
+
+            // Save backup metadata
+            const metadataPath = path.join(backupDirPath, 'backup_metadata.json');
+            const metadata = {
+                type: 'medias_backup',
+                timestamp,
+                mediaIds,
+                totalMedias: medias.length,
+                downloadedFiles: downloadedFiles.length,
+                apiUrl,
+                created: now.toISOString()
+            };
+            fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+            // Create tar.gz archive
+            const archivePath = path.join(mediasPath, `${backupPrefix}.tar.gz`);
+            await this.createTarGz(backupDirPath, archivePath);
+
+            // Clean up temporary directory
+            for (const file of fs.readdirSync(backupDirPath))
+                fs.unlinkSync(path.join(backupDirPath, file));
+            fs.rmdirSync(backupDirPath);
+
+            return {
+                success: true,
+                message: `Medias backup created successfully: ${medias.length} media records and ${downloadedFiles.length} files backed up`,
+                filename: path.basename(archivePath),
+                backupPath: archivePath,
+                mediasCount: medias.length,
+                filesCount: downloadedFiles.length
+            };
+
+        } catch (error) {
+            console.error(`Error during medias backup: ${error instanceof Error ? error.message : String(error)}`);
+
+            // Clean up on error
+            if (fs.existsSync(backupDirPath)) {
+                try {
+                    for (const file of fs.readdirSync(backupDirPath))
+                        fs.unlinkSync(path.join(backupDirPath, file));
+                    fs.rmdirSync(backupDirPath);
+                } catch (cleanupError) {
+                    console.error(`Error during cleanup: ${cleanupError}`);
+                }
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Rollback medias from a backup file
+     * @param filename - The backup filename to restore from
+     * @returns Rollback result
+     */
+    async rollbackMediasBackup(filename: string) {
+        const mediasPath = path.join(cwd(), "medias", "backup");
+        const imagesPath = path.join(cwd(), "medias", "images");
+        const backupFilePath = path.join(mediasPath, filename);
+
+        if (!fs.existsSync(backupFilePath))
+            throw new Error("Backup file not found");
+
+        const tempDir = path.join(mediasPath, `temp_restore_${Date.now()}`);
+        
+        try {
+            // Extract backup
+            if (!fs.existsSync(tempDir))
+                fs.mkdirSync(tempDir, { recursive: true });
+
+            await this.extractTarGz(backupFilePath, tempDir);
+
+            // Read metadata
+            const metadataPath = path.join(tempDir, 'backup_metadata.json');
+            if (!fs.existsSync(metadataPath))
+                throw new Error("Invalid backup file: metadata not found");
+
+            const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+            
+            if (metadata.type !== 'medias_backup')
+                throw new Error("Invalid backup file: not a medias backup");
+
+            // Read medias records
+            const mediasDataPath = path.join(tempDir, 'medias_records.json');
+            if (!fs.existsSync(mediasDataPath))
+                throw new Error("Invalid backup file: medias records not found");
+
+            const mediasRecords = JSON.parse(fs.readFileSync(mediasDataPath, 'utf8'));
+
+            const MediasEntity = Repository.getEntity("MediasEntity");
+            const blogStorageService = Application.resolveProvider(BlogStorageService);
+            const storageType = Config.get("blog.storageType");
+            
+            let restoredRecords = 0;
+            let restoredFiles = 0;
+            let uploadedToCloud = 0;
+            let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
+            
+            if (apiUrl.endsWith("/"))
+                apiUrl = apiUrl.slice(0, -1);
+
+            // Ensure images directory exists
+            if (!fs.existsSync(imagesPath))
+                fs.mkdirSync(imagesPath, { recursive: true });
+
+            for (const mediaRecord of mediasRecords) {
+                try {
+                    // Check if media record still exists (shouldn't if it was deleted)
+                    const existingMedia = await Repository.findOne(MediasEntity, { id: mediaRecord.id });
+                    
+                    if (existingMedia) {
+                        console.log(`Media record ${mediaRecord.id} still exists, skipping...`);
+                        continue;
+                    }
+
+                    // Restore image file
+                    let filename = '';
+                    if (mediaRecord.sha1 && mediaRecord.format)
+                        filename = `${mediaRecord.sha1}.${mediaRecord.format}`;
+                    else if (mediaRecord.filepath)
+                        filename = path.basename(mediaRecord.filepath);
+
+                    if (filename) {
+                        const backupImagePath = path.join(tempDir, filename);
+                        if (fs.existsSync(backupImagePath)) {
+                            const imageBuffer = fs.readFileSync(backupImagePath);
+                            
+                            // Decide where to restore the image
+                            let finalImagePath = '';
+                            let finalImageUrl = '';
+
+                            if (storageType && (storageType === 'spaces' || storageType === 's3')) {
+                                // Upload back to cloud storage
+                                try {
+                                    const uploadResult = await blogStorageService.uploadFile({
+                                        buffer: imageBuffer,
+                                        originalname: filename,
+                                        mimetype: mediaRecord.format ? `image/${mediaRecord.format}` : 'image/jpeg'
+                                    });
+
+                                    if (uploadResult && uploadResult.url) {
+                                        finalImagePath = uploadResult.url;
+                                        finalImageUrl = uploadResult.url;
+                                        uploadedToCloud++;
+                                    } else {
+                                        throw new Error('Upload failed');
+                                    }
+                                } catch (uploadError) {
+                                    console.error(`Failed to upload ${filename} to cloud, saving locally:`, uploadError);
+                                    // Fallback to local storage
+                                    finalImagePath = path.join(imagesPath, filename);
+                                    fs.writeFileSync(finalImagePath, imageBuffer);
+                                    finalImageUrl = `${apiUrl}/images/${filename}`.toLowerCase();
+                                }
+                            } else {
+                                // Restore to local storage
+                                finalImagePath = path.join(imagesPath, filename);
+                                fs.writeFileSync(finalImagePath, imageBuffer);
+                                finalImageUrl = `${apiUrl}/images/${filename}`.toLowerCase();
+                            }
+
+                            restoredFiles++;
+
+                            // Restore thumbnail if exists
+                            let thumbnailUrl: string | null = null;
+                            const thumbnailFilename = `${mediaRecord.sha1}_thumb.webp`;
+                            const backupThumbnailPath = path.join(tempDir, thumbnailFilename);
+                            
+                            if (fs.existsSync(backupThumbnailPath)) {
+                                const thumbnailBuffer = fs.readFileSync(backupThumbnailPath);
+                                
+                                if (storageType && (storageType === 'spaces' || storageType === 's3')) {
+                                    try {
+                                        const uploadResult = await blogStorageService.uploadFile({
+                                            buffer: thumbnailBuffer,
+                                            originalname: thumbnailFilename,
+                                            mimetype: 'image/webp'
+                                        });
+
+                                        if (uploadResult && uploadResult.url) {
+                                            thumbnailUrl = uploadResult.url;
+                                        }
+                                    } catch (uploadError) {
+                                        console.error(`Failed to upload thumbnail ${thumbnailFilename} to cloud, saving locally:`, uploadError);
+                                        const localThumbnailPath = path.join(imagesPath, thumbnailFilename);
+                                        fs.writeFileSync(localThumbnailPath, thumbnailBuffer);
+                                        thumbnailUrl = `${apiUrl}/images/${thumbnailFilename}`.toLowerCase();
+                                    }
+                                } else {
+                                    const localThumbnailPath = path.join(imagesPath, thumbnailFilename);
+                                    fs.writeFileSync(localThumbnailPath, thumbnailBuffer);
+                                    thumbnailUrl = `${apiUrl}/images/${thumbnailFilename}`.toLowerCase();
+                                }
+                            }
+
+                            // Restore database record
+                            const restoreData = {
+                                ...mediaRecord,
+                                filepath: finalImagePath,
+                                thumbnail: thumbnailUrl
+                            };
+                            delete restoreData.id; // Let database assign new ID
+
+                            await Repository.insert(MediasEntity, restoreData);
+                            restoredRecords++;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error restoring media record ${mediaRecord.id}:`, error);
+                }
+            }
+
+            // Clean up temp directory
+            for (const file of fs.readdirSync(tempDir))
+                fs.unlinkSync(path.join(tempDir, file));
+            fs.rmdirSync(tempDir);
+
+            const message = `Rollback completed: ${restoredRecords} media records and ${restoredFiles} files restored. ${uploadedToCloud} files uploaded to cloud storage.`;
+            
+            return {
+                success: true,
+                message,
+                restoredRecords,
+                restoredFiles,
+                uploadedToCloud,
+                metadata
+            };
+
+        } catch (error) {
+            // Clean up temp directory on error
+            if (fs.existsSync(tempDir)) {
+                try {
+                    for (const file of fs.readdirSync(tempDir))
+                        fs.unlinkSync(path.join(tempDir, file));
+                    fs.rmdirSync(tempDir);
+                } catch (cleanupError) {
+                    console.error(`Error during cleanup: ${cleanupError}`);
+                }
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Extract a tar.gz file
+     * @param archivePath - Path to the tar.gz file
+     * @param outputDir - Directory to extract to
+     */
+    private async extractTarGz(archivePath: string, outputDir: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const { spawn } = require('child_process');
+            
+            const tar = spawn('tar', [
+                '-xzf',
+                archivePath,
+                '-C',
+                outputDir,
+                '--strip-components=1'
+            ]);
+
+            tar.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    this.manualExtractTarGz(archivePath, outputDir)
+                        .then(resolve)
+                        .catch(reject);
+                }
+            });
+
+            tar.on('error', (err) => {
+                this.manualExtractTarGz(archivePath, outputDir)
+                    .then(resolve)
+                    .catch(reject);
+            });
+        });
+    }
+
+    /**
+     * Manual extraction of tar.gz file (fallback)
+     * @param archivePath - Path to the tar.gz file
+     * @param outputDir - Directory to extract to
+     */
+    private async manualExtractTarGz(archivePath: string, outputDir: string): Promise<void> {
+        const compressed = fs.readFileSync(archivePath);
+        const gunzip = promisify(zlib.gunzip);
+        const decompressed = await gunzip(compressed);
+        
+        // Simple extraction - this is a basic implementation
+        // In a real scenario, you might want to use a proper tar parser
+        const files = decompressed.toString('binary').split('FILE:');
+        
+        for (let i = 1; i < files.length; i++) {
+            const parts = files[i].split('\n');
+            if (parts.length >= 2) {
+                const header = parts[0];
+                const [filename, size] = header.split(':');
+                
+                if (filename && size) {
+                    const content = parts.slice(1).join('\n').substring(0, parseInt(size));
+                    const outputPath = path.join(outputDir, filename);
+                    fs.writeFileSync(outputPath, content, 'binary');
+                }
+            }
+        }
+    }
+
+    /**
+     * Get media backups (filter only media backup files)
+     * @returns Array of media backup files
+     */
+    async getMediaBackups() {
+        const mediasPath = path.join(cwd(), "medias", "backup");
+
+        if (!fs.existsSync(mediasPath)) {
+            return { data: [] };
+        }
+
+        try {
+            const files = fs.readdirSync(mediasPath)
+                .filter(file => file.endsWith('.tar.gz') && file.startsWith('medias_backup_'))
+                .map(filename => {
+                    const filePath = path.join(mediasPath, filename);
+                    const stats = fs.statSync(filePath);
+
+                    let date = new Date();
+                    try {
+                        const datePart = filename.replace('medias_backup_', '').replace('.tar.gz', '');
+                        const [datePortion, timePortion] = datePart.split('_');
+                        const [year, month, day] = datePortion.split('-').map(Number);
+                        const [hour, minute, second] = timePortion.split('-').map(Number);
+                        date = new Date(year, month - 1, day, hour, minute, second || 0);
+                    } catch (e) {
+                        date = stats.birthtime;
+                    }
+
+                    return {
+                        filename,
+                        path: filePath,
+                        size: stats.size,
+                        created: date.toISOString(),
+                        formattedSize: this.formatFileSize(stats.size),
+                        type: 'medias_backup'
+                    };
+                })
+                .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+            return { data: files };
+        } catch (error) {
+            console.error(`Error getting media backups: ${error}`);
+            return { data: [] };
+        }
     }
 }

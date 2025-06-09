@@ -1,6 +1,6 @@
 import {
     Controller, Get, Post,
-    Delete, Res, Query
+    Delete, Res, Query, Body
 } from "@cmmv/http";
 
 import {
@@ -46,5 +46,23 @@ export class BackupController {
             stream.pipe(response.res);
         else
             response.res.end();
+    }
+
+    @Get("backup/medias")
+    @Auth({ rootOnly: true })
+    async getMediaBackups() {
+        return this.backupService.getMediaBackups();
+    }
+
+    @Post("backup/medias/create")
+    @Auth({ rootOnly: true })
+    async createMediaBackup(@Body() body: {mediaIds: string[]}) {
+        return this.backupService.backupMediasBeforeDeletion(body.mediaIds);
+    }
+
+    @Post("backup/medias/rollback")
+    @Auth({ rootOnly: true })
+    async rollbackMediaBackup(@Body() body: {filename: string}) {
+        return this.backupService.rollbackMediasBackup(body.filename);
     }
 }

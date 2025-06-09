@@ -12,6 +12,7 @@ import TagsView from './views/TagsView.vue';
 import ProfileView from './views/ProfileView.vue';
 import AuthorsView from './views/AuthorsView.vue';
 import MediasView from './views/MediasView.vue';
+import MediaBackupsView from './views/MediaBackupsView.vue';
 import MembersView from './views/MembersView.vue';
 import CommentsView from './views/CommentsView.vue';
 import ImportsView from './views/ImportsView.vue';
@@ -41,6 +42,7 @@ export const blogAdminRoutes: RouteRecordRaw[] = [
             { path: '/profile', component: ProfileView },
             { path: '/authors', component: AuthorsView },
             { path: '/medias', component: MediasView },
+            { path: '/media-backups', component: MediaBackupsView },
             { path: '/members', component: MembersView },
             { path: '/comments', component: CommentsView },
             { path: '/imports', component: ImportsView },
@@ -107,6 +109,12 @@ useNavbar().addItems([
         label: 'Medias',
         icon: 'fas fa-images',
         to: '/medias',
+        group: 'CMS'
+    },
+    {
+        label: 'Media Backups',
+        icon: 'fas fa-archive',
+        to: '/media-backups',
         group: 'CMS'
     },
     {

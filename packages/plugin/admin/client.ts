@@ -106,7 +106,7 @@ export const useAdminClient = () => {
             caption: string;
         }) => api.authRequest('import-from-url', 'POST', data),
         delete: (id: string) => api.authRequest(`medias/${id}`, 'DELETE'),
-        bulkDelete: (ids: string[]) => api.authRequest('bulk-delete', 'POST', { ids }),
+        bulkDelete: (ids: string[], createBackup?: boolean) => api.authRequest('bulk-delete', 'POST', { ids, createBackup }),
     };
 
     const members = {
@@ -260,6 +260,10 @@ export const useAdminClient = () => {
         getBackups: () => api.authRequest('blog/backup', 'GET'),
         download: (filename: string) => api.authRequest(`blog/backup/download?filename=${filename}`, 'GET'),
         delete: (filename: string) => api.authRequest(`blog/backup/delete?filename=${filename}`, 'DELETE'),
+        // Media backup methods
+        getMediaBackups: () => api.authRequest('blog/backup/medias', 'GET'),
+        createMediaBackup: (mediaIds: string[]) => api.authRequest('blog/backup/medias/create', 'POST', { mediaIds }),
+        rollbackMediaBackup: (filename: string) => api.authRequest('blog/backup/medias/rollback', 'POST', { filename }),
     };
 
     const prompts = {

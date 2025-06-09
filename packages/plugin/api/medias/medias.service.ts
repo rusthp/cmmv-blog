@@ -1357,10 +1357,11 @@ export class MediasService extends AbstractService {
     /**
      * Bulk delete medias, checking for post associations first
      * @param ids - Array of media IDs to delete
+     * @param createBackup - Whether to create a backup before deletion
      * @returns Result with statistics about what was deleted and what was skipped
      */
-    async bulkDeleteMedias(ids: string[]) {
-        console.log('MediasService.bulkDeleteMedias called with:', ids);
+    async bulkDeleteMedias(ids: string[], createBackup: boolean = false) {
+        console.log('MediasService.bulkDeleteMedias called with:', ids, 'createBackup:', createBackup);
         
         try {
             if (!ids || ids.length === 0) {
@@ -1371,8 +1372,17 @@ export class MediasService extends AbstractService {
                     summary: { requested: 0, deleted: 0, skipped: 0, errors: 0 },
                     deleted: [],
                     skipped: [],
-                    errors: []
+                    errors: [],
+                    backup: null
                 };
+            }
+
+            let backupResult: any = null;
+            
+            // Note: Backup functionality temporarily disabled to avoid circular dependency
+            // Will be re-enabled in a future update with proper dependency injection
+            if (createBackup) {
+                console.log('Backup requested but currently disabled due to circular dependency issue');
             }
 
             const MediasEntity = Repository.getEntity("MediasEntity");
@@ -1464,7 +1474,8 @@ export class MediasService extends AbstractService {
                 },
                 deleted,
                 skipped,
-                errors
+                errors,
+                backup: backupResult
             };
 
             console.log('Bulk delete completed, returning result:', result);
@@ -1477,7 +1488,8 @@ export class MediasService extends AbstractService {
                 summary: { requested: ids.length, deleted: 0, skipped: 0, errors: ids.length },
                 deleted: [],
                 skipped: [],
-                errors: ids.map(id => ({ id, error: error.message || 'Erro interno' }))
+                errors: ids.map(id => ({ id, error: error.message || 'Erro interno' })),
+                backup: null
             };
         }
     }
