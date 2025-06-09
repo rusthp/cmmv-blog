@@ -90,6 +90,13 @@
                     </svg>
                     Delete Selected ({{ selectedMedias.size }})
                 </button>
+
+                <button @click="openDeleteAllDialog" class="px-2.5 py-1 bg-red-800 hover:bg-red-900 text-white text-xs font-medium rounded-md transition-colors flex items-center border border-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Delete All Media
+                </button>
             </div>
         </div>
 
@@ -740,6 +747,167 @@
                 </div>
             </div>
         </div>
+
+        <!-- Delete All Media Dialog -->
+        <div v-if="showDeleteAllDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+            style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+                <div class="p-6 border-b border-neutral-700">
+                    <h3 class="text-lg font-medium text-white">Remoção Total de Mídias</h3>
+                </div>
+                <div class="p-6">
+                    <div v-if="!deleteAllLoading && !deleteAllResult">
+                        <div class="bg-red-600/20 border border-red-600/50 rounded-md p-4 mb-6">
+                            <div class="flex items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div>
+                                    <h4 class="text-red-200 font-medium mb-2">⚠️ ATENÇÃO - OPERAÇÃO PERIGOSA ⚠️</h4>
+                                    <p class="text-red-300 text-sm mb-2">
+                                        Esta operação tentará remover <strong class="text-white">TODAS as {{ allMediasCount }} mídias</strong> da base de dados.
+                                    </p>
+                                    <p class="text-red-300 text-sm">
+                                        Esta ação <strong>NÃO PODE SER DESFEITA</strong> e pode afetar drasticamente o seu site.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-600/20 border border-yellow-600/50 rounded-md p-4 mb-6">
+                            <div class="flex items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <h4 class="text-yellow-200 font-medium mb-1">Proteção Automática</h4>
+                                    <p class="text-yellow-300 text-sm">
+                                        O sistema verificará automaticamente quais mídias estão sendo usadas em posts.
+                                        <strong>Mídias vinculadas a posts não serão removidas</strong> para manter a integridade do conteúdo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-neutral-700 rounded-lg p-4 mb-6">
+                            <h5 class="text-white font-medium mb-3">O que será feito:</h5>
+                            <ul class="text-neutral-300 text-sm space-y-2">
+                                <li class="flex items-start">
+                                    <span class="text-blue-400 mr-2">•</span>
+                                    Buscar todas as {{ allMediasCount }} mídias da base de dados
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-400 mr-2">•</span>
+                                    Verificar quais estão vinculadas a posts (essas serão protegidas)
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-400 mr-2">•</span>
+                                    Remover arquivos dos storages (local, S3, Cloudflare Spaces)
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-400 mr-2">•</span>
+                                    Remover registros do banco de dados
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button @click="showDeleteAllDialog = false"
+                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors">
+                                Cancelar
+                            </button>
+                            <button @click="executeDeleteAll"
+                                class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-md transition-colors border border-red-500">
+                                🗑️ CONFIRMAR REMOÇÃO TOTAL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-else-if="deleteAllLoading">
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto mb-4"></div>
+                            <p class="text-white mb-2">Processando remoção total...</p>
+                            <p class="text-neutral-400 text-sm">Buscando todas as mídias, verificando vínculos e removendo arquivos seguros...</p>
+                            <p class="text-yellow-400 text-xs mt-2">Esta operação pode demorar alguns minutos dependendo da quantidade de mídias.</p>
+                        </div>
+                    </div>
+
+                    <div v-else-if="deleteAllResult">
+                        <div class="space-y-4">
+                            <div class="text-center mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h4 class="text-lg font-medium text-white">Remoção Total Concluída</h4>
+                            </div>
+
+                            <div class="bg-neutral-700 rounded-lg p-4">
+                                <h5 class="text-white font-medium mb-3">Resumo da Operação Total:</h5>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-neutral-400">Total processado:</span>
+                                        <span class="text-white ml-2 font-bold">{{ deleteAllResult.summary.requested }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Removidas:</span>
+                                        <span class="text-green-400 ml-2 font-bold">{{ deleteAllResult.summary.deleted }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Protegidas:</span>
+                                        <span class="text-yellow-400 ml-2 font-bold">{{ deleteAllResult.summary.skipped }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Erros:</span>
+                                        <span class="text-red-400 ml-2 font-bold">{{ deleteAllResult.summary.errors }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="deleteAllResult.summary.deleted > 0" class="bg-green-600/20 border border-green-600/50 rounded-lg p-4">
+                                <h5 class="text-green-200 font-medium mb-2">✅ Sucesso!</h5>
+                                <p class="text-green-300 text-sm">
+                                    {{ deleteAllResult.summary.deleted }} mídia(s) foram removidas com sucesso dos storages e da base de dados.
+                                </p>
+                            </div>
+
+                            <div v-if="deleteAllResult.skipped.length > 0" class="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4">
+                                <h5 class="text-yellow-200 font-medium mb-2">🛡️ Mídias Protegidas ({{ deleteAllResult.skipped.length }})</h5>
+                                <p class="text-yellow-300 text-sm mb-3">Estas mídias não foram removidas porque estão sendo usadas em posts:</p>
+                                <div class="max-h-32 overflow-y-auto space-y-1">
+                                    <div v-for="skipped in deleteAllResult.skipped.slice(0, 10)" :key="skipped.id" class="text-sm">
+                                        <span class="text-yellow-300">{{ skipped.id.substring(0, 8) }}...</span>
+                                        <span class="text-yellow-400 ml-2">{{ skipped.reason }}</span>
+                                    </div>
+                                    <div v-if="deleteAllResult.skipped.length > 10" class="text-yellow-400 text-xs mt-2">
+                                        ... e mais {{ deleteAllResult.skipped.length - 10 }} mídias protegidas
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="deleteAllResult.errors.length > 0" class="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
+                                <h5 class="text-red-200 font-medium mb-2">❌ Erros ({{ deleteAllResult.errors.length }})</h5>
+                                <div class="max-h-32 overflow-y-auto space-y-1">
+                                    <div v-for="error in deleteAllResult.errors.slice(0, 10)" :key="error.id" class="text-sm">
+                                        <span class="text-red-300">{{ error.id.substring(0, 8) }}...</span>
+                                        <span class="text-red-400 ml-2">{{ error.error }}</span>
+                                    </div>
+                                    <div v-if="deleteAllResult.errors.length > 10" class="text-red-400 text-xs mt-2">
+                                        ... e mais {{ deleteAllResult.errors.length - 10 }} erros
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button @click="closeDeleteAllDialog"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -852,6 +1020,12 @@ const selectedMedias = ref(new Set())
 const showBulkDeleteDialog = ref(false)
 const bulkDeleteLoading = ref(false)
 const bulkDeleteResult = ref(null)
+
+// Delete all functionality
+const showDeleteAllDialog = ref(false)
+const deleteAllLoading = ref(false)
+const deleteAllResult = ref(null)
+const allMediasCount = ref(0)
 
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
@@ -987,6 +1161,136 @@ function closeBulkDeleteDialog() {
     showBulkDeleteDialog.value = false
     bulkDeleteResult.value = null
     bulkDeleteLoading.value = false
+}
+
+// Delete all functions
+async function openDeleteAllDialog() {
+    try {
+        // Get total count of all medias
+        const response = await adminClient.medias.get({ limit: 1, offset: 0 })
+        allMediasCount.value = response.count || 0
+        
+        if (allMediasCount.value === 0) {
+            showNotification('info', 'Não há mídias para remover')
+            return
+        }
+        
+        deleteAllResult.value = null
+        showDeleteAllDialog.value = true
+    } catch (err) {
+        console.error('Failed to get medias count:', err)
+        showNotification('error', 'Falha ao verificar quantidade de mídias')
+    }
+}
+
+async function executeDeleteAll() {
+    try {
+        deleteAllLoading.value = true
+        
+        // Get all media IDs (we'll fetch them in batches to avoid memory issues)
+        console.log('Fetching all media IDs for delete all operation...')
+        
+        let allMediaIds = []
+        let offset = 0
+        const batchSize = 1000 // Process 1000 at a time
+        
+        while (true) {
+            const response = await adminClient.medias.get({ 
+                limit: batchSize, 
+                offset: offset
+            })
+            
+            if (!response.data || response.data.length === 0) {
+                break
+            }
+            
+            allMediaIds.push(...response.data.map(media => media.id))
+            offset += batchSize
+            
+            // Safety check to prevent infinite loops
+            if (offset > 50000) {
+                console.warn('Stopping at 50k medias for safety')
+                break
+            }
+        }
+        
+        console.log(`Found ${allMediaIds.length} medias to delete`)
+        
+        if (allMediaIds.length === 0) {
+            showNotification('info', 'Nenhuma mídia encontrada para remover')
+            deleteAllLoading.value = false
+            return
+        }
+        
+        // Execute bulk delete with all IDs
+        const response = await adminClient.medias.bulkDelete(allMediaIds)
+        console.log('Delete all response:', response)
+        
+        // Verificar se a resposta existe e tem a estrutura esperada
+        if (!response) {
+            throw new Error('Resposta vazia do servidor')
+        }
+        
+        // Se a resposta é primitiva, transformar em objeto estruturado
+        let normalizedResponse = response;
+        if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
+            console.log('Response is not an object, creating normalized response');
+            normalizedResponse = {
+                success: false,
+                message: 'Resposta inesperada do servidor',
+                summary: { requested: allMediaIds.length, deleted: 0, skipped: 0, errors: allMediaIds.length },
+                deleted: [],
+                skipped: [],
+                errors: allMediaIds.map(id => ({ id, error: 'Resposta inesperada do servidor' }))
+            };
+        }
+        
+        if (!normalizedResponse.summary) {
+            console.error('Response missing summary:', normalizedResponse)
+            throw new Error('Resposta do servidor inválida: faltando informações de resumo')
+        }
+        
+        deleteAllResult.value = normalizedResponse
+        
+        // Show appropriate notifications
+        if (normalizedResponse.summary.deleted > 0) {
+            showNotification('success', `${normalizedResponse.summary.deleted} mídia(s) removida(s) com sucesso`)
+        }
+        
+        if (normalizedResponse.summary.skipped > 0) {
+            showNotification('warning', `${normalizedResponse.summary.skipped} mídia(s) protegida(s) por estarem vinculadas a posts`)
+        }
+        
+        if (normalizedResponse.summary.errors > 0) {
+            showNotification('error', `${normalizedResponse.summary.errors} erro(s) durante a remoção`)
+        }
+        
+        // Clear selection and refresh data if any were deleted
+        if (normalizedResponse.summary.deleted > 0) {
+            selectedMedias.value.clear()
+            refreshData()
+        }
+        
+    } catch (err) {
+        console.error('Failed to delete all medias:', err)
+        showNotification('error', err.message || 'Falha na remoção total')
+        deleteAllResult.value = {
+            success: false,
+            message: err.message || 'Falha na remoção total',
+            summary: { requested: allMediasCount.value, deleted: 0, skipped: 0, errors: allMediasCount.value },
+            deleted: [],
+            skipped: [],
+            errors: [{ id: 'all', error: err.message || 'Erro desconhecido' }]
+        }
+    } finally {
+        deleteAllLoading.value = false
+    }
+}
+
+function closeDeleteAllDialog() {
+    showDeleteAllDialog.value = false
+    deleteAllResult.value = null
+    deleteAllLoading.value = false
 }
 
 const formatFileSize = (bytes) => {
