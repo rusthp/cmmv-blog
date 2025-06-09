@@ -106,6 +106,7 @@ export const useAdminClient = () => {
             caption: string;
         }) => api.authRequest('import-from-url', 'POST', data),
         delete: (id: string) => api.authRequest(`medias/${id}`, 'DELETE'),
+        bulkDelete: (ids: string[]) => api.authRequest('bulk-delete', 'POST', { ids }),
     };
 
     const members = {

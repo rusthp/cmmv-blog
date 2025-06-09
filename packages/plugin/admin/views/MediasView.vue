@@ -83,6 +83,13 @@
                     </svg>
                     Generate Thumbnails
                 </button>
+
+                <button @click="openBulkDeleteDialog" :disabled="selectedMedias.size === 0" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Selected ({{ selectedMedias.size }})
+                </button>
             </div>
         </div>
 
@@ -119,6 +126,14 @@
                     <thead class="bg-neutral-700">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
+                                <input
+                                    type="checkbox"
+                                    :checked="isAllSelected"
+                                    @change="toggleSelectAll"
+                                    class="h-4 w-4 text-blue-600 bg-neutral-700 border-neutral-600 rounded focus:ring-blue-500"
+                                />
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
                                 ID
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
@@ -147,6 +162,14 @@
                     </thead>
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="media in medias" :key="media.id" class="hover:bg-neutral-750">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input
+                                    type="checkbox"
+                                    :checked="selectedMedias.has(media.id)"
+                                    @change="toggleMediaSelection(media.id)"
+                                    class="h-4 w-4 text-blue-600 bg-neutral-700 border-neutral-600 rounded focus:ring-blue-500"
+                                />
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400" :title="media.id">
                                 {{ media.id.substring(0, 6) }}...
                             </td>
@@ -598,6 +621,125 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bulk Delete Dialog -->
+        <div v-if="showBulkDeleteDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+            style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+                <div class="p-6 border-b border-neutral-700">
+                    <h3 class="text-lg font-medium text-white">Remoção em Massa de Mídia</h3>
+                </div>
+                <div class="p-6">
+                    <div v-if="!bulkDeleteLoading && !bulkDeleteResult">
+                        <p class="text-neutral-300 mb-4">
+                            Você está prestes a remover <strong class="text-white">{{ selectedMedias.size }}</strong> mídia(s):
+                        </p>
+                        
+                        <div class="bg-neutral-700 rounded-md p-4 mb-4 max-h-32 overflow-y-auto">
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div v-for="media in selectedMediasData" :key="media.id" class="text-neutral-300">
+                                    • {{ media.id.substring(0, 8) }}... ({{ media.format?.toUpperCase() }})
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-600/20 border border-yellow-600/50 rounded-md p-4 mb-4">
+                            <div class="flex items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div>
+                                    <h4 class="text-yellow-200 font-medium mb-1">Verificação de Segurança</h4>
+                                    <p class="text-yellow-300 text-sm">
+                                        O sistema verificará automaticamente se alguma dessas mídias está sendo usada em posts.
+                                        Mídias vinculadas a posts <strong>não serão removidas</strong> para manter a integridade do conteúdo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button @click="showBulkDeleteDialog = false"
+                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors">
+                                Cancelar
+                            </button>
+                            <button @click="executeBulkDelete"
+                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors">
+                                Confirmar Remoção
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-else-if="bulkDeleteLoading">
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto mb-4"></div>
+                            <p class="text-white mb-2">Processando remoção em massa...</p>
+                            <p class="text-neutral-400 text-sm">Verificando vínculos com posts e removendo mídias seguras...</p>
+                        </div>
+                    </div>
+
+                    <div v-else-if="bulkDeleteResult">
+                        <div class="space-y-4">
+                            <div class="text-center mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h4 class="text-lg font-medium text-white">Processo Concluído</h4>
+                            </div>
+
+                            <div class="bg-neutral-700 rounded-lg p-4">
+                                <h5 class="text-white font-medium mb-3">Resumo da Operação:</h5>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-neutral-400">Total solicitado:</span>
+                                        <span class="text-white ml-2">{{ bulkDeleteResult.summary.requested }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Removidas:</span>
+                                        <span class="text-green-400 ml-2">{{ bulkDeleteResult.summary.deleted }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Puladas (vinculadas):</span>
+                                        <span class="text-yellow-400 ml-2">{{ bulkDeleteResult.summary.skipped }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-neutral-400">Erros:</span>
+                                        <span class="text-red-400 ml-2">{{ bulkDeleteResult.summary.errors }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="bulkDeleteResult.skipped.length > 0" class="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4">
+                                <h5 class="text-yellow-200 font-medium mb-2">Mídias Protegidas ({{ bulkDeleteResult.skipped.length }})</h5>
+                                <div class="max-h-32 overflow-y-auto space-y-1">
+                                    <div v-for="skipped in bulkDeleteResult.skipped" :key="skipped.id" class="text-sm">
+                                        <span class="text-yellow-300">{{ skipped.id.substring(0, 8) }}...</span>
+                                        <span class="text-yellow-400 ml-2">{{ skipped.reason }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="bulkDeleteResult.errors.length > 0" class="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
+                                <h5 class="text-red-200 font-medium mb-2">Erros ({{ bulkDeleteResult.errors.length }})</h5>
+                                <div class="max-h-32 overflow-y-auto space-y-1">
+                                    <div v-for="error in bulkDeleteResult.errors" :key="error.id" class="text-sm">
+                                        <span class="text-red-300">{{ error.id.substring(0, 8) }}...</span>
+                                        <span class="text-red-400 ml-2">{{ error.error }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button @click="closeBulkDeleteDialog"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -705,6 +847,12 @@ let progressInterval = null
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
 
+// Bulk delete functionality
+const selectedMedias = ref(new Set())
+const showBulkDeleteDialog = ref(false)
+const bulkDeleteLoading = ref(false)
+const bulkDeleteResult = ref(null)
+
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
 
@@ -720,6 +868,125 @@ function clearSearch() {
     filters.value.page = 1
     loadMedias()
     showSearchDropdown.value = false
+}
+
+// Bulk delete functions
+const isAllSelected = computed(() => {
+    return medias.value.length > 0 && medias.value.every(media => selectedMedias.value.has(media.id))
+})
+
+const selectedMediasData = computed(() => {
+    return medias.value.filter(media => selectedMedias.value.has(media.id))
+})
+
+function toggleSelectAll() {
+    if (isAllSelected.value) {
+        selectedMedias.value.clear()
+    } else {
+        medias.value.forEach(media => {
+            selectedMedias.value.add(media.id)
+        })
+    }
+}
+
+function toggleMediaSelection(mediaId) {
+    if (selectedMedias.value.has(mediaId)) {
+        selectedMedias.value.delete(mediaId)
+    } else {
+        selectedMedias.value.add(mediaId)
+    }
+}
+
+function openBulkDeleteDialog() {
+    if (selectedMedias.value.size === 0) {
+        showNotification('warning', 'Selecione pelo menos uma mídia para remover')
+        return
+    }
+    
+    bulkDeleteResult.value = null
+    showBulkDeleteDialog.value = true
+}
+
+async function executeBulkDelete() {
+    if (selectedMedias.value.size === 0) return
+
+    try {
+        bulkDeleteLoading.value = true
+        
+        const selectedIds = Array.from(selectedMedias.value)
+        console.log('Sending bulk delete request for IDs:', selectedIds)
+        
+        const response = await adminClient.medias.bulkDelete(selectedIds)
+        console.log('Bulk delete response:', response)
+        
+        // Verificar se a resposta existe e tem a estrutura esperada
+        if (!response) {
+            throw new Error('Resposta vazia do servidor')
+        }
+        
+        // Se a resposta é primitiva, transformar em objeto estruturado
+        let normalizedResponse = response;
+        if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
+            console.log('Response is not an object, creating normalized response');
+            normalizedResponse = {
+                success: false,
+                message: 'Resposta inesperada do servidor',
+                summary: { requested: selectedIds.length, deleted: 0, skipped: 0, errors: selectedIds.length },
+                deleted: [],
+                skipped: [],
+                errors: selectedIds.map(id => ({ id, error: 'Resposta inesperada do servidor' }))
+            };
+        }
+        
+        if (!normalizedResponse.summary) {
+            console.error('Response missing summary:', normalizedResponse)
+            throw new Error('Resposta do servidor inválida: faltando informações de resumo')
+        }
+        
+        // Use normalized response for the rest of the function
+        const finalResponse = normalizedResponse;
+        
+        bulkDeleteResult.value = finalResponse
+        
+        // Show appropriate notification based on results
+        if (finalResponse.summary.deleted > 0) {
+            showNotification('success', `${finalResponse.summary.deleted} mídia(s) removida(s) com sucesso`)
+        }
+        
+        if (finalResponse.summary.skipped > 0) {
+            showNotification('warning', `${finalResponse.summary.skipped} mídia(s) protegida(s) por estarem vinculadas a posts`)
+        }
+        
+        if (finalResponse.summary.errors > 0) {
+            showNotification('error', `${finalResponse.summary.errors} erro(s) durante a remoção`)
+        }
+        
+        // Clear selection and refresh data if any were deleted
+        if (finalResponse.summary.deleted > 0) {
+            selectedMedias.value.clear()
+            refreshData()
+        }
+        
+    } catch (err) {
+        console.error('Failed to bulk delete medias:', err)
+        showNotification('error', err.message || 'Falha na remoção em massa')
+        bulkDeleteResult.value = {
+            success: false,
+            message: err.message || 'Falha na remoção em massa',
+            summary: { requested: selectedMedias.value.size, deleted: 0, skipped: 0, errors: selectedMedias.value.size },
+            deleted: [],
+            skipped: [],
+            errors: Array.from(selectedMedias.value).map(id => ({ id, error: err.message || 'Erro desconhecido' }))
+        }
+    } finally {
+        bulkDeleteLoading.value = false
+    }
+}
+
+function closeBulkDeleteDialog() {
+    showBulkDeleteDialog.value = false
+    bulkDeleteResult.value = null
+    bulkDeleteLoading.value = false
 }
 
 const formatFileSize = (bytes) => {
@@ -787,6 +1054,9 @@ const loadMedias = async () => {
         }
 
         loading.value = false
+        
+        // Clear selection when page changes or data is refreshed
+        selectedMedias.value.clear()
     } catch (err) {
         console.error('Failed to load medias:', err)
         loading.value = false

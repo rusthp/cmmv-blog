@@ -116,4 +116,18 @@ export class MediasController {
     async generateMissingThumbnails() {
         return await this.mediasService.generateMissingThumbnails();
     }
+
+    @Post("bulk-delete", { exclude: true })
+    @Auth("media:delete")
+    async bulkDeleteMedias(@Body() body: {ids: string[]}) {
+        try {
+            console.log('Bulk delete request received:', body);
+            const result = await this.mediasService.bulkDeleteMedias(body.ids);
+            console.log('Bulk delete result:', result);
+            return result;
+        } catch (error) {
+            console.error('Bulk delete error:', error);
+            throw error;
+        }
+    }
 }
