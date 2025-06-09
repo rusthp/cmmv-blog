@@ -154,12 +154,8 @@ export const useAdminClient = () => {
         getReprocessProgress: () => api.authRequest('reprocess-images-progress', 'GET'),
         cleanupOrphanedMedia: (forceCleanup: boolean = false) => api.authRequest('cleanup-orphaned-media', 'POST', { forceCleanup }),
         cleanupDuplicatedImages: () => api.authRequest('cleanup-duplicated-images', 'POST'),
-        cleanupUnusedImages: (dryRun: boolean = false) => api.authRequest('cleanup-unused-images', 'POST', { dryRun }),
-        deleteUnusedImages: () => api.authRequest('delete-unused-images', 'POST'),
         getCleanupProgress: () => api.authRequest('cleanup-orphaned-media-progress', 'GET'),
-        getUnusedImagesProgress: () => api.authRequest('cleanup-unused-images-progress', 'GET'),
         initCleanupProgress: () => api.authRequest('init-cleanup-progress', 'POST'),
-        initUnusedImagesProgress: () => api.authRequest('init-unused-images-progress', 'POST'),
         generateMissingThumbnails: () => api.authRequest('generate-missing-thumbnails', 'POST'),
     };
 

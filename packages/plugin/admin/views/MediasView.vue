@@ -70,59 +70,19 @@
                     Refresh
                 </button>
 
-                <!-- More actions dropdown -->
-                <div class="relative" data-more-actions-toggle>
-                    <button
-                        @click="toggleMoreActionsDropdown"
-                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                        </svg>
-                        More
-                    </button>
-                    <!-- More actions dropdown menu -->
-                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
-                        <div class="py-1">
-                            <button
-                                @click="openReprocessDialog"
-                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Process Images
-                            </button>
-                            <button
-                                @click="openThumbnailDialog"
-                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                Generate Thumbnails
-                            </button>
-                            <button
-                                @click="openUnusedImagesDialog"
-                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Clean Unused Images
-                            </button>
-                            <button
-                                @click="openBulkDeleteDialog"
-                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Mass Exclusion
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <button @click="openReprocessDialog" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Process Images
+                </button>
+
+                <button @click="openThumbnailDialog" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Generate Thumbnails
+                </button>
             </div>
         </div>
 
@@ -158,17 +118,6 @@
                 <table class="min-w-full divide-y divide-neutral-700">
                     <thead class="bg-neutral-700">
                         <tr>
-                            <th scope="col" class="px-2 py-3 text-center w-8">
-                                <div class="flex items-center justify-center">
-                                    <input 
-                                        type="checkbox" 
-                                        class="w-4 h-4 bg-neutral-600 border-neutral-500 rounded text-blue-600 focus:ring-blue-500"
-                                        :checked="selectedMedias.length > 0 && selectedMedias.length === medias.length"
-                                        :indeterminate.prop="selectedMedias.length > 0 && selectedMedias.length < medias.length"
-                                        @change="toggleSelectAll"
-                                    />
-                                </div>
-                            </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
                                 ID
                             </th>
@@ -198,16 +147,6 @@
                     </thead>
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="media in medias" :key="media.id" class="hover:bg-neutral-750">
-                            <td class="px-2 py-4">
-                                <div class="flex items-center justify-center">
-                                    <input 
-                                        type="checkbox" 
-                                        :value="media.id" 
-                                        v-model="selectedMedias"
-                                        class="w-4 h-4 bg-neutral-600 border-neutral-500 rounded text-blue-600 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400" :title="media.id">
                                 {{ media.id.substring(0, 6) }}...
                             </td>
@@ -608,125 +547,6 @@
             </div>
         </div>
 
-        <!-- Add Unused Images Dialog after Thumbnail Dialog -->
-        <div v-if="showUnusedImagesDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-            style="backdrop-filter: blur(4px);">
-            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
-                <div class="p-6 border-b border-neutral-700">
-                    <h3 class="text-lg font-medium text-white">Clean Unused Images</h3>
-                </div>
-                <div class="p-6">
-                    <div v-if="!isUnusedImagesProcessing && !unusedImagesResult">
-                        <p class="text-neutral-300 mb-4">
-                            This will scan for images that are not used in any post or page content:
-                        </p>
-                        <ul class="list-disc pl-5 mb-4 text-neutral-300 space-y-1">
-                            <li>Check all media against post and page content</li>
-                            <li>Identify images that aren't referenced in any content</li>
-                            <li>Remove unused images from both local storage and cloud storage</li>
-                            <li>Delete database records for unused images</li>
-                        </ul>
-                        <p class="text-yellow-500 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            This action will permanently delete unused images.
-                        </p>
-
-                        <div class="bg-neutral-700 p-4 rounded-md mb-4">
-                            <div class="flex items-center mb-2">
-                                <input type="checkbox" id="dryRun" v-model="dryRun" class="mr-2 h-4 w-4 text-blue-600 rounded">
-                                <label for="dryRun" class="text-white font-medium">Dry Run Mode (Scan Only)</label>
-                            </div>
-                            <p class="text-neutral-400 text-sm">
-                                <span v-if="dryRun">
-                                    Only scan and identify unused images without deleting them.
-                                </span>
-                                <span v-else>
-                                    Images will be permanently deleted from storage and database.
-                                </span>
-                            </p>
-                        </div>
-
-                        <div class="flex justify-end space-x-3 mt-6">
-                            <button @click="showUnusedImagesDialog = false"
-                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors">
-                                Cancel
-                            </button>
-                            <button @click="startUnusedImagesCleanup"
-                                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors">
-                                {{ dryRun ? 'Scan Unused Images' : 'Clean Unused Images' }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div v-else-if="isUnusedImagesProcessing && !unusedImagesResult">
-                        <div class="mb-4">
-                            <p class="text-white mb-2">{{ reprocessStatus.message }}</p>
-
-                            <div class="w-full bg-neutral-700 rounded-full h-4 mb-2">
-                                <div class="bg-amber-600 h-4 rounded-full"
-                                    :style="{ width: `${reprocessStatus.percentage || 0}%` }"></div>
-                            </div>
-
-                            <p class="text-neutral-400 text-sm">
-                                {{ reprocessStatus.processed || 0 }} of {{ reprocessStatus.total || 0 }} images checked ({{ reprocessStatus.percentage || 0 }}%)
-                            </p>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button
-                                disabled
-                                class="px-4 py-2 bg-neutral-600 text-white rounded-md cursor-not-allowed">
-                                Processing...
-                            </button>
-                        </div>
-                    </div>
-
-                    <div v-else-if="unusedImagesResult">
-                        <div class="mb-4">
-                            <p class="text-white mb-4">{{ unusedImagesResult.message }}</p>
-
-                            <div class="bg-neutral-700 rounded-md p-4 mb-4">
-                                <h4 class="text-white mb-2 font-medium">Results:</h4>
-                                <ul class="text-neutral-300 text-sm space-y-1">
-                                    <li>Total images scanned: {{ unusedImagesResult.total || reprocessStatus.total }}</li>
-                                    <li>Unused images identified: {{ unusedImagesResult.identified }}</li>
-                                    <li v-if="!unusedImagesResult.dryRun">Unused images removed: {{ unusedImagesResult.removed }}</li>
-                                    <li v-if="unusedImagesResult.dryRun" class="text-amber-400">Dry run mode: No images were deleted</li>
-                                </ul>
-                            </div>
-
-                            <div v-if="unusedImagesResult.dryRun && unusedImagesResult.unusedMedias && unusedImagesResult.unusedMedias.length > 0" class="mb-4">
-                                <h4 class="text-white mb-2 font-medium">Unused Images ({{ unusedImagesResult.unusedMedias.length }}):</h4>
-                                <div class="max-h-48 overflow-y-auto bg-neutral-750 rounded-md p-2">
-                                    <div v-for="(media, index) in unusedImagesResult.unusedMedias" :key="index" class="text-sm text-neutral-400 mb-1 truncate">
-                                        {{ media.url }}
-                                    </div>
-                                </div>
-                                <div class="mt-4 flex justify-end">
-                                    <button 
-                                        v-if="unusedImagesResult.identified > 0"
-                                        @click="proceedWithDeletion" 
-                                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors">
-                                        Delete {{ unusedImagesResult.identified }} Unused Images
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button
-                                @click="closeUnusedImagesDialog"
-                                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Adicionar diálogo de edição de mídia -->
         <div v-if="showDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
             style="backdrop-filter: blur(4px);">
@@ -774,64 +594,6 @@
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
                             Save Changes
                         </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bulk Delete Dialog -->
-        <div v-if="showBulkDeleteDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-            style="backdrop-filter: blur(4px);">
-            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
-                <div class="p-6 border-b border-neutral-700">
-                    <h3 class="text-lg font-medium text-white">Mass Exclusion</h3>
-                </div>
-                <div class="p-6">
-                    <div v-if="!isBulkDeleteProcessing">
-                        <p class="text-neutral-300 mb-3">Are you sure you want to delete <strong>{{ selectedMedias.length }}</strong> items?</p>
-                        <p class="text-red-400 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            This action cannot be undone.
-                        </p>
-
-                        <div class="flex justify-between space-x-3 mt-6">
-                            <button @click="cancelBulkDelete"
-                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors">
-                                Cancel
-                            </button>
-                            <button @click="confirmBulkDelete"
-                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Delete {{ selectedMedias.length }} Items
-                            </button>
-                        </div>
-                    </div>
-                    <div v-else>
-                        <div class="mb-4">
-                            <p class="text-white mb-2">{{ bulkDeleteStatus.message }}</p>
-
-                            <div class="w-full bg-neutral-700 rounded-full h-4 mb-2">
-                                <div class="bg-red-600 h-4 rounded-full"
-                                    :style="{ width: `${bulkDeleteStatus.percentage || 0}%` }"></div>
-                            </div>
-
-                            <p class="text-neutral-400 text-sm">
-                                {{ bulkDeleteStatus.processed || 0 }} of {{ bulkDeleteStatus.total || 0 }} items deleted ({{ bulkDeleteStatus.percentage || 0 }}%)
-                            </p>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button
-                                @click="closeBulkDeleteDialog"
-                                :disabled="bulkDeleteStatus.status === 'processing'"
-                                class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-600 text-white rounded-md transition-colors">
-                                {{ bulkDeleteStatus.status === 'processing' ? 'Processing...' : 'Close' }}
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -900,14 +662,11 @@ const showReprocessDialog = ref(false)
 const showCleanupDialog = ref(false)
 const showDuplicatesDialog = ref(false)
 const showThumbnailDialog = ref(false)
-const showUnusedImagesDialog = ref(false)
 const isReprocessing = ref(false)
 const isProcessing = ref(false)
 const isDuplicatesProcessing = ref(false)
 const isThumbnailProcessing = ref(false)
-const isUnusedImagesProcessing = ref(false)
 const forceCleanup = ref(false)
-const dryRun = ref(false)
 const reprocessStatus = ref({
     total: 0,
     processed: 0,
@@ -941,24 +700,10 @@ const thumbnailStatus = ref({
 const duplicatesResult = ref(null)
 const cleanupResult = ref(null)
 const thumbnailResult = ref(null)
-const unusedImagesResult = ref(null)
 let progressInterval = null
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
-
-const selectedMedias = ref([])
-const showMoreActionsDropdown = ref(false)
-const showBulkDeleteDialog = ref(false)
-const isBulkDeleteProcessing = ref(false)
-const bulkDeleteStatus = ref({
-    total: 0,
-    processed: 0,
-    percentage: 0,
-    status: 'idle',
-    message: '',
-    failed: 0
-})
 
 function toggleSearchDropdown() {
     showSearchDropdown.value = !showSearchDropdown.value
@@ -995,16 +740,11 @@ const loadMedias = async () => {
         loading.value = true
         error.value = null
 
-        // Incluir timestamp para evitar cache
-        const timestamp = new Date().getTime()
-        console.log(`Loading medias (timestamp: ${timestamp})...`)
-
         const apiFilters = {
             limit: pagination.value.perPage,
             offset: (filters.value.page - 1) * pagination.value.perPage,
             sortBy: filters.value.sortBy,
             sort: filters.value.sortOrder,
-            t: timestamp // Adicionar timestamp para evitar cache
         }
 
         if (filters.value.search) {
@@ -1016,7 +756,6 @@ const loadMedias = async () => {
 
         if (response && response.data) {
             medias.value = response.data || []
-            console.log(`Loaded ${medias.value.length} medias`)
 
             const paginationData = response.pagination || {}
             const totalCount = response.count || 0
@@ -1036,7 +775,6 @@ const loadMedias = async () => {
             }
         } else {
             medias.value = []
-            console.log('No medias found or empty response')
 
             pagination.value = {
                 current: 1,
@@ -1058,8 +796,6 @@ const loadMedias = async () => {
 }
 
 const refreshData = () => {
-    console.log('Refreshing media data...')
-    // Forçar recarregamento completo dos dados
     loadMedias()
 }
 
@@ -1134,8 +870,6 @@ const deleteMedia = async () => {
     try {
         // Mostrar estado de carregamento se necessário
         showDeleteDialog.value = false;
-        
-        console.log('Deleting media with ID:', mediaToDelete.value.id);
 
         // Chamar a API para excluir a mídia
         await adminClient.medias.delete(mediaToDelete.value.id);
@@ -1143,11 +877,8 @@ const deleteMedia = async () => {
         // Mostrar notificação de sucesso
         showNotification('success', 'Media deleted successfully');
 
-        // Atualizar a lista de mídias forçando uma nova requisição
-        setTimeout(() => {
-            refreshData();
-            console.log('Media list refreshed after deletion');
-        }, 500); // Pequeno atraso para garantir que o backend tenha tempo de processar
+        // Atualizar a lista de mídias
+        refreshData();
     } catch (err) {
         console.error('Failed to delete media:', err);
         showNotification('error', err.message || 'Failed to delete media');
@@ -1799,399 +1530,6 @@ const closeThumbnailDialog = () => {
     }
 }
 
-const openUnusedImagesDialog = () => {
-    showUnusedImagesDialog.value = true
-    isUnusedImagesProcessing.value = false
-    unusedImagesResult.value = null
-    reprocessStatus.value = {
-        total: 0,
-        processed: 0,
-        percentage: 0,
-        status: 'idle',
-        message: '',
-        details: {
-            scanned: 0,
-            added: 0,
-            removed: 0,
-            optimized: 0,
-            failed: 0,
-            bytes_saved: 0
-        }
-    }
-}
-
-const startUnusedImagesCleanup = async () => {
-    try {
-        isUnusedImagesProcessing.value = true
-        unusedImagesResult.value = null
-        
-        // Reset the status object
-        reprocessStatus.value = {
-            total: 0,
-            processed: 0,
-            percentage: 0,
-            status: 'processing',
-            message: 'Iniciando análise de imagens não utilizadas...',
-            details: {
-                scanned: 0,
-                identified: 0,
-                removed: 0,
-                failed: 0
-            }
-        }
-
-        // Limpar qualquer intervalo anterior
-        if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-        }
-
-        console.log('Starting unused images scan with dryRun=' + dryRun.value)
-        
-        // Inicializar explicitamente o progresso para garantir que o backend esteja pronto
-        await adminClient.imports.initUnusedImagesProgress()
-        
-        // Iniciar a limpeza primeiro, para obter o resultado inicial
-        try {
-            console.log('Calling cleanupUnusedImages with dryRun=' + dryRun.value)
-            const result = await adminClient.imports.cleanupUnusedImages(dryRun.value)
-            console.log('Unused images scan initial result:', result)
-            
-            // Se já temos um resultado final, não precisamos verificar o progresso
-            if (result && (result.success === true || result.success === false)) {
-                console.log('Process completed immediately with result:', result)
-                unusedImagesResult.value = result
-                isUnusedImagesProcessing.value = false
-                return
-            }
-            
-            // Se chegamos aqui, o processo está em andamento e precisamos verificar o progresso
-            let checkCount = 0
-            let lastProgress = 0
-            
-            // Função para verificar o progresso
-            const checkProgress = async () => {
-                try {
-                    checkCount++
-                    console.log(`Checking progress, attempt ${checkCount}`)
-                    const progress = await adminClient.imports.getUnusedImagesProgress()
-                    
-                    if (!progress) {
-                        console.log('No progress data received')
-                        return
-                    }
-                    
-                    console.log('Progress update:', progress)
-                    
-                    // Verificar se temos progresso real
-                    const hasProgress = progress.processed > 0 && progress.total > 0
-                    const hasChangedSinceLastCheck = progress.processed !== lastProgress
-                    
-                    if (hasProgress) {
-                        lastProgress = progress.processed
-                        
-                        // Atualizar o estado
-                        reprocessStatus.value = {
-                            ...progress
-                        }
-                        
-                        // Log para debug
-                        console.log(`Progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
-                    }
-                    
-                    // Verificar se o processo foi concluído ou se estamos travados
-                    if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Process completed with status:', progress.status)
-                        clearInterval(progressInterval)
-                        progressInterval = null
-                        
-                        // Tentar obter o resultado final
-                        try {
-                            const finalResult = await adminClient.imports.getUnusedImagesProgress()
-                            unusedImagesResult.value = {
-                                success: true,
-                                message: finalResult.message,
-                                identified: finalResult.details?.identified || 0,
-                                removed: finalResult.details?.removed || 0,
-                                total: finalResult.total,
-                                dryRun: dryRun.value
-                            }
-                            isUnusedImagesProcessing.value = false
-                        } catch (finalErr) {
-                            console.error('Error getting final result:', finalErr)
-                            isUnusedImagesProcessing.value = false
-                        }
-                        
-                        return
-                    }
-                    
-                    // Se não há progresso após várias tentativas, considere o processo concluído
-                    if (checkCount > 15 && !hasChangedSinceLastCheck) {
-                        console.log('No progress detected after multiple attempts, assuming process completed')
-                        clearInterval(progressInterval)
-                        progressInterval = null
-                        isUnusedImagesProcessing.value = false
-                        
-                        // Exibir o resultado parcial
-                        unusedImagesResult.value = {
-                            success: true,
-                            message: 'Processo completado (sem atualizações de progresso)',
-                            identified: progress.details?.identified || 0,
-                            removed: progress.details?.removed || 0,
-                            total: progress.total,
-                            dryRun: dryRun.value
-                        }
-                        
-                        return
-                    }
-                    
-                } catch (err) {
-                    console.error('Error checking progress:', err)
-                    checkCount++
-                    
-                    // Se falhar muitas vezes, interrompa o intervalo
-                    if (checkCount > 10) {
-                        console.log('Too many errors checking progress, stopping interval')
-                        clearInterval(progressInterval)
-                        progressInterval = null
-                        isUnusedImagesProcessing.value = false
-                        
-                        // Exibir mensagem de erro
-                        reprocessStatus.value.status = 'error'
-                        reprocessStatus.value.message = 'Erro ao verificar progresso'
-                    }
-                }
-            }
-            
-            // Verificar o progresso imediatamente
-            await checkProgress()
-            
-            // Configurar o intervalo para verificações regulares (a cada 2 segundos)
-            progressInterval = setInterval(checkProgress, 2000)
-            
-        } catch (err) {
-            console.error('Error scanning unused images:', err)
-            reprocessStatus.value.status = 'error'
-            reprocessStatus.value.message = `Erro: ${err.message || 'Falha ao verificar imagens não utilizadas'}`
-            
-            if (progressInterval) {
-                clearInterval(progressInterval)
-                progressInterval = null
-            }
-            
-            isUnusedImagesProcessing.value = false
-            showNotification('error', err.message || 'Falha ao verificar imagens não utilizadas')
-        }
-        
-    } catch (err) {
-        console.error('Failed to start process:', err)
-        reprocessStatus.value.status = 'error'
-        reprocessStatus.value.message = err.message || 'Falha ao iniciar o processo'
-        
-        if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-        }
-        
-        isUnusedImagesProcessing.value = false
-        showNotification('error', err.message || 'Falha ao iniciar o processo')
-    }
-}
-
-const closeUnusedImagesDialog = () => {
-    showUnusedImagesDialog.value = false
-
-    // Garantir que o intervalo de verificação seja limpo
-    if (progressInterval) {
-        clearInterval(progressInterval)
-        progressInterval = null
-    }
-
-    // Refresh the media list if cleanup completed
-    if (reprocessStatus.value.status === 'completed') {
-        refreshData()
-    }
-}
-
-const proceedWithDeletion = async () => {
-    try {
-        // Mostrar estado de carregamento se necessário
-        isUnusedImagesProcessing.value = true
-        unusedImagesResult.value = null
-        reprocessStatus.value.status = 'processing'
-        reprocessStatus.value.message = 'Iniciando remoção de imagens não utilizadas...'
-        
-        // Limpar qualquer intervalo anterior
-        if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-        }
-        
-        // Função para verificar o progresso
-        const checkProgress = async () => {
-            try {
-                console.log('Checking unused images progress...')
-                const progress = await adminClient.imports.getUnusedImagesProgress()
-                console.log('Unused images progress update:', progress)
-
-                // Atualizar o estado apenas se tivermos dados válidos
-                if (progress && typeof progress === 'object') {
-                    reprocessStatus.value = {
-                        ...reprocessStatus.value,
-                        ...progress
-                    }
-
-                    // Verificar se o processo foi concluído
-                    if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Unused images process completed with status:', progress.status)
-                        if (progressInterval) {
-                            clearInterval(progressInterval)
-                            progressInterval = null
-                        }
-
-                        if (progress.status === 'completed') {
-                            showNotification('success', `Deleted ${progress.details.removed || 0} unused images successfully`)
-                            // Atualizar a lista de mídias após a conclusão bem-sucedida
-                            refreshData()
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('Error getting unused images progress:', err)
-            }
-        }
-        
-        // Configurar o intervalo para verificações regulares
-        progressInterval = setInterval(checkProgress, 1000)
-
-        // Chamar a API para excluir as imagens
-        const result = await adminClient.imports.deleteUnusedImages()
-        console.log('Deletion completed:', result)
-        
-        // Armazenar o resultado para exibição
-        unusedImagesResult.value = result
-        
-        // Verificar o progresso final
-        await checkProgress()
-        
-        // Forçar a atualização da lista de mídias independentemente do resultado
-        refreshData()
-    } catch (err) {
-        console.error('Failed to remove unused images:', err)
-        reprocessStatus.value.status = 'error'
-        reprocessStatus.value.message = `Error: ${err.message || 'Failed to remove unused images'}`
-        
-        if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-        }
-        
-        showNotification('error', err.message || 'Failed to remove unused images')
-    } finally {
-        // Garantir que a lista seja atualizada mesmo em caso de erro
-        refreshData()
-    }
-}
-
-// Toggle dropdown for More actions
-const toggleMoreActionsDropdown = () => {
-    showMoreActionsDropdown.value = !showMoreActionsDropdown.value
-}
-
-// Toggle select all medias
-const toggleSelectAll = (event) => {
-    if (event.target.checked) {
-        selectedMedias.value = medias.value.map(media => media.id)
-    } else {
-        selectedMedias.value = []
-    }
-}
-
-// Bulk delete functions
-const openBulkDeleteDialog = () => {
-    if (selectedMedias.value.length === 0) {
-        showNotification('error', 'Select at least one item to delete')
-        return
-    }
-    
-    showBulkDeleteDialog.value = true
-    isBulkDeleteProcessing.value = false
-    bulkDeleteStatus.value = {
-        total: 0,
-        processed: 0,
-        percentage: 0,
-        status: 'idle',
-        message: '',
-        failed: 0
-    }
-}
-
-const cancelBulkDelete = () => {
-    showBulkDeleteDialog.value = false
-}
-
-const closeBulkDeleteDialog = () => {
-    if (bulkDeleteStatus.value.status !== 'processing') {
-        showBulkDeleteDialog.value = false
-        selectedMedias.value = []
-        
-        // Refresh data if any deletions were made
-        if (bulkDeleteStatus.value.processed > 0) {
-            refreshData()
-        }
-    }
-}
-
-const confirmBulkDelete = async () => {
-    if (selectedMedias.value.length === 0) return
-    
-    try {
-        isBulkDeleteProcessing.value = true
-        bulkDeleteStatus.value.status = 'processing'
-        bulkDeleteStatus.value.message = 'Deleting selected media...'
-        bulkDeleteStatus.value.total = selectedMedias.value.length
-        bulkDeleteStatus.value.processed = 0
-        bulkDeleteStatus.value.percentage = 0
-        bulkDeleteStatus.value.failed = 0
-        
-        // Create a copy of the selected items array
-        const itemsToDelete = [...selectedMedias.value]
-        
-        for (let i = 0; i < itemsToDelete.length; i++) {
-            const mediaId = itemsToDelete[i]
-            
-            try {
-                // Call API to delete
-                await adminClient.medias.delete(mediaId)
-                
-                // Update progress
-                bulkDeleteStatus.value.processed++
-                bulkDeleteStatus.value.percentage = Math.round((bulkDeleteStatus.value.processed / bulkDeleteStatus.value.total) * 100)
-                bulkDeleteStatus.value.message = `Deleted ${bulkDeleteStatus.value.processed} of ${bulkDeleteStatus.value.total} items...`
-            } catch (err) {
-                console.error(`Failed to delete media ${mediaId}:`, err)
-                bulkDeleteStatus.value.failed++
-            }
-        }
-        
-        // Update final status
-        bulkDeleteStatus.value.status = 'completed'
-        bulkDeleteStatus.value.message = `Deletion completed: ${bulkDeleteStatus.value.processed} items deleted.`
-        if (bulkDeleteStatus.value.failed > 0) {
-            bulkDeleteStatus.value.message += ` (${bulkDeleteStatus.value.failed} failed)`
-        }
-        
-        // Show notification
-        showNotification('success', bulkDeleteStatus.value.message)
-        
-    } catch (err) {
-        console.error('Failed to process bulk delete:', err)
-        bulkDeleteStatus.value.status = 'error'
-        bulkDeleteStatus.value.message = `Error: ${err.message || 'Failed to delete items'}`
-        showNotification('error', bulkDeleteStatus.value.message)
-    }
-}
-
 onMounted(() => {
     initializeFromUrl()
     loadMedias()
@@ -2201,13 +1539,6 @@ onMounted(() => {
         if (showSearchDropdown.value && !e.target.closest('.relative')
             && e.target !== document.querySelector('button[data-search-toggle]')) {
             showSearchDropdown.value = false
-        }
-    })
-
-    // Add event listener for more actions dropdown
-    document.addEventListener('click', (e) => {
-        if (showMoreActionsDropdown.value && !e.target.closest('[data-more-actions-toggle]')) {
-            showMoreActionsDropdown.value = false
         }
     })
 })
