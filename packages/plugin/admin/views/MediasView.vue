@@ -827,8 +827,12 @@
                         <div class="text-center py-8">
                             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto mb-4"></div>
                             <p class="text-white mb-2">Processando remoção total...</p>
-                            <p class="text-neutral-400 text-sm">Buscando todas as mídias, verificando vínculos e removendo arquivos seguros...</p>
-                            <p class="text-yellow-400 text-xs mt-2">Esta operação pode demorar alguns minutos dependendo da quantidade de mídias.</p>
+                            <p class="text-neutral-400 text-sm">Processando {{ allMediasCount }} mídias em lotes de 100...</p>
+                            <p class="text-yellow-400 text-xs mt-2">Esta operação pode demorar alguns minutos. Aguarde...</p>
+                            <div class="mt-4 bg-neutral-700 rounded-full h-2">
+                                <div class="bg-red-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-neutral-400 text-xs mt-2">Processando em lotes para evitar timeouts do servidor</p>
                         </div>
                     </div>
 
@@ -1222,9 +1226,70 @@ async function executeDeleteAll() {
             return
         }
         
-        // Execute bulk delete with all IDs
-        const response = await adminClient.medias.bulkDelete(allMediaIds)
-        console.log('Delete all response:', response)
+        // Process deletions in smaller batches to avoid timeouts
+        const deleteBatchSize = 100 // Delete 100 at a time to avoid server timeout
+        let totalDeleted = 0
+        let totalSkipped = 0
+        let totalErrors = 0
+        let allDeletedIds = []
+        let allSkippedItems = []
+        let allErrorItems = []
+        
+        console.log(`Processing ${allMediaIds.length} medias in batches of ${deleteBatchSize}`)
+        
+        for (let i = 0; i < allMediaIds.length; i += deleteBatchSize) {
+            const batch = allMediaIds.slice(i, i + deleteBatchSize)
+            const batchNumber = Math.floor(i / deleteBatchSize) + 1
+            const totalBatches = Math.ceil(allMediaIds.length / deleteBatchSize)
+            
+            console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} items)`)
+            
+            try {
+                const response = await adminClient.medias.bulkDelete(batch)
+                console.log(`Batch ${batchNumber} response:`, response)
+                
+                if (response && response.summary) {
+                    totalDeleted += response.summary.deleted || 0
+                    totalSkipped += response.summary.skipped || 0
+                    totalErrors += response.summary.errors || 0
+                    
+                    if (response.deleted) allDeletedIds.push(...response.deleted)
+                    if (response.skipped) allSkippedItems.push(...response.skipped)
+                    if (response.errors) allErrorItems.push(...response.errors)
+                }
+                
+                // Small delay between batches to not overwhelm the server
+                if (i + deleteBatchSize < allMediaIds.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                }
+                
+            } catch (batchError) {
+                console.error(`Error in batch ${batchNumber}:`, batchError)
+                // Add all items in this batch as errors
+                totalErrors += batch.length
+                allErrorItems.push(...batch.map(id => ({ 
+                    id, 
+                    error: batchError.message || 'Erro no lote' 
+                })))
+            }
+        }
+        
+        // Create consolidated response
+        const response = {
+            success: totalDeleted > 0,
+            message: `Processamento concluído: ${totalDeleted} removidas, ${totalSkipped} protegidas, ${totalErrors} erros`,
+            summary: {
+                requested: allMediaIds.length,
+                deleted: totalDeleted,
+                skipped: totalSkipped,
+                errors: totalErrors
+            },
+            deleted: allDeletedIds,
+            skipped: allSkippedItems,
+            errors: allErrorItems
+        }
+        
+        console.log('Final consolidated response:', response)
         
         // Verificar se a resposta existe e tem a estrutura esperada
         if (!response) {
