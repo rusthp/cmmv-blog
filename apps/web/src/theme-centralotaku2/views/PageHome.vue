@@ -34,7 +34,7 @@
                                 aria-label="Cover Image"
                                 width="890"
                                 height="606"
-                                
+                                loading="lazy"
                                 priority="high"
                                 icon-size="lg"
                             />
@@ -748,21 +748,19 @@ const loadMorePosts = async () => {
     }
 };
 
-const setupIntersectionObserver = () => {
-    observer.value = new IntersectionObserver(
-        (entries) => {
-            const [entry] = entries;
-
-            if (entry.isIntersecting && hasMorePosts.value && !loadingMore.value)
-                loadMorePosts();
-        },
-        { threshold: 0.1 }
-    );
-
-    if (observerTarget.value) {
-        observer.value.observe(observerTarget.value);
-    }
-};
+// TODO: OPTIMIZATION - Implement GameDevBR-style intersection observer for infinite scroll
+// Example from GameDevBR:
+// const setupIntersectionObserver = () => {
+//     observer.value = new IntersectionObserver(
+//         (entries) => {
+//             const [entry] = entries;
+//             if (entry.isIntersecting && hasMorePosts.value && !loadingMore.value) {
+//                 loadMorePosts();
+//             }
+//         },
+//         { threshold: 0.1, rootMargin: '50px 0px' }
+//     );
+// };
 
 const getAuthor = (post: any) => {
     if (!post.authors || !post.authors.length) return null;
@@ -777,7 +775,7 @@ provide('hydrated', hydrated);
 onMounted(async () => {
     loading.value = false;
     hydrated.value = true;
-    setupIntersectionObserver();
+    // TODO: Re-implement setupIntersectionObserver with GameDevBR optimizations
     startCarouselInterval();
     loadAdScripts();
     loadSidebarLeftAd(sidebarLeftAdContainer.value);

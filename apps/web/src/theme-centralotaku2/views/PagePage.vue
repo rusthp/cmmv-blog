@@ -20,20 +20,20 @@
                         {{ category.name }}
                     </a>
                 </div>
-
-                <img
-                    :src="page.featureImage"
-                    :alt="page.featureImageAlt || page.title"
-                    class="featured-img md:block hidden"
                     
+                <OptimizedImage
+                    :src="page.full?.featureImage"
+                    :alt="page.full?.title"
+                    :title="page.full?.title"
+                    aria-label="Cover Image"
                     width="890"
                     height="606"
-                    :title="page.title"
-                    aria-label="Cover Image"
-                    fetchpriority="high"
+                    loading="lazy"
+                    priority="high"
+                    icon-size="lg"
                 />
 
-                <p v-if="page.featureImageCaption" class="image-caption dark:text-neutral-300">{{ page.featureImageCaption }}</p>
+                <p v-if="page.full?.featureImageCaption" class="image-caption dark:text-neutral-300">{{ page.full?.featureImageCaption }}</p>
             </div>
 
             <!-- Post Header -->
@@ -125,6 +125,7 @@
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { vue3 } from '@cmmv/blog/client';
+import OptimizedImage from '../../components/OptimizedImage.vue';
 
 const blogAPI = vue3.useBlog();
 const route = useRoute();

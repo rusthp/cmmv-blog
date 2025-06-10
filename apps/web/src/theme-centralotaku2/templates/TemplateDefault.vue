@@ -98,7 +98,7 @@ import CookieConsent from '../../components/CookieConsent.vue'
 import { useSettingsStore } from "../../store/settings";
 import { useCategoriesStore } from "../../store/categories";
 import { useHead } from '@unhead/vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { vue3 as newsletterVue3 } from '@cmmv/newsletter/client';
 
 const settingsStore = useSettingsStore();
@@ -118,13 +118,12 @@ useHead({
     link: [
         {
             rel: 'stylesheet',
-            href: '/src/theme-default/style.css',
-            media: 'all'
+            href: '/src/theme-centralotaku2/style.css'
         },
         {
             rel: 'icon',
             type: 'image/ico',
-            href: computed(() => settingsStore.faviconUrl)
+            href: '/src/theme-centralotaku2/favicon.ico?v=2'
         },
         { rel: 'preconnect', href: 'https://www.googletagmanager.com/' },
         { rel: 'preconnect', href: 'https://www.google-analytics.com/' },
@@ -132,12 +131,14 @@ useHead({
         { rel: 'preconnect', href: 'https://connect.facebook.net/' },
         { rel: 'preconnect', href: 'https://securepubads.g.doubleclick.net/' },
         { rel: 'preconnect', href: 'https://tpc.googlesyndication.com/' },
-        { rel: 'preconnect', href: 'https://www.googletag.com/' },
+        { rel: 'preconnect', href: 'https://static.centralotaku.com.br/' },
         { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
-        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' }
+        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
+        { rel: 'dns-prefetch', href: 'https://static.centralotaku.com.br/' },
+        { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
     ],
 
-    script: scripts
+    script: scripts.value
 })
 
 const newsletterAPI = newsletterVue3.useNewsletter();
@@ -194,4 +195,13 @@ const isValidEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 };
+
+const isDarkMode = ref(false);
+
+onMounted(() => {
+    // Force light theme for better performance (GameDevBR optimization)
+    isDarkMode.value = false;
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+});
 </script>
