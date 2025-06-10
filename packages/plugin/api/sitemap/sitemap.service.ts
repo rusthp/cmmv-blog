@@ -27,7 +27,23 @@ export class SitemapService {
         const CategoriesEntity = Repository.getEntity("CategoriesEntity");
         const TagsEntity = Repository.getEntity("TagsEntity");
 
-        const post = await Repository.findAll(PostsEntity, {
+        // Count posts and calculate pagination
+        const postCount = await Repository.count(PostsEntity, {
+            type: "post",
+            status: "published"
+        });
+
+        const pageCount = await Repository.count(PostsEntity, {
+            type: "page",
+            status: "published"
+        });
+
+        const postsPerSitemap = 1000;
+        const postPages = Math.ceil(postCount / postsPerSitemap);
+        const pagePages = Math.ceil(pageCount / postsPerSitemap);
+
+        // Get latest posts for lastmod
+        const latestPost = await Repository.findAll(PostsEntity, {
             type: "post",
             status: "published",
             sortBy: "publishedAt",
@@ -37,7 +53,7 @@ export class SitemapService {
             select: ["publishedAt"]
         });
 
-        const page = await Repository.findAll(PostsEntity, {
+        const latestPage = await Repository.findAll(PostsEntity, {
             type: "page",
             status: "published",
             sortBy: "publishedAt",
@@ -63,22 +79,46 @@ export class SitemapService {
             select: ["updatedAt"]
         });
 
-        if(post && post.data.length > 0){
-            sitemapIndex.push(
-                `\t<sitemap>`,
-                    `\t\t<loc>${apiUrl}/post-sitemap.xml</loc>`,
-                    `\t\t<lastmod>${post.data[0]?.publishedAt.toISOString()}</lastmod>`,
-                `\t</sitemap>`
-            );
+        // Add post sitemaps
+        if(latestPost && latestPost.data.length > 0 && postPages > 0){
+            if(postPages === 1) {
+                sitemapIndex.push(
+                    `\t<sitemap>`,
+                        `\t\t<loc>${apiUrl}/post-sitemap.xml</loc>`,
+                        `\t\t<lastmod>${latestPost.data[0]?.publishedAt.toISOString()}</lastmod>`,
+                    `\t</sitemap>`
+                );
+            } else {
+                for(let i = 1; i <= postPages; i++) {
+                    sitemapIndex.push(
+                        `\t<sitemap>`,
+                            `\t\t<loc>${apiUrl}/post-sitemap-${i}.xml</loc>`,
+                            `\t\t<lastmod>${latestPost.data[0]?.publishedAt.toISOString()}</lastmod>`,
+                        `\t</sitemap>`
+                    );
+                }
+            }
         }
 
-        if(page && page.data.length > 0){
-            sitemapIndex.push(
-                `\t<sitemap>`,
-                    `\t\t<loc>${apiUrl}/page-sitemap.xml</loc>`,
-                    `\t\t<lastmod>${page.data[0]?.publishedAt.toISOString()}</lastmod>`,
-                `\t</sitemap>`
-            );
+        // Add page sitemaps
+        if(latestPage && latestPage.data.length > 0 && pagePages > 0){
+            if(pagePages === 1) {
+                sitemapIndex.push(
+                    `\t<sitemap>`,
+                        `\t\t<loc>${apiUrl}/page-sitemap.xml</loc>`,
+                        `\t\t<lastmod>${latestPage.data[0]?.publishedAt.toISOString()}</lastmod>`,
+                    `\t</sitemap>`
+                );
+            } else {
+                for(let i = 1; i <= pagePages; i++) {
+                    sitemapIndex.push(
+                        `\t<sitemap>`,
+                            `\t\t<loc>${apiUrl}/page-sitemap-${i}.xml</loc>`,
+                            `\t\t<lastmod>${latestPage.data[0]?.publishedAt.toISOString()}</lastmod>`,
+                        `\t</sitemap>`
+                    );
+                }
+            }
         }
 
         if(category && category.data.length > 0){
@@ -109,24 +149,28 @@ export class SitemapService {
      * Get the post sitemap
      * @returns {Promise<string>}
      */
-    async getPostSitemap(type: string = "post"){
+    async getPostSitemap(type: string = "post", page: number = 1){
         const apiUrl = Config.get<string>("blog.url", process.env.API_URL);
         let sitemapIndex = [`<?xml version="1.0" encoding="UTF-8"?>`];//<?xml-stylesheet type="text/xsl" href="//andreferreira.com.br/main-sitemap.xsl"?>
         sitemapIndex.push(`<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`);
 
         const PostsEntity = Repository.getEntity("PostsEntity");
 
+        const postsPerPage = 1000;
+        const offset = (page - 1) * postsPerPage;
+
         const posts = await Repository.findAll(PostsEntity, {
             type: type,
             status: "published",
             sortBy: "publishedAt",
             sort: "desc",
-            limit: 100000
+            limit: postsPerPage,
+            offset: offset
         }, [], {
             select: ["publishedAt", "slug", "featureImage", "featureImageAlt", "featureImageCaption"]
         });
 
-        if(type === "page")
+        if(type === "page" && page === 1)
             sitemapIndex.push(`<url>`, `<loc>${apiUrl}/</loc>`, `</url>`);
 
         if(posts){

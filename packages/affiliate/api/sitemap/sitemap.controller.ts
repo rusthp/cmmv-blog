@@ -1,7 +1,7 @@
 import {
     Get, Controller,
     ContentType, Raw,
-    CacheControl
+    CacheControl, Param
 } from "@cmmv/http";
 
 import {
@@ -23,20 +23,48 @@ export class AffiliateSitemapController {
     @ContentType('text/xml')
     @CacheControl({ maxAge: 86400, public: true })
     async getSitemap() {
-        return this.sitemapService.generateSitemapIndex();
+        try {
+            return await this.sitemapService.generateSitemapIndex();
+        } catch (error) {
+            console.error('Error generating sitemap index:', error);
+            throw error;
+        }
     }
 
     @Get('affiliate-campaign-sitemap.xml')
     @ContentType('text/xml')
     @CacheControl({ maxAge: 86400, public: true })
     async getCampaignSitemap() {
-        return this.sitemapService.getCampaignSitemap();
+        try {
+            return await this.sitemapService.getCampaignSitemap();
+        } catch (error) {
+            console.error('Error generating campaign sitemap:', error);
+            throw error;
+        }
+    }
+
+    @Get('affiliate-campaign-sitemap-:page.xml')
+    @ContentType('text/xml')
+    @CacheControl({ maxAge: 86400, public: true })
+    async getCampaignSitemapPaginated(@Param('page') page: string) {
+        try {
+            const pageNumber = parseInt(page) || 1;
+            return await this.sitemapService.getCampaignSitemap(pageNumber);
+        } catch (error) {
+            console.error(`Error generating campaign sitemap page ${page}:`, error);
+            throw error;
+        }
     }
 
     @Get('affiliate-category-sitemap.xml')
     @ContentType('text/xml')
     @CacheControl({ maxAge: 86400, public: true })
     async getCategorySitemap() {
-        return this.sitemapService.getCategorySitemap();
+        try {
+            return await this.sitemapService.getCategorySitemap();
+        } catch (error) {
+            console.error('Error generating category sitemap:', error);
+            throw error;
+        }
     }
 }

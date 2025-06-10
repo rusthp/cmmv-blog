@@ -10,6 +10,43 @@ import {
 export class AffiliateSitemapService {
 
     /**
+     * Escape special XML characters
+     * @param text The text to escape
+     * @returns The escaped text
+     */
+    private escapeXml(text: string): string {
+        if (!text) return '';
+        
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    /**
+     * Validate and clean URL
+     * @param url The URL to validate
+     * @returns The cleaned URL or null if invalid
+     */
+    private validateUrl(url: string): string | null {
+        if (!url || typeof url !== 'string') return null;
+        
+        try {
+            // Remove any potential XML characters from URL
+            const cleanUrl = url.trim().replace(/[<>"'\s]/g, '');
+            // Basic URL validation
+            if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+                return cleanUrl;
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
      * Generate the sitemap index
      * @returns {Promise<string>}
      */
@@ -21,7 +58,16 @@ export class AffiliateSitemapService {
         const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
         const AffiliateCategoriesEntity = Repository.getEntity("AffiliateCategoriesEntity");
 
-        const campaign = await Repository.findAll(AffiliateCampaignsEntity, {
+        // Count campaigns and calculate pagination
+        const campaignCount = await Repository.count(AffiliateCampaignsEntity, {
+            active: true
+        });
+
+        const campaignsPerSitemap = 1000;
+        const campaignPages = Math.ceil(campaignCount / campaignsPerSitemap);
+
+        // Get latest campaigns for lastmod
+        const latestCampaign = await Repository.findAll(AffiliateCampaignsEntity, {
             active: true,
             limit: 1
         }, [], {
@@ -35,13 +81,25 @@ export class AffiliateSitemapService {
             select: ["updatedAt"]
         });
 
-        if(campaign && campaign.data.length > 0){
-            sitemapIndex.push(
-                `\t<sitemap>`,
-                    `\t\t<loc>${apiUrl}/affiliate/affiliate-campaign-sitemap.xml</loc>`,
-                    `\t\t<lastmod>${campaign.data[0]?.updatedAt.toISOString()}</lastmod>`,
-                `\t</sitemap>`
-            );
+        // Add campaign sitemaps
+        if(latestCampaign && latestCampaign.data.length > 0 && campaignPages > 0){
+            if(campaignPages === 1) {
+                sitemapIndex.push(
+                    `\t<sitemap>`,
+                        `\t\t<loc>${apiUrl}/affiliate/affiliate-campaign-sitemap.xml</loc>`,
+                        `\t\t<lastmod>${latestCampaign.data[0]?.updatedAt.toISOString()}</lastmod>`,
+                    `\t</sitemap>`
+                );
+            } else {
+                for(let i = 1; i <= campaignPages; i++) {
+                    sitemapIndex.push(
+                        `\t<sitemap>`,
+                            `\t\t<loc>${apiUrl}/affiliate/affiliate-campaign-sitemap-${i}.xml</loc>`,
+                            `\t\t<lastmod>${latestCampaign.data[0]?.updatedAt.toISOString()}</lastmod>`,
+                        `\t</sitemap>`
+                    );
+                }
+            }
         }
 
         if(category && category.data.length > 0){
@@ -63,36 +121,60 @@ export class AffiliateSitemapService {
      * Get the campaign sitemap
      * @returns {Promise<string>}
      */
-    async getCampaignSitemap(){
+    async getCampaignSitemap(page: number = 1){
         const apiUrl = Config.get<string>("blog.url", process.env.API_URL);
         let sitemapIndex = [`<?xml version="1.0" encoding="UTF-8"?>`];//<?xml-stylesheet type="text/xsl" href="//andreferreira.com.br/main-sitemap.xsl"?>
         sitemapIndex.push(`<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`);
 
         const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
 
+        const campaignsPerPage = 1000;
+        const offset = (page - 1) * campaignsPerPage;
+
         const campaigns = await Repository.findAll(AffiliateCampaignsEntity, {
             active: true,
             sortBy: "updatedAt",
             sort: "desc",
-            limit: 100000
+            limit: campaignsPerPage,
+            offset: offset
         }, [], {
             select: ["updatedAt", "slug", "logo", "name"]
         });
 
-        if(campaigns){
+        if(campaigns && campaigns.data && campaigns.data.length > 0){
             for(const campaign of campaigns.data){
                 try{
-                    if(campaign.logo) {
-                        sitemapIndex.push(
-                            `\t<url>`,
-                                `\t\t<loc>${apiUrl}/desconto/${campaign.slug}</loc>`,
-                                `\t\t<lastmod>${campaign.updatedAt.toISOString()}</lastmod>`,
-                                `\t\t<image:image>`,
-                                    `\t\t\t<image:loc>${campaign.logo}</image:loc>`,
-                                    `\t\t\t<image:caption>${campaign.name}</image:caption>`,
-                                `\t\t</image:image>`,
-                            `\t</url>`
-                        );
+                    // Skip campaigns without required fields
+                    if (!campaign.slug || !campaign.updatedAt) {
+                        console.warn(`Skipping campaign ${campaign.id}: missing slug or updatedAt`);
+                        continue;
+                    }
+                    
+                    // Escape the campaign name for XML
+                    const escapedName = this.escapeXml(campaign.name || '');
+                    
+                    if(campaign.logo && campaign.logo.trim()) {
+                        const validatedLogo = this.validateUrl(campaign.logo);
+                        if (validatedLogo) {
+                            sitemapIndex.push(
+                                `\t<url>`,
+                                    `\t\t<loc>${apiUrl}/desconto/${campaign.slug}</loc>`,
+                                    `\t\t<lastmod>${campaign.updatedAt.toISOString()}</lastmod>`,
+                                    `\t\t<image:image>`,
+                                        `\t\t\t<image:loc>${validatedLogo}</image:loc>`,
+                                        `\t\t\t<image:caption>${escapedName}</image:caption>`,
+                                    `\t\t</image:image>`,
+                                `\t</url>`
+                            );
+                        } else {
+                            // If logo URL is invalid, add URL without image
+                            sitemapIndex.push(
+                                `\t<url>`,
+                                    `\t\t<loc>${apiUrl}/desconto/${campaign.slug}</loc>`,
+                                    `\t\t<lastmod>${campaign.updatedAt.toISOString()}</lastmod>`,
+                                `\t</url>`
+                            );
+                        }
                     } else {
                         sitemapIndex.push(
                             `\t<url>`,
@@ -101,7 +183,10 @@ export class AffiliateSitemapService {
                             `\t</url>`
                         );
                     }
-                }catch(e){}
+                }catch(e){
+                    // Log error but continue processing other campaigns
+                    console.error(`Error processing campaign ${campaign.id}:`, e);
+                }
             }
         }
 
@@ -129,14 +214,23 @@ export class AffiliateSitemapService {
             limit: 100000
         });
 
-        if(categories){
+        if(categories && categories.data && categories.data.length > 0){
             for(const category of categories.data){
                 try{
-                    sitemapIndex.push(`<url>`,
-                        `<loc>${apiUrl}/cupom/${category.slug}</loc>`,
-                        `<lastmod>${category.updatedAt.toISOString()}</lastmod>`,
-                    `</url>`);
-                }catch(e){}
+                    // Skip categories without required fields
+                    if (!category.slug || !category.updatedAt) {
+                        console.warn(`Skipping category ${category.id}: missing slug or updatedAt`);
+                        continue;
+                    }
+                    
+                    sitemapIndex.push(`\t<url>`,
+                        `\t\t<loc>${apiUrl}/cupom/${category.slug}</loc>`,
+                        `\t\t<lastmod>${category.updatedAt.toISOString()}</lastmod>`,
+                    `\t</url>`);
+                }catch(e){
+                    // Log error but continue processing other categories
+                    console.error(`Error processing category ${category.id}:`, e);
+                }
             }
         }
 
