@@ -269,6 +269,14 @@
                                         <p class="text-gray-600 text-sm mb-3 line-clamp-2">
                                             {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                         </p>
+                                        
+                                        <!-- Audio Player Widget -->
+                                        <AudioPlayer 
+                                            v-if="hasAudio(post.content) && extractAudioUrl(post.content)"
+                                            :src="extractAudioUrl(post.content)!"
+                                            :compact="true"
+                                        />
+                                        
                                         <div class="flex justify-between items-center text-xs text-gray-500">
                                             <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
                                             <span>{{ formatDate(post.publishedAt) }}</span>
@@ -326,6 +334,14 @@
                                             <p class="text-gray-600 text-sm mb-3 line-clamp-2">
                                                 {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                             </p>
+                                            
+                                            <!-- Audio Player Widget -->
+                                            <AudioPlayer 
+                                                v-if="hasAudio(post.content) && extractAudioUrl(post.content)"
+                                                :src="extractAudioUrl(post.content)!"
+                                                :compact="true"
+                                            />
+                                            
                                             <div class="flex justify-between items-center text-xs text-gray-500">
                                                 <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
                                                 <span>{{ formatDate(post.publishedAt) }}</span>
@@ -397,6 +413,23 @@
                                                     {{ post.title }}
                                                 </h4>
                                             </a>
+                                            
+                                            <!-- Compact Audio Player for sidebar -->
+                                            <div v-if="hasAudio(post.content) && extractAudioUrl(post.content)" class="mt-2">
+                                                <div class="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                                    <button
+                                                        @click="toggleAudio(post.id, extractAudioUrl(post.content)!)"
+                                                        class="flex-shrink-0 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors text-xs"
+                                                        :aria-label="'Reproduzir áudio de ' + post.title"
+                                                    >
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M8 5v14l11-7z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <span class="text-xs text-gray-600">🎵 Áudio disponível</span>
+                                                </div>
+                                            </div>
+                                            
                                             <span class="text-xs text-gray-500 mt-1 block">
                                                 {{ formatDate(post.publishedAt) }}
                                             </span>
@@ -450,9 +483,10 @@ import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 import { usePostsStore } from '../../store/posts';
 import { useMostAccessedPostsStore } from '../../store/mostaccessed';
-import { formatDate, stripHtml } from '../../composables/useUtils';
+import { formatDate, stripHtml, hasAudio, extractAudioUrl } from '../../composables/useUtils';
 import { useAds } from '../../composables/useAds';
 import OptimizedImage from '../../components/OptimizedImage.vue';
+import AudioPlayer from '../../components/AudioPlayer.vue';
 
 declare global {
     interface Window {
@@ -760,6 +794,31 @@ const getAuthor = (post: any) => {
     return post.authors.find((author: any) => author.id === post.author);
 };
 
+const currentAudio = ref<HTMLAudioElement | null>(null);
+
+const toggleAudio = (postId: string, audioUrl: string) => {
+    // Pausar áudio atual se existir
+    if (currentAudio.value) {
+        currentAudio.value.pause();
+        currentAudio.value = null;
+    }
+
+    // Criar e reproduzir novo áudio
+    const audio = new Audio(audioUrl);
+    audio.play().then(() => {
+        currentAudio.value = audio;
+    }).catch(error => {
+        console.error('Erro ao reproduzir áudio:', error);
+    });
+
+    // Limpar referência quando terminar
+    audio.addEventListener('ended', () => {
+        if (currentAudio.value === audio) {
+            currentAudio.value = null;
+        }
+    });
+};
+
 
 
 // Provide hydrated state to child components
@@ -783,6 +842,12 @@ onUnmounted(() => {
     }
 
     stopCarouselInterval();
+    
+    // Pausar áudio se estiver tocando
+    if (currentAudio.value) {
+        currentAudio.value.pause();
+        currentAudio.value = null;
+    }
 });
 
 watch(() => settings.value['blog.cover'], () => {
@@ -820,6 +885,7 @@ watch(() => posts.value.length, async () => {
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

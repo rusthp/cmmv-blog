@@ -575,6 +575,87 @@ export class RawService {
     }
 
     /**
+     * Proxy audio files
+     * @param audioUrl The URL of the audio to proxy
+     * @param res The response object
+     * @returns The audio
+     */
+    async proxyAudio(audioUrl: string, res: any): Promise<any> {
+        try {
+            this.logger.log(`Proxying audio request for: ${audioUrl}`);
+            
+            if (!audioUrl || typeof audioUrl !== 'string') {
+                this.logger.error('Invalid audioUrl provided');
+                res.status(400).json({ error: 'URL inválida' });
+                return;
+            }
+
+            this.logger.log(`Fetching audio from: ${audioUrl}`);
+            
+            const response = await fetch(audioUrl, {
+                method: 'get',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'audio/*,*/*;q=0.9',
+                    'Accept-Encoding': 'identity',
+                    'Range': 'bytes=0-'
+                }
+            });
+
+            this.logger.log(`Response status: ${response.status} ${response.statusText}`);
+
+            if (!response.ok) {
+                this.logger.error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
+                throw new Error(`Error fetching audio: ${response.status} ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            const contentLength = response.headers.get('content-length');
+            
+            this.logger.log(`Content-Type: ${contentType}, Content-Length: ${contentLength}`);
+            
+            // Detectar tipo de áudio se não especificado
+            let audioContentType = contentType;
+            if (!audioContentType || !audioContentType.includes('audio')) {
+                if (audioUrl.includes('.mp3')) audioContentType = 'audio/mpeg';
+                else if (audioUrl.includes('.wav')) audioContentType = 'audio/wav';
+                else if (audioUrl.includes('.ogg')) audioContentType = 'audio/ogg';
+                else if (audioUrl.includes('.m4a')) audioContentType = 'audio/mp4';
+                else audioContentType = 'audio/mpeg'; // fallback
+                
+                this.logger.log(`Auto-detected content type: ${audioContentType}`);
+            }
+
+            // Headers para streaming de áudio
+            res.setHeader('Content-Type', audioContentType);
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Range, Content-Length');
+            res.setHeader('Accept-Ranges', 'bytes');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            
+            if (contentLength) {
+                res.setHeader('Content-Length', contentLength);
+            }
+
+            this.logger.log('Successfully fetched audio, sending response');
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            res.send(buffer);
+            
+            this.logger.log(`Audio proxy completed successfully. Buffer size: ${buffer.length} bytes`);
+        } catch (error) {
+            this.logger.error(`Error proxying audio: ${error}`);
+            if (error instanceof Error) {
+                this.logger.error(`Error details: ${error.message}`);
+                this.logger.error(`Error stack: ${error.stack}`);
+            }
+            res.status(500).json({ error: 'Erro ao buscar áudio', details: error instanceof Error ? error.message : String(error) });
+        }
+    }
+
+    /**
      * Clean all raw feed items that are older than a specified period
      * @returns Information about the cleaning operation
      */

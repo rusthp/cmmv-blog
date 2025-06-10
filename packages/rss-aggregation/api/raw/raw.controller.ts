@@ -53,9 +53,13 @@ export class RawController {
     }
 
     @Get("imageProxy", {exclude: true })
-    @Auth("feedraw:get")
     async imageProxy(@Query("url") url: string, @Response() res: Response) {
         return await this.rawService.proxyImage(url, res);
+    }
+
+    @Get("audioProxy", {exclude: true })
+    async audioProxy(@Query("url") url: string, @Response() res: Response) {
+        return await this.rawService.proxyAudio(url, res);
     }
 
     @Get("cleanAllRaws", {exclude: true })
