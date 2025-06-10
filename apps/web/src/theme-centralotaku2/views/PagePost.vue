@@ -1,12 +1,12 @@
 <template>
-    <div class="lg:ml-64 w-full relative">
+    <div class="w-full relative overflow-x-hidden" :class="{ 'content-with-sidebar': isLargeScreen }">
         <!-- Top AdSense Banner -->
-        <div v-if="adSettings.enableAds && adSettings.articlePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center max-w-[1060px] mx-auto px-4">
-            <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
+        <div v-if="adSettings.enableAds && adSettings.articlePageHeader" class="w-full bg-gray-100 rounded-lg mb-4 sm:mb-8 overflow-visible flex justify-center mx-auto px-1 sm:px-4" :class="isLargeScreen ? 'max-w-[1200px]' : 'max-w-full'">
+            <div class="ad-container ad-banner-top py-2 px-2 sm:px-4" v-if="getAdHtml('header')">
                 <div v-html="getAdHtml('header')"></div>
             </div>
-            <div class="ad-container ad-banner-top py-2 px-4" v-else>
-                <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+            <div class="ad-container ad-banner-top py-2 px-2 sm:px-4" v-else>
+                <div class="ad-placeholder h-[90px] sm:h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                     <span>Anúncio</span>
                 </div>
             </div>
@@ -19,12 +19,12 @@
             </div>
         </div>
 
-        <div v-else class="article-container w-full max-w-[1060px] px-4 m-auto">
-            <div class="w-full px-4 sm:px-6 mx-auto overflow-hidden">
-                <div v-if="post.featureImage" class="post-featured-image relative overflow-hidden rounded-lg max-h-[400px]">
-                    <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+        <div v-else class="article-container w-full px-1 sm:px-4 m-auto overflow-x-hidden" :class="isLargeScreen ? 'max-w-[1200px]' : 'max-w-full'">
+            <div class="w-full px-1 sm:px-4 lg:px-6 mx-auto overflow-x-hidden">
+                <div v-if="post.featureImage" class="post-featured-image relative overflow-hidden rounded-sm sm:rounded-lg max-h-[200px] sm:max-h-[400px] mb-2 sm:mb-4">
+                    <div class="absolute top-1 left-1 sm:top-4 sm:left-4 z-10 flex flex-wrap gap-0.5 sm:gap-2">
                         <a v-for="category in post.categories" :key="category.id" :href="`/category/${category.slug}`"
-                            class="px-3 py-1 bg-red-500 bg-opacity-85 text-white text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all">
+                            class="category-badge px-1.5 py-0.5 sm:px-3 sm:py-1 bg-red-500 bg-opacity-85 text-white text-xs sm:text-sm font-medium rounded-full shadow-sm hover:bg-opacity-100 transition-all">
                             {{ category.name }}
                         </a>
                     </div>
@@ -45,12 +45,12 @@
                 </div>
 
                 <!-- Post Header -->
-                <header class="post-header">
-                    <h1 class="post-title text-neutral-900 dark:text-white break-words">{{ post.title }}</h1>
+                <header class="post-header py-2 sm:py-6">
+                    <h1 class="post-title text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white break-words mb-2 sm:mb-4 leading-tight">{{ post.title }}</h1>
 
                     <div class="post-meta">
-                        <div class="flex items-center text-neutral-600 dark:text-neutral-400 text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                        <div class="flex items-center text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -58,18 +58,18 @@
                             <span>{{ formatDate(post.status === 'published' ? post.publishedAt : post.updatedAt) }}</span>
                         </div>
 
-                        <div class="post-status" v-if="post.status !== 'published'">
-                            <span class="status-badge">{{ post.status?.toUpperCase() }}</span>
+                        <div class="post-status mt-2" v-if="post.status !== 'published'">
+                            <span class="status-badge px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">{{ post.status?.toUpperCase() }}</span>
                         </div>
                     </div>
                 </header>
 
                 <!-- After Title Ad -->
-                <div v-if="adSettings.enableAds && adSettings.articlePageAfterTitle" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
-                    <div class="ad-container ad-after-title py-2 px-4" v-if="getAdHtml('afterTitle')">
+                <div v-if="adSettings.enableAds && adSettings.articlePageAfterTitle" class="w-full bg-gray-100 rounded-lg my-3 sm:my-6 overflow-visible flex justify-center">
+                    <div class="ad-container ad-after-title py-2 px-2 sm:px-4" v-if="getAdHtml('afterTitle')">
                         <div v-html="getAdHtml('afterTitle')"></div>
                     </div>
-                    <div class="ad-container ad-after-title py-2 px-4" v-else>
+                    <div class="ad-container ad-after-title py-2 px-2 sm:px-4" v-else>
                         <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                             <span>Anúncio</span>
                         </div>
@@ -77,20 +77,20 @@
                 </div>
 
                 <!-- Main Content Layout -->
-                <div class="flex flex-col lg:flex-row gap-8">
+                <div class="w-full overflow-x-hidden">
                     <!-- Article Content -->
-                    <div class="lg:flex-1">
+                    <div class="w-full max-w-none overflow-x-hidden">
                         <!-- Post Content -->
-                        <div class="post-content dark:text-neutral-300 prose prose-sm sm:prose prose-neutral dark:prose-invert max-w-none overflow-hidden">
-                            <div v-html="post.content"></div>
+                        <div class="post-content text-neutral-900 dark:text-neutral-300 prose prose-sm sm:prose lg:prose-lg prose-neutral dark:prose-invert max-w-none overflow-x-hidden not-italic">
+                            <div class="break-words overflow-x-hidden not-italic" v-html="post.content"></div>
                         </div>
 
                         <!-- In-Content Ad -->
-                        <div v-if="adSettings.enableAds && adSettings.articlePageInContent" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
-                            <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
+                        <div v-if="adSettings.enableAds && adSettings.articlePageInContent" class="w-full bg-gray-100 rounded-lg my-4 sm:my-8 overflow-visible flex justify-center">
+                            <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4" v-if="getAdHtml('inContent')">
                                 <div v-html="getAdHtml('inContent')"></div>
                             </div>
-                            <div class="ad-container ad-banner-mid py-2 px-4" v-else>
+                            <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4" v-else>
                                 <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                     <span>Anúncio</span>
                                 </div>
@@ -98,11 +98,11 @@
                         </div>
 
                         <!-- Tags & Categories -->
-                        <div class="post-taxonomy">
+                        <div class="post-taxonomy py-3 sm:py-6">
                             <div v-if="post.tags && post.tags.length > 0" class="post-tags">
-                                <div class="tags-list flex flex-wrap gap-2">
+                                <div class="tags-list flex flex-wrap gap-1 sm:gap-2">
                                     <a v-for="tag in post.tags" :key="tag" :href="`/tag/${tag.slug}`"
-                                        class="tag bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600">
+                                        class="tag px-2 py-1 sm:px-3 sm:py-1.5 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-xs sm:text-sm rounded-full transition-colors">
                                         {{ tag.name }}
                                     </a>
                                 </div>
@@ -110,11 +110,11 @@
                         </div>
 
                         <!-- After Content Ad -->
-                        <div v-if="adSettings.enableAds && adSettings.articlePageAfterContent" class="w-full bg-gray-100 rounded-lg mt-8 mb-4 overflow-hidden flex justify-center">
-                            <div class="ad-container ad-banner-bottom py-2 px-4" v-if="getAdHtml('belowContent')">
+                        <div v-if="adSettings.enableAds && adSettings.articlePageAfterContent" class="w-full bg-gray-100 rounded-lg mt-4 mb-3 sm:mt-8 sm:mb-4 overflow-visible flex justify-center">
+                            <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4" v-if="getAdHtml('belowContent')">
                                 <div v-html="getAdHtml('belowContent')"></div>
                             </div>
-                            <div class="ad-container ad-banner-bottom py-2 px-4" v-else>
+                            <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4" v-else>
                                 <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                     <span>Anúncio</span>
                                 </div>
@@ -122,11 +122,11 @@
                         </div>
 
                         <!-- Share Box -->
-                        <div class="py-8 border-t border-neutral-200 dark:border-neutral-800">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                        <div class="share-section py-4 sm:py-8 border-t border-neutral-200 dark:border-neutral-800">
+                            <div class="flex flex-col space-y-3 sm:space-y-4">
                                 <!-- Share text and icons -->
-                                <div class="flex items-center gap-2">
-                                    <span class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Share:</span>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <span class="text-neutral-600 dark:text-neutral-400 text-sm font-medium">Compartilhar:</span>
 
                                     <div class="flex gap-2 flex-wrap">
                                         <!-- Facebook -->
@@ -183,14 +183,14 @@
                                 </div>
 
                                 <!-- URL copy field -->
-                                <div class="relative flex-1 max-w-full sm:max-w-md sm:ml-4">
+                                <div class="relative w-full">
                                     <div class="flex">
                                         <input type="text" :value="pageUrl" readonly
-                                            class="w-full px-3 py-1.5 bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-l-md text-sm text-neutral-600 dark:text-neutral-300 focus:outline-none overflow-hidden text-ellipsis"
+                                            class="flex-1 px-3 py-2 bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-l-md text-sm text-neutral-600 dark:text-neutral-300 focus:outline-none"
                                             onclick="this.select()" aria-label="Copy to clipboard post url" />
                                         <button @click="copyPageUrl"
                                             class="bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 border border-neutral-300 dark:border-neutral-600 border-l-0 rounded-r-md px-3 text-neutral-600 dark:text-neutral-300 transition-colors flex-shrink-0"
-                                            title="Copy to clipboard">
+                                            title="Copiar link">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                 stroke-linejoin="round">
@@ -198,8 +198,8 @@
                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                             </svg>
                                             <span v-if="linkCopied"
-                                                class="absolute top-full right-0 mt-1 bg-green-600 text-white text-xs py-1 px-2 rounded">
-                                                Copied!
+                                                class="absolute top-full right-0 mt-1 bg-green-600 text-white text-xs py-1 px-2 rounded z-10">
+                                                Copiado!
                                             </span>
                                         </button>
                                     </div>
@@ -209,66 +209,99 @@
 
                         <!-- Author Box -->
                         <div v-if="author"
-                            class="mb-10 p-6 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
-                            <div class="flex items-center mb-4">
+                            class="author-box mb-4 sm:mb-10 p-4 sm:p-6 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-300 dark:border-neutral-600 shadow-sm">
+                            <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                                 <!-- Author Avatar -->
-                                <div
-                                    class="w-10 h-10 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white dark:border-neutral-700 shadow">
-                                    <img v-if="author.image" :src="author.image" :alt="author.name"
-                                        class="w-full h-full object-cover" />
-                                    <div v-else
-                                        class="w-full h-full flex items-center justify-center bg-red-500 text-white font-bold text-lg">
-                                        {{ authorInitials }}
+                                <div class="flex sm:block items-center gap-3 sm:gap-0">
+                                    <div class="relative">
+                                        <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden flex-shrink-0 border-4 border-red-500 shadow-lg ring-4 ring-red-100 dark:ring-red-900">
+                                            <img v-if="author.image" :src="author.image" :alt="author.name"
+                                                class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                                            <div v-else
+                                                class="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-lg sm:text-2xl">
+                                                {{ authorInitials }}
+                                            </div>
+                                        </div>
+                                        <!-- Badge/Indicator -->
+                                        <div class="absolute -bottom-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 border-3 border-white dark:border-neutral-900 rounded-full flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Author Info Mobile -->
+                                    <div class="flex-1 sm:hidden">
+                                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-3 rounded-lg border-l-4 border-red-500">
+                                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1 leading-tight">
+                                                <a :href="`/author/${author.slug}`" class="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                                    ✍️ {{ author.name }}
+                                                </a>
+                                            </h3>
+                                            <p v-if="author.location" class="text-base text-gray-700 dark:text-gray-200 flex items-center font-semibold">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5 flex-shrink-0 text-red-500" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <span class="text-red-600 dark:text-red-400">📍 {{ author.location }}</span>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Author Info -->
-                                <div class="flex-1 min-w-0">
-                                    <span class="text-md font-semibold text-neutral-800 dark:text-white mb-1 break-words">
-                                        <a :href="`/author/${author.slug}`" class="hover:underline">
-                                            {{ author.name }}
-                                        </a>
-                                    </span>
-                                    <p v-if="author.location"
-                                        class="text-xs text-neutral-600 dark:text-neutral-400 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        <span class="truncate">{{ author.location }}</span>
-                                    </p>
+                                <!-- Author Info Desktop -->
+                                <div class="flex-1 hidden sm:block">
+                                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg mb-3 border-l-4 border-red-500">
+                                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                            <a :href="`/author/${author.slug}`" class="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                                ✍️ {{ author.name }}
+                                            </a>
+                                        </h3>
+                                        <p v-if="author.location" class="text-lg text-gray-700 dark:text-gray-200 flex items-center font-semibold">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2 flex-shrink-0 text-red-500" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <span class="text-red-600 dark:text-red-400">📍 {{ author.location }}</span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Author Bio -->
-                            <div v-if="author.bio" class="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300 mb-4">
+                            <div v-if="author.bio" class="text-sm sm:text-base leading-relaxed text-neutral-700 dark:text-neutral-200 mb-4 bg-neutral-50 dark:bg-neutral-800 p-3 rounded-md">
                                 {{ author.bio }}
                             </div>
 
                             <!-- Social Links -->
-                            <div class="flex flex-wrap gap-3">
-                                <a v-if="author.website" :href="author.website" target="_blank" rel="noopener noreferrer"
-                                    class="inline-flex items-center px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 rounded-full text-sm text-neutral-700 dark:text-neutral-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                    </svg>
-                                    Website
-                                </a>
-                                <a v-if="author.twitter" :href="`https://twitter.com/${author.twitter}`" target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex items-center px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 rounded-full text-sm text-neutral-700 dark:text-neutral-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" viewBox="0 0 24 24"
-                                        fill="currentColor">
-                                        <path
-                                            d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                                    </svg>
-                                    Twitter
-                                </a>
+                            <div class="border-t border-neutral-200 dark:border-neutral-700 pt-3">
+                                <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2 font-medium">Redes Sociais:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a v-if="author.website" :href="author.website" target="_blank" rel="noopener noreferrer"
+                                        class="inline-flex items-center px-3 py-1.5 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full text-xs sm:text-sm text-blue-700 dark:text-blue-300 transition-colors font-medium">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                        </svg>
+                                        Website
+                                    </a>
+                                    <a v-if="author.twitter" :href="`https://twitter.com/${author.twitter}`" target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center px-3 py-1.5 bg-sky-100 dark:bg-sky-900 hover:bg-sky-200 dark:hover:bg-sky-800 rounded-full text-xs sm:text-sm text-sky-700 dark:text-sky-300 transition-colors font-medium">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" viewBox="0 0 24 24"
+                                            fill="currentColor">
+                                            <path
+                                                d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                                        </svg>
+                                        Twitter
+                                    </a>
                                 <a v-if="author.facebook" :href="`https://facebook.com/${author.facebook}`" target="_blank"
                                     rel="noopener noreferrer"
                                     class="inline-flex items-center px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 rounded-full text-sm text-neutral-700 dark:text-neutral-300 transition-colors">
@@ -299,58 +332,21 @@
                                     </svg>
                                     LinkedIn
                                 </a>
-                                <a v-if="author.github" :href="`https://github.com/${author.github}`" target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex items-center px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 rounded-full text-sm text-neutral-700 dark:text-neutral-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" viewBox="0 0 24 24"
-                                        fill="currentColor">
-                                        <path
-                                            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.236 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-                                    </svg>
-                                    Github
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Sidebar -->
-                    <div class="lg:w-80 lg:flex-shrink-0">
-                        <!-- AdSense Rectangle (Top) -->
-                        <div v-if="adSettings.enableAds && adSettings.articlePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
-                            <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
-                                <div v-html="getAdHtml('sidebarTop')"></div>
-                            </div>
-                            <div class="ad-container ad-sidebar-top" v-else>
-                                <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                    <span>Anúncio</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- AdSense Rectangle (Mid) -->
-                        <div v-if="adSettings.enableAds && adSettings.articlePageSidebarMid" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
-                            <div class="ad-container ad-sidebar-mid" v-if="getAdHtml('sidebarMid')">
-                                <div v-html="getAdHtml('sidebarMid')"></div>
-                            </div>
-                            <div class="ad-container ad-sidebar-mid" v-else>
-                                <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                    <span>Anúncio</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- AdSense Rectangle (Bottom) -->
-                        <div v-if="adSettings.enableAds && adSettings.articlePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
-                            <div class="ad-container ad-sidebar-bottom" v-if="getAdHtml('sidebarBottom')">
-                                <div v-html="getAdHtml('sidebarBottom')"></div>
-                            </div>
-                            <div class="ad-container ad-sidebar-bottom" v-else>
-                                <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                    <span>Anúncio</span>
+                                    <a v-if="author.github" :href="`https://github.com/${author.github}`" target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-xs sm:text-sm text-gray-700 dark:text-gray-300 transition-colors font-medium">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" viewBox="0 0 24 24"
+                                            fill="currentColor">
+                                            <path
+                                                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.236 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                                        </svg>
+                                        Github
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                 <div id="comments-container"></div>
@@ -366,7 +362,7 @@
 //@ts-nocheck
 import {
     ref, computed, onServerPrefetch,
-    onMounted, watchEffect, watch
+    onMounted, onBeforeUnmount, watchEffect, watch
 } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -374,6 +370,17 @@ import { vue3 } from '@cmmv/blog/client'
 import { formatDate, stripHtml } from '../../composables/useUtils'
 import CommentSection from '../../components/CommentSection.vue'
 import { useSettingsStore } from '../../store/settings';
+
+// Composables para responsividade
+const isLargeScreen = ref(false);
+
+const checkScreenSize = () => {
+    isLargeScreen.value = window.innerWidth >= 1690;
+}
+
+const handleResize = () => {
+    checkScreenSize();
+}
 
 const settingsStore = useSettingsStore();
 const blogAPI = vue3.useBlog()
@@ -638,32 +645,243 @@ const copyPageUrl = () => {
         })
     }
 }
+
+// Configurar responsividade
+onMounted(() => {
+    checkScreenSize();
+    window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <style scoped>
+/* Prevenir scroll horizontal - Global */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* Garantir que o container principal nunca ultrapasse */
+.article-container,
+.post-content,
+.featured-img {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Forçar quebra de palavra em textos longos */
+h1, h2, h3, h4, h5, h6, p, div, span {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+.content-with-sidebar {
+    margin-left: 16rem;
+    margin-right: 1rem;
+}
+
+/* Telas muito pequenas - < 700px */
+@media (max-width: 699px) {
+    /* Forçar contenção total */
+    .article-container {
+        padding-left: 0.125rem;
+        padding-right: 0.125rem;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+    
+    /* Garantir que nenhum elemento ultrapasse */
+    .post-content :deep(*) {
+        max-width: calc(100vw - 0.5rem) !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+    
+    .post-featured-image {
+        margin-left: -0.125rem;
+        margin-right: -0.125rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        max-height: 200px !important;
+    }
+    
+    .post-title {
+        font-size: 1.25rem !important;
+        line-height: 1.2;
+        margin-bottom: 0.375rem !important;
+        font-weight: 700;
+    }
+    
+    .post-content {
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+    }
+    
+    .post-content :deep(h1) {
+        font-size: 1.375rem !important;
+    }
+    
+    .post-content :deep(h2) {
+        font-size: 1.25rem !important;
+    }
+    
+    .post-content :deep(h3) {
+        font-size: 1.125rem !important;
+    }
+    
+    .post-content :deep(p) {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .post-header {
+        padding-top: 0.375rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    
+    .post-meta {
+        margin-bottom: 0.25rem;
+    }
+    
+    .author-box {
+        margin-left: -0.125rem;
+        margin-right: -0.125rem;
+        padding: 0.75rem !important;
+        margin-bottom: 1rem !important;
+        background: #ffffff !important;
+        border: 2px solid #e5e5e5 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    .dark .author-box {
+        background: #1f2937 !important;
+        border-color: #374151 !important;
+    }
+    
+    .ad-container {
+        padding: 0.25rem !important;
+    }
+    
+    .tags-list a {
+        font-size: 0.625rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .share-section {
+        padding: 0.75rem 0 !important;
+    }
+    
+    .category-badge {
+        font-size: 0.625rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+}
+
+/* Mobile First Optimizations - 640px-699px */
+@media (min-width: 640px) and (max-width: 699px) {
+    .article-container {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+    
+    .post-featured-image {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+        margin-bottom: 0.75rem;
+        border-radius: 0.375rem;
+    }
+    
+    .post-title {
+        font-size: 1.375rem !important;
+        line-height: 1.25;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .post-content {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    
+    .post-header {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+    
+    .author-box {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+        padding: 0.75rem !important;
+    }
+    
+    .ad-container {
+        padding: 0.5rem !important;
+    }
+}
+
+/* Controle rigoroso de largura para todos os elementos */
+.post-content :deep(*) {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 .post-content :deep(img) {
     max-width: 100%;
+    width: 100%;
     height: auto;
+    border-radius: 0.5rem;
+    object-fit: cover;
 }
 
 .post-content :deep(iframe) {
     max-width: 100%;
+    width: 100%;
 }
 
 .post-content :deep(table) {
     max-width: 100%;
+    width: 100%;
     overflow-x: auto;
     display: block;
+    white-space: nowrap;
 }
 
 .post-content :deep(pre) {
     max-width: 100%;
     overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .post-content :deep(code) {
     white-space: pre-wrap;
     word-break: break-word;
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+.post-content :deep(p), 
+.post-content :deep(div),
+.post-content :deep(span) {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Elementos que podem causar overflow */
+.post-content :deep(blockquote),
+.post-content :deep(figure),
+.post-content :deep(video) {
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .featured-img {
@@ -681,5 +899,49 @@ const copyPageUrl = () => {
 .tags-list {
     overflow-x: auto;
     padding-bottom: 4px;
+}
+
+/* Melhor responsividade para anúncios */
+.ad-container {
+    width: 100%;
+    overflow: visible;
+}
+
+.ad-placeholder {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Melhor espaçamento para desktop com sidebar de navegação */
+@media (min-width: 1690px) {
+    .article-container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+/* Correção do texto em itálico */
+.post-content :deep(*) {
+    font-style: normal !important;
+}
+
+.post-content :deep(p),
+.post-content :deep(div),
+.post-content :deep(span),
+.post-content :deep(h1),
+.post-content :deep(h2),
+.post-content :deep(h3),
+.post-content :deep(h4),
+.post-content :deep(h5),
+.post-content :deep(h6) {
+    font-style: normal !important;
+}
+
+/* Permitir itálico apenas em elementos específicos que devem estar em itálico */
+.post-content :deep(em),
+.post-content :deep(i) {
+    font-style: italic !important;
 }
 </style>
