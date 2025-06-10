@@ -339,12 +339,6 @@
                             </div>
                         </div>
 
-                        <!-- Related/Recent Posts -->
-                        <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 mb-6 border border-neutral-200 dark:border-neutral-700">
-                            <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Artigos Relacionados</h3>
-                            <!-- Add related posts logic here if needed -->
-                        </div>
-
                         <!-- AdSense Rectangle (Bottom) -->
                         <div v-if="adSettings.enableAds && adSettings.articlePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
                             <div class="ad-container ad-sidebar-bottom" v-if="getAdHtml('sidebarBottom')">
