@@ -539,6 +539,17 @@ const cropOptions = ref({
     caption: ''
 });
 
+const CROP_OPTIONS_STORAGE_KEY = 'mediaDialogCropOptions';
+
+watch(() => ({
+    width: cropOptions.value.width,
+    height: cropOptions.value.height,
+    format: cropOptions.value.format,
+    quality: cropOptions.value.quality,
+}), (optionsToSave) => {
+    localStorage.setItem(CROP_OPTIONS_STORAGE_KEY, JSON.stringify(optionsToSave));
+}, { deep: true });
+
 // Pagination state
 const pagination = ref({
     current: 1,
@@ -768,8 +779,6 @@ const openMediaForCrop = (media) => {
         mediaCropModalOpen.value = true;
         cropOptions.value.alt = media.alt || '';
         cropOptions.value.caption = media.caption || '';
-        cropOptions.value.width = img.naturalWidth > 1280 ? 1280 : img.naturalWidth;
-        cropOptions.value.height = Math.round(cropOptions.value.width * (img.naturalHeight / img.naturalWidth));
 
         setTimeout(() => {
             initMediaCropCanvas();
@@ -1004,5 +1013,14 @@ watch(() => props.modelValue, (newVal) => {
 onMounted(() => {
     if (props.modelValue)
         loadMedias();
+    
+    try {
+        const savedOptions = localStorage.getItem(CROP_OPTIONS_STORAGE_KEY);
+        if (savedOptions) {
+            cropOptions.value = { ...cropOptions.value, ...JSON.parse(savedOptions) };
+        }
+    } catch(e) {
+        console.error('Failed to load media options from localStorage.', e);
+    }
 });
 </script>
