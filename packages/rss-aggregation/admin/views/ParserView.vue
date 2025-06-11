@@ -774,7 +774,6 @@ const parseUrl = async () => {
 
 const createParserFromResults = () => {
     if (!parsingResults.value) return
-    console.log(parsingResults.value)
 
     formData.value = {
         id: undefined,

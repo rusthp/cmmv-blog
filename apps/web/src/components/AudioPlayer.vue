@@ -130,7 +130,6 @@ const togglePlay = async () => {
             audioElement.value.pause();
             isPlaying.value = false;
         } else {
-            console.log('Attempting to play audio:', props.src);
             await audioElement.value.play();
             isPlaying.value = true;
         }
@@ -139,12 +138,10 @@ const togglePlay = async () => {
         
         // Para URLs do Discord, tentar estratégias alternativas
         if (props.src.includes('cdn.discordapp.com')) {
-            console.log('Discord URL detected, trying alternative methods...');
             await tryDiscordAudioFallbacks();
         } else {
             // Tentar retry se ainda não excedeu o limite
             if (retryCount.value < maxRetries) {
-                console.log(`Tentando novamente... (${retryCount.value + 1}/${maxRetries})`);
                 retryCount.value++;
                 await retryWithDifferentMethod();
             } else {
@@ -162,7 +159,6 @@ const tryDiscordAudioFallbacks = async () => {
     const strategies = [
         // Estratégia 1: Tentar sem crossorigin
         async () => {
-            console.log('Strategy 1: No crossorigin');
             audioElement.value!.removeAttribute('crossorigin');
             audioElement.value!.load();
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -171,7 +167,6 @@ const tryDiscordAudioFallbacks = async () => {
         
         // Estratégia 2: Usar fetch para carregar como blob
         async () => {
-            console.log('Strategy 2: Fetch as blob');
             try {
                 const response = await fetch(props.src, {
                     method: 'GET',
@@ -184,7 +179,6 @@ const tryDiscordAudioFallbacks = async () => {
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
                 
-                console.log('Created blob URL:', blobUrl);
                 audioElement.value!.src = blobUrl;
                 audioElement.value!.load();
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -198,7 +192,6 @@ const tryDiscordAudioFallbacks = async () => {
         
         // Estratégia 3: Tentar com proxy customizado local
         async () => {
-            console.log('Strategy 3: Custom proxy');
             const proxyUrl = createCustomProxy(props.src);
             audioElement.value!.src = proxyUrl;
             audioElement.value!.load();
@@ -209,11 +202,9 @@ const tryDiscordAudioFallbacks = async () => {
     
     for (let i = 0; i < strategies.length; i++) {
         try {
-            console.log(`Trying Discord strategy ${i + 1}/${strategies.length}`);
             await strategies[i]();
             isPlaying.value = true;
             hasError.value = false;
-            console.log(`Strategy ${i + 1} successful!`);
             return;
         } catch (error) {
             console.error(`Strategy ${i + 1} failed:`, error);
@@ -246,9 +237,7 @@ const retryWithDifferentMethod = async () => {
         // Tentar diferentes configurações de crossorigin
         const crossoriginOptions = ['', 'anonymous', 'use-credentials'];
         const currentOption = crossoriginOptions[retryCount.value % crossoriginOptions.length];
-        
-        console.log(`Retry ${retryCount.value}: Setting crossorigin to "${currentOption}"`);
-        
+                
         if (currentOption === '') {
             audioElement.value.removeAttribute('crossorigin');
         } else {
@@ -303,28 +292,23 @@ const seek = (event: MouseEvent) => {
 };
 
 const onLoadStart = () => {
-    console.log('Audio load started:', props.src);
     isLoading.value = true;
     hasError.value = false;
 };
 
 const onLoadedMetadata = () => {
-    console.log('Audio metadata loaded:', props.src);
     if (audioElement.value) {
         duration.value = audioElement.value.duration;
-        console.log('Audio duration:', duration.value);
     }
 };
 
 const onLoadedData = () => {
-    console.log('Audio data loaded:', props.src);
     isLoading.value = false;
     hasError.value = false;
     retryCount.value = 0; // Reset retry count on successful load
 };
 
 const onCanPlay = () => {
-    console.log('Audio can play:', props.src);
     isLoading.value = false;
     hasError.value = false;
     retryCount.value = 0; // Reset retry count on successful load
@@ -372,7 +356,6 @@ const onError = (error: Event) => {
     
     // Não definir erro imediatamente - tentar retry primeiro
     if (retryCount.value < maxRetries) {
-        console.log(`Auto-retry on error... (${retryCount.value + 1}/${maxRetries})`);
         retryCount.value++;
         retryWithDifferentMethod();
     } else {
@@ -385,7 +368,6 @@ const onError = (error: Event) => {
 
 // Watch for src changes
 watch(() => props.src, (newSrc) => {
-    console.log('Audio src changed:', newSrc);
     hasError.value = false;
     isPlaying.value = false;
     currentTime.value = 0;
@@ -397,9 +379,7 @@ watch(() => props.src, (newSrc) => {
     }
 });
 
-onMounted(() => {
-    console.log('AudioPlayer mounted with src:', props.src);
-    
+onMounted(() => {    
     // Pausar outros áudios quando este começar a tocar
     const handlePlay = () => {
         document.querySelectorAll('audio').forEach(audio => {

@@ -1338,7 +1338,6 @@ const loadChannels = async (): Promise<void> => {
 
         if (response && response.data) {
             channels.value = response.data || [];
-            //console.log(`Loaded ${channels.value.length} channels`);
         }
     } catch (err: unknown) {
         console.error('Failed to load channels:', err);
@@ -1356,7 +1355,6 @@ const loadCategories = async (): Promise<void> => {
 
         if (response && response.data) {
             categories.value = response.data || [];
-            //console.log(`Loaded ${categories.value.length} categories`);
         }
         loadingCategories.value = false;
     } catch (err: unknown) {
@@ -1467,26 +1465,19 @@ const generateAIContent = async (): Promise<void> => {
                             selectedTags.value = [...response.suggestedTags];
                         }
 
-                        // Auto-select categories based on AI suggestion
                         if (response.suggestedCategories && response.suggestedCategories.length > 0 && categories.value.length > 0) {
                             const suggestedCategoryNames = response.suggestedCategories.map((cat: string) => cat.toLowerCase());
-                            //console.log('[DEBUG] Suggested Category Names (AI):', suggestedCategoryNames);
-                            //console.log('[DEBUG] Available Categories (System):', JSON.parse(JSON.stringify(categories.value)));
-
                             const matchingCategoryIds = categories.value
                                 .filter(category => {
                                     const systemCategoryNameLower = removeAccents(category.name.toLowerCase());
                                     const normalizedSuggestedCategories = suggestedCategoryNames.map((sc: string) => removeAccents(sc));
 
-                                    // Check if the exact system category name is included in any AI suggestion string
                                     let isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => aiSuggest.includes(systemCategoryNameLower));
 
-                                    // If not, check if any word from the system category name is in any AI suggestion word list
                                     if (!isMatch) {
                                         const systemWords = systemCategoryNameLower.split(/\s+/);
                                         isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => {
                                             const aiWords = aiSuggest.split(/\s+/);
-                                            // Check for partial matches between individual words
                                             return systemWords.some(sysWord => 
                                                 aiWords.some(aiWord => {
                                                     let partMatch = false;
@@ -1496,28 +1487,20 @@ const generateAIContent = async (): Promise<void> => {
                                                         partMatch = sysWord.includes(aiWord) || aiWord.includes(sysWord);
                                                     }
                                                     
-                                                    //if (partMatch) {
-                                                    //    console.log(`[DEBUG] Word match: sysWord="${sysWord}", aiWord="${aiWord}" from aiSuggest="${aiSuggest}"`);
-                                                    //}
                                                     return partMatch;
                                                 })
                                             );
                                         });
                                     }
                                     
-                                    // Also check if any AI suggested category name is included in the system category name (for shorter AI suggestions)
                                     if (!isMatch) {
                                         isMatch = normalizedSuggestedCategories.some((aiSuggest: string) => systemCategoryNameLower.includes(aiSuggest));
                                     }
 
-                                    //if (isMatch) {
-                                    //    console.log(`[DEBUG] Match found: AI Suggs: "${normalizedSuggestedCategories.join(", ")}" vs System-"${category.name}" (Normalized: "${systemCategoryNameLower}") (ID: ${category.id})`);
-                                    //}
                                     return isMatch;
                                 })
                                 .map(category => category.id);
 
-                            //console.log('[DEBUG] Matching Category IDs for auto-selection:', matchingCategoryIds);
                             selectedCategories.value = [...new Set([...selectedCategories.value, ...matchingCategoryIds])];
                         }
 
@@ -1732,7 +1715,7 @@ const handleImageError = (event: Event): void => {
 
     if (!originalSrc.includes('/feed/raw/imageProxy')) {
         const proxyUrl = `/feed/raw/imageProxy?url=${encodeURIComponent(originalSrc)}`;
-        //console.log('Tentando carregar imagem via proxy:', proxyUrl);
+       
 
         target.onerror = () => {
             console.error('Falha ao carregar imagem mesmo usando proxy:', originalSrc);

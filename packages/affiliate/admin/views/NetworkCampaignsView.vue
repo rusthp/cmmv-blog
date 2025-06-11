@@ -1770,7 +1770,6 @@ const saveSystemCampaign = async () => {
             }
         } else {
             try {
-                console.log('Creating campaign without special logo handling:', campaignData);
                 await affiliateClient.campaigns.insert(campaignData);
                 showNotification('success', 'Campaign created successfully');
 

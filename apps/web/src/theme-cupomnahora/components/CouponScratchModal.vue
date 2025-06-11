@@ -103,28 +103,21 @@ const visitStore = () => {
 };
 
 const handleImageError = (event: Event) => {
-    //console.log('Erro ao carregar a imagem:', props.coupon?.campaignLogo);
-    // Quando a imagem falha ao carregar, substituímos por null para mostrar o fallback
     if (props.coupon) {
         props.coupon.campaignLogo = null;
     }
 };
 
-// Monitorar mudanças na visibilidade do modal para logs
 watch(() => props.visible, (isVisible) => {
     if (isVisible && props.coupon) {
-        //console.log('Modal aberto com logo:', props.coupon.campaignLogo);
     }
 });
 
-// Verificar o estado da logo quando o componente é montado
 onMounted(() => {
     if (props.visible && props.coupon) {
-        //console.log('Componente montado com logo:', props.coupon.campaignLogo);
     }
 });
 </script>
 
 <style scoped>
-/* Estilos gerais para o modal */
 </style>

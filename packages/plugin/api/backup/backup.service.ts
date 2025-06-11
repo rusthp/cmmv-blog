@@ -414,7 +414,6 @@ export class BackupService {
                     } else if (media.filepath && media.filepath.startsWith('http')) {
                         // Remote file - download it
                         try {
-                            console.log(`Downloading ${media.filepath} for backup...`);
                             const response = await fetch(media.filepath);
                             if (response.ok) {
                                 const arrayBuffer = await response.arrayBuffer();
@@ -586,7 +585,6 @@ export class BackupService {
                     const existingMedia = await Repository.findOne(MediasEntity, { id: mediaRecord.id });
                     
                     if (existingMedia) {
-                        console.log(`Media record ${mediaRecord.id} still exists, skipping...`);
                         continue;
                     }
 

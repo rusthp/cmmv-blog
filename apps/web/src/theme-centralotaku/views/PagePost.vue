@@ -607,24 +607,18 @@ const adSettings = computed(() => {
         taboolaJsCode: rawSettings['blog.taboolaJsCode'] || '',
     };
 
-    // Log for debugging
-    console.log('adSenseSidebarLeft value in PagePost:', rawSettings['blog.adSenseSidebarLeft']);
-
     return result;
 });
 
-// Helper to get appropriate ad HTML based on position
 const getAdHtml = (position) => {
     if (!adSettings.value.enableAds) return '';
 
-    // Check if position is enabled
     const positionSetting = `articlePage${position.charAt(0).toUpperCase() + position.slice(1)}`;
     if (positionSetting in adSettings.value && !adSettings.value[positionSetting]) {
         return '';
     }
 
     if (adSettings.value.enableAdSense) {
-        // Map position to the correct AdSense setting key
         let adSenseSetting = '';
         switch (position) {
             case 'header':
@@ -661,7 +655,6 @@ const getAdHtml = (position) => {
     }
 
     if (adSettings.value.enableCustomAds) {
-        // Map position to the correct custom ad setting key
         let customSetting = '';
         switch (position) {
             case 'header':
@@ -722,23 +715,19 @@ const getAdHtml = (position) => {
 function processPostContent(content) {
     if (!content) return '';
 
-    // Twitter/X URL patterns
     const twitterUrlPatterns = [
         /https?:\/\/(www\.)?twitter\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s]*)?/g,
         /https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s]*)?/g
     ];
 
-    // Reddit URL patterns
     const redditUrlPatterns = [
         /https?:\/\/(www\.)?reddit\.com\/r\/([a-zA-Z0-9_]+)\/comments\/([a-zA-Z0-9]+)(?:\/[^\/\s]+)?(?:\/([a-zA-Z0-9]+))?/g
     ];
 
     let processedContent = content;
 
-    // Replace Twitter/X URLs with embed code
     twitterUrlPatterns.forEach(pattern => {
         processedContent = processedContent.replace(pattern, (match, p1, username, tweetId) => {
-            // Create Twitter embed HTML
             return `<div class="twitter-embed">
                 <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
                     <a href="${match}"></a>
@@ -747,10 +736,8 @@ function processPostContent(content) {
         });
     });
 
-    // Replace Reddit URLs with embed code
     redditUrlPatterns.forEach(pattern => {
         processedContent = processedContent.replace(pattern, (match, p1, subreddit, postId, commentId) => {
-            // Create Reddit embed HTML
             return `<div class="reddit-embed">
                 <div class="reddit-card" data-embed-height="500">
                     <a href="${match}"></a>
@@ -759,14 +746,12 @@ function processPostContent(content) {
         });
     });
 
-    // Load Twitter script if content has Twitter embeds
     if (!isSSR && (processedContent.includes('twitter-tweet') || processedContent.includes('twitter-embed'))) {
         setTimeout(() => {
             loadTwitterScript();
         }, 100);
     }
 
-    // Load Reddit script if content has Reddit embeds
     if (!isSSR && processedContent.includes('reddit-embed')) {
         setTimeout(() => {
             loadRedditScript();
@@ -1080,7 +1065,6 @@ const loadDisqusComments = () => {
         if (!document.body.contains(commentsContainer)) return;
         commentsContainer.appendChild(disqusThread);
 
-        // Usar setTimeout para garantir que o Disqus seja carregado após o DOM ser atualizado
         setTimeout(() => {
             try {
                 if (!isMounted.value || !document.body.contains(disqusThread)) return;
@@ -1215,17 +1199,8 @@ const loadRelatedPosts = async () => {
     }
 };
 
-// Load the AdSense script if enabled
 const loadAdScripts = () => {
     if (adSettings.value.enableAds) {
-        console.log('Loading ad scripts in PagePost. Ad settings:', {
-            enableAds: adSettings.value.enableAds,
-            enableAdSense: adSettings.value.enableAdSense,
-            enableAdSenseAutoAds: adSettings.value.enableAdSenseAutoAds,
-            adSenseSidebarLeft: adSettings.value.adSenseSidebarLeft
-        });
-
-        // Load AdSense if enabled
         if (adSettings.value.enableAdSense && adSettings.value.enableAdSenseAutoAds && adSettings.value.adSenseAutoAdsCode) {
             const existingScript = document.getElementById('adsense-script');
             if (!existingScript) {
@@ -1242,42 +1217,30 @@ const loadAdScripts = () => {
                         script.src = scriptSrc;
                         script.crossOrigin = "anonymous";
                         head.appendChild(script);
-                        console.log('AdSense script added to head:', scriptSrc);
-                    } else {
-                        console.error('Could not extract AdSense script URL from:', adSettings.value.adSenseAutoAdsCode);
-                    }
+                    } 
                 } catch (e) {
                     console.error('Error parsing AdSense code:', e);
                 }
             }
         }
 
-        // Insert sidebar left ad code directly into DOM
         if (adSettings.value.adSenseSidebarLeft && sidebarLeftAdContainer.value) {
             try {
-                // Wait a bit for the DOM to be ready
                 setTimeout(() => {
-                    // Create a temporary div to parse the HTML
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = adSettings.value.adSenseSidebarLeft;
 
-                    // Get the ins element
                     const insElement = tempDiv.querySelector('ins');
                     if (insElement) {
                         sidebarLeftAdContainer.value.appendChild(insElement);
-                        console.log('Left sidebar ad inserted into DOM');
 
-                        // Initialize AdSense for this specific ad
                         if (window.adsbygoogle) {
                             try {
                                 window.adsbygoogle.push({});
-                                console.log('AdSense push called for left sidebar ad');
                             } catch (e) {
                                 console.error('Error initializing left sidebar ad:', e);
                             }
                         }
-                    } else {
-                        console.error('Could not find ins element in adSenseSidebarLeft HTML');
                     }
                 }, 500);
             } catch (e) {
@@ -1285,17 +1248,12 @@ const loadAdScripts = () => {
             }
         }
 
-        // Initialize other AdSense ad units
         if (adSettings.value.enableAdSense && window.adsbygoogle) {
             setTimeout(() => {
                 try {
-                    console.log('Initializing AdSense ads in PagePost. Found adsbygoogle units:', document.querySelectorAll('.adsbygoogle').length);
                     document.querySelectorAll('.adsbygoogle').forEach((ad) => {
                         if (!ad.hasAttribute('data-adsbygoogle-status')) {
-                            console.log('Pushing ad unit to AdSense:', ad);
                             (window.adsbygoogle = window.adsbygoogle || []).push({});
-                        } else {
-                            console.log('Ad unit already initialized:', ad.getAttribute('data-adsbygoogle-status'));
                         }
                     });
                 } catch (e) {

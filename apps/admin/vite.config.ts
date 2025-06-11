@@ -55,7 +55,6 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return fetchWhitelabelApiUrls(retryCount + 1, maxRetries);
             } else {
-                console.log('Max retries reached, continuing with build process');
                 return false;
             }
         }

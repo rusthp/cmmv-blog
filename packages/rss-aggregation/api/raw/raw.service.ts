@@ -508,8 +508,6 @@ export class RawService {
             id: id
         }, updateData);
 
-        console.log("aki2")
-
         return {
             message: "Raw feed item updated successfully"
         };

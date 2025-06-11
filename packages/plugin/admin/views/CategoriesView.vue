@@ -962,7 +962,6 @@ const generateSlug = (text) => {
         .replace(/-+$/, '');         // Trim - from end of text
 }
 
-// Add view category function
 const viewCategory = (category) => {
     if (!blogUrl.value) {
         showNotification('error', 'Blog URL is not available');
@@ -970,11 +969,9 @@ const viewCategory = (category) => {
     }
 
     const url = `${blogUrl.value}/category/${category.slug}`;
-    console.log('Opening category URL:', url); // For debugging
     window.open(url, '_blank');
 }
 
-// Função para ajudar a construir a árvore (ou lista ordenada com profundidade)
 const buildCategoryHierarchy = (categoriesRaw) => {
     if (!categoriesRaw || categoriesRaw.length === 0) return [];
 
@@ -988,15 +985,14 @@ const buildCategoryHierarchy = (categoriesRaw) => {
         const catNode = categoriesMap.get(catRaw.id);
         if (catRaw.parentCategory && categoriesMap.has(catRaw.parentCategory)) {
             const parentNode = categoriesMap.get(catRaw.parentCategory);
-            if (parentNode) { // Certifique-se de que o pai existe no mapa
-                // Adicionamos a informação se tem filhos diretamente no nó para facilitar no template
+            if (parentNode) {
                 catNode.hasChildren = catNode.children && catNode.children.length > 0;
                 parentNode.children.push(catNode);
                 parentNode.hasChildren = true; 
             }
         } else {
             catNode.hasChildren = catNode.children && catNode.children.length > 0;
-            tree.push(catNode); // Categoria de nível superior
+            tree.push(catNode);
         }
     });
 
@@ -1020,41 +1016,27 @@ const buildCategoryHierarchy = (categoriesRaw) => {
         
         for (const node of nodes) {
             if (node._visited && !flattenedList.find(n => n.id === node.id)) {
-                 // Se já visitado mas não está na lista (acontece se um pai foi recolhido e depois reexpandido)
-                 // precisamos resetar _visited para reprocessar seus filhos se ele estiver expandido agora.
-                 // No entanto, a lógica atual de _visited é para evitar loops infinitos em estruturas malformadas,
-                 // o que não deveria ser o caso aqui. Vamos simplificar e remover _visited por enquanto
-                 // já que a estrutura é uma árvore a partir das raízes.
             }
-            // node._visited = true; // Removendo _visited por enquanto
+            node._visited = true;
             node.depth = depth;
-            // Adiciona a informação se tem filhos no nó achatado, para o template
-            // Esta já foi definida quando construímos categoriesMap e tree.
-            // node.hasChildren = categoriesMap.get(node.id)?.children?.length > 0;
             flattenedList.push(node);
 
-            // Só achata os filhos se o nó atual estiver expandido e tiver filhos
             if (expandedCategories.value.has(node.id) && node.children && node.children.length > 0) {
                 flatten(node.children, depth + 1);
             }
         }
     }
 
-    // Processar nós raiz (aqueles sem pai ou cujo pai não está no mapa)
     const rootNodes = Array.from(categoriesMap.values()).filter(node => !node.parentCategory || !categoriesMap.has(node.parentCategory));
-    rootNodes.forEach(rn => rn.hasChildren = rn.children && rn.children.length > 0); // Garante que hasChildren está setado para raízes
+    rootNodes.forEach(rn => rn.hasChildren = rn.children && rn.children.length > 0);
 
     flatten(rootNodes, 0);
     
-    // Limpar _visited não é mais necessário
-    // flattenedList.forEach(node => delete node._visited);
-
     return flattenedList;
 };
 
 const displayedCategories = computed(() => {
     if (categories.value && categories.value.length > 0) {
-        // Usar deep copy para não mutar o ref original ou causar loops de re-renderização infinitos
         return buildCategoryHierarchy(JSON.parse(JSON.stringify(categories.value)));
     }
     return [];

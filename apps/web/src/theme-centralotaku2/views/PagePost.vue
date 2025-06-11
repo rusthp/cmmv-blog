@@ -138,11 +138,7 @@
 
                                         <!-- Copy Link -->
                                         <button onclick="
-                                            console.log('🔥 Copiando link...');
                                             const url = window.location.href;
-                                            console.log('📍 URL:', url);
-                                            
-                                            // Mostrar feedback visual
                                             const btn = this;
                                             const feedback = btn.querySelector('.copy-feedback');
                                             if (feedback) {

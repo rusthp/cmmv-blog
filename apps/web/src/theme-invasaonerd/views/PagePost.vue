@@ -1169,9 +1169,6 @@ const loadAdScripts = () => {
                         script.src = scriptSrc;
                         script.crossOrigin = "anonymous";
                         head.appendChild(script);
-                        console.log('AdSense script added to head:', scriptSrc);
-                    } else {
-                        console.error('Could not extract AdSense script URL from:', adSettings.value.adSenseAutoAdsCode);
                     }
                 } catch (e) {
                     console.error('Error parsing AdSense code:', e);
@@ -1211,8 +1208,6 @@ const loadAdScripts = () => {
                     document.querySelectorAll('.adsbygoogle').forEach((ad) => {
                         if (!ad.hasAttribute('data-adsbygoogle-status')) {
                             (window.adsbygoogle = window.adsbygoogle || []).push({});
-                        } else {
-                            console.log('Ad unit already initialized:', ad.getAttribute('data-adsbygoogle-status'));
                         }
                     });
                 } catch (e) {

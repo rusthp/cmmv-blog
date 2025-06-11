@@ -492,7 +492,6 @@ const subscribeNewsletter = async () => {
     if (!newsletterEmail.value) return;
 
     try {
-        console.log('Newsletter subscription for:', newsletterEmail.value);
         alert('Obrigado por se inscrever na nossa newsletter!');
         newsletterEmail.value = '';
     } catch (error) {

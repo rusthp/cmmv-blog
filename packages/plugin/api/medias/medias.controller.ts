@@ -123,32 +123,23 @@ export class MediasController {
     @Auth("media:delete")
     async bulkDeleteMedias(@Body() body: {ids: string[], createBackup?: boolean}) {
         try {
-            console.log('Bulk delete request received:', body);
-            
             let backupResult: any = null;
             
-            // Create backup if requested using dynamic import to avoid circular dependency
             if (body.createBackup) {
                 try {
-                    console.log('Creating backup for medias before deletion...');
-                    
-                    // Use dynamic require/import to avoid circular dependency at startup
                     let backupService: any;
                     
                     try {
-                        // Try to dynamically import and instantiate the backup service
                         const backupModulePath = require.resolve('../backup/backup.service');
-                        delete require.cache[backupModulePath]; // Clear cache to avoid stale imports
+                        delete require.cache[backupModulePath];
                         const { BackupService } = require('../backup/backup.service');
                         
                         const storageModulePath = require.resolve('../storage/storage.service');
                         const { BlogStorageService } = require('../storage/storage.service');
                         
-                        // Create instances
                         const storageService = new BlogStorageService();
                         backupService = new BackupService(this.mediasService, storageService);
                         
-                        console.log('BackupService instantiated successfully');
                     } catch (importError: any) {
                         console.error('Failed to import BackupService:', importError);
                         throw new Error(`Failed to import BackupService: ${importError.message}`);
@@ -163,7 +154,6 @@ export class MediasController {
                     }
                     
                     backupResult = await backupService.backupMediasBeforeDeletion(body.ids);
-                    console.log('Backup created successfully:', backupResult);
                 } catch (backupError: any) {
                     console.error('Backup creation failed:', backupError);
                     return {
@@ -178,15 +168,12 @@ export class MediasController {
                 }
             }
             
-            // Proceed with deletion
             const result = await this.mediasService.bulkDeleteMedias(body.ids, false);
             
-            // Add backup result to response if backup was created
             if (backupResult) {
                 result.backup = backupResult;
             }
             
-            console.log('Bulk delete result:', result);
             return result;
         } catch (error) {
             console.error('Bulk delete error:', error);

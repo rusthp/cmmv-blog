@@ -373,7 +373,6 @@ const handleSocialLogin = async (provider) => {
             router.push('/')
     } catch (err) {
         loading.value = false
-        console.log(err);
 
         if (err.code) {
             switch(err.code) {

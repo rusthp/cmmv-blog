@@ -775,19 +775,21 @@ const loadMorePosts = async () => {
     }
 };
 
-// TODO: OPTIMIZATION - Implement GameDevBR-style intersection observer for infinite scroll
-// Example from GameDevBR:
-// const setupIntersectionObserver = () => {
-//     observer.value = new IntersectionObserver(
-//         (entries) => {
-//             const [entry] = entries;
-//             if (entry.isIntersecting && hasMorePosts.value && !loadingMore.value) {
-//                 loadMorePosts();
-//             }
-//         },
-//         { threshold: 0.1, rootMargin: '50px 0px' }
-//     );
-// };
+const setupIntersectionObserver = () => {
+    if (observerTarget.value) {
+        observer.value = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries;
+                if (entry.isIntersecting && hasMorePosts.value && !loadingMore.value) {
+                    loadMorePosts();
+                }
+            },
+            { threshold: 0.1, rootMargin: '100px 0px' }
+        );
+        
+        observer.value.observe(observerTarget.value);
+    }
+};
 
 const getAuthor = (post: any) => {
     if (!post.authors || !post.authors.length) return null;
@@ -827,12 +829,12 @@ provide('hydrated', hydrated);
 onMounted(async () => {
     loading.value = false;
     hydrated.value = true;
-    // TODO: Re-implement setupIntersectionObserver with GameDevBR optimizations
     startCarouselInterval();
     loadAdScripts();
     loadSidebarLeftAd(sidebarLeftAdContainer.value);
 
     await nextTick();
+    setupIntersectionObserver();
 });
 
 onUnmounted(() => {
@@ -884,9 +886,9 @@ watch(() => posts.value.length, async () => {
 
 .line-clamp-2 {
     display: -webkit-box;
+    -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    -webkit-box-orient: vertical;
     overflow: hidden;
 }
 

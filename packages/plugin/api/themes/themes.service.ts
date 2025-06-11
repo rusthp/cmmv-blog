@@ -105,7 +105,6 @@ export class ThemesPublicService {
             })
         });
 
-        console.log(await response.text());
         return { message: "Theme set as active" };
     }
 }

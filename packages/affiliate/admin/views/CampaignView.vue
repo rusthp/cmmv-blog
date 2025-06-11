@@ -1938,7 +1938,6 @@ const handleLogoImageSelect = (event) => {
         img.crossOrigin = "Anonymous"
 
         img.onload = () => {
-            console.log('Logo image loaded', { width: img.width, height: img.height })
             selectedLogoImage.value = img
             logoCropModalOpen.value = true
 

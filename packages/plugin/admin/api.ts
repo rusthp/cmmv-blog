@@ -231,7 +231,6 @@ export function useApi() {
 
     const checkSession = async () => {
         const result = await authRequest('auth/check', 'GET')
-        console.log(result)
 
         if (!result)
             refreshAuth()
@@ -259,11 +258,9 @@ export function useApi() {
         if (whitelabelId) {
             currentWhitelabelId.value = whitelabelId;
             ssrLocalStorage.setItem('currentWhitelabelId', whitelabelId);
-            console.log(`Switched to whitelabel: ${whitelabelId}`);
         } else {
             currentWhitelabelId.value = null;
             ssrLocalStorage.removeItem('currentWhitelabelId');
-            console.log('Switched to root mode');
         }
     }
 

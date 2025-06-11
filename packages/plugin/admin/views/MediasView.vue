@@ -1201,12 +1201,9 @@ async function executeBulkDelete() {
         bulkDeleteLoading.value = true
         
         const selectedIds = Array.from(selectedMedias.value)
-        console.log('Sending bulk delete request for IDs:', selectedIds)
         
         const response = await adminClient.medias.bulkDelete(selectedIds, createBackupBeforeDelete.value)
-        console.log('Bulk delete response:', response)
         
-        // Verificar se a resposta existe e tem a estrutura esperada
         if (!response) {
             throw new Error('Empty server response')
         }
@@ -1214,7 +1211,6 @@ async function executeBulkDelete() {
         // Se a resposta é primitiva, transformar em objeto estruturado
         let normalizedResponse = response;
         if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
-            console.log('Response is not an object, creating normalized response');
             normalizedResponse = {
                 success: false,
                 message: 'Unexpected server response',
@@ -1301,9 +1297,6 @@ async function executeDeleteAll() {
     try {
         deleteAllLoading.value = true
         
-        // Get all media IDs (we'll fetch them in batches to avoid memory issues)
-        console.log('Fetching all media IDs for delete all operation...')
-        
         let allMediaIds = []
         let offset = 0
         const batchSize = 1000 // Process 1000 at a time
@@ -1328,8 +1321,6 @@ async function executeDeleteAll() {
             }
         }
         
-        console.log(`Found ${allMediaIds.length} medias to delete`)
-        
         if (allMediaIds.length === 0) {
             showNotification('info', 'No media found to remove')
             deleteAllLoading.value = false
@@ -1345,18 +1336,14 @@ async function executeDeleteAll() {
         let allSkippedItems = []
         let allErrorItems = []
         
-        console.log(`Processing ${allMediaIds.length} medias in batches of ${deleteBatchSize}`)
-        
         for (let i = 0; i < allMediaIds.length; i += deleteBatchSize) {
             const batch = allMediaIds.slice(i, i + deleteBatchSize)
             const batchNumber = Math.floor(i / deleteBatchSize) + 1
             const totalBatches = Math.ceil(allMediaIds.length / deleteBatchSize)
             
-            console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} items)`)
             
             try {
                 const response = await adminClient.medias.bulkDelete(batch, createBackupBeforeDeleteAll.value && i === 0)
-                console.log(`Batch ${batchNumber} response:`, response)
                 
                 if (response && response.summary) {
                     totalDeleted += response.summary.deleted || 0
@@ -1375,7 +1362,6 @@ async function executeDeleteAll() {
                 
             } catch (batchError) {
                 console.error(`Error in batch ${batchNumber}:`, batchError)
-                // Add all items in this batch as errors
                 totalErrors += batch.length
                 allErrorItems.push(...batch.map(id => ({ 
                     id, 
@@ -1399,9 +1385,6 @@ async function executeDeleteAll() {
             errors: allErrorItems
         }
         
-        console.log('Final consolidated response:', response)
-        
-        // Verificar se a resposta existe e tem a estrutura esperada
         if (!response) {
             throw new Error('Resposta vazia do servidor')
         }
@@ -1409,7 +1392,6 @@ async function executeDeleteAll() {
         // Se a resposta é primitiva, transformar em objeto estruturado
         let normalizedResponse = response;
         if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
-            console.log('Response is not an object, creating normalized response');
             normalizedResponse = {
                 success: false,
                 message: 'Unexpected server response',
@@ -1421,13 +1403,11 @@ async function executeDeleteAll() {
         }
         
         if (!normalizedResponse.summary) {
-            console.error('Response missing summary:', normalizedResponse)
             throw new Error('Invalid server response: missing summary information')
         }
         
         deleteAllResult.value = normalizedResponse
         
-        // Show appropriate notifications
         if (normalizedResponse.summary.deleted > 0) {
             showNotification('success', `${normalizedResponse.summary.deleted} media removed successfully`)
         }
@@ -1440,7 +1420,6 @@ async function executeDeleteAll() {
             showNotification('error', `${normalizedResponse.summary.errors} error(s) during deletion`)
         }
         
-        // Clear selection and refresh data if any were deleted
         if (normalizedResponse.summary.deleted > 0) {
             selectedMedias.value.clear()
             refreshData()
@@ -1534,7 +1513,6 @@ const loadMedias = async () => {
 
         loading.value = false
         
-        // Clear selection when page changes or data is refreshed
         selectedMedias.value.clear()
     } catch (err) {
         console.error('Failed to load medias:', err)
@@ -1791,33 +1769,21 @@ const startReprocessing = async () => {
             bytes_saved: 0
         }
 
-        // Limpar qualquer intervalo anterior
         if (progressInterval) {
             clearInterval(progressInterval)
         }
 
-        console.log('Starting progress polling for reprocessing...')
-
-        // Iniciar o polling imediatamente e a cada 1 segundo depois
         const checkProgress = async () => {
             try {
-                console.log('Checking reprocess progress...')
                 const progress = await adminClient.imports.getReprocessProgress()
-                console.log('Progress update:', progress)
 
-                // Atualizar o estado apenas se tivermos dados válidos
                 if (progress && typeof progress === 'object') {
                     reprocessStatus.value = {
                         ...reprocessStatus.value,
                         ...progress
                     }
 
-                    // Log para debug
-                    console.log(`Progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
-
-                    // Verificar se o processo foi concluído
                     if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Process completed with status:', progress.status)
                         if (progressInterval) {
                             clearInterval(progressInterval)
                             progressInterval = null
@@ -1829,17 +1795,12 @@ const startReprocessing = async () => {
             }
         }
 
-        // Verificar o progresso imediatamente
         await checkProgress()
 
-        // Configurar o intervalo para verificações regulares
         progressInterval = setInterval(checkProgress, 1000)
 
-        // Iniciar o reprocessamento
-        console.log('Starting image reprocessing...')
         adminClient.imports.reprocessImages()
             .then(result => {
-                console.log('Reprocessing completed:', result)
             })
             .catch(err => {
                 console.error('Error reprocessing images:', err)
@@ -1874,39 +1835,23 @@ const startCleanup = async () => {
         reprocessStatus.value.details.removed = 0
         cleanupResult.value = null
 
-        // Limpar qualquer intervalo anterior
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        console.log('Initializing progress tracker...')
-
-        // Inicializar o rastreador de progresso no servidor
         await adminClient.imports.initCleanupProgress()
 
-        console.log('Starting progress polling for cleanup...')
-
-        // Função para verificar o progresso
         const checkProgress = async () => {
             try {
-                console.log('Checking cleanup progress...')
                 const progress = await adminClient.imports.getCleanupProgress()
-                console.log('Cleanup progress update:', progress)
-
-                // Atualizar o estado apenas se tivermos dados válidos
                 if (progress && typeof progress === 'object') {
                     reprocessStatus.value = {
                         ...reprocessStatus.value,
                         ...progress
                     }
 
-                    // Log para debug
-                    console.log(`Cleanup progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
-
-                    // Verificar se o processo foi concluído
                     if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Cleanup process completed with status:', progress.status)
                         if (progressInterval) {
                             clearInterval(progressInterval)
                             progressInterval = null
@@ -1922,22 +1867,14 @@ const startCleanup = async () => {
             }
         }
 
-        // Verificar o progresso imediatamente
         await checkProgress()
 
-        // Configurar o intervalo para verificações regulares
         progressInterval = setInterval(checkProgress, 1000)
 
-        // Iniciar a limpeza
-        console.log(`Starting orphaned records cleanup... Force mode: ${forceCleanup.value}`)
         try {
             const result = await adminClient.imports.cleanupOrphanedMedia(forceCleanup.value)
-            console.log('Cleanup completed:', result)
-
-            // Armazenar o resultado para exibição
             cleanupResult.value = result
 
-            // Verificar o progresso final após a conclusão
             await checkProgress()
         } catch (err) {
             console.error('Error during cleanup:', err)
@@ -1969,13 +1906,11 @@ const closeReprocessDialog = () => {
     if (reprocessStatus.value.status !== 'processing') {
         showReprocessDialog.value = false
 
-        // Garantir que o intervalo de verificação seja limpo
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        // Refresh the media list if reprocessing completed
         if (reprocessStatus.value.status === 'completed') {
             refreshData()
         }
@@ -1986,13 +1921,11 @@ const closeCleanupDialog = () => {
     if (reprocessStatus.value.status !== 'processing') {
         showCleanupDialog.value = false
 
-        // Garantir que o intervalo de verificação seja limpo
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        // Refresh the media list if cleanup completed
         if (reprocessStatus.value.status === 'completed') {
             refreshData()
         }
@@ -2030,39 +1963,23 @@ const startRemoveDuplicates = async () => {
         reprocessStatus.value.percentage = 0
         duplicatesResult.value = null
 
-        // Limpar qualquer intervalo anterior
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        console.log('Initializing progress tracker...')
-
-        // Inicializar o rastreador de progresso no servidor
         await adminClient.imports.initCleanupProgress()
 
-        console.log('Starting progress polling for duplicate removal...')
-
-        // Função para verificar o progresso
         const checkProgress = async () => {
             try {
-                console.log('Checking cleanup progress...')
                 const progress = await adminClient.imports.getCleanupProgress()
-                console.log('Cleanup progress update:', progress)
-
-                // Atualizar o estado apenas se tivermos dados válidos
                 if (progress && typeof progress === 'object') {
                     reprocessStatus.value = {
                         ...reprocessStatus.value,
                         ...progress
                     }
 
-                    // Log para debug
-                    console.log(`Cleanup progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
-
-                    // Verificar se o processo foi concluído
                     if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Cleanup process completed with status:', progress.status)
                         if (progressInterval) {
                             clearInterval(progressInterval)
                             progressInterval = null
@@ -2078,22 +1995,15 @@ const startRemoveDuplicates = async () => {
             }
         }
 
-        // Verificar o progresso imediatamente
         await checkProgress()
 
-        // Configurar o intervalo para verificações regulares
         progressInterval = setInterval(checkProgress, 1000)
 
-        // Iniciar a limpeza
-        console.log('Starting duplicate images removal...')
         try {
             const result = await adminClient.imports.cleanupDuplicatedImages()
-            console.log('Duplicates removal completed:', result)
 
-            // Armazenar o resultado para exibição
             duplicatesResult.value = result
 
-            // Verificar o progresso final após a conclusão
             await checkProgress()
         } catch (err) {
             console.error('Error during duplicates removal:', err)
@@ -2125,13 +2035,11 @@ const closeDuplicatesDialog = () => {
     if (reprocessStatus.value.status !== 'processing') {
         showDuplicatesDialog.value = false
 
-        // Garantir que o intervalo de verificação seja limpo
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        // Refresh the media list if cleanup completed
         if (reprocessStatus.value.status === 'completed') {
             refreshData()
         }
@@ -2178,34 +2086,21 @@ const startThumbnailGeneration = async () => {
         }
         thumbnailResult.value = null
 
-        // Clear any previous interval
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        console.log('Starting progress polling for thumbnail generation...')
-
-        // Function to check progress
         const checkProgress = async () => {
             try {
-                console.log('Checking thumbnail generation progress...')
                 const progress = await adminClient.imports.getReprocessProgress()
-                console.log('Thumbnail progress update:', progress)
-
-                // Update state only if we have valid data
                 if (progress && typeof progress === 'object') {
                     thumbnailStatus.value = {
                         ...thumbnailStatus.value,
                         ...progress
                     }
 
-                    // Log for debugging
-                    console.log(`Thumbnail progress: ${progress.processed}/${progress.total} (${progress.percentage}%)`)
-
-                    // Check if process completed
                     if (progress.status === 'completed' || progress.status === 'error') {
-                        console.log('Thumbnail generation completed with status:', progress.status)
                         if (progressInterval) {
                             clearInterval(progressInterval)
                             progressInterval = null
@@ -2221,22 +2116,15 @@ const startThumbnailGeneration = async () => {
             }
         }
 
-        // Check progress immediately
         await checkProgress()
 
-        // Set up interval for regular checks
         progressInterval = setInterval(checkProgress, 1000)
 
-        // Start thumbnail generation
-        console.log('Starting thumbnail generation...')
         try {
             const result = await adminClient.imports.generateMissingThumbnails()
-            console.log('Thumbnail generation completed:', result)
 
-            // Store result for display
             thumbnailResult.value = result
 
-            // Check final progress after completion
             await checkProgress()
         } catch (err) {
             console.error('Error during thumbnail generation:', err)
@@ -2268,13 +2156,11 @@ const closeThumbnailDialog = () => {
     if (thumbnailStatus.value.status !== 'processing') {
         showThumbnailDialog.value = false
 
-        // Ensure progress interval is cleared
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
         }
 
-        // Refresh the media list if thumbnail generation completed
         if (thumbnailStatus.value.status === 'completed') {
             refreshData()
         }
@@ -2285,17 +2171,14 @@ onMounted(() => {
     initializeFromUrl()
     loadMedias()
 
-    // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
         const target = e.target
         
-        // Close search dropdown
         if (showSearchDropdown.value && !target.closest('[data-search-toggle]') 
             && !target.closest('.absolute')) {
             showSearchDropdown.value = false
         }
         
-        // Close more actions dropdown
         if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
             showMoreActionsDropdown.value = false
         }
@@ -2303,7 +2186,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    console.log('Component unmounted, cleaning up intervals')
     if (progressInterval) {
         clearInterval(progressInterval)
         progressInterval = null

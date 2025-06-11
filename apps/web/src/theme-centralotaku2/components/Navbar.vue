@@ -642,24 +642,20 @@ const performSearch = async () => {
     isSearching.value = true;
 
     try {
-        // Verificar se a API está disponível
         if (!blogAPI || !blogAPI.posts || typeof blogAPI.posts.search !== 'function') {
             console.error('API de busca não disponível');
             throw new Error('API de busca não disponível');
         }
 
         const trimmedQuery = searchQuery.value.trim();
-        console.log('Realizando busca por:', trimmedQuery);
-        
+
         const response = await blogAPI.posts.search(trimmedQuery);
-        console.log('Resposta da busca:', response);
 
         let results: any[] = [];
         
         if (Array.isArray(response)) {
             results = response;
         } else if (response && typeof response === 'object') {
-            // Suporte a diferentes formatos de resposta
             if (Array.isArray(response.posts)) {
                 results = response.posts;
             } else if (Array.isArray(response.data)) {
@@ -675,23 +671,18 @@ const performSearch = async () => {
             console.warn('Formato de resposta inesperado durante a busca:', response);
         }
         
-        // Melhorar a relevância dos resultados
         if (results.length > 0) {
-            // Calcular pontuação de relevância para cada resultado
             results = results.map((post: any) => {
                 let relevanceScore = 0;
                 const searchTermLower = trimmedQuery.toLowerCase();
                 
-                // Título contém o termo de busca exato (maior pontuação)
                 if (post.title && post.title.toLowerCase().includes(searchTermLower)) {
                     relevanceScore += 10;
-                    // Título começa com o termo de busca (pontuação ainda maior)
                     if (post.title.toLowerCase().startsWith(searchTermLower)) {
                         relevanceScore += 5;
                     }
                 }
                 
-                // Verificar nas categorias
                 if (post.categories && Array.isArray(post.categories)) {
                     post.categories.forEach((cat: any) => {
                         if (cat.name && cat.name.toLowerCase().includes(searchTermLower)) {
@@ -700,7 +691,6 @@ const performSearch = async () => {
                     });
                 }
                 
-                // Verificar nas tags
                 if (post.tags && Array.isArray(post.tags)) {
                     post.tags.forEach((tag: any) => {
                         if (tag.name && tag.name.toLowerCase().includes(searchTermLower)) {
@@ -709,12 +699,10 @@ const performSearch = async () => {
                     });
                 }
                 
-                // Verificar no resumo/excerto
                 if (post.excerpt && post.excerpt.toLowerCase().includes(searchTermLower)) {
                     relevanceScore += 3;
                 }
                 
-                // Verificar no conteúdo (menor pontuação pois é menos específico)
                 if (post.html && post.html.toLowerCase().includes(searchTermLower)) {
                     relevanceScore += 1;
                 }
@@ -722,10 +710,8 @@ const performSearch = async () => {
                 return { ...post, relevanceScore };
             });
             
-            // Filtrar resultados com pontuação zero (irrelevantes)
             results = results.filter((post: any) => post.relevanceScore > 0);
             
-            // Ordenar por relevância
             results.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
         }
         
@@ -880,8 +866,7 @@ const handleResize = () => {
     isLargeScreen.value = window.innerWidth >= 1690;
     
     if (isLargeScreen.value) {
-        // For large screens, sidebar should always be visible
-        sidebarOpen.value = false; // Reset mobile toggle state
+        sidebarOpen.value = false;
     }
 }
 
@@ -895,9 +880,8 @@ onMounted(() => {
     document.addEventListener('keydown', handleGlobalSearch);
     window.addEventListener('resize', handleResize);
     checkAuthentication();
-    checkScreenSize(); // Initial screen size check
+    checkScreenSize();
     
-    // Fetch categories if they're not already loaded
     if (!categories.value.length) {
         blogAPI.categories.getAll()
             .then(categoriesResponse => {
@@ -928,26 +912,20 @@ const formatDate = (dateString: string) => {
     }).format(date);
 }
 
-// Estado para controlar quais categorias estão expandidas no dropdown
 const openedCategories = ref<Record<string, boolean>>({});
 
-// Categorias formatadas para o menu principal
 const mainCategories = computed(() => {
-    // Usar as categorias agrupadas mas em formato plano para o menu dropdown
     return groupedCategories.value;
 });
 
-// Verificar se uma categoria tem filhos
 const hasChildren = (category: any) => {
     return category.children && category.children.length > 0;
 };
 
-// Obter os filhos de uma categoria
 const getCategoryChildren = (category: any) => {
     return category.children || [];
 };
 
-// Alternar visibilidade de uma categoria
 const toggleCategory = (categoryId: string) => {
     openedCategories.value = {
         ...openedCategories.value,
@@ -955,7 +933,6 @@ const toggleCategory = (categoryId: string) => {
     };
 };
 
-// Verificar se o usuário está pressionando Ctrl+K ou Cmd+K para abrir a busca
 const handleGlobalSearch = (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -977,12 +954,10 @@ const clearSearch = () => {
 const highlightSearchTerm = (text: string, query: string): string => {
     if (!text || !query || query.trim() === '') return text;
     
-    // Escapar caracteres especiais para evitar problemas com regex
     const escapeRegExp = (string: string) => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     };
     
-    // Escapar HTML para prevenir XSS
     const escapeHtml = (str: string) => {
         return str
             .replace(/&/g, '&amp;')

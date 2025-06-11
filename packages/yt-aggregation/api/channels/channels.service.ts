@@ -487,8 +487,6 @@ export class YTChannelsServiceAdmin {
                 throw new Error('Could not resolve channel ID from the provided URL');
             }
 
-            console.log(channelId)
-
             const channelInfo = await this.fetchChannelInfo(channelId);
 
             return {

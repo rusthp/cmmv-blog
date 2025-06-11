@@ -239,18 +239,14 @@ async function bootstrap() {
                     const settingsData = await settings.json();
                     settingsData["blog.theme"] = theme;
                     settingsStore.setSettings(settingsData);
-                    console.log("Theme set successfully:", theme);
 
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'text/plain');
                     res.end('Theme set successfully. Server will restart to apply changes.');
 
                     setTimeout(() => {
-                        console.log(`🔄 Restarting server to apply new theme: ${theme}`);
-
                         if (serverInstance) {
                             serverInstance.close();
-                            console.log('Server closed. Starting a new instance...');
                             bootstrap();
                         }
                     }, 500);

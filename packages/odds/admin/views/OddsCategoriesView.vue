@@ -673,8 +673,6 @@ const saveCategory = async () => {
             return
         }
 
-        console.log('Category form image value before save:', categoryForm.value.image)
-
         const categoryData = {
             name: categoryForm.value.name.trim(),
             index: categoryForm.value.index !== null && categoryForm.value.index !== undefined ? Number(categoryForm.value.index) : null,
@@ -692,8 +690,6 @@ const saveCategory = async () => {
                 else
                     categoryData.image = null
 
-                console.log('Category data being sent (without base64 image):', categoryData)
-
                 let category
                 let categoryId
 
@@ -710,12 +706,8 @@ const saveCategory = async () => {
                     throw new Error('Unable to update image: Missing category ID')
                 }
 
-                // Now process the image using updateImage method
-                console.log('Calling updateImage with ID:', categoryId, 'and base64 length:', imageBackup.length)
                 const imageResponse = await oddsClient.categories.updateImage(categoryId, imageBackup)
-                console.log('Image update response:', imageResponse)
 
-                // Extract the image URL from response and update the category
                 let processedImageUrl = null
                 if (imageResponse && imageResponse.url) {
                     processedImageUrl = imageResponse.url
@@ -726,12 +718,10 @@ const saveCategory = async () => {
                 }
 
                 if (processedImageUrl) {
-                    // Update category with the processed image URL
                     await oddsClient.categories.update(categoryId, {
                         ...categoryData,
                         image: processedImageUrl
                     })
-                    console.log('Category updated with processed image URL:', processedImageUrl)
                 }
 
                 showNotification('success', isEditing.value ? 'Category updated successfully' : 'Category created successfully')
@@ -749,8 +739,6 @@ const saveCategory = async () => {
                 return
             }
         } else {
-            // Regular save (no base64 image)
-            console.log('Category data being sent:', categoryData)
 
             if (isEditing.value) {
                 await oddsClient.categories.update(categoryToEdit.value.id, categoryData)
@@ -854,9 +842,7 @@ const handleFileSelect = (event) => {
         const reader = new FileReader()
         reader.onload = (e) => {
             filePreviewUrl.value = e.target.result
-            // Directly set the image as base64 data URL (like CampaignView.vue)
             categoryForm.value.image = e.target.result
-            console.log('Image set as base64, length:', e.target.result.length)
         }
         reader.readAsDataURL(file)
     }
@@ -872,7 +858,6 @@ const removeImage = () => {
 onMounted(() => {
     loadCategories()
 
-    // Close search dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (showSearchDropdown.value && !e.target.closest('.relative')
             && e.target !== document.querySelector('button[data-search-toggle]')) {

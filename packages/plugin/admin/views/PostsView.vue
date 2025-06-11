@@ -1329,7 +1329,6 @@ function updateAllScheduleTimes() {
 }
 
 watch(scheduleInterval, (newInterval, oldInterval) => {
-    console.log(`Interval changed from ${oldInterval} to ${newInterval}`)
     updateAllScheduleTimes()
 }, { immediate: false })
 

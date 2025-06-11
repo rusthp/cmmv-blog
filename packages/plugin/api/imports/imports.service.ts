@@ -160,15 +160,11 @@ export class ImportService {
     async importWordpress(req: any) {
         return new Promise<any>((resolve, reject) => {
             try {
-                console.log("Processing WordPress import request");
-
                 if (req.file || (req.files && req.files.file) || (req.body && req.body.file)) {
                     return this.processMiddlewareParsedFile(req)
                         .then(result => resolve(result))
                         .catch(error => reject(error));
                 }
-
-                console.log("Reading file from request stream");
 
                 if (!req.headers || !req.headers['content-type']) {
                     return reject({
@@ -204,10 +200,7 @@ export class ImportService {
                     let fileError: FileError = null;
 
                     bb.on('file', (fieldname: string, fileStream: NodeJS.ReadableStream, info: StreamInfo) => {
-                        console.log(`Processing file upload: ${fieldname}, filename: ${info.filename}`);
-
                         if (fieldname !== 'file') {
-                            console.log(`Skipping non-'file' field: ${fieldname}`);
                             fileStream.resume(); // Skip this stream
                             return;
                         }
@@ -230,10 +223,6 @@ export class ImportService {
                         });
                     });
 
-                    bb.on('field', (fieldname: string, value: string) => {
-                        console.log(`Form field: ${fieldname}=${value}`);
-                    });
-
                     bb.on('close', async () => {
                         try {
                             if (fileError) {
@@ -243,8 +232,6 @@ export class ImportService {
                             if (!fileFound) {
                                 throw new Error('No file uploaded. Make sure to send the file with field name "file"');
                             }
-
-                            console.log(`File saved to ${tempFilePath}, now processing XML`);
 
                             const xmlContent = await fs.promises.readFile(tempFilePath, 'utf-8');
 
@@ -267,8 +254,6 @@ export class ImportService {
                             const items = Array.isArray(wpData.rss.channel.item)
                                 ? wpData.rss.channel.item
                                 : [wpData.rss.channel.item];
-
-                            console.log(`WordPress import started: Found ${items.length} items`);
 
                             const importId = uuidv4();
 
@@ -402,8 +387,6 @@ export class ImportService {
             const items = Array.isArray(wpData.rss.channel.item)
                 ? wpData.rss.channel.item
                 : [wpData.rss.channel.item];
-
-            console.log(`WordPress import started: Found ${items.length} items`);
 
             const importId = uuidv4();
 
@@ -729,8 +712,6 @@ export class ImportService {
         const youtubeBlockPattern = /<!-- wp:embed[\s\S]*?youtube.com\/watch\?v=([a-zA-Z0-9_-]+)[\s\S]*?<!-- \/wp:embed -->/g;
 
         processedContent = processedContent.replace(youtubeBlockPattern, (match, videoId) => {
-            console.log(`Found YouTube embed, video ID: ${videoId}`);
-
             return `<iframe title="YouTube Video" width="720" height="405" data-lazy="true" src="https://www.youtube.com/embed/${videoId}?feature=oembed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         });
 
@@ -768,7 +749,6 @@ export class ImportService {
                 }
 
                 const cleanFilename = filename.replace(/-\d+x\d+(\.[^.]+)$/, '$1');
-                console.log(`Processing image: ${filename} -> ${cleanFilename} (${width}x${height})`);
 
                 const newImagePath = `/images/${cleanFilename}`;
 
@@ -810,8 +790,6 @@ export class ImportService {
 
                 const altMatch = match.match(/alt="([^"]*)"/);
                 const alt = altMatch ? altMatch[1] : '';
-
-                console.log(`Processing img tag: ${filename} -> ${cleanFilename} (${width}x${height})`);
 
                 const widthAttr = width ? ` width="${width}"` : '';
                 const heightAttr = height ? ` height="${height}"` : '';

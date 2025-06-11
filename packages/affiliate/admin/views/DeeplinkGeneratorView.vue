@@ -440,7 +440,7 @@ const findCampaignByDomain = () => {
             }
         }
     } catch (err) {
-        console.log('Invalid URL or domain extraction failed:', err)
+        console.error('Invalid URL or domain extraction failed:', err)
     }
 }
 

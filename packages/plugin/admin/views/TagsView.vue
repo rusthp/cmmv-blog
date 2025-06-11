@@ -653,7 +653,6 @@ const viewTag = (tag) => {
     }
 
     const url = `${blogUrl.value}/tag/${tag.slug}`;
-    console.log('Opening tag URL:', url);
     window.open(url, '_blank');
 }
 
