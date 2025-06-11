@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-[1200px] mx-auto px-2 sm:px-4">
+    <div class="w-full max-w-[1200px] mx-auto px-2 sm:px-4 overflow-x-hidden">
         <div v-if="error" class="text-center py-8 sm:py-16 bg-white rounded-lg shadow-md mx-2 sm:mx-0">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -20,13 +20,13 @@
             <p class="text-gray-600 px-4">Volte mais tarde para novos conteúdos!</p>
         </div>
 
-        <div v-else>
+        <div v-else class="overflow-x-hidden">
             <!-- Cover Section -->
-            <section v-if="posts.length > 0" class="mb-4 sm:mb-8 hidden sm:block">
+            <section v-if="posts.length > 0" class="mb-4 sm:mb-6 md:mb-8 hidden sm:block">
                 <!-- Full Layout (default) -->
                 <div v-if="coverSettings.layoutType === 'full' || !coverSettings.layoutType" class="bg-white rounded-lg overflow-hidden shadow-md">
                     <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block">
-                        <div class="relative h-[250px] sm:h-[400px]">
+                        <div class="relative h-[200px] sm:h-[300px] md:h-[400px]">
                             <OptimizedImage
                                 :src="coverPosts.full?.featureImage"
                                 :alt="coverPosts.full?.title"
@@ -38,17 +38,17 @@
                                 priority="high"
                                 icon-size="lg"
                             />
-                            <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                            <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                 <div v-if="coverPosts.full && coverPosts.full.categories && coverPosts.full.categories.length > 0" class="mb-2">
                                     <span class="bg-[#dc2626] text-[#ffffff] px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                         {{ coverPosts.full.categories[0].name }}
                                     </span>
                                 </div>
-                                <h2 v-if="coverPosts.full" class="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
-                                <p v-if="coverPosts.full" class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl text-sm sm:text-base">
+                                <h2 v-if="coverPosts.full" class="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
+                                <p v-if="coverPosts.full" class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-full md:max-w-2xl text-xs sm:text-sm md:text-base">
                                     {{ coverPosts.full.excerpt || stripHtml(coverPosts.full.content).substring(0, 150) + '...' }}
                                 </p>
-                                <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base">
+                                <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm md:text-base">
                                     Continuar lendo
                                 </span>
                             </div>
@@ -58,7 +58,7 @@
 
                 <!-- Carousel Layout -->
                 <div v-else-if="coverSettings.layoutType === 'carousel'" class="bg-white rounded-lg overflow-hidden shadow-md">
-                    <div class="relative h-[250px] sm:h-[400px]">
+                    <div class="relative h-[200px] sm:h-[300px] md:h-[400px]">
                         <div v-for="(post, index) in coverPosts.carousel" :key="post.id"
                              class="absolute w-full h-full transition-opacity duration-500 ease-in-out"
                              :class="{ 'opacity-100': currentCarouselIndex === index, 'opacity-0': currentCarouselIndex !== index }">
@@ -73,17 +73,17 @@
                                     priority="high"
                                     icon-size="lg"
                                 />
-                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
                                         <span class="bg-[#dc2626] text-[#ffffff] px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
-                                    <p class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl text-sm sm:text-base">
+                                    <h2 class="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                    <p class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-full md:max-w-2xl text-xs sm:text-sm md:text-base">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm md:text-base">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -123,10 +123,10 @@
                 </div>
 
                 <!-- Split Layout (1 large, 2 small) -->
-                <div v-else-if="coverSettings.layoutType === 'split'" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div class="lg:col-span-2 bg-white rounded-lg overflow-hidden shadow-md">
+                <div v-else-if="coverSettings.layoutType === 'split'" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="md:col-span-2 bg-white rounded-lg overflow-hidden shadow-md">
                         <a v-if="coverPosts.splitMain" :href="`/post/${coverPosts.splitMain.slug}`" class="block h-full">
-                            <div class="relative h-[250px] lg:h-full">
+                            <div class="relative h-[200px] md:h-[300px] lg:h-full">
                                 <OptimizedImage
                                     :src="coverPosts.splitMain?.featureImage"
                                     :alt="coverPosts.splitMain?.title"
@@ -137,25 +137,25 @@
                                     priority="high"
                                     icon-size="lg"
                                 />
-                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="coverPosts.splitMain && coverPosts.splitMain.categories && coverPosts.splitMain.categories.length > 0" class="mb-2">
                                         <span class="bg-[#dc2626] text-[#ffffff] px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                             {{ coverPosts.splitMain.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 v-if="coverPosts.splitMain" class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.splitMain.title }}</h2>
-                                    <p v-if="coverPosts.splitMain" class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl text-sm sm:text-base">
+                                    <h2 v-if="coverPosts.splitMain" class="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.splitMain.title }}</h2>
+                                    <p v-if="coverPosts.splitMain" class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-full md:max-w-2xl text-xs sm:text-sm md:text-base">
                                         {{ coverPosts.splitMain.excerpt || stripHtml(coverPosts.splitMain.content).substring(0, 150) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm md:text-base">
                                         Continuar lendo
                                     </span>
                                 </div>
                             </div>
                         </a>
                     </div>
-                    <div class="lg:col-span-1 flex flex-col gap-4">
-                        <div v-for="(post, index) in coverPosts.splitSide" :key="post.id" class="flex-1 bg-white rounded-lg overflow-hidden shadow-md min-h-[200px]">
+                    <div class="md:col-span-1 flex flex-col gap-3 sm:gap-4">
+                        <div v-for="(post, index) in coverPosts.splitSide" :key="post.id" class="flex-1 bg-white rounded-lg overflow-hidden shadow-md min-h-[150px] sm:min-h-[200px]">
                             <a :href="`/post/${post.slug}`" class="block h-full">
                                 <div class="relative h-full">
                                     <OptimizedImage
@@ -163,14 +163,14 @@
                                         :alt="post.title"
                                         icon-size="md"
                                     />
-                                    <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
-                                        <div v-if="post.categories && post.categories.length > 0" class="mb-2">
-                                            <span class="bg-[#dc2626] text-[#ffffff] px-2 py-1 rounded-md text-xs font-medium">
+                                    <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 md:p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                        <div v-if="post.categories && post.categories.length > 0" class="mb-1 sm:mb-2">
+                                            <span class="bg-[#dc2626] text-[#ffffff] px-1 sm:px-2 py-1 rounded-md text-xs font-medium">
                                                 {{ post.categories[0].name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-sm sm:text-base font-bold mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h3>
-                                        <span class="text-xs sm:text-sm text-white hover:text-[#dc2626] transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
+                                        <h3 class="text-xs sm:text-sm md:text-base font-bold mb-1 sm:mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded line-clamp-2">{{ post.title }}</h3>
+                                        <span class="text-xs text-white hover:text-[#dc2626] transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
                                             Continuar lendo &rarr;
                                         </span>
                                     </div>
@@ -181,10 +181,10 @@
                 </div>
 
                 <!-- Dual Layout (2 equal columns) -->
-                <div v-else-if="coverSettings.layoutType === 'dual'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div v-else-if="coverSettings.layoutType === 'dual'" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div v-for="post in coverPosts.dual" :key="post.id" class="bg-white rounded-lg overflow-hidden shadow-md">
                         <a :href="`/post/${post.slug}`" class="block">
-                            <div class="relative h-[250px] lg:h-[350px]">
+                            <div class="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[350px]">
                                 <OptimizedImage
                                     :src="post.featureImage"
                                     :alt="post.title"
@@ -195,17 +195,17 @@
                                     priority="high"
                                     icon-size="lg"
                                 />
-                                <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
+                                <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent text-white">
                                     <div v-if="post.categories && post.categories.length > 0" class="mb-2">
                                         <span class="bg-[#dc2626] text-[#ffffff] px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium">
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
-                                    <p class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl text-sm sm:text-base">
+                                    <h2 class="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold mb-2 sm:mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                    <p class="text-gray-100 mb-3 sm:mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-full text-xs sm:text-sm md:text-base">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                     </p>
-                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-sm sm:text-base">
+                                    <span class="inline-block bg-[#dc2626] hover:bg-[#dc2626] text-white px-3 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm md:text-base">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -216,34 +216,34 @@
             </section>
 
             <!-- Top AdSense Banner -->
-            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-4 sm:mb-8 overflow-hidden flex justify-center mx-2 sm:mx-0">
-                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4 w-full" v-if="getAdHtml('header')">
+            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-4 sm:mb-6 md:mb-8 overflow-hidden flex justify-center mx-2 sm:mx-0">
+                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4 w-full max-w-full" v-if="getAdHtml('header')">
                     <div v-html="getAdHtml('header')"></div>
                 </div>
-                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4 w-full" v-else>
-                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[320px] sm:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                <div class="ad-container ad-banner-top py-2 px-2 sm:px-4 w-full max-w-full" v-else>
+                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                         <span>Anúncio</span>
                     </div>
                 </div>
             </div>
 
             <!-- Main Content Layout -->
-            <div class="flex flex-col lg:flex-row gap-4 sm:gap-8">
-                <div class="flex-grow">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-                        <div class="lg:col-span-2">
+            <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8">
+                <div class="flex-grow min-w-0">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+                        <div class="lg:col-span-2 min-w-0">
                             <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pb-2 text-[#dc2626] border-b-2 border-[#FFFF] px-2 sm:px-0">
                                 Últimas Notícias
                             </h2>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2 sm:px-0">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0">
                                 <article
                                     v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
                                     :key="post.id"
                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                 >
                                     <a :href="`/post/${post.slug}`" class="block">
-                                        <div class="h-40 sm:h-48 overflow-hidden relative">
+                                        <div class="h-32 sm:h-40 md:h-48 overflow-hidden relative">
                                             <OptimizedImage
                                                 :src="post.featureImage"
                                                 :alt="post.title"
@@ -262,11 +262,11 @@
                                     </a>
                                     <div class="p-3 sm:p-4">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
+                                            <h3 class="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
                                                 {{ post.title }}
                                             </h3>
                                         </a>
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                        <p class="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2">
                                             {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                         </p>
                                         
@@ -278,20 +278,20 @@
                                         />
                                         
                                         <div class="flex justify-between items-center text-xs text-gray-500">
-                                            <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                            <span>{{ formatDate(post.publishedAt) }}</span>
+                                            <span v-if="getAuthor(post)" class="truncate">Por {{ getAuthor(post).name }}</span>
+                                            <span class="flex-shrink-0 ml-2">{{ formatDate(post.publishedAt) }}</span>
                                         </div>
                                     </div>
                                 </article>
                             </div>
 
                             <!-- Mid-content AdSense Banner -->
-                            <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-6 sm:my-8 overflow-hidden flex justify-center">
-                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4 w-full" v-if="getAdHtml('inContent')">
+                            <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-4 sm:my-6 md:my-8 overflow-hidden flex justify-center">
+                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4 w-full max-w-full" v-if="getAdHtml('inContent')">
                                     <div v-html="getAdHtml('inContent')"></div>
                                 </div>
-                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4 w-full" v-else>
-                                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[320px] sm:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                                <div class="ad-container ad-banner-mid py-2 px-2 sm:px-4 w-full max-w-full" v-else>
+                                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -302,14 +302,14 @@
                                     Mais Conteúdo
                                 </h2>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0">
                                     <article
                                         v-for="post in posts.slice(featuredPost ? 5 : 4)"
                                         :key="post.id"
                                         class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                     >
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <div class="h-40 sm:h-48 overflow-hidden relative">
+                                            <div class="h-32 sm:h-40 md:h-48 overflow-hidden relative">
                                                 <OptimizedImage
                                                     :src="post.featureImage"
                                                     :alt="post.title"
@@ -327,11 +327,11 @@
                                         </a>
                                         <div class="p-3 sm:p-4">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
+                                                <h3 class="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-2 hover:text-[#dc2626] transition-colors line-clamp-2">
                                                     {{ post.title }}
                                                 </h3>
                                             </a>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                            <p class="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2">
                                                 {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                             </p>
                                             
@@ -343,26 +343,26 @@
                                             />
                                             
                                             <div class="flex justify-between items-center text-xs text-gray-500">
-                                                <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
-                                                <span>{{ formatDate(post.publishedAt) }}</span>
+                                                <span v-if="getAuthor(post)" class="truncate">Por {{ getAuthor(post).name }}</span>
+                                                <span class="flex-shrink-0 ml-2">{{ formatDate(post.publishedAt) }}</span>
                                             </div>
                                         </div>
                                     </article>
                                 </div>
                             </div>
 
-                            <div v-if="adSettings.enableAds && adSettings.homePageAfterPosts" class="w-full bg-gray-100 rounded-lg mt-6 sm:mt-8 mb-4 overflow-hidden flex justify-center">
-                                <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4 w-full" v-if="getAdHtml('belowContent')">
+                            <div v-if="adSettings.enableAds && adSettings.homePageAfterPosts" class="w-full bg-gray-100 rounded-lg mt-4 sm:mt-6 md:mt-8 mb-4 overflow-hidden flex justify-center">
+                                <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4 w-full max-w-full" v-if="getAdHtml('belowContent')">
                                     <div v-html="getAdHtml('belowContent')"></div>
                                 </div>
-                                <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4 w-full" v-else>
-                                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[320px] sm:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                                <div class="ad-container ad-banner-bottom py-2 px-2 sm:px-4 w-full max-w-full" v-else>
+                                    <div class="ad-placeholder h-[70px] sm:h-[90px] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div v-if="loadingMore" class="mt-6 sm:mt-8 flex justify-center items-center py-6">
+                            <div v-if="loadingMore" class="mt-4 sm:mt-6 md:mt-8 flex justify-center items-center py-6">
                                 <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-[#dc2626]"></div>
                                 <span class="ml-3 text-gray-600 text-sm sm:text-base">Carregando mais posts...</span>
                             </div>
@@ -371,22 +371,22 @@
                         </div>
 
                         <!-- Right Column (Widgets + Ads) -->
-                        <div class="lg:col-span-1 w-full lg:min-w-[300px] px-2 sm:px-0">
+                        <div class="lg:col-span-1 w-full lg:max-w-[320px] px-2 sm:px-0 min-w-0">
                             <!-- AdSense Rectangle (Top) -->
-                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[250px] sm:min-h-[400px]" aria-label="Publicidade" aria-hidden="true">
-                                <div class="ad-container ad-sidebar-top w-full" v-if="getAdHtml('sidebarTop')">
+                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[400px]" aria-label="Publicidade" aria-hidden="true">
+                                <div class="ad-container ad-sidebar-top w-full max-w-full" v-if="getAdHtml('sidebarTop')">
                                     <div v-html="getAdHtml('sidebarTop')"></div>
                                 </div>
-                                <div class="ad-container ad-sidebar-top w-full" v-else>
-                                    <div class="ad-placeholder h-[200px] sm:h-[250px] w-full max-w-[280px] sm:max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                                <div class="ad-container ad-sidebar-top w-full max-w-full" v-else>
+                                    <div class="ad-placeholder h-[180px] sm:h-[200px] md:h-[250px] w-full max-w-[280px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Popular Posts Widget -->
-                            <div class="bg-white rounded-lg shadow-md p-4 sm:p-5 mb-4 sm:mb-6">
-                                <h2 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]" id="popular-posts">
+                            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 md:p-5 mb-4 sm:mb-6">
+                                <h2 class="text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 pb-2 text-[#dc2626] border-b-2 border-[#000]" id="popular-posts">
                                     Mais Populares
                                 </h2>
 
@@ -396,7 +396,7 @@
                                         :key="post.id"
                                         class="flex gap-2 sm:gap-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
                                     >
-                                        <div class="w-16 sm:w-20 h-12 sm:h-16 flex-shrink-0 overflow-hidden rounded-md">
+                                        <div class="w-12 sm:w-16 md:w-20 h-10 sm:h-12 md:h-16 flex-shrink-0 overflow-hidden rounded-md">
                                             <a :href="`/post/${post.slug}`" :aria-label="'Ver post: ' + post.title">
                                                 <OptimizedImage
                                                     :src="post.image"
@@ -409,24 +409,24 @@
                                         </div>
                                         <div class="flex-grow min-w-0">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h4 class="text-sm font-semibold text-gray-800 hover:text-[#dc2626] transition-colors line-clamp-2">
+                                                <h4 class="text-xs sm:text-sm font-semibold text-gray-800 hover:text-[#dc2626] transition-colors line-clamp-2">
                                                     {{ post.title }}
                                                 </h4>
                                             </a>
                                             
                                             <!-- Compact Audio Player for sidebar -->
                                             <div v-if="hasAudio(post.content) && extractAudioUrl(post.content)" class="mt-2">
-                                                <div class="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                                <div class="flex items-center gap-2 bg-gray-50 rounded p-1 sm:p-2">
                                                     <button
                                                         @click="toggleAudio(post.id, extractAudioUrl(post.content)!)"
-                                                        class="flex-shrink-0 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors text-xs"
+                                                        class="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors text-xs"
                                                         :aria-label="'Reproduzir áudio de ' + post.title"
                                                     >
-                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                        <svg class="w-2 h-2 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 24 24">
                                                             <path d="M8 5v14l11-7z"/>
                                                         </svg>
                                                     </button>
-                                                    <span class="text-xs text-gray-600">🎵 Áudio disponível</span>
+                                                    <span class="text-xs text-gray-600 truncate">🎵 Áudio disponível</span>
                                                 </div>
                                             </div>
                                             
@@ -439,24 +439,24 @@
                             </div>
 
                             <!-- AdSense Rectangle (Middle) -->
-                            <div class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[250px] sm:min-h-[400px]">
-                                <div class="ad-container ad-sidebar-mid w-full" v-if="getAdHtml('sidebarMid')">
+                            <div class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[400px]">
+                                <div class="ad-container ad-sidebar-mid w-full max-w-full" v-if="getAdHtml('sidebarMid')">
                                     <div v-html="getAdHtml('sidebarMid')"></div>
                                 </div>
-                                <div class="ad-container ad-sidebar-mid w-full" v-else>
-                                    <div class="ad-placeholder h-[200px] sm:h-[250px] w-full max-w-[280px] sm:max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                                <div class="ad-container ad-sidebar-mid w-full max-w-full" v-else>
+                                    <div class="ad-placeholder h-[180px] sm:h-[200px] md:h-[250px] w-full max-w-[280px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- AdSense Rectangle (Bottom) -->
-                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[250px] sm:min-h-[400px]">
-                                <div class="ad-container ad-sidebar-bottom w-full" v-if="getAdHtml('sidebarBottom')">
+                            <div v-if="adSettings.enableAds && adSettings.homePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-4 sm:mb-6 flex justify-center min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[400px]">
+                                <div class="ad-container ad-sidebar-bottom w-full max-w-full" v-if="getAdHtml('sidebarBottom')">
                                     <div v-html="getAdHtml('sidebarBottom')"></div>
                                 </div>
-                                <div class="ad-container ad-sidebar-bottom w-full" v-else>
-                                    <div class="ad-placeholder h-[200px] sm:h-[250px] w-full max-w-[280px] sm:max-w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
+                                <div class="ad-container ad-sidebar-bottom w-full max-w-full" v-else>
+                                    <div class="ad-placeholder h-[180px] sm:h-[200px] md:h-[250px] w-full max-w-[280px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm mx-auto">
                                         <span>Anúncio</span>
                                     </div>
                                 </div>
@@ -821,8 +821,6 @@ const toggleAudio = (postId: string, audioUrl: string) => {
     });
 };
 
-
-
 // Provide hydrated state to child components
 provide('hydrated', hydrated);
 
@@ -863,6 +861,12 @@ watch(() => posts.value.length, async () => {
 </script>
 
 <style scoped>
+/* Prevent horizontal overflow */
+* {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 @media (max-width: 1280px) {
     .ad-sidebar-left {
         display: none;
@@ -872,15 +876,46 @@ watch(() => posts.value.length, async () => {
 /* Responsive utilities */
 @media (max-width: 640px) {
     .lg\:grid-cols-3 {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
     
     .lg\:col-span-2 {
-        grid-column: span 1;
+        grid-column: span 1 !important;
     }
     
     .lg\:col-span-1 {
-        grid-column: span 1;
+        grid-column: span 1 !important;
+    }
+    
+    .md\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .md\:col-span-2 {
+        grid-column: span 1 !important;
+    }
+    
+    .md\:col-span-1 {
+        grid-column: span 1 !important;
+    }
+    
+    .md\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+    .lg\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .lg\:col-span-2 {
+        grid-column: span 1 !important;
+    }
+    
+    .lg\:col-span-1 {
+        grid-column: span 1 !important;
     }
 }
 
@@ -890,6 +925,7 @@ watch(() => posts.value.length, async () => {
     -webkit-line-clamp: 2;
     line-clamp: 2;
     overflow: hidden;
+    word-break: break-word;
 }
 
 .ad-placeholder {
@@ -898,6 +934,14 @@ watch(() => posts.value.length, async () => {
     justify-content: center;
     border: 1px dashed #ccc;
     border-radius: 4px;
+    max-width: 100%;
+}
+
+/* Prevent text overflow */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Mobile optimizations */
@@ -908,6 +952,17 @@ watch(() => posts.value.length, async () => {
     
     .hover\:-translate-y-1:hover {
         transform: none !important;
+    }
+    
+    /* Ensure images don't break layout */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* Prevent content from being too narrow */
+    .min-w-0 {
+        min-width: 0;
     }
 }
 
@@ -923,6 +978,34 @@ watch(() => posts.value.length, async () => {
     
     .hover\:-translate-y-1:hover {
         transform: none;
+    }
+}
+
+/* Flexbox improvements for responsive layout */
+@media (max-width: 1023px) {
+    .flex-grow {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .flex-shrink-0 {
+        flex-shrink: 0;
+    }
+}
+
+/* Grid improvements */
+@media (max-width: 1023px) {
+    .grid {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    .gap-3 {
+        gap: 0.75rem;
+    }
+    
+    .gap-4 {
+        gap: 1rem;
     }
 }
 
@@ -969,6 +1052,30 @@ watch(() => posts.value.length, async () => {
     
     .content-with-sidebar {
         margin-left: 16rem !important;
+    }
+}
+
+/* Ensure container doesn't overflow */
+.overflow-x-hidden {
+    overflow-x: hidden;
+}
+
+/* Responsive container */
+@media (max-width: 640px) {
+    .max-w-\[1200px\] {
+        max-width: 100% !important;
+    }
+}
+
+/* Ad container responsive fixes */
+.ad-container {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+@media (max-width: 767px) {
+    .ad-container {
+        padding: 0.5rem;
     }
 }
 </style>
