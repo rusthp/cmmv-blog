@@ -1,1 +1,209 @@
-importScripts("https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js");const{registerRoute:e,setCatchHandler:s}=workbox.routing,{CacheFirst:t,NetworkFirst:a,StaleWhileRevalidate:n}=workbox.strategies,{ExpirationPlugin:i}=workbox.expiration,{CacheableResponsePlugin:o}=workbox.cacheableResponse,{BackgroundSyncPlugin:c}=workbox.backgroundSync,{skipWaiting:E,clientsClaim:r}=workbox.core;self.addEventListener("install",e=>{e.waitUntil(self.skipWaiting())}),r();const VERSION="v0.0.6",CACHE_NAMES={ASSETS:"assets-cache-"+VERSION,STATIC:"static-cache-"+VERSION,LAST_VISITED:"last-visited-"+VERSION,COUPONS:`coupons-pages-${VERSION}-${(new Date).toLocaleDateString("pt-BR").replace(/\//g,"")}`,OFFLINE_QUEUE:"offline-queue-"+VERSION},ROUTE_REGEX={IMAGES:/\.(?:png|jpg|jpeg|svg|gif|webp)$/i,ASSETS:/\.(?:js|css|woff2?|eot|ttf|otf|map)$/i,COUPONS:/(?:\?|&)c=(\d+)(?:&|#|$)/,LAST_VISITED:/.*(?:static\.com\.br\/widget\/lastvisitedstores)/},assetsExpirationPlugin=new i({maxEntries:100,maxAgeSeconds:2592e3,purgeOnQuotaError:!0}),imagesExpirationPlugin=new i({maxEntries:100,maxAgeSeconds:5184e3,purgeOnQuotaError:!0}),couponsExpirationPlugin=new i({maxEntries:40,maxAgeSeconds:1800,purgeOnQuotaError:!0}),lastVisitedStoresExpirationPlugin=new i({maxEntries:8,maxAgeSeconds:60,purgeOnQuotaError:!0});e(({request:e,url:s})=>("script"===e.destination||"style"===e.destination)&&!s.hostname.includes("googlesyndication.com")&&!s.hostname.includes("googleadservices.com")&&!s.hostname.includes("doubleclick.net"),new t({cacheName:CACHE_NAMES.ASSETS,plugins:[new o({statuses:[200]}),assetsExpirationPlugin]})),e(({request:e})=>"image"===e.destination||ROUTE_REGEX.IMAGES.test(e.url),new t({cacheName:"images-cache-"+VERSION,plugins:[new o({statuses:[200]}),imagesExpirationPlugin]})),e(({url:e})=>"https://fonts.gstatic.com"===e.origin,new t({cacheName:"google-fonts",plugins:[new o({statuses:[200]}),new i({maxEntries:20})]})),e(ROUTE_REGEX.COUPONS,new t({cacheName:CACHE_NAMES.COUPONS,plugins:[new c(CACHE_NAMES.OFFLINE_QUEUE,{maxRetentionTime:1440}),couponsExpirationPlugin]})),e(ROUTE_REGEX.LAST_VISITED,new t({cacheName:CACHE_NAMES.LAST_VISITED,plugins:[lastVisitedStoresExpirationPlugin]})),self.addEventListener("message",e=>{"clear_coupons"===e.data?couponsExpirationPlugin.deleteCacheAndMetadata().finally(()=>{e.source.postMessage("coupons_cleared")}):"clear_assets"===e.data?assetsExpirationPlugin.deleteCacheAndMetadata().finally(()=>{e.source.postMessage("assets_cleared")}):"logout"===e.data?lastVisitedStoresExpirationPlugin.deleteCacheAndMetadata().finally(()=>{e.source.postMessage("last_visited_cleared")}):e.data?.type==="force_update"&&(self.skipWaiting(),r())});
+importScripts("https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js");
+
+const {
+    registerRoute,
+    setCatchHandler
+} = workbox.routing;
+const {
+    CacheFirst,
+    NetworkFirst,
+    StaleWhileRevalidate
+} = workbox.strategies;
+const {
+    ExpirationPlugin
+} = workbox.expiration;
+const {
+    CacheableResponsePlugin
+} = workbox.cacheableResponse;
+const {
+    BackgroundSyncPlugin
+} = workbox.backgroundSync;
+const {
+    skipWaiting,
+    clientsClaim
+} = workbox.core;
+
+self.addEventListener("install", e => {
+    e.waitUntil(self.skipWaiting());
+});
+clientsClaim();
+
+const VERSION = "v0.0.7";
+
+const CACHE_NAMES = {
+    ASSETS: "assets-cache-" + VERSION,
+    STATIC: "static-cache-" + VERSION,
+    LAST_VISITED: "last-visited-" + VERSION,
+    COUPONS: `coupons-pages-${VERSION}-${(new Date).toLocaleDateString("pt-BR").replace(/\//g, "")}`,
+    OFFLINE_QUEUE: "offline-queue-" + VERSION
+};
+
+const ROUTE_REGEX = {
+    IMAGES: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+    ASSETS: /\.(?:js|css|woff2?|eot|ttf|otf|map)$/i,
+    COUPONS: /(?:\?|&)c=(\d+)(?:&|#|$)/,
+    LAST_VISITED: /.*(?:static\.com\.br\/widget\/lastvisitedstores)/,
+};
+
+const assetsExpirationPlugin = new ExpirationPlugin({
+    maxEntries: 100,
+    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
+    purgeOnQuotaError: true
+});
+
+const imagesExpirationPlugin = new ExpirationPlugin({
+    maxEntries: 100,
+    maxAgeSeconds: 60 * 24 * 60 * 60, // 60 dias
+    purgeOnQuotaError: true
+});
+
+const couponsExpirationPlugin = new ExpirationPlugin({
+    maxEntries: 40,
+    maxAgeSeconds: 1800,
+    purgeOnQuotaError: true
+});
+
+const lastVisitedStoresExpirationPlugin = new ExpirationPlugin({
+    maxEntries: 8,
+    maxAgeSeconds: 60,
+    purgeOnQuotaError: true
+});
+
+// Lista de domínios do Google Ads/AdSense que devem ser excluídos do cache
+const GOOGLE_ADS_DOMAINS = [
+    'googlesyndication.com',
+    'googleadservices.com',
+    'doubleclick.net',
+    'adtrafficquality.google',
+    'googletagmanager.com',
+    'googletagservices.com',
+    'gstatic.com',
+    'adsystem.google.com',
+    'pagead2.googlesyndication.com'
+];
+
+// Função helper para verificar se uma URL é do Google Ads
+const isGoogleAdsUrl = (url) => {
+    return GOOGLE_ADS_DOMAINS.some(domain => url.hostname.includes(domain)) ||
+           url.hostname.includes('google') && url.pathname.includes('/pagead/');
+};
+
+// 🚫 Excluir completamente requisições do Google Ads/AdSense do service worker
+registerRoute(
+    ({ url }) => isGoogleAdsUrl(url) || 
+                 url.hostname.includes('google') && url.pathname.includes('/pagead/') ||
+                 url.pathname.includes('sodar'),
+    new NetworkFirst({
+        networkTimeoutSeconds: 3,
+        plugins: [
+            new CacheableResponsePlugin({ 
+                statuses: [0, 200] // Aceita respostas opacas também
+            })
+        ]
+    })
+);
+
+// ⚡️ Cache JS/CSS com CacheFirst (exceto AdSense)
+registerRoute(
+    ({ request, url }) =>
+        (request.destination === 'script' || request.destination === 'style') &&
+        !isGoogleAdsUrl(url),
+    new CacheFirst({
+        cacheName: CACHE_NAMES.ASSETS,
+        plugins: [
+            new CacheableResponsePlugin({ statuses: [200] }),
+            assetsExpirationPlugin
+        ]
+    })
+);
+
+// ⚡️ Cache imagens
+registerRoute(
+    ({ request }) => request.destination === 'image' || ROUTE_REGEX.IMAGES.test(request.url),
+    new CacheFirst({
+        cacheName: 'images-cache-' + VERSION,
+        plugins: [
+            new CacheableResponsePlugin({ statuses: [200] }),
+            imagesExpirationPlugin
+        ]
+    })
+);
+
+// 🔄 Cache fontes do Google
+registerRoute(
+    ({ url }) => url.origin === 'https://fonts.gstatic.com',
+    new CacheFirst({
+        cacheName: 'google-fonts',
+        plugins: [
+            new CacheableResponsePlugin({ statuses: [200] }),
+            new ExpirationPlugin({ maxEntries: 20 })
+        ]
+    })
+);
+
+// 🏷 Cupons
+registerRoute(ROUTE_REGEX.COUPONS, new CacheFirst({
+    cacheName: CACHE_NAMES.COUPONS,
+    plugins: [
+        new BackgroundSyncPlugin(CACHE_NAMES.OFFLINE_QUEUE, {
+            maxRetentionTime: 1440
+        }),
+        couponsExpirationPlugin
+    ]
+}));
+
+// 🛍 Últimas lojas
+registerRoute(ROUTE_REGEX.LAST_VISITED, new CacheFirst({
+    cacheName: CACHE_NAMES.LAST_VISITED,
+    plugins: [lastVisitedStoresExpirationPlugin]
+}));
+
+// 🛡️ Catch handler para requisições que falham (evita erros no console)
+setCatchHandler(async ({ event, request, url }) => {
+    // Se for uma requisição do Google Ads/AdSense que falhou, ignore silenciosamente
+    if (isGoogleAdsUrl(url) || 
+        url.hostname.includes('google') || 
+        url.pathname.includes('pagead') ||
+        url.pathname.includes('sodar')) {
+        console.log('Ignorando falha em requisição do Google Ads:', url.href);
+        return;
+    }
+
+    // Para outras requisições, tente o cache ou retorne uma resposta offline
+    switch (request.destination) {
+        case 'document':
+            // Para páginas, retorne uma resposta de offline se disponível
+            return caches.match('/offline.html') || new Response('Página offline indisponível', {
+                status: 503,
+                statusText: 'Service Unavailable'
+            });
+        
+        case 'image':
+            // Para imagens, retorne um placeholder se disponível
+            return caches.match('/assets/offline-image.svg') || new Response();
+        
+        default:
+            console.log('Requisição falhou:', url.href);
+            return new Response();
+    }
+});
+
+// 🎯 Mensagens
+self.addEventListener("message", e => {
+    if (e.data === "clear_coupons") {
+        couponsExpirationPlugin.deleteCacheAndMetadata().finally(() => {
+            e.source.postMessage("coupons_cleared");
+        });
+    } else if (e.data === "clear_assets") {
+        assetsExpirationPlugin.deleteCacheAndMetadata().finally(() => {
+            e.source.postMessage("assets_cleared");
+        });
+    } else if (e.data === "logout") {
+        lastVisitedStoresExpirationPlugin.deleteCacheAndMetadata().finally(() => {
+            e.source.postMessage("last_visited_cleared");
+        });
+    } else if (e.data?.type === "force_update") {
+        self.skipWaiting();
+        clientsClaim();
+    }
+});
