@@ -144,6 +144,8 @@ export class PostsPublicService {
                         post.featureImage,
                         "webp",
                         1200,
+                        675,
+                        80,
                         post.featureImageAlt,
                         post.featureImageCaption
                     );
@@ -173,6 +175,8 @@ export class PostsPublicService {
                         author.image,
                         "webp",
                         128,
+                        128,
+                        80,
                         author.name,
                         author.name
                     );
@@ -181,6 +185,8 @@ export class PostsPublicService {
                         author.coverImage,
                         "webp",
                         1024,
+                        300,
+                        80,
                         author.name,
                         author.name
                     );

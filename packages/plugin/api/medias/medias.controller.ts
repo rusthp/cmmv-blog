@@ -18,7 +18,9 @@ import {
 interface ProcessImageInterface {
     image: string;
     format: string;
-    maxWidth: number;
+    width?: number;
+    height?: number;
+    quality?: number;
     alt: string;
     caption: string;
 }
@@ -55,8 +57,15 @@ export class MediasController {
     @ContentType("application/json")
     @Raw()
     async processImage(@Body() body: ProcessImageInterface) {
-        const url = await this.mediasService.getImageUrl(body.image, body.format, body.maxWidth, body.alt, body.caption);
-        return { url };
+        return this.mediasService.getImageUrl(
+            body.image,
+            body.format,
+            body.width,
+            body.height,
+            body.quality,
+            body.alt,
+            body.caption
+        );
     }
 
     @Put("medias/:id", { exclude: true })
@@ -124,35 +133,33 @@ export class MediasController {
     async bulkDeleteMedias(@Body() body: {ids: string[], createBackup?: boolean}) {
         try {
             let backupResult: any = null;
-            
             if (body.createBackup) {
                 try {
                     let backupService: any;
-                    
+
                     try {
                         const backupModulePath = require.resolve('../backup/backup.service');
                         delete require.cache[backupModulePath];
                         const { BackupService } = require('../backup/backup.service');
-                        
+
                         const storageModulePath = require.resolve('../storage/storage.service');
                         const { BlogStorageService } = require('../storage/storage.service');
-                        
+
                         const storageService = new BlogStorageService();
                         backupService = new BackupService(this.mediasService, storageService);
-                        
                     } catch (importError: any) {
                         console.error('Failed to import BackupService:', importError);
                         throw new Error(`Failed to import BackupService: ${importError.message}`);
                     }
-                    
+
                     if (!backupService) {
                         throw new Error('BackupService could not be instantiated');
                     }
-                    
+
                     if (typeof backupService.backupMediasBeforeDeletion !== 'function') {
                         throw new Error('BackupService does not have backupMediasBeforeDeletion method');
                     }
-                    
+
                     backupResult = await backupService.backupMediasBeforeDeletion(body.ids);
                 } catch (backupError: any) {
                     console.error('Backup creation failed:', backupError);
@@ -167,16 +174,14 @@ export class MediasController {
                     };
                 }
             }
-            
+
             const result = await this.mediasService.bulkDeleteMedias(body.ids, false);
-            
-            if (backupResult) {
+
+            if (backupResult)
                 result.backup = backupResult;
-            }
-            
+
             return result;
         } catch (error) {
-            console.error('Bulk delete error:', error);
             throw error;
         }
     }
