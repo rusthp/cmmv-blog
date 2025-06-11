@@ -1,0 +1,596 @@
+:root {
+    --bg-color: linear-gradient(135deg, #7c3aed 0%, #000000 20%, #000000 50%, #000000 80%, #7c3aed 100%);
+    --text-color: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.2);
+    --muted-color: #e5e7eb;
+}
+
+.dark {
+    --bg-color: linear-gradient(135deg, #6b21a8 0%, #000000 20%, #000000 50%, #000000 80%, #6b21a8 100%);
+    --text-color: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.3);
+    --muted-color: #f3f4f6;
+}
+
+/* Aplicar gradiente de fundo - Otimizado para performance */
+html, body {
+    background: var(--bg-color);
+    min-height: 100vh;
+    color: var(--text-color);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Garantir que containers principais herdem o fundo transparente */
+main, .container, .content {
+    background: transparent !important;
+}
+
+/* Força o gradiente e sobrescreve Tailwind */
+* {
+    box-sizing: border-box;
+}
+
+/* Sobrescrever classes do Tailwind que aplicam fundo branco */
+.bg-gray-100, .bg-white, .bg-neutral-100 {
+    background: transparent !important;
+}
+
+/* Cards de postagens com destaque azul claro - Otimizado */
+.bg-white .post-card, 
+.post-card,
+.bg-white,
+.rounded-lg,
+.shadow-md,
+.border,
+.overflow-hidden,
+.hover\:shadow-lg {
+    background: rgba(135, 206, 235, 0.15) !important;
+    border-radius: 12px;
+    border: 2px solid rgba(135, 206, 235, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(135, 206, 235, 0.2) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    padding: 16px;
+    word-wrap: normal;
+}
+
+/* Hover effects para cards - Otimizado */
+.post-card:hover,
+.bg-white:hover,
+.rounded-lg:hover {
+    background: rgba(135, 206, 235, 0.25) !important;
+    border-color: rgba(135, 206, 235, 0.6) !important;
+    box-shadow: 0 6px 20px rgba(135, 206, 235, 0.3) !important;
+    transform: translateY(-3px);
+}
+
+/* Destaque para conteúdo dos cards */
+.post-card h2,
+.post-card h3,
+.bg-white h2,
+.bg-white h3 {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid rgba(135, 206, 235, 0.4);
+    position: relative;
+    line-height: 1.4;
+    /* Ellipsis para títulos */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.8em; /* 2 linhas */
+}
+
+/* Linha divisória animada */
+.post-card h2::after,
+.post-card h3::after,
+.bg-white h2::after,
+.bg-white h3::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #87ceeb, #add8e6);
+    transition: width 0.3s ease;
+}
+
+.post-card:hover h2::after,
+.post-card:hover h3::after,
+.bg-white:hover h2::after,
+.bg-white:hover h3::after {
+    width: 100%;
+}
+
+/* Texto dos cards */
+.post-card p,
+.bg-white p {
+    color: #f0f8ff !important;
+    line-height: 1.5;
+    max-height: 4.5em; /* 3 linhas máximo */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+}
+
+/* Links dos cards */
+.post-card a,
+.bg-white a {
+    color: #87ceeb !important;
+    text-decoration: none;
+}
+
+.post-card a:hover,
+.bg-white a:hover {
+    color: #add8e6 !important;
+}
+
+/* Seção Mais Populares - Corrigir legibilidade e tamanho das imagens */
+.bg-white h4 {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    /* Ellipsis para títulos da sidebar */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.6em;
+}
+
+.bg-white .text-gray-500,
+.bg-white .text-xs {
+    color: #e5e7eb !important;
+    font-size: 13px !important;
+}
+
+.bg-white .text-gray-800 {
+    color: #ffffff !important;
+}
+
+/* Aumentar tamanho das imagens na seção Mais Populares */
+.bg-white .w-20 {
+    width: 120px !important;
+}
+
+.bg-white .h-16 {
+    height: 90px !important;
+}
+
+/* Melhorar hover dos links na seção Mais Populares */
+.bg-white a:hover h4 {
+    color: #87ceeb !important;
+    transition: color 0.2s ease;
+}
+
+/* Espaçamento entre items da seção Mais Populares */
+.bg-white .space-y-4 > div {
+    padding-bottom: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+/* Melhorar o layout dos items da seção Mais Populares */
+.bg-white .flex.gap-3 {
+    gap: 16px !important;
+    align-items: flex-start !important;
+}
+
+/* Garantir que o texto se ajuste ao lado da imagem maior */
+.bg-white .flex-grow {
+    min-width: 0;
+    padding-top: 4px;
+}
+
+/* Botão Ver Mais Posts */
+.bg-\\[\\#0a5d28\\] {
+    background-color: #0a5d28 !important;
+}
+
+.hover\\:bg-\\[\\#064019\\]:hover {
+    background-color: #064019 !important;
+}
+
+/* Estilo adicional para garantir que o botão fique destacado */
+button[class*="bg-[#0a5d28]"] {
+    background: linear-gradient(135deg, #0a5d28, #064019) !important;
+    box-shadow: 0 4px 16px rgba(10, 93, 40, 0.3) !important;
+    border: 2px solid rgba(135, 206, 235, 0.3);
+}
+
+button[class*="bg-[#0a5d28]"]:hover {
+    background: linear-gradient(135deg, #064019, #0a5d28) !important;
+    box-shadow: 0 6px 20px rgba(10, 93, 40, 0.4) !important;
+    border-color: rgba(135, 206, 235, 0.5);
+}
+
+.article-container {
+    padding-bottom: 0px;
+}
+
+.post-header {
+    margin-bottom: 0px;
+}
+
+.post-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+.post-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+    color: var(--muted-color);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: #ffcc00;
+    color: #333;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.post-featured-image {
+    margin: 0 -20px 32px;
+}
+
+.featured-img {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.image-caption {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--muted-color);
+    font-style: italic;
+}
+
+.post-content {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+}
+
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4 {
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.post-content p {
+    margin-bottom: 20px;
+}
+
+.post-content img {
+    max-width: 100%;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+.post-content a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.post-content a:hover {
+    text-decoration: underline;
+}
+
+.post-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 16px;
+    margin-left: 0;
+    color: #666;
+    font-style: italic;
+}
+
+.post-content pre {
+    width: 100%;
+    background: #555;
+    color: var(--color-neutral-300);
+    padding: 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.post-content code {
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+.post-content ul {
+    margin-left: 40px;
+    margin-bottom: 24px;
+}
+
+.post-content li {
+    list-style-type: disc;
+    position: relative;
+}
+
+.post-content h2 {
+    font-size: 24px;
+    padding-top: 20.8px;
+    margin-bottom: 14.4px;
+    line-height: 1.5;
+}
+
+.post-taxonomy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    padding-bottom: 20px;
+}
+
+.post-tags h3,
+.post-categories h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.tags-list,
+.categories-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+}
+
+.category {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e6f3ff;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: #0066cc;
+}
+
+.author-box {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    padding: 24px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.author-box-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.author-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 16px;
+    flex-shrink: 0;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.author-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0066cc;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.author-info {
+    flex: 1;
+}
+
+.author-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: var(--text-color);
+}
+
+.author-name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.author-name a:hover {
+    text-decoration: underline;
+}
+
+.author-location {
+    font-size: 14px;
+    color: var(--muted-color);
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.author-bio {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin-bottom: 16px;
+}
+
+.author-social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: #eee;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #555;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.social-link:hover {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+}
+
+/* Regras para iframes e incorporações de vídeo */
+iframe {
+    width: 100%;
+    border: none;
+    aspect-ratio: 16/9;
+    min-height: 477px;
+}
+
+.video-embed-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    padding-bottom: 56.25%; /* Para proporção 16:9 */
+    margin: 1.5rem 0;
+}
+
+.video-embed-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-height: unset; /* Remover min-height aqui para manter proporção */
+}
+
+.post-content iframe {
+    max-width: 100%;
+    border: none;
+}
+
+/* Media queries para diferentes tamanhos de tela */
+@media (max-width: 1200px) {
+    iframe {
+        min-height: 400px;
+    }
+}
+
+@media (max-width: 992px) {
+    iframe {
+        min-height: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .post-title {
+        font-size: 2rem;
+    }
+
+    .post-content {
+        font-size: 1rem;
+    }
+
+    iframe {
+        min-height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    iframe {
+        min-height: 250px;
+    }
+
+    .video-embed-container {
+        padding-bottom: 56.25%; /* Manter proporção 16:9 */
+    }
+}
+
+@media (max-width: 480px) {
+    iframe {
+        min-height: 215px;
+    }
+}
+
+/* Add these styles for Reddit embeds at the end of the file */
+.reddit-embed {
+    margin: 1.5rem auto;
+    max-width: 500px;
+    position: relative;
+    min-height: 200px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.reddit-embed .reddit-card {
+    width: 100%;
+    border: none;
+}
+
+.reddit-embed iframe {
+    border: none !important;
+    width: 100%;
+    min-height: 500px;
+}
+
+/* Reddit loading placeholder */
+.reddit-embed::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23FF4500'%3E%3Cpath d='M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0zm5.5 11.5c-.3.3-.7.4-1.1.4-.3 0-.6-.1-.9-.3-1 .7-2.2 1-3.5 1.1l.7 3.1 2.2-.5c.2.4.6.7 1.1.7.7 0 1.2-.6 1.2-1.2 0-.7-.6-1.2-1.2-1.2-.5 0-.9.3-1.1.7l-2.5.6-.7-3.5c-1.3 0-2.5-.4-3.5-1.1-.3.2-.6.3-.9.3-.4 0-.8-.1-1.1-.4-.6-.6-.6-1.5 0-2.1.1-.1.2-.1.3-.2-.1-.5-.2-1-.2-1.5C4.5 6.2 7 5 10 5s5.5 1.2 5.5 2.7c0 .5-.1 1-.2 1.5.1.1.2.1.3.2.5.5.5 1.4-.1 2.1zM7.2 9.5c0-.7.6-1.2 1.2-1.2.7 0 1.2.6 1.2 1.2 0 .7-.6 1.2-1.2 1.2-.7 0-1.2-.5-1.2-1.2zm5.5 2.4c-.8.8-2.3.8-3.1 0-.1-.1-.1-.3 0-.4.1-.1.3-.1.4 0 .6.6 1.7.6 2.3 0 .1-.1.3-.1.4 0 .2.1.2.3 0 .4zm-.5-1.2c-.7 0-1.2-.6-1.2-1.2 0-.7.6-1.2 1.2-1.2.7 0 1.2.6 1.2 1.2 0 .7-.5 1.2-1.2 1.2z'%3E%3C/path%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.2;
+}
