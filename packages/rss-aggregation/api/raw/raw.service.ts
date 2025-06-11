@@ -12,6 +12,7 @@ import {
 import { AIContentService } from "@cmmv/ai-content";
 //@ts-ignore
 import { PromptsServiceTools } from "@cmmv/blog/prompts/prompts.service";
+//@ts-ignore
 import { ParserService } from "../parser/parser.service";
 
 interface AIJob {

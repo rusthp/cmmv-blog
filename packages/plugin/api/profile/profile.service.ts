@@ -6,9 +6,14 @@ import {
 import {
     Repository
 } from "@cmmv/repository";
+import { MediasService } from "../medias/medias.service";
 
 @Service("blog_profile")
 export class BlogProfileService extends AbstractService {
+    constructor(private readonly mediasService: MediasService){
+        super();
+    }
+
     /**
      * Get the profile of the user
      * @param user
@@ -19,7 +24,7 @@ export class BlogProfileService extends AbstractService {
         const userData = await Repository.findOne(UserEntity, { id: user.id, blocked: false });
 
         if(!userData)
-            throw new Error("User not found");
+            throw new Error(`User with ID ${user?.id} not found or is blocked`);
 
         const ProfilesEntity = Repository.getEntity("ProfilesEntity");
         const profile = await Repository.findOne(ProfilesEntity, { user: user.id }, {
@@ -48,7 +53,29 @@ export class BlogProfileService extends AbstractService {
         const userData = await Repository.findOne(UserEntity, { id: user.id, blocked: false });
 
         if(!userData)
-            throw new Error("User not found");
+            throw new Error(`User with ID ${user?.id} not found or is blocked`);
+
+        if (profile.image && profile.image.startsWith('data:image')) {
+            profile.image = await this.mediasService.getImageUrl(
+                profile.image,
+                "webp",
+                400,
+                400,
+                80,
+                `${profile.name || 'user'} profile image`
+            );
+        }
+
+        if (profile.coverImage && profile.coverImage.startsWith('data:image')) {
+            profile.coverImage = await this.mediasService.getImageUrl(
+                profile.coverImage,
+                "webp",
+                1200,
+                400,
+                80,
+                `${profile.name || 'user'} cover image`
+            );
+        }
 
         const ProfilesEntity = Repository.getEntity("ProfilesEntity");
         const profileData = await Repository.findOne(ProfilesEntity, { user: user.id });

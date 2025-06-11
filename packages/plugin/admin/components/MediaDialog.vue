@@ -161,7 +161,14 @@
                                     <p class="text-white truncate">{{ getFileName(media.url) }}</p>
                                     <p class="text-neutral-400 text-xs">{{ formatDate(media.createdAt) }} · {{ formatFileSize(media.size) }}</p>
                                 </div>
-                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity gap-2">
+                                    <button
+                                        @click.stop="openMediaForCrop(media)"
+                                        class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-md"
+                                        title="Edit Media"
+                                    >
+                                        Edit
+                                    </button>
                                     <button
                                         @click.stop="selectMedia(media)"
                                         class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md"
@@ -230,7 +237,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                         {{ formatDate(media.createdAt) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                                        <button
+                                            @click.stop="openMediaForCrop(media)"
+                                            class="text-yellow-500 hover:text-yellow-400 transition-colors"
+                                            title="Edit Media"
+                                        >
+                                            Edit
+                                        </button>
                                         <button
                                             @click.stop="selectMedia(media)"
                                             class="text-blue-500 hover:text-blue-400 transition-colors"
@@ -328,15 +342,124 @@
                         </button>
                     </div>
 
-                    <div class="mt-auto">
+                    <div class="mt-auto space-y-2">
                         <button
                             @click="confirmSelection"
                             class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
                         >
                             Select This Media
                         </button>
+                        <button
+                            @click="confirmDelete"
+                            class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                        >
+                            Delete Media
+                        </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Crop Modal -->
+    <div v-if="mediaCropModalOpen" class="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+        <div class="bg-neutral-800 rounded-lg max-w-4xl w-full p-6 flex gap-6">
+            <!-- Left Side: Crop Area -->
+            <div class="w-2/3">
+                <h3 class="text-lg font-medium text-white mb-4">Edit Media</h3>
+                <div class="relative mb-4">
+                    <div class="w-full max-w-full mx-auto bg-neutral-750 relative overflow-hidden rounded-lg border-2 border-neutral-600" style="height: 400px;">
+                        <canvas
+                            ref="mediaCropCanvas"
+                            class="mx-auto"
+                            @mousedown="startMediaDrag"
+                            @mousemove="onMediaDrag"
+                            @mouseup="stopMediaDrag"
+                            @mouseleave="stopMediaDrag"
+                            @wheel.prevent="handleMediaWheel"
+                            @touchstart.prevent="startMediaDrag"
+                            @touchmove.prevent="onMediaDrag"
+                            @touchend.prevent="stopMediaDrag"
+                        ></canvas>
+                        <div
+                            class="absolute top-0 left-0 pointer-events-none border-2 border-white/80"
+                            :style="{
+                                width: cropBox.width + 'px',
+                                height: cropBox.height + 'px',
+                                transform: `translate(${cropBox.x}px, ${cropBox.y}px)`
+                            }"
+                        ></div>
+                    </div>
+                </div>
+                 <!-- Zoom controls -->
+                <div class="flex items-center justify-center">
+                    <button @click="adjustMediaZoom(-0.1)" class="p-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-l-md">-</button>
+                    <div class="px-4 py-2 bg-neutral-700 text-white text-sm font-medium">
+                        Zoom: {{ Math.round(mediaZoomLevel * 100) }}%
+                    </div>
+                    <button @click="adjustMediaZoom(0.1)" class="p-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-r-md">+</button>
+                </div>
+            </div>
+
+            <!-- Right Side: Options -->
+            <div class="w-1/3">
+                <h4 class="text-lg font-medium text-white mb-4">Options</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-300 mb-1">Dimensions (px)</label>
+                        <div class="flex gap-2">
+                            <input type="number" v-model.number="cropOptions.width" placeholder="Width" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <input type="number" v-model.number="cropOptions.height" placeholder="Height" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="cropFormat" class="block text-sm font-medium text-neutral-300 mb-1">Format</label>
+                        <select id="cropFormat" v-model="cropOptions.format" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="webp">WebP</option>
+                            <option value="jpeg">JPEG</option>
+                            <option value="png">PNG</option>
+                            <option value="avif">AVIF</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label for="cropQuality" class="block text-sm font-medium text-neutral-300 mb-1">Quality (1-100)</label>
+                        <input id="cropQuality" type="range" min="1" max="100" v-model.number="cropOptions.quality" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-center text-sm text-neutral-400">{{ cropOptions.quality }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-300 mb-1">Alt Text</label>
+                        <input v-model="cropOptions.alt" type="text" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white text-sm" placeholder="Image description">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-300 mb-1">Caption</label>
+                        <textarea v-model="cropOptions.caption" rows="2" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white text-sm" placeholder="Optional caption"></textarea>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button @click="mediaCropModalOpen = false" class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md">Cancel</button>
+                    <button @click="cropAndUpload" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md" :disabled="isUploading">
+                        <span v-if="isUploading">Applying...</span>
+                        <span v-else>Apply & Upload</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation -->
+    <div v-if="showDeleteDialog" class="fixed inset-0 bg-black/75 flex items-center justify-center z-[60]">
+        <div class="bg-neutral-800 rounded-lg p-6 max-w-sm w-full">
+            <h3 class="text-lg font-medium text-white">Delete Media</h3>
+            <p class="text-neutral-300 mt-2">Are you sure you want to delete this media? This action cannot be undone.</p>
+            <p class="text-neutral-400 text-sm mt-1">File: {{ selectedMedia?.url.split('/').pop() }}</p>
+            <div class="flex justify-end gap-2 mt-4">
+                <button @click="showDeleteDialog = false" class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md">Cancel</button>
+                <button @click="deleteSelectedMedia" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md" :disabled="isDeleting">
+                    <span v-if="isDeleting">Deleting...</span>
+                    <span v-else>Delete</span>
+                </button>
             </div>
         </div>
     </div>
@@ -392,6 +515,40 @@ const selectedMedia = ref(null);
 const viewMode = ref('grid'); // 'grid' or 'list'
 const uploadProgress = ref(0);
 const isUploading = ref(false);
+
+// Delete confirmation
+const showDeleteDialog = ref(false);
+const isDeleting = ref(false);
+
+// Crop modal state
+const mediaCropModalOpen = ref(false);
+const mediaCropCanvas = ref(null);
+const mediaCropContext = ref(null);
+const selectedMediaForCrop = ref(null);
+const mediaZoomLevel = ref(1);
+const isMediaDragging = ref(false);
+const mediaDragStart = ref({ x: 0, y: 0 });
+const mediaImagePosition = ref({ x: 0, y: 0 });
+const cropBox = ref({ x: 0, y: 0, width: 200, height: 200 });
+const cropOptions = ref({
+    width: 800,
+    height: 600,
+    format: 'webp',
+    quality: 80,
+    alt: '',
+    caption: ''
+});
+
+const CROP_OPTIONS_STORAGE_KEY = 'mediaDialogCropOptions';
+
+watch(() => ({
+    width: cropOptions.value.width,
+    height: cropOptions.value.height,
+    format: cropOptions.value.format,
+    quality: cropOptions.value.quality,
+}), (optionsToSave) => {
+    localStorage.setItem(CROP_OPTIONS_STORAGE_KEY, JSON.stringify(optionsToSave));
+}, { deep: true });
 
 // Pagination state
 const pagination = ref({
@@ -562,6 +719,29 @@ const updateMediaDetails = async () => {
     }
 };
 
+const confirmDelete = () => {
+    if (selectedMedia.value) {
+        showDeleteDialog.value = true;
+    }
+}
+
+const deleteSelectedMedia = async () => {
+    if (!selectedMedia.value) return;
+    isDeleting.value = true;
+    try {
+        await adminClient.medias.delete(selectedMedia.value.id);
+        showNotification('success', 'Media deleted successfully');
+        selectedMedia.value = null;
+        showDeleteDialog.value = false;
+        refreshData();
+    } catch (err) {
+        console.error('Failed to delete media:', err);
+        showNotification('error', err.message || 'Failed to delete media');
+    } finally {
+        isDeleting.value = false;
+    }
+}
+
 const confirmSelection = () => {
     if (selectedMedia.value) {
         emit('select', selectedMedia.value);
@@ -569,72 +749,216 @@ const confirmSelection = () => {
     }
 };
 
-const convertFileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-            resolve(reader.result.toString());
-        };
-        reader.onerror = error => reject(error);
-    });
-};
-
 const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const format = file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+    if (!file.type.startsWith('image/')) {
+        showNotification('error', 'Please select an image file');
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        openMediaForCrop({
+            url: e.target.result,
+            alt: file.name.split('.').slice(0, -1).join(' '),
+            caption: ''
+        });
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+};
+
+const openMediaForCrop = (media) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+        selectedMediaForCrop.value = img;
+        mediaCropModalOpen.value = true;
+        cropOptions.value.alt = media.alt || '';
+        cropOptions.value.caption = media.caption || '';
+
+        setTimeout(() => {
+            initMediaCropCanvas();
+        }, 100);
+    };
+    img.onerror = () => {
+        showNotification('error', 'Failed to load image for editing. Check CORS policy if using a remote URL.');
+    };
+    img.src = media.url;
+};
+
+const initMediaCropCanvas = () => {
+    if (!mediaCropCanvas.value || !selectedMediaForCrop.value) return;
+
+    const canvas = mediaCropCanvas.value;
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+
+    mediaCropContext.value = canvas.getContext('2d');
+    mediaZoomLevel.value = 1;
+
+    const img = selectedMediaForCrop.value;
+    const canvasAspect = canvas.width / canvas.height;
+    const imgAspect = img.width / img.height;
+
+    let initialScale;
+    if (canvasAspect > imgAspect) {
+        initialScale = canvas.height / img.height;
+    } else {
+        initialScale = canvas.width / img.width;
+    }
+    mediaZoomLevel.value = initialScale;
+
+    mediaImagePosition.value = { x: 0, y: 0 };
+    updateCropBox();
+    drawMediaImageOnCanvas();
+};
+
+const drawMediaImageOnCanvas = () => {
+    if (!mediaCropCanvas.value || !selectedMediaForCrop.value || !mediaCropContext.value) return;
+
+    const canvas = mediaCropCanvas.value;
+    const ctx = mediaCropContext.value;
+    const img = selectedMediaForCrop.value;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const scaledWidth = img.width * mediaZoomLevel.value;
+    const scaledHeight = img.height * mediaZoomLevel.value;
+
+    const x = mediaImagePosition.value.x + (canvas.width - scaledWidth) / 2;
+    const y = mediaImagePosition.value.y + (canvas.height - scaledHeight) / 2;
+
+    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+};
+
+const startMediaDrag = (e) => {
+    isMediaDragging.value = true;
+    const pos = e.type.includes('mouse') ? e : e.touches[0];
+    mediaDragStart.value = { x: pos.clientX, y: pos.clientY };
+};
+
+const onMediaDrag = (e) => {
+    if (!isMediaDragging.value) return;
+    const pos = e.type.includes('mouse') ? e : e.touches[0];
+    const deltaX = pos.clientX - mediaDragStart.value.x;
+    const deltaY = pos.clientY - mediaDragStart.value.y;
+
+    mediaImagePosition.value.x += deltaX;
+    mediaImagePosition.value.y += deltaY;
+
+    mediaDragStart.value = { x: pos.clientX, y: pos.clientY };
+    drawMediaImageOnCanvas();
+};
+
+const stopMediaDrag = () => {
+    isMediaDragging.value = false;
+};
+
+const handleMediaWheel = (e) => {
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    adjustMediaZoom(delta);
+};
+
+const adjustMediaZoom = (delta) => {
+    mediaZoomLevel.value = Math.max(0.1, mediaZoomLevel.value + delta);
+    drawMediaImageOnCanvas();
+};
+
+const updateCropBox = () => {
+    const canvas = mediaCropCanvas.value;
+    if (!canvas) return;
+    const canvasAspect = canvas.width / canvas.height;
+    const cropAspect = cropOptions.value.width / cropOptions.value.height;
+
+    let w, h;
+    if (canvasAspect > cropAspect) {
+        h = canvas.height * 0.9;
+        w = h * cropAspect;
+    } else {
+        w = canvas.width * 0.9;
+        h = w / cropAspect;
+    }
+
+    cropBox.value = {
+        width: w,
+        height: h,
+        x: (canvas.width - w) / 2,
+        y: (canvas.height - h) / 2,
+    };
+};
+
+const cropAndUpload = async () => {
+    if (!mediaCropCanvas.value || !selectedMediaForCrop.value) return;
+
+    isUploading.value = true;
 
     try {
-        isUploading.value = true;
-        uploadProgress.value = 0;
+        const canvas = mediaCropCanvas.value;
+        const img = selectedMediaForCrop.value;
 
-        showNotification('success', 'Preparando imagem...');
+        const scaledWidth = img.width * mediaZoomLevel.value;
+        const scaledHeight = img.height * mediaZoomLevel.value;
+        const imgX = mediaImagePosition.value.x + (canvas.width - scaledWidth) / 2;
+        const imgY = mediaImagePosition.value.y + (canvas.height - scaledHeight) / 2;
 
-        const base64Image = await convertFileToBase64(file);
+        const cropX = (cropBox.value.x - imgX) / mediaZoomLevel.value;
+        const cropY = (cropBox.value.y - imgY) / mediaZoomLevel.value;
+        const cropW = cropBox.value.width / mediaZoomLevel.value;
+        const cropH = cropBox.value.height / mediaZoomLevel.value;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cropOptions.value.width || cropW;
+        tempCanvas.height = cropOptions.value.height || cropH;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        tempCtx.drawImage(
+            img,
+            cropX, cropY, cropW, cropH,
+            0, 0, tempCanvas.width, tempCanvas.height
+        );
+        
+        const dataUrl = tempCanvas.toDataURL(`image/${cropOptions.value.format}`, cropOptions.value.quality / 100);
+        
+        showNotification('info', 'Processing and uploading image...');
 
         const imageData = {
-            image: base64Image,
-            format: format,
-            maxWidth: 1920,
-            alt: '',
-            caption: ''
+            image: dataUrl,
+            format: cropOptions.value.format,
+            width: tempCanvas.width,
+            height: tempCanvas.height,
+            quality: cropOptions.value.quality,
+            alt: cropOptions.value.alt,
+            caption: cropOptions.value.caption,
         };
 
         const response = await adminClient.medias.processImage(imageData);
 
-        isUploading.value = false;
-
         if (response) {
-            showNotification('success', 'Imagem processada com sucesso. Atualizando lista...');
-            filters.value.page = 1;
-            filters.value.sortBy = 'createdAt';
-            filters.value.sortOrder = 'desc';
-
-            await loadMedias();
-
-            setTimeout(async () => {
-                let newMedia = medias.value.find(m => m.id === response.id);
-
-                if (!newMedia) {
-                    await loadMedias();
-                    newMedia = medias.value.find(m => m.id === response.id);
-                }
-
-                if (newMedia) {
-                    selectMedia(newMedia);
-                    showNotification('success', 'Nova imagem adicionada e selecionada');
-                }
-            }, 500);
+            showNotification('success', 'Image processed successfully. Refreshing...');
+            mediaCropModalOpen.value = false;
+            await refreshData();
+            
+            const newMedia = medias.value.find(m => m.url === response.url);
+            if (newMedia) {
+                selectMedia(newMedia);
+            }
+        } else {
+            throw new Error("Failed to get a response from server.");
         }
-    } catch (err) {
-        isUploading.value = false;
-        console.error('Failed to process image:', err);
-        showNotification('error', err.message || 'Failed to process image');
-    }
 
-    event.target.value = '';
+    } catch (err) {
+        console.error('Failed to crop and upload image:', err);
+        showNotification('error', err.message || 'Failed to crop and upload image');
+    } finally {
+        isUploading.value = false;
+    }
 };
 
 const showNotification = (type, message, duration = 3000) => {
@@ -672,6 +996,9 @@ watch(filters, () => {
     loadMedias();
 }, { deep: true });
 
+watch(() => cropOptions.value.width, updateCropBox);
+watch(() => cropOptions.value.height, updateCropBox);
+
 watch(() => props.modelValue, (newVal) => {
     if (newVal) {
         if (props.type !== 'all')
@@ -686,5 +1013,14 @@ watch(() => props.modelValue, (newVal) => {
 onMounted(() => {
     if (props.modelValue)
         loadMedias();
+    
+    try {
+        const savedOptions = localStorage.getItem(CROP_OPTIONS_STORAGE_KEY);
+        if (savedOptions) {
+            cropOptions.value = { ...cropOptions.value, ...JSON.parse(savedOptions) };
+        }
+    } catch(e) {
+        console.error('Failed to load media options from localStorage.', e);
+    }
 });
 </script>

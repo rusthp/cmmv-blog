@@ -107,7 +107,14 @@ const categoriesStore = useCategoriesStore();
 const categories = ref<any[]>(categoriesStore.getCategories || []);
 
 const scripts = computed(() => {
-    const baseScripts = [];
+    const baseScripts = [
+        {
+            src: '/imgix-min.js?v=0.0.6',
+            type: 'text/javascript',
+            async: true,
+            defer: true
+        }
+    ];
 
     return [...baseScripts, ...settingsStore.googleAnalyticsScripts];
 });
