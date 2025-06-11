@@ -334,6 +334,8 @@ export class PostsPublicService {
                         author.image,
                         "webp",
                         128,
+                        128,
+                        80,
                         author.name,
                         author.name
                     );
@@ -342,6 +344,8 @@ export class PostsPublicService {
                         author.coverImage,
                         "webp",
                         1024,
+                        300,
+                        80,
                         author.name,
                         author.name
                     );
@@ -479,13 +483,9 @@ export class PostsPublicService {
             const currentId = queue.shift();
             if (!currentId) continue;
 
-            // Fetch the full category object to inspect its structure
             const category: CategoryWithParent | null = await Repository.findOne(CategoriesEntity,
                 { id: currentId }
             );
-
-            // CRUCIAL LOG: Inspect the structure of the fetched category object
-            this.logger.log(`Fetched category object for ID ${currentId}: ${JSON.stringify(category)}`);
 
             if (category && category.parentCategory) {
                 let parentId: string | null = null;
@@ -572,19 +572,14 @@ export class PostsPublicService {
             if(data.post.author !== "current-user-id")
                 data.post.authors.push(data.post.author);
 
-            // --- Start Parent Category Inheritance Logic ---
             if (data.post.categories && data.post.categories.length > 0) {
                 try {
-                    this.logger.log(`Original categories for post ${data.post.id || 'new'}: ${data.post.categories.join(', ')}`);
                     const allCategoriesWithParents = await this.getAllParentCategoryIds(data.post.categories, CategoriesEntity);
-                    data.post.categories = [...new Set(allCategoriesWithParents)]; // Ensure uniqueness
-                    this.logger.log(`Categories with parents for post ${data.post.id || 'new'}: ${data.post.categories.join(', ')}`);
+                    data.post.categories = [...new Set(allCategoriesWithParents)];
                 } catch (catError) {
                     this.logger.error(`Error processing parent categories for post ${data.post.id || 'new'}: ${catError}`);
-                    // Decide if you want to throw the error or proceed without parent inheritance
                 }
             }
-            // --- End Parent Category Inheritance Logic ---
 
             const post: any = await Repository.updateOne(
                 PostsEntity, Repository.queryBuilder({ id: data.post.id }), data.post
@@ -627,13 +622,10 @@ export class PostsPublicService {
             if(!data.post.authors || data.post.authors.length === 1)
                 data.post.authors = [user.id];
 
-            // --- Start Parent Category Inheritance Logic for new posts ---
             if (data.post.categories && data.post.categories.length > 0) {
                 try {
-                    this.logger.log(`Original categories for new post: ${data.post.categories.join(', ')}`);
                     const allCategoriesWithParents = await this.getAllParentCategoryIds(data.post.categories, CategoriesEntity);
-                    data.post.categories = [...new Set(allCategoriesWithParents)]; // Ensure uniqueness
-                    this.logger.log(`Categories with parents for new post: ${data.post.categories.join(', ')}`);
+                    data.post.categories = [...new Set(allCategoriesWithParents)];
                 } catch (catError) {
                     this.logger.error(`Error processing parent categories for new post: ${catError}`);
                 }
@@ -872,21 +864,29 @@ export class PostsPublicService {
             post.authors = (authorsData) ? authorsData.data : [];
 
             for(let key in post.authors){
-                post.authors[key].image = await this.mediasService.getImageUrl(
-                    post.authors[key].image,
-                    "webp",
-                    128,
-                    post.authors[key].name,
-                    post.authors[key].name
-                );
+                if(post.authors[key].image){
+                    post.authors[key].image = await this.mediasService.getImageUrl(
+                        post.authors[key].image,
+                        "webp",
+                        128,
+                        128,
+                        80,
+                        post.authors[key].name,
+                        post.authors[key].name
+                    );
+                }
 
-                post.authors[key].coverImage = await this.mediasService.getImageUrl(
-                    post.authors[key].coverImage,
-                    "webp",
-                    1024,
-                    post.authors[key].name,
-                    post.authors[key].name
-                );
+                if(post.authors[key].coverImage){
+                    post.authors[key].coverImage = await this.mediasService.getImageUrl(
+                        post.authors[key].coverImage,
+                        "webp",
+                        1024,
+                        300,
+                        80,
+                        post.authors[key].name,
+                        post.authors[key].name
+                    );
+                }
             }
 
             if(categoryIn.length > 0){
