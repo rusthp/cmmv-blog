@@ -160,6 +160,10 @@ const headData = ref({
         { property: 'og:title', content: category.value.name + ' - ' + settings.value['blog.title'] },
         { property: 'og:description', content: category.value.description },
         { property: 'og:image', content: settings.value['blog.logo'] },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '675' },
+        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:image:alt', content: category.value.name },
         { property: 'og:url', content: pageUrl.value }
     ],
     link: [

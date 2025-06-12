@@ -144,6 +144,10 @@ const headData = ref({
         { property: 'og:title', content: data.value?.tag?.name + ' - ' + settings.value['blog.title'] },
         { property: 'og:description', content: data.value?.tag?.description },
         { property: 'og:image', content: settings.value['blog.logo'] },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '675' },
+        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:image:alt', content: data.value?.tag?.name },
         { property: 'og:url', content: pageUrl.value }
     ],
     link: [

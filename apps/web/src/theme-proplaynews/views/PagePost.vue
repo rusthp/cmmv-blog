@@ -864,7 +864,6 @@ const headData = computed(() => ({
         { property: 'og:image:secure_url', content: post.value?.featureImage || settings.value?.['blog.image'] },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '675' },
-        { property: 'og:image:type', content: 'image/webp' },
         { property: 'og:updated_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
         { property: 'article:published_time', content: post.value?.status === 'published' && post.value?.publishedAt ? new Date(post.value.publishedAt).toISOString() : post.value?.createdAt ? new Date(post.value.createdAt).toISOString() : new Date().toISOString() },
         { property: 'article:modified_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },

@@ -668,7 +668,11 @@ const headData = ref({
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: settings.value.title },
         { property: 'og:description', content: settings.value.description },
-        { property: 'og:image', content: settings.value.logo }
+        { property: 'og:image', content: settings.value.logo },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '675' },
+        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:image:alt', content: settings.value.title }
     ],
     link: [
         { rel: 'canonical', href: settings.value.url },

@@ -142,6 +142,10 @@ const headData = computed(() => ({
         { property: 'og:title', content: page.value.title },
         { property: 'og:description', content: page.value.meta_description || page.value.excerpt || '' },
         { property: 'og:image', content: page.value.featureImage || settings.value?.['blog.image'] },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '675' },
+        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:image:alt', content: page.value.title },
         { property: 'og:url', content: pageUrl.value }
     ],
     link: [
