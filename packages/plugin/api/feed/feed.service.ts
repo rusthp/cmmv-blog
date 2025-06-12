@@ -67,7 +67,7 @@ export class FeedService {
             feed.push(`<link>${this.escapeXml(url)}/post/${this.escapeXml(post.slug)}</link>`);
             feed.push(`<pubDate>${post.publishedAt.toGMTString()}</pubDate>`);
             feed.push(`<guid isPermaLink=\"true\">${this.escapeXml(url)}/post/${this.escapeXml(post.slug)}</guid>`);
-            feed.push(`<description><![CDATA[ <img src=\"${this.escapeXml(post.featureImage)}\" /><br /> ]]>${this.stripHtml(post.content)}</description>`);
+            feed.push(`<description><![CDATA[ <img src="${this.escapeXml(post.featureImage)}" /><br /> ${this.stripHtml(post.content)} ]]></description>`);
             feed.push(`<media:content url=\"${this.escapeXml(post.featureImage)}\" medium=\"image\"/>`);
 
             for (const category of post.categories) {
