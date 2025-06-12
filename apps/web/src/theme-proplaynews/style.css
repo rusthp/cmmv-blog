@@ -56,6 +56,10 @@ main, .container, .content {
     overflow: hidden;
     padding: 16px;
     word-wrap: normal;
+    /* GPU acceleration for better performance */
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 /* Hover effects para cards - Otimizado */
@@ -65,7 +69,8 @@ main, .container, .content {
     background: rgba(135, 206, 235, 0.25) !important;
     border-color: rgba(135, 206, 235, 0.6) !important;
     box-shadow: 0 6px 20px rgba(135, 206, 235, 0.3) !important;
-    transform: translateY(-3px);
+    /* Use transform instead of changing other properties */
+    transform: translateY(-3px) translateZ(0);
 }
 
 /* Títulos normais para todas as páginas - REGRA BASE */
@@ -770,4 +775,15 @@ iframe {
 .description * {
     color: #ffffff !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Critical CSS optimizations */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
