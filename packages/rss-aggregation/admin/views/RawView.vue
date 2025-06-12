@@ -1233,6 +1233,28 @@ const promptsList = ref<any[]>([]);
 const selectedPrompt = ref<string>('default');
 const loadingPrompts = ref<boolean>(false);
 
+const parseAIList = (list: any): string[] => {
+    if (!list) return [];
+    if (Array.isArray(list)) return list.map(String).filter(Boolean);
+
+    if (typeof list === 'string') {
+        const trimmedList = list.trim();
+        if (trimmedList.startsWith('[') && trimmedList.endsWith(']')) {
+            try {
+                const parsed = JSON.parse(trimmedList);
+                if (Array.isArray(parsed)) {
+                    return parsed.map(String).filter(Boolean);
+                }
+            } catch (e) {
+                // Not a valid JSON array, fall through to comma split
+            }
+        }
+        // Fallback to comma-separated string
+        return trimmedList.split(',').map(item => item.trim()).filter(Boolean);
+    }
+    return [];
+};
+
 // Helper function to remove accents
 const removeAccents = (str: string): string => {
     if (!str) return '';
@@ -1287,10 +1309,11 @@ const loadFeedItems = async (): Promise<void> => {
         if (filters.value.channelFilter)
             queryParams.channel = filters.value.channelFilter;
 
-        if (filters.value.processedFilter === 'unprocessed')
+        if (filters.value.processedFilter === 'unprocessed') {
             queryParams.postRef = null;
-        else if (filters.value.processedFilter === 'processed')
+        } else if (filters.value.processedFilter === 'processed') {
             queryParams.hasPostRef = true;
+        }
 
         const response = await feedClient.raw.get(queryParams);
 
@@ -1459,20 +1482,24 @@ const generateAIContent = async (): Promise<void> => {
                     const response = jobStatus.result;
 
                     if (response && response.title && response.content && previewItem.value) {
+                        const parsedTags = parseAIList(response.suggestedTags);
+                        const parsedCategories = parseAIList(response.suggestedCategories);
+
                         aiContent.value = {
                             ...previewItem.value,
                             title: response.title,
                             content: response.content,
-                            suggestedTags: response.suggestedTags || [],
-                            suggestedCategories: response.suggestedCategories || []
+                            suggestedTags: parsedTags,
+                            suggestedCategories: parsedCategories,
                         };
 
-                        if (response.suggestedTags && response.suggestedTags.length > 0) {
-                            selectedTags.value = [...response.suggestedTags];
+                        if (parsedTags.length > 0) {
+                            selectedTags.value = [...parsedTags];
                         }
 
-                        if (response.suggestedCategories && response.suggestedCategories.length > 0 && categories.value.length > 0) {
-                            const suggestedCategoryNames = response.suggestedCategories.map((cat: string) => cat.toLowerCase());
+                        if (parsedCategories.length > 0 && categories.value.length > 0) {
+                            const suggestedCategoryNames = parsedCategories.map((cat: string) => cat.toLowerCase());
+                            
                             const matchingCategoryIds = categories.value
                                 .filter(category => {
                                     const systemCategoryNameLower = removeAccents(category.name.toLowerCase());
@@ -1623,7 +1650,8 @@ const createPostFromAI = async (): Promise<void> => {
             throw new Error("Failed to create post");
 
         await feedClient.raw.updateRaw(aiContent.value.id, {
-            postRef: saveResponse.id
+            postRef: saveResponse.id,
+            status: 'approved'
         });
 
         showNotification('success', 'Post created successfully!');
@@ -1783,9 +1811,7 @@ const rejectRawItem = async (): Promise<void> => {
     try {
         rejectLoading.value = true;
 
-        await feedClient.raw.updateRaw(previewItem.value.id, {
-            rejected: true
-        });
+        await feedClient.raw.rejectRaw(previewItem.value.id);
 
         showNotification('success', 'Feed item rejected successfully');
 
@@ -1815,9 +1841,7 @@ const confirmListReject = async (): Promise<void> => {
     try {
         listRejectLoading.value = true;
 
-        await feedClient.raw.updateRaw(itemToReject.value.id, {
-            rejected: true
-        });
+        await feedClient.raw.rejectRaw(itemToReject.value.id);
 
         showNotification('success', 'Feed item rejected successfully');
 

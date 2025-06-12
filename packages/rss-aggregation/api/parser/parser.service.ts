@@ -223,6 +223,9 @@ ${truncatedHtml}
             const textResponse = await this.aiContentService.generateContent(promptString);
 
             try {
+                if (!textResponse) {
+                    throw new Error("AI service returned an empty response.");
+                }
                 const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
 
                 if (!jsonMatch)
@@ -573,6 +576,42 @@ ${truncatedHtml}
             return `${base.protocol}//${base.host}${basePath}${url}`;
         } catch (e) {
             return url;
+        }
+    }
+
+    async testContent(rules: Record<string, string>, url: string) {
+        this.logger.log(`Testing parser rules for URL: ${url}`);
+        try {
+            const html = await this.fetchHTML(url);
+            if (!html) {
+                throw new Error("Failed to fetch HTML for testing.");
+            }
+
+            const extractedData: Record<string, any> = {};
+            const fields = ['title', 'content', 'category', 'featureImage', 'tags'];
+
+            for (const field of fields) {
+                const regexString = rules[field];
+                if (regexString) {
+                    try {
+                        // 's' flag para que . corresponda a novas linhas, útil para o conteúdo
+                        const regex = new RegExp(regexString, 's'); 
+                        const match = html.match(regex);
+                        // O resultado está geralmente no primeiro grupo de captura
+                        extractedData[field] = match && match[1] ? match[1].trim() : `No match for ${field}`;
+                    } catch (e) {
+                        this.logger.error(`Invalid regex for field ${field}: ${regexString}`);
+                        extractedData[field] = `Invalid regex for ${field}`;
+                    }
+                } else {
+                    extractedData[field] = 'No rule provided';
+                }
+            }
+
+            return { success: true, data: extractedData };
+        } catch (error: any) {
+            this.logger.error(`Error in testContent: ${error.message}`);
+            return { success: false, message: error.message };
         }
     }
 }
