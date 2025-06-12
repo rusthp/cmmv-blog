@@ -1,6 +1,8 @@
 import {
     Controller, Get, Param,
-    Query
+    Query,
+    Post,
+    Body
 } from "@cmmv/http";
 
 import {
@@ -14,6 +16,13 @@ import {
 @Controller("feed/parser")
 export class ParserController {
     constructor(private readonly parserService: ParserService){}
+
+    @Post("testContent")
+    @Auth("feedparser:get")
+    async testContent(@Body() data: any, @Query("url") url: string) {
+        const urlDecoded = decodeURIComponent(url);
+        return await this.parserService.testContent(data, urlDecoded);
+    }
 
     @Get("parseURL")
     @Auth("feedparser:get")
