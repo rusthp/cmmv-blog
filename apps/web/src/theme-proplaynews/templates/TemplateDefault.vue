@@ -431,7 +431,7 @@ useHead({
         {
             rel: 'icon',
             type: 'image/ico',
-            href: '/src/theme-proplaynews/favicon.ico?v=2'
+            href: '/src/theme-proplaynews/favicon.ico'
         },
         { rel: 'preconnect', href: 'https://www.googletagmanager.com/' },
         { rel: 'preconnect', href: 'https://www.google-analytics.com/' },
