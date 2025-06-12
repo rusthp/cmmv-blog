@@ -67,6 +67,7 @@
                 <template #node-ai-content="props">
                     <AiNode 
                         :data="props.data" 
+                        :is-approving="approving.has(props.data.rawId)"
                         @approve="handleApproveAi" 
                         @preview="handlePreview"
                         @regenerate="handleRegenerateAi"
@@ -670,6 +671,7 @@ const raws = ref([])
 const aiContents = ref([])
 const generatingAi = ref(new Set())
 const executing = ref(new Set())
+const approving = ref(new Set())
 const selectedPrompts = ref({})
 const selectedRaws = ref(new Set())
 
@@ -1099,6 +1101,8 @@ const handleApproveAi = async (event) => {
     const aiContentData = event.data;
     if (!aiContentData) return;
 
+    approving.value.add(aiContentData.rawId);
+
     try {
         showNotification('info', 'Criando post a partir da versão da IA...');
 
@@ -1174,6 +1178,8 @@ const handleApproveAi = async (event) => {
     } catch (err) {
         console.error('Falha ao aprovar conteúdo de IA:', err);
         showNotification('error', `Falha ao criar post: ${err.message}`);
+    } finally {
+        approving.value.delete(aiContentData.rawId);
     }
 };
 

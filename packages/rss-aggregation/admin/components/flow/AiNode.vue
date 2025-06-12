@@ -1,5 +1,9 @@
 <template>
-  <div @click="onPreview" class="p-3 rounded-lg shadow-md cursor-pointer" :style="nodeStyle">
+  <div @click="onPreview" class="relative p-3 rounded-lg shadow-md cursor-pointer" :style="nodeStyle">
+    <div v-if="isApproving" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center rounded-lg z-10 transition-opacity duration-300">
+        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-400 mb-2"></div>
+        <span class="text-xs text-green-300 font-semibold">Criando Post...</span>
+    </div>
     <Handle id="target-left" type="target" :position="Position.Left" />
     <Handle id="source-right" type="source" :position="Position.Right" />
     <div class="flex items-center mb-2">
@@ -36,6 +40,10 @@ const props = defineProps({
   data: {
     type: Object,
     required: true,
+  },
+  isApproving: {
+    type: Boolean,
+    default: false,
   },
 })
 

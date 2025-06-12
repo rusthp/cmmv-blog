@@ -1,5 +1,9 @@
 <template>
-  <div class="p-3 rounded-lg shadow-md transition-all duration-200" :style="nodeStyle" :class="{'ring-2 ring-offset-2 ring-offset-neutral-900 ring-sky-400': isSelected}">
+  <div class="relative p-3 rounded-lg shadow-md transition-all duration-200" :style="nodeStyle" :class="{'ring-2 ring-offset-2 ring-offset-neutral-900 ring-sky-400': isSelected}">
+    <div v-if="isApproving" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center rounded-lg z-10 transition-opacity duration-300">
+        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-400 mb-2"></div>
+        <span class="text-xs text-green-300 font-semibold">Criando Post...</span>
+    </div>
     <Handle id="target-left" type="target" :position="Position.Left" :style="{ top: '50%' }" />
     <Handle id="source-right" type="source" :position="Position.Right" :style="{ top: '50%' }" />
 
@@ -70,6 +74,10 @@ const props = defineProps({
     default: 'default'
   },
   isSelected: {
+    type: Boolean,
+    default: false
+  },
+  isApproving: {
     type: Boolean,
     default: false
   }
