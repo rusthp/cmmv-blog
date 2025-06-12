@@ -27,9 +27,9 @@
                         class="border-b border-neutral-200 pb-8 last:border-0">
                         <!-- Feature Image -->
                         <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
-                            <div v-if="post.featureImage" class="relative aspect-video overflow-hidden rounded-lg">
-                                <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title"
-                                    class="w-full h-full object-cover imgix-lazy" :hover="true" icon-size="lg" />
+                                                          <div v-if="post.featureImage" class="relative bg-gray-100 overflow-hidden rounded-lg" style="min-height: 200px;">
+                                                                <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title" 
+                                    class="w-full h-auto object-contain imgix-lazy" :hover="true" icon-size="lg" style="max-height: 250px; min-height: 200px;" />
                             </div>
                         </a>
 

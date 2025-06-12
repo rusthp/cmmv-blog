@@ -1042,6 +1042,8 @@ export class PostsPublicService {
         });
 
         if(posts){
+            const CategoriesEntity = Repository.getEntity("CategoriesEntity");
+
             for(const post of posts.data){
                 post.featureImage = await this.processImageIfNeeded(
                     post.featureImage,
@@ -1052,6 +1054,18 @@ export class PostsPublicService {
                     "",
                     ""
                 );
+
+                // Convert category IDs to full category objects
+                if(post.categories && post.categories.length > 0){
+                    const categoriesData = await Repository.findAll(CategoriesEntity, {
+                        id: In(post.categories),
+                        limit: 100
+                    }, [], {
+                        select: [ "id", "name", "slug", "description" ]
+                    });
+
+                    post.categories = (categoriesData) ? categoriesData.data : [];
+                }
 
                 //Tags
                 const tagsData = await Repository.findAll(TagsEntity, {
@@ -1120,6 +1134,8 @@ export class PostsPublicService {
         });
 
         if(posts){
+            const CategoriesEntity = Repository.getEntity("CategoriesEntity");
+
             for(const post of posts.data){
                 post.featureImage = await this.processImageIfNeeded(
                     post.featureImage,
@@ -1130,6 +1146,18 @@ export class PostsPublicService {
                     "",
                     ""
                 );
+
+                // Convert category IDs to full category objects
+                if(post.categories && post.categories.length > 0){
+                    const categoriesData = await Repository.findAll(CategoriesEntity, {
+                        id: In(post.categories),
+                        limit: 100
+                    }, [], {
+                        select: [ "id", "name", "slug", "description" ]
+                    });
+
+                    post.categories = (categoriesData) ? categoriesData.data : [];
+                }
 
                 //Tags
                 const tagsData = await Repository.findAll(TagsEntity, {

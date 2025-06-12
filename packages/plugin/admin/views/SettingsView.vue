@@ -3448,7 +3448,27 @@
                                     <p class="text-xs text-neutral-500">
                                         Your Cloudflare Zone ID found in the Cloudflare dashboard
                                     </p>
-            </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <div class="flex items-center">
+                                        <input
+                                            id="cloudflare-image-srcset"
+                                            v-model="settings.cloudflareImageSrcset"
+                                            type="checkbox"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                        <label
+                                            for="cloudflare-image-srcset"
+                                            class="ml-2 block text-sm text-neutral-300"
+                                        >
+                                            Enable Cloudflare Image Optimization
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-neutral-500">
+                                        Enable automatic image optimization using Cloudflare Images. Required for OptimizedImage component to work properly.
+                                    </p>
+                                </div>
 
                                 <div class="mt-4">
                                     <h4
@@ -4380,8 +4400,9 @@ const settings = ref({
     linkedInIncludeImage: false,
 
     // CDN Settings
-    cloudflareToken: "",
-    cloudflareZoneId: "",
+                cloudflareToken: "",
+            cloudflareZoneId: "",
+            cloudflareImageSrcset: false,
     cloudfrontAccessKey: "",
     cloudfrontSecretKey: "",
     cloudfrontDistributionId: "",
@@ -4677,8 +4698,9 @@ const tabFieldMap = {
         "smsOnNewUser",
     ],
     cdn: [
-        "cloudflareToken",
-        "cloudflareZoneId",
+                        "cloudflareToken",
+                "cloudflareZoneId",
+                "cloudflareImageSrcset",
         "cloudfrontAccessKey",
         "cloudfrontSecretKey",
         "cloudfrontDistributionId",

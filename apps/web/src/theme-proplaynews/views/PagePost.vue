@@ -29,29 +29,31 @@
                             <!-- Main Post Content (2 columns width) -->
                             <div class="lg:col-span-3 bg-white rounded-lg p-4 relative">
                                 <div class="w-full mx-auto overflow-hidden">
-                                    <h1 class="post-title text-neutral-900 text-3xl md:text-4xl font-bold break-words mb-4">{{ post.title }}</h1>
+                                    <h1 class="post-title text-neutral-900 text-3xl md:text-4xl font-bold break-words mb-6">{{ post.title }}</h1>
 
-                                    <div v-if="post.featureImage" class="post-featured-image relative overflow-hidden rounded-lg max-h-[400px]">
+                                    <div v-if="post.featureImage" class="post-featured-image relative bg-gray-100 rounded-2xl overflow-hidden mb-6" style="min-height: 380px;">
                                         <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
                                             <a v-for="category in post.categories" :key="category.id" :href="`/category/${category.slug}`"
-                                                class="px-3 py-1 bg-[#0a5d28] text-white text-sm font-medium rounded-full shadow-sm hover:bg-[#064019] transition-all">
+                                                class="px-3 py-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-medium rounded-full shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all">
                                                 {{ category.name }}
                                             </a>
                                         </div>
 
-                                                                <OptimizedImage
-                            :src="post.featureImage"
-                            :alt="post.featureImageAlt || post.title"
-                            class="featured-img md:block hidden imgix-lazy"
-                            width="890"
-                            height="606"
-                            loading="lazy"
-                            priority="high"
-                            icon-size="lg"
-                            :title="post.featureImageAlt || 'Imagem de destaque'"
-                        />
+                                        <div class="w-full rounded-2xl overflow-hidden" style="height: 360px;">
+                                            <OptimizedImage
+                                                :src="post.featureImage"
+                                                :alt="post.featureImageAlt || post.title"
+                                                class="w-full h-full object-cover imgix-lazy"
+                                                width="890"
+                                                height="320"
+                                                loading="lazy"
+                                                priority="high"
+                                                icon-size="lg"
+                                                :title="post.featureImageAlt || 'Imagem de destaque'"
+                                            />
+                                        </div>
 
-                                        <p v-if="post.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center">{{
+                                        <p v-if="post.featureImageCaption" class="image-caption text-neutral-600 text-sm mt-2 text-center px-4 pb-2">{{
                                             post.featureImageCaption }}</p>
                                     </div>
 
@@ -68,7 +70,7 @@
                                     </div>
 
                                     <!-- Post Header -->
-                                    <header class="post-header my-6">
+                                    <header class="post-header mb-6">
                                         <div class="post-meta flex items-center">
                                             <div class="flex items-center text-neutral-600 text-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
@@ -112,7 +114,7 @@
                                                                                 <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name"
                                     class="w-full h-full object-cover imgix-lazy" width="44" height="44" icon-size="sm" />
                                                 <div v-else
-                                                    class="w-full h-full flex items-center justify-center bg-[#0a5d28] text-white font-bold text-lg">
+                                                    class="w-full h-full flex items-center justify-center bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold text-lg">
                                                     {{ authorInitials }}
                                                 </div>
                                             </div>
@@ -221,7 +223,7 @@
 
                                     <!-- Mais Conteúdo Section -->
                                     <div class="mt-10">
-                                        <h2 class="text-xl font-bold mb-6 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                        <h2 class="text-xl font-bold mb-6 pb-2 text-purple-700 border-b-2 border-purple-400">
                                             Mais Conteúdo
                                         </h2>
 
@@ -238,14 +240,14 @@
                                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                                 >
                                                     <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                        <div class="h-48 overflow-hidden relative">
+                                                        <div class="bg-gray-100 overflow-hidden relative" style="min-height: 200px; max-height: 200px;">
                                                                                                         <OptimizedImage
                                                 v-if="relatedPost.featureImage"
                                                 :src="relatedPost.featureImage"
                                                 :alt="relatedPost.title"
-                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                                class="w-full h-auto object-contain transition-transform hover:scale-105 duration-300 imgix-lazy"
                                                 :hover="true"
-                                                icon-size="md"
+                                                icon-size="md" style="max-height: 200px; min-height: 160px;"
                                             />
                                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -261,7 +263,7 @@
                                                     </a>
                                                     <div class="p-4">
                                                         <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#0a5d28] transition-colors line-clamp-2">
+                                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors line-clamp-2">
                                                                 {{ relatedPost.title }}
                                                             </h3>
                                                         </a>
@@ -329,7 +331,7 @@
 
                                 <!-- Share Widget -->
                                 <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                    <h2 class="text-xl font-bold mb-4 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                    <h2 class="text-xl font-bold mb-4 pb-2 text-purple-700 border-b-2 border-purple-400">
                                         Compartilhar
                                     </h2>
                                     <div class="flex flex-wrap gap-2">
@@ -406,7 +408,7 @@
 
                                 <!-- Popular Posts Widget -->
                                 <div v-if="popularPosts && popularPosts.length > 0" class="bg-white rounded-lg shadow-md p-5 mb-6 hidden md:block">
-                                    <h2 class="text-xl font-bold mb-4 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                    <h2 class="text-xl font-bold mb-4 pb-2 text-purple-700 border-b-2 border-purple-400">
                                         Mais Populares
                                     </h2>
 
@@ -422,7 +424,7 @@
                                         v-if="popularPost.image || popularPost.featureImage"
                                         :src="popularPost.image || popularPost.featureImage"
                                         :alt="popularPost.title"
-                                        class="w-full h-full object-cover imgix-lazy"
+                                        class="w-full h-auto object-contain imgix-lazy" style="max-height: 64px; min-height: 64px;"
                                         width="80"
                                         height="64"
                                         icon-size="sm"
@@ -436,7 +438,7 @@
                                             </div>
                                             <div class="flex-grow">
                                                 <a :href="`/post/${popularPost.slug}`" class="block">
-                                                    <h4 class="text-sm font-semibold text-gray-800 hover:text-[#0a5d28] transition-colors line-clamp-2">
+                                                    <h4 class="text-sm font-semibold text-gray-800 hover:text-purple-600 transition-colors line-clamp-2">
                                                         {{ popularPost.title }}
                                                     </h4>
                                                 </a>
@@ -450,7 +452,7 @@
 
                                 <!-- Categories Widget -->
                                 <div v-if="categories && categories.length > 0" class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                    <h2 class="text-xl font-bold mb-4 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                    <h2 class="text-xl font-bold mb-4 pb-2 text-purple-700 border-b-2 border-purple-400">
                                         Categorias
                                     </h2>
 
@@ -458,10 +460,10 @@
                                         <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                                             <a
                                                 :href="`/category/${category.slug}`"
-                                                class="flex justify-between items-center text-gray-700 hover:text-[#0a5d28] transition-colors"
+                                                class="flex justify-between items-center text-gray-700 hover:text-purple-600 transition-colors"
                                             >
                                                 {{ category.name }}
-                                                <span class="bg-[#0a5d28] text-white px-2 py-1 rounded-full text-xs font-medium">
+                                                <span class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm">
                                                     {{ category.postCount }}
                                                 </span>
                                             </a>

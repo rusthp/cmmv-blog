@@ -44,7 +44,7 @@
                                         {{ coverPosts.full.categories[0].name }}
                                     </span>
                                 </div>
-                                <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.full.title }}</h2>
+                                <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ coverPosts.full.title }}</h2>
                                 <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                     {{ coverPosts.full.excerpt || stripHtml(coverPosts.full.content).substring(0, 150) + '...' }}
                                 </p>
@@ -80,7 +80,7 @@
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                    <h2 class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ post.title }}</h2>
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
                                     </p>
@@ -142,7 +142,7 @@
                                             {{ coverPosts.splitMain.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 v-if="coverPosts.splitMain" class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ coverPosts.splitMain.title }}</h2>
+                                    <h2 v-if="coverPosts.splitMain" class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ coverPosts.splitMain.title }}</h2>
                                     <p v-if="coverPosts.splitMain" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ coverPosts.splitMain.excerpt || stripHtml(coverPosts.splitMain.content).substring(0, 150) + '...' }}
                                     </p>
@@ -169,7 +169,7 @@
                                                 {{ post.categories[0].name }}
                                             </span>
                                         </div>
-                                        <h3 class="text-base font-bold mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h3>
+                                        <h3 class="text-base font-bold mb-2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-3 rounded">{{ post.title }}</h3>
                                         <span class="text-sm text-white hover:text-[#ffcc00] transition-colors drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 px-2 py-1 rounded inline-block">
                                             Continuar lendo &rarr;
                                         </span>
@@ -202,7 +202,7 @@
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-1 px-2 rounded">{{ post.title }}</h2>
+                                                                            <h2 class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ post.title }}</h2>
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
                                     </p>
@@ -216,8 +216,8 @@
                 </div>
             </section>
 
-            <!-- Top AdSense Banner -->
-            <div v-if="adSettings.enableAds && adSettings.homePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
+                            <!-- Top AdSense Banner -->
+                <div v-if="adStates.showHeaderAd" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
                 <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
                     <div v-html="getAdHtml('header')"></div>
                 </div>
@@ -233,13 +233,13 @@
                 <div class="flex-grow">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-2">
-                            <h2 class="text-xl font-bold mb-6 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                            <h2 class="text-xl font-bold mb-6 pb-2 text-purple-700 border-b-2 border-purple-400">
                                 Últimas Notícias
                             </h2>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <article
-                                    v-for="post in posts.slice(featuredPost ? 1 : 0, featuredPost ? 5 : 4)"
+                                    v-for="post in computedPosts.initial"
                                     :key="post.id"
                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                 >
@@ -264,8 +264,8 @@
                                     </a>
                                     <div class="p-4">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#0a5d28] transition-colors line-clamp-2">
-                                                {{ post.title }}
+                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors">
+                                                {{ post.title.length > 60 ? post.title.substring(0, 60) + '...' : post.title }}
                                             </h3>
                                         </a>
                                         <p class="text-gray-600 text-sm mb-3 line-clamp-2">
@@ -279,8 +279,8 @@
                                 </article>
                             </div>
 
-                            <!-- Mid-content AdSense Banner -->
-                            <div v-if="adSettings.enableAds" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
+                                            <!-- Mid-content AdSense Banner -->
+                <div v-if="adStates.showInContentAd" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
                                 <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
                                     <div v-html="getAdHtml('inContent')"></div>
                                 </div>
@@ -291,14 +291,14 @@
                                 </div>
                             </div>
 
-                            <div v-if="posts.length > (featuredPost ? 5 : 4)">
-                                <h2 class="text-xl font-bold mb-6 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                            <div v-if="computedPosts.remaining.length > 0">
+                                <h2 class="text-xl font-bold mb-6 pb-2 text-purple-700 border-b-2 border-purple-400">
                                     Mais Conteúdo
                                 </h2>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     <article
-                                        v-for="post in posts.slice(featuredPost ? 5 : 4)"
+                                        v-for="post in computedPosts.remaining"
                                         :key="post.id"
                                         class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                     >
@@ -322,8 +322,8 @@
                                         </a>
                                         <div class="p-4">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-[#0a5d28] transition-colors line-clamp-2">
-                                                    {{ post.title }}
+                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors">
+                                                    {{ post.title.length > 60 ? post.title.substring(0, 60) + '...' : post.title }}
                                                 </h3>
                                             </a>
                                             <p class="text-gray-600 text-sm mb-3 line-clamp-2">
@@ -409,8 +409,8 @@
                                         </div>
                                         <div class="flex-grow">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h4 class="text-sm font-semibold text-gray-800 hover:text-[#0a5d28] transition-colors line-clamp-2">
-                                                    {{ post.title }}
+                                                <h4 class="text-sm font-semibold text-gray-800 hover:text-purple-600 transition-colors">
+                                                    {{ post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title }}
                                                 </h4>
                                             </a>
                                             <span class="text-xs text-gray-500 mt-1 block">
@@ -791,7 +791,18 @@ const getAuthor = (post: any) => {
     return post.authors.find((author: any) => author.id === post.author);
 };
 
-
+// Performance optimization: compute post slices once
+const computedPosts = computed(() => {
+    if (!posts.value?.length) return { initial: [], remaining: [] };
+    
+    const startIndex = featuredPost.value ? 1 : 0;
+    const midIndex = featuredPost.value ? 5 : 4;
+    
+    return {
+        initial: posts.value.slice(startIndex, midIndex),
+        remaining: posts.value.slice(midIndex)
+    };
+});
 
 // Provide hydrated state to child components
 provide('hydrated', hydrated);
@@ -818,6 +829,17 @@ watch(() => settings.value['blog.cover'], () => {
 watch(() => posts.value.length, async () => {
     await nextTick();
 });
+
+// Performance optimization: compute ad states once
+const adStates = computed(() => ({
+    showHeaderAd: adSettings.value.enableAds && adSettings.value.homePageHeader,
+    showInContentAd: adSettings.value.enableAds,
+    showAfterPostsAd: adSettings.value.enableAds && adSettings.value.homePageAfterPosts,
+    showSidebarTopAd: adSettings.value.enableAds && adSettings.value.homePageSidebarTop,
+    showSidebarMidAd: adSettings.value.enableAds && adSettings.value.homePageSidebarMid,
+    showSidebarBottomAd: adSettings.value.enableAds && adSettings.value.homePageSidebarBottom,
+    showTaboolaAds: adSettings.value.enableAds && adSettings.value.enableTaboolaAds && adSettings.value.taboolaJsCode
+}));
 </script>
 
 <style scoped>
@@ -827,12 +849,7 @@ watch(() => posts.value.length, async () => {
     }
 }
 
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
+/* line-clamp removido para evitar truncamento duplo */
 
 .ad-placeholder {
     display: flex;

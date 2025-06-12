@@ -137,7 +137,10 @@ const generateCloudflareImageUrl = (originalUrl: string, width: number, fit: str
 
 const generateSrcset = (src: string, sizes: number[]): string => {
 
-    if (!src || !settings.value['blog.cloudflareImageSrcset']) return '';
+    if (!src) return '';
+
+    // Only generate Cloudflare URLs if the feature is enabled
+    if (!settings.value['blog.cloudflareImageSrcset']) return '';
 
     const fit = props.objectFit === 'contain' ? 'contain' : 'cover';
 
@@ -212,11 +215,13 @@ const imageSrc = computed(() => {
     if (useOriginalImage.value)
         return props.src;
 
+    // Only use Cloudflare optimization if it's enabled
     if (settings.value['blog.cloudflareImageSrcset']) {
         const fit = props.objectFit === 'contain' ? 'contain' : 'cover';
         return generateCloudflareImageUrl(props.src, 1280, fit, props.quality, props.format);
     }
 
+    // Default to original image when Cloudflare is not configured
     return props.src;
 });
 

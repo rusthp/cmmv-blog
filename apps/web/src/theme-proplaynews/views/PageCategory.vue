@@ -1,99 +1,97 @@
 <template>
-    <div class="w-full relative bg-neutral-100">
-        <div class="lg:max-w-4xl md:max-w-3xl mx-auto">
-            <div v-if="!category" class="bg-white rounded-lg p-6">
+    <div class="w-full relative min-h-screen" style="background: transparent;">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div v-if="!category" class="bg-gray-800/50 rounded-lg p-6 backdrop-blur-sm">
                 <div class="text-center">
-                    <h1 class="text-2xl font-bold text-neutral-800 mb-4">Categoria não encontrada</h1>
-                    <p class="text-neutral-600">A categoria que você está procurando não existe ou está indisponível.</p>
+                    <h1 class="text-2xl font-bold text-white mb-4">Categoria não encontrada</h1>
+                    <p class="text-gray-300">A categoria que você está procurando não existe ou está indisponível.</p>
                 </div>
             </div>
 
-            <div v-else class="bg-white rounded-lg p-6 article-container overflow-hidden">
-                <header class="border-b border-neutral-200 pb-4 mb-6 pr-4 pt-4">
-                    <h1 class="text-3xl font-bold text-neutral-900 mb-3">{{ category.name }}</h1>
-                    <p v-if="category.description" class="text-neutral-600 mb-4">{{ category.description }}</p>
-                    <div class="text-sm text-neutral-500">{{ category.postCount }} posts nesta categoria</div>
+            <div v-else class="article-container overflow-hidden">
+                <header class="text-center mb-8">
+                    <!-- Category Badge -->
+                    <div class="inline-block bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-bold px-6 py-2 rounded-full uppercase tracking-wide mb-4 shadow-lg">
+                        {{ category.name }}
+                    </div>
+                    <div class="text-sm text-gray-300">{{ category.postCount }} posts nesta categoria</div>
                 </header>
 
                 <!-- Initial loading state -->
                 <div v-if="loading && posts.length === 0" class="flex justify-center items-center py-20">
-                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
                 </div>
 
-                <!-- Posts List -->
-                <div v-else-if="posts.length > 0" class="space-y-10 post-content prose prose-sm sm:prose prose-neutral max-w-none">
-                    <article v-for="post in posts" :key="post.id" class="border-b border-neutral-200 pb-8 last:border-0">
+                <!-- Posts Grid -->
+                <div v-else-if="posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <article v-for="post in posts" :key="post.id" class="bg-gradient-to-br from-white to-purple-50 rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:shadow-purple-200 transition-all duration-300 hover:transform hover:scale-105 border border-purple-100">
                         <!-- Feature Image -->
-                        <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
-                            <div v-if="post.featureImage" class="relative aspect-video overflow-hidden rounded-lg">
-                                <OptimizedImage
+                        <a :href="`/post/${post.slug}`" class="block relative" aria-label="Ler mais sobre este post">
+                            <div v-if="post.featureImage" class="relative bg-gray-100 rounded-t-lg overflow-hidden" style="min-height: 200px;">
+                                <img
                                     :src="post.featureImage"
                                     :alt="post.featureImageAlt || post.title"
-                                    class="w-full h-full object-cover imgix-lazy"
+                                    class="w-full h-auto object-contain transition-transform duration-300 hover:scale-105"
                                     loading="lazy"
-                                    width="768"
-                                    height="432"
-                                    :hover="true"
-                                    icon-size="lg"
+                                    style="max-height: 250px; min-height: 200px;"
                                 />
+                                <!-- Category Badge -->
+                                <div class="absolute top-3 left-3">
+                                    <span class="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
+                                        {{ (post.categories && post.categories.length > 0) ? post.categories[0].name : category.name }}
+                                    </span>
+                                </div>
                             </div>
                         </a>
 
-                        <!-- Post Title -->
-                        <h2 class="text-2xl font-bold text-neutral-900 mb-3">
-                            <a :href="`/post/${post.slug}`" class="hover:text-[#0a5d28] transition-colors" aria-label="Ler mais sobre este post">
-                                {{ post.title }}
-                            </a>
-                        </h2>
+                        <!-- Post Content -->
+                        <div class="p-4">
+                            <!-- Post Title -->
+                            <h2 class="text-lg font-bold text-gray-800 mb-3">
+                                <a :href="`/post/${post.slug}`" class="hover:text-purple-600 transition-colors" aria-label="Ler mais sobre este post">
+                                    {{ post.title }}
+                                </a>
+                            </h2>
 
-                        <!-- Post Meta -->
-                        <div class="flex items-center mb-4 text-sm text-neutral-600">
-                            <div class="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span>{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
+                            <!-- Post Excerpt -->
+                            <div v-if="post.excerpt" class="text-gray-600 mb-4 text-sm leading-relaxed break-words">
+                                {{ post.excerpt }}
                             </div>
-                        </div>
+                            <div v-else-if="post.content" class="text-gray-600 mb-4 text-sm leading-relaxed break-words">
+                                {{ stripHtml(post.content) }}
+                            </div>
 
-                        <!-- Post Excerpt -->
-                        <div v-if="post.excerpt" class="text-neutral-700 mb-4">
-                            {{ post.excerpt }}
-                        </div>
-                        <div v-else-if="post.content" class="text-neutral-700 mb-4">
-                            {{ stripHtml(post.content).substring(0, 200) }}{{ stripHtml(post.content).length > 200 ? '...' : '' }}
-                        </div>
+                            <!-- Post Meta -->
+                            <div class="flex items-center justify-between text-xs text-purple-500 mb-4">
+                                <div class="flex items-center">
+                                    <span>Por</span>
+                                    <span class="ml-1 font-medium">{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
+                                </div>
+                            </div>
 
-                        <!-- Tags -->
-                        <div v-if="post.tags && post.tags.length > 0" class="mb-4 flex flex-wrap gap-2">
-                            <a v-for="tag in post.tags" :key="tag" :href="`/tag/${tag.slug}`"
-                            class="bg-neutral-100 text-neutral-700 text-sm px-3 py-1 rounded-full hover:bg-neutral-200 transition-colors">
-                                {{ tag.name }}
-                            </a>
-                        </div>
-
-                        <!-- Read More Button -->
-                        <div class="mt-4">
-                            <a :href="`/post/${post.slug}`"
-                            class="inline-flex items-center text-[#0a5d28] font-medium hover:text-[#064019] transition-colors">
-                                Ler mais
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
+                            <!-- Read More Button -->
+                            <div class="mt-auto">
+                                <a :href="`/post/${post.slug}`"
+                                class="inline-flex items-center bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-md hover:shadow-lg">
+                                    Continuar lendo
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
                     </article>
                 </div>
 
                 <!-- No posts state -->
                 <div v-else-if="!loading && posts.length === 0" class="text-center py-16">
-                    <h2 class="text-2xl font-bold mb-2 text-neutral-800">Nenhum post encontrado nesta categoria</h2>
-                    <p class="text-neutral-600">Volte mais tarde para novos conteúdos!</p>
+                    <h2 class="text-2xl font-bold mb-2 text-purple-800">Nenhum post encontrado nesta categoria</h2>
+                    <p class="text-purple-600">Volte mais tarde para novos conteúdos!</p>
                 </div>
 
                 <!-- Loading more indicator -->
                 <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
                 </div>
 
                 <!-- No more posts indicator -->
@@ -115,7 +113,7 @@ import { useRoute } from 'vue-router';
 import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
-import OptimizedImage from '../../components/OptimizedImage.vue';
+
 
 import {
     formatDate, stripHtml

@@ -1,24 +1,24 @@
 <template>
     <div class="flex flex-col min-h-screen" style="background: var(--bg-color) !important; background-attachment: fixed !important;">
         <!-- Header -->
-        <header class="bg-[#0a5d28] sticky top-0 z-50 shadow-md">
+        <header class="bg-gradient-to-r from-purple-600 to-purple-700 sticky top-0 z-50 shadow-md">
             <div class="max-w-[1200px] mx-auto px-4">
                 <div class="flex justify-between items-center h-14">
                     <!-- Logo -->
                     <div class="flex-shrink-0">
                         <a href="/" class="text-2xl font-bold text-white">
-                            <img src="/src/theme-proplaynews/assets/android-icon-192x192.png" width="52" height="52" alt="Logo" title="Logo">
+                            <img src="/src/theme-proplaynews/assets/android-icon-192x192.png" width="70" height="70" alt="Logo" title="Logo">
                         </a>
                     </div>
 
                     <!-- Desktop Navigation -->
                     <nav class="hidden md:flex items-center space-x-1">
                         <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                            <div v-if="mainNavCategories.childrenMap[category.id]" class="relative">
+                            <div v-if="mainNavCategories.childrenMap[category.id]" class="relative" style="z-index: 9999;">
                                 <button
                                     @click="(e) => toggleDropdown(category.id, e)"
-                                    class="dropdown-toggle text-white hover:bg-[#064019] dark:hover:bg-[#0a5d28] hover:text-[#ffcc00] px-2 py-1 rounded text-sm flex items-center whitespace-nowrap transition-colors"
-                                    :class="{'bg-[#064019] text-[#ffcc00]': openDropdowns[category.id]}"
+                                    class="dropdown-toggle text-white hover:bg-blue-400/30 hover:text-[#ffcc00] px-2 py-1 rounded text-sm flex items-center whitespace-nowrap transition-colors"
+                                    :class="{'bg-blue-400/30 text-[#ffcc00]': openDropdowns[category.id]}"
                                 >
                                     {{ category.name }}
                                     <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -27,11 +27,16 @@
                                 </button>
                                 <div
                                     v-show="openDropdowns[category.id]"
-                                    class="dropdown-menu absolute left-0 mt-1 w-48 rounded-md shadow-lg bg-[#0a5d28] ring-1 ring-black ring-opacity-5 z-10"
+                                    class="dropdown-menu fixed w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5"
+                                    :style="{
+                                        'z-index': '99999',
+                                        'top': (dropdownPositions[category.id]?.top || 65) + 'px',
+                                        'left': (dropdownPositions[category.id]?.left || 170) + 'px'
+                                    }"
                                 >
                                     <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
                                         :href="`/category/${child.slug}`"
-                                        class="block text-white hover:bg-[#064019] hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
+                                        class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
                                     >
                                         {{ child.name }}
                                     </a>
@@ -39,7 +44,7 @@
                             </div>
                             <a v-else
                                 :href="`/category/${category.slug}`"
-                                class="text-white hover:bg-[#064019] dark:hover:bg-[#0a5d28] hover:text-[#ffcc00] px-2 py-1 rounded text-sm whitespace-nowrap transition-colors"
+                                class="text-white hover:bg-blue-400/30 hover:text-[#ffcc00] px-2 py-1 rounded text-sm whitespace-nowrap transition-colors"
                             >
                                 {{ category.name }}
                             </a>
@@ -114,26 +119,26 @@
                 </div>
 
                 <!-- Mobile Menu -->
-                <div v-show="mobileMenuOpen" class="md:hidden py-3 border-t border-[#064019]">
+                <div v-show="mobileMenuOpen" class="md:hidden py-3 border-t border-blue-400/30">
                     <div class="flex flex-col gap-1">
                         <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
                             <div v-if="mainNavCategories.childrenMap[category.id]" class="w-full">
                                 <button
                                     @click="(e) => toggleDropdown(category.id, e)"
-                                    class="dropdown-toggle flex items-center justify-between w-full text-white hover:bg-[#064019] dark:hover:bg-[#0a5d28] hover:text-[#ffcc00] rounded px-3 py-2 text-sm"
-                                    :class="{'bg-[#064019] text-[#ffcc00]': openDropdowns[category.id]}"
+                                    class="dropdown-toggle flex items-center justify-between w-full text-white hover:bg-blue-400/30 hover:text-[#ffcc00] rounded px-3 py-2 text-sm"
+                                    :class="{'bg-blue-400/30 text-[#ffcc00]': openDropdowns[category.id]}"
                                 >
                                     {{ category.name }}
                                     <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </button>
-                                <div v-show="openDropdowns[category.id]" class="pl-4 py-1 bg-[#064019] rounded mt-1">
+                                <div v-show="openDropdowns[category.id]" class="pl-4 py-1 bg-blue-400/20 rounded mt-1">
                                     <a
                                         v-for="child in mainNavCategories.childrenMap[category.id]"
                                         :key="child.id"
                                         :href="`/category/${child.slug}`"
-                                        class="block px-4 py-2 text-sm text-white hover:bg-[#0a5d28] hover:text-[#ffcc00] rounded"
+                                        class="block px-4 py-2 text-sm text-white hover:bg-blue-400/30 hover:text-[#ffcc00] rounded"
                                     >
                                         {{ child.name }}
                                     </a>
@@ -142,7 +147,7 @@
                             <a
                                 v-else
                                 :href="`/category/${category.slug}`"
-                                class="block text-white hover:bg-[#064019] dark:hover:bg-[#0a5d28] hover:text-[#ffcc00] rounded px-3 py-2 text-sm"
+                                class="block text-white hover:bg-blue-400/30 hover:text-[#ffcc00] rounded px-3 py-2 text-sm"
                             >
                                 {{ category.name }}
                             </a>
@@ -150,7 +155,7 @@
                     </div>
 
                     <!-- Social Icons for Mobile -->
-                    <div class="flex justify-center space-x-6 mt-3 pt-3 border-t border-[#064019]">
+                    <div class="flex justify-center space-x-6 mt-3 pt-3 border-t border-blue-400/30">
                         <a href="#" class="text-white hover:text-[#ffcc00] transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -179,7 +184,7 @@
         </main>
 
         <!-- Newsletter Section -->
-        <section class="bg-[#0a5d28] py-10 text-white mt-8">
+        <section class="bg-transparent py-10 text-white mt-8">
             <div class="max-w-[1200px] mx-auto px-4">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="md:w-1/2">
@@ -209,7 +214,7 @@
                     <div>
                         <h3 class="text-lg font-bold mb-4 relative pb-3">
                             Sobre o ProPlay News
-                            <span class="absolute bottom-0 left-0 w-10 h-1 bg-[#0a5d28]"></span>
+                            <span class="absolute bottom-0 left-0 w-10 h-1 bg-purple-600"></span>
                         </h3>
                         <p class="text-gray-300 text-sm mb-4">
                             Portal especializado em notícias, reviews e conteúdo sobre o mundo dos games.
@@ -262,7 +267,7 @@
                     <div>
                         <h3 class="text-lg font-bold mb-4 relative pb-3">
                             Categorias
-                            <span class="absolute bottom-0 left-0 w-10 h-1 bg-[#0a5d28]"></span>
+                            <span class="absolute bottom-0 left-0 w-10 h-1 bg-purple-600"></span>
                         </h3>
                         <div class="grid grid-cols-3 gap-x-4">
                             <ul class="space-y-2">
@@ -329,7 +334,7 @@
                                         type="search"
                                         v-model="searchQuery"
                                         @input="debouncedSearch"
-                                        class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-[#0a5d28] focus:border-[#0a5d28]"
+                                        class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2.5 focus:ring-purple-600 focus:border-purple-600"
                                         placeholder="Pesquisar posts..."
                                         autocomplete="off"
                                         ref="searchInput"
@@ -338,7 +343,7 @@
 
                                 <div class="mt-4 max-h-[70vh] overflow-y-auto">
                                     <div v-if="isSearching" class="flex justify-center items-center py-8">
-                                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
                                     </div>
 
                                     <div v-else-if="searchResults.length === 0 && searchQuery.length > 1" class="py-8 text-center text-gray-600">
@@ -360,7 +365,7 @@
                                         >
                                             <div class="flex flex-col sm:flex-row">
                                                 <div v-if="post.featureImage" class="w-full sm:w-32 h-40 sm:h-24 flex-shrink-0">
-                                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
+                                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-auto object-contain" loading="lazy" style="max-height: 200px;" />
                                                 </div>
                                                 <div class="p-4 flex-grow">
                                                     <h4 class="font-bold text-gray-900 mb-1">{{ post.title }}</h4>
@@ -493,9 +498,19 @@ const mainNavCategories = computed(() => {
 });
 
 const openDropdowns = ref<Record<string, boolean>>({});
+const dropdownPositions = ref<Record<string, { left: number; top: number }>>({});
 
 const toggleDropdown = (categoryId: string, event: Event) => {
     event.stopPropagation();
+    const target = event.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    
+    // Calcula a posição do dropdown
+    dropdownPositions.value[categoryId] = {
+        left: rect.left,
+        top: rect.bottom + 4 // 4px de espaço
+    };
+    
     if (openDropdowns.value[categoryId]) {
         openDropdowns.value = {
             ...openDropdowns.value,
