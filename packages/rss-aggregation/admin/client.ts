@@ -31,7 +31,7 @@ export const useFeedClient = () => {
         createRaw: (data: any) => api.authRequest(`feed/raw`, "POST", data),
         cleanAllRaws: () => api.authRequest(`feed/raw/cleanAllRaws`, "GET"),
         cleanChannelRaws: (channelId: string) => api.authRequest(`feed/raw/cleanChannelRaws/${channelId}`, "GET"),
-        classifyRawsWithAI: () => api.authRequest(`feed/raw/classifyRawsWithAI`, "POST"),
+        classifyRawsWithAI: (rawIds?: string[]) => api.authRequest(`feed/raw/classifyRawsWithAI`, "POST", { rawIds }),
         deleteRaw: (id: string) => api.authRequest(`feed/raw/${id}`, "DELETE")
     };
 
@@ -52,12 +52,27 @@ export const useFeedClient = () => {
             const encodedUrl = encodeURIComponent(url);
             return api.authRequest(`feed/parser/parseContentAll?url=${encodedUrl}`, "GET");
         },
-        createRaw: (data: any) => api.authRequest("feed/parser/createRaw", "POST", data)
+        createRaw: (data: any) => api.authRequest("feed/parser/createRaw", "POST", data),
+        testContent: (data: any, url: string) => {
+            const encodedUrl = encodeURIComponent(url);
+            return api.authRequest(`feed/parser/testContent?url=${encodedUrl}`, "POST", data);
+        }
+    };
+
+    const feedAIContent = {
+        get: (filters: Record<string, any>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`feed/ai-content/get?${query}`, "GET");
+        },
+        update: (id: string, data: any) => {
+            return api.authRequest(`feed/ai-content/update/${id}`, "POST", data);
+        }
     };
 
     return {
         channels,
         raw,
-        parser
+        parser,
+        feedAIContent
     };
 };
