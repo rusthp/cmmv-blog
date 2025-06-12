@@ -47,18 +47,18 @@
                         <!-- Post Content -->
                         <div class="p-4">
                             <!-- Post Title -->
-                            <h2 class="text-lg font-bold text-gray-800 mb-3">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4 pb-3 border-b border-gray-200">
                                 <a :href="`/post/${post.slug}`" class="hover:text-purple-600 transition-colors" aria-label="Ler mais sobre este post">
                                     {{ post.title }}
                                 </a>
                             </h2>
 
                             <!-- Post Excerpt -->
-                            <div v-if="post.excerpt" class="text-gray-600 mb-4 text-sm leading-relaxed break-words">
-                                {{ post.excerpt }}
+                            <div v-if="post.excerpt" class="text-gray-600 mb-4 text-sm leading-relaxed break-words pt-2">
+                                {{ post.excerpt.length > 150 ? post.excerpt.substring(0, 150) + '...' : post.excerpt }}
                             </div>
-                            <div v-else-if="post.content" class="text-gray-600 mb-4 text-sm leading-relaxed break-words">
-                                {{ stripHtml(post.content) }}
+                            <div v-else-if="post.content" class="text-gray-600 mb-4 text-sm leading-relaxed break-words pt-2">
+                                {{ stripHtml(post.content).length > 150 ? stripHtml(post.content).substring(0, 150) + '...' : stripHtml(post.content) }}
                             </div>
 
                             <!-- Post Meta -->

@@ -68,7 +68,7 @@ main, .container, .content {
     transform: translateY(-3px);
 }
 
-/* Destaque para conteúdo dos cards */
+/* Títulos normais para todas as páginas - REGRA BASE */
 .post-card h2,
 .post-card h3,
 .bg-white h2,
@@ -80,9 +80,34 @@ main, .container, .content {
     border-bottom: 2px solid rgba(135, 206, 235, 0.4);
     position: relative;
     line-height: 1.4;
-    /* Removido: ellipsis para permitir títulos completos */
     display: block;
     overflow: visible;
+}
+
+/* SOBRESCREVE: Truncamento APENAS para cards na homepage */
+.home-page article h2,
+.home-page article h3 {
+    max-height: 3.2em !important; /* Limita a 2 linhas com mais espaço */
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    line-height: 1.6 !important; /* Altura da linha otimizada */
+    position: relative !important;
+}
+
+/* Máscara para esconder texto cortado */
+.home-page article h2::after,
+.home-page article h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0.5em;
+    background: linear-gradient(transparent, rgba(135, 206, 235, 0.15));
+    pointer-events: none;
 }
 
 /* Linha divisória animada */
@@ -107,16 +132,25 @@ main, .container, .content {
     width: 100%;
 }
 
-/* Texto dos cards */
+/* Texto normal para todas as páginas - REGRA BASE */
 .post-card p,
 .bg-white p {
     color: #f8fafc !important; /* Branco mais puro */
     line-height: 1.5;
-    /* Removido: max-height e line-clamp para permitir texto completo */
     overflow: visible;
     display: block;
     font-weight: 400 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* SOBRESCREVE: Truncamento APENAS para parágrafos na homepage */
+.home-page article p {
+    max-height: 3.6em !important; /* Limita a 3 linhas aproximadamente */
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
 }
 
 /* Links dos cards */
@@ -131,15 +165,42 @@ main, .container, .content {
     color: #add8e6 !important;
 }
 
-/* Seção Mais Populares - Corrigir legibilidade e tamanho das imagens */
+/* h4 normal para todas as páginas - REGRA BASE */
 .bg-white h4 {
     color: #ffffff !important;
     font-weight: 600 !important;
     line-height: 1.3 !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
-    /* Removido: ellipsis para permitir títulos completos */
     display: block;
     overflow: visible;
+}
+
+/* SOBRESCREVE: Truncamento APENAS para h4 na sidebar da homepage */
+.sidebar h4 {
+    max-height: 2.6em !important; /* Limita a 2 linhas aproximadamente */
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+}
+
+/* Otimização para cards da seção "Mais Conteúdo" */
+.home-page article {
+    min-height: 380px; /* Altura mínima consistente */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Esconde qualquer conteúdo que ultrapasse */
+}
+
+.home-page article .p-3 {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: -10px; /* Sobe o conteúdo para esconder texto cortado */
+    position: relative;
+    z-index: 1;
 }
 
 /* Melhorar legibilidade de textos secundários */
@@ -203,30 +264,36 @@ main, .container, .content {
 }
 
 /* Botão Ver Mais Posts */
-.bg-\\[\\#0a5d28\\] {
+.bg-purple-600,
+.bg-green-600,
+[class*="bg-green"] {
     background: linear-gradient(135deg, #7c3aed, #6b21a8) !important;
     box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3) !important;
 }
 
-.hover\\:bg-\\[\\#064019\\]:hover {
+.bg-purple-600:hover,
+.bg-green-600:hover,
+[class*="bg-green"]:hover {
     background: linear-gradient(135deg, #6b21a8, #581c87) !important;
     box-shadow: 0 4px 12px rgba(107, 33, 168, 0.4) !important;
     transform: translateY(-1px);
 }
 
 /* Estilo adicional para garantir que o botão fique destacado */
-button[class*="bg-[#0a5d28]"],
-a[class*="bg-[#0a5d28]"],
-span[class*="bg-[#0a5d28]"] {
+button[class*="bg-green"],
+a[class*="bg-green"],
+span[class*="bg-green"],
+.btn-primary {
     background: linear-gradient(135deg, #7c3aed, #6b21a8) !important;
     box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3) !important;
     border: 2px solid rgba(139, 92, 246, 0.3);
     transition: all 0.3s ease !important;
 }
 
-button[class*="bg-[#0a5d28]"]:hover,
-a[class*="bg-[#0a5d28]"]:hover,
-span[class*="bg-[#0a5d28]"]:hover {
+button[class*="bg-green"]:hover,
+a[class*="bg-green"]:hover,
+span[class*="bg-green"]:hover,
+.btn-primary:hover {
     background: linear-gradient(135deg, #6b21a8, #581c87) !important;
     box-shadow: 0 6px 20px rgba(107, 33, 168, 0.4) !important;
     border-color: rgba(139, 92, 246, 0.5);

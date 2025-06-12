@@ -229,7 +229,7 @@
 
                                         <div ref="relatedPostsObserver" class="min-h-[200px]">
                                             <div v-if="!relatedPostsLoaded" class="flex justify-center items-center py-6">
-                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
                                                 <span class="ml-3 text-gray-600">Carregando posts relacionados...</span>
                                             </div>
 
@@ -263,11 +263,11 @@
                                                     </a>
                                                     <div class="p-4">
                                                         <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors line-clamp-2">
-                                                                {{ relatedPost.title }}
+                                                            <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b border-gray-200 hover:text-purple-600 transition-colors line-clamp-2">
+                                                                {{ relatedPost.title.length > 30 ? relatedPost.title.substring(0, 30) + '...' : relatedPost.title }}
                                                             </h3>
                                                         </a>
-                                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2 pt-2">
                                                             {{ relatedPost.excerpt || stripHtml(relatedPost.content).substring(0, 120) + '...' }}
                                                         </p>
                                                         <div class="flex justify-between items-center text-xs text-gray-500">

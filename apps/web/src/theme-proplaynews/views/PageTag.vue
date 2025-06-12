@@ -17,7 +17,7 @@
 
                 <!-- Initial loading state -->
                 <div v-if="loading && posts.length === 0" class="flex justify-center items-center py-20">
-                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
                 </div>
 
                 <!-- Posts List -->
@@ -28,21 +28,21 @@
                         <!-- Feature Image -->
                         <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
                                                           <div v-if="post.featureImage" class="relative bg-gray-100 overflow-hidden rounded-lg" style="min-height: 200px;">
-                                                                <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title" 
+                                <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title"
                                     class="w-full h-auto object-contain imgix-lazy" :hover="true" icon-size="lg" style="max-height: 250px; min-height: 200px;" />
                             </div>
                         </a>
 
                         <!-- Post Title -->
-                        <h2 class="text-2xl font-bold text-neutral-900 mb-3">
-                            <a :href="`/post/${post.slug}`" class="hover:text-[#0a5d28] transition-colors"
+                        <h2 class="text-2xl font-bold text-neutral-900 mb-4 pb-3 border-b border-gray-200">
+                            <a :href="`/post/${post.slug}`" class="hover:text-purple-600 transition-colors"
                                 aria-label="Ler mais sobre este post">
                                 {{ post.title }}
                             </a>
                         </h2>
 
                         <!-- Post Meta -->
-                        <div class="flex items-center mb-4 text-sm text-neutral-600">
+                        <div class="flex items-center mb-4 text-sm text-neutral-600 pt-2">
                             <div class="flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1.5" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -55,7 +55,7 @@
 
                         <!-- Post Excerpt -->
                         <div v-if="post.excerpt" class="text-neutral-700 mb-4">
-                            {{ post.excerpt }}
+                            {{ post.excerpt.length > 200 ? post.excerpt.substring(0, 200) + '...' : post.excerpt }}
                         </div>
                         <div v-else-if="post.content" class="text-neutral-700 mb-4">
                             {{ stripHtml(post.content).substring(0, 200) }}{{ stripHtml(post.content).length > 200 ?
@@ -73,7 +73,7 @@
                         <!-- Read More Button -->
                         <div class="mt-4">
                             <a :href="`/post/${post.slug}`"
-                                class="inline-flex items-center text-[#0a5d28] font-medium hover:text-[#064019] transition-colors">
+                                class="inline-flex items-center text-purple-600 font-medium hover:text-purple-700 transition-colors">
                                 Ler mais
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20"
                                     fill="currentColor">
@@ -94,7 +94,7 @@
 
                 <!-- Loading more indicator -->
                 <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
                 </div>
 
                 <!-- Intersection observer target -->

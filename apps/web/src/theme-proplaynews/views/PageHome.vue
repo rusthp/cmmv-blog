@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-[1200px] mx-auto px-4">
+    <div class="home-page w-full max-w-[1200px] mx-auto px-4">
         <div v-if="error" class="text-center py-16 bg-white rounded-lg shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -46,7 +46,7 @@
                                 </div>
                                 <h2 v-if="coverPosts.full" class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ coverPosts.full.title }}</h2>
                                 <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
-                                    {{ coverPosts.full.excerpt || stripHtml(coverPosts.full.content).substring(0, 150) + '...' }}
+                                    {{ coverPosts.full.excerpt || (stripHtml(coverPosts.full.content).length > 100 ? stripHtml(coverPosts.full.content).substring(0, 100) + '...' : stripHtml(coverPosts.full.content)) }}
                                 </p>
                                 <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
                                     Continuar lendo
@@ -80,10 +80,10 @@
                                             {{ post.categories[0].name }}
                                         </span>
                                     </div>
-                                    <h2 class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ post.title }}</h2>
-                                    <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
-                                        {{ post.excerpt || stripHtml(post.content).substring(0, 150) + '...' }}
-                                    </p>
+                                                                    <h2 class="text-2xl md:text-3xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ post.title }}</h2>
+                                <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
+                                    {{ post.excerpt || (stripHtml(post.content).length > 100 ? stripHtml(post.content).substring(0, 100) + '...' : stripHtml(post.content)) }}
+                                </p>
                                     <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
@@ -144,7 +144,7 @@
                                     </div>
                                     <h2 v-if="coverPosts.splitMain" class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ coverPosts.splitMain.title }}</h2>
                                     <p v-if="coverPosts.splitMain" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
-                                        {{ coverPosts.splitMain.excerpt || stripHtml(coverPosts.splitMain.content).substring(0, 150) + '...' }}
+                                        {{ coverPosts.splitMain.excerpt || (stripHtml(coverPosts.splitMain.content).length > 100 ? stripHtml(coverPosts.splitMain.content).substring(0, 100) + '...' : stripHtml(coverPosts.splitMain.content)) }}
                                     </p>
                                     <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
@@ -204,7 +204,7 @@
                                     </div>
                                                                             <h2 class="text-xl md:text-2xl font-bold mb-3 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] bg-black/30 inline-block py-2 px-4 rounded">{{ post.title }}</h2>
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
-                                        {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                        {{ post.excerpt || (stripHtml(post.content).length > 100 ? stripHtml(post.content).substring(0, 100) + '...' : stripHtml(post.content)) }}
                                     </p>
                                     <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
@@ -244,16 +244,16 @@
                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                 >
                                     <a :href="`/post/${post.slug}`" class="block">
-                                        <div class="h-48 overflow-hidden relative">
+                                        <div class="h-64 overflow-hidden relative">
                                             <OptimizedImage
                                                 :src="post.featureImage"
                                                 :alt="post.title"
-                                                width="360"
-                                                height="192"
+                                                width="400"
+                                                height="256"
                                                 loading="lazy"
                                                 priority="high"
                                                 :hover="true"
-                                                icon-size="md"
+                                                icon-size="lg"
                                             />
                                             <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2">
                                                 <span class="bg-[#ffcc00] text-[#333] px-2 py-1 rounded-md text-xs font-medium">
@@ -262,14 +262,14 @@
                                             </div>
                                         </div>
                                     </a>
-                                    <div class="p-4">
+                                    <div class="p-3">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors">
-                                                {{ post.title.length > 60 ? post.title.substring(0, 60) + '...' : post.title }}
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
+                                                {{ post.title.length > 65 ? post.title.substring(0, 65) + '...' : post.title }}
                                             </h3>
                                         </a>
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                            {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                        <p class="text-gray-600 text-sm mb-2 line-clamp-2">
+                                            {{ post.excerpt || (stripHtml(post.content).length > 70 ? stripHtml(post.content).substring(0, 70) + '...' : stripHtml(post.content)) }}
                                         </p>
                                         <div class="flex justify-between items-center text-xs text-gray-500">
                                             <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
@@ -303,15 +303,15 @@
                                         class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                     >
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <div class="h-48 overflow-hidden relative">
+                                            <div class="h-64 overflow-hidden relative">
                                                 <OptimizedImage
                                                     :src="post.featureImage"
                                                     :alt="post.title"
-                                                    width="360"
-                                                    height="192"
+                                                    width="400"
+                                                    height="256"
                                                     loading="lazy"
                                                     :hover="true"
-                                                    icon-size="md"
+                                                    icon-size="lg"
                                                 />
                                                 <div v-if="post.categories && post.categories.length > 0" class="absolute top-2 left-2">
                                                     <span class="bg-[#ffcc00] text-[#333] px-2 py-1 rounded-md text-xs font-medium">
@@ -320,14 +320,14 @@
                                                 </div>
                                             </div>
                                         </a>
-                                        <div class="p-4">
+                                        <div class="p-3">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-lg font-bold text-gray-800 mb-2 hover:text-purple-600 transition-colors">
-                                                    {{ post.title.length > 60 ? post.title.substring(0, 60) + '...' : post.title }}
-                                                </h3>
+                                                                                        <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
+                                            {{ post.title.length > 65 ? post.title.substring(0, 65) + '...' : post.title }}
+                                        </h3>
                                             </a>
-                                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                                {{ post.excerpt || stripHtml(post.content).substring(0, 120) + '...' }}
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-2">
+                                                {{ post.excerpt || (stripHtml(post.content).length > 42 ? stripHtml(post.content).substring(0, 42) + '...' : stripHtml(post.content)) }}
                                             </p>
                                             <div class="flex justify-between items-center text-xs text-gray-500">
                                                 <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
@@ -370,7 +370,7 @@
                         </div>
 
                         <!-- Right Column (Widgets + Ads) -->
-                        <div class="lg:col-span-1 min-w-[300px]">
+                        <div class="sidebar lg:col-span-1 min-w-[300px]">
                             <!-- AdSense Rectangle (Top) -->
                             <div v-if="adSettings.enableAds && adSettings.homePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
                                 <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
@@ -410,7 +410,7 @@
                                         <div class="flex-grow">
                                             <a :href="`/post/${post.slug}`" class="block">
                                                 <h4 class="text-sm font-semibold text-gray-800 hover:text-purple-600 transition-colors">
-                                                    {{ post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title }}
+                                                    {{ post.title.length > 45 ? post.title.substring(0, 45) + '...' : post.title }}
                                                 </h4>
                                             </a>
                                             <span class="text-xs text-gray-500 mt-1 block">
