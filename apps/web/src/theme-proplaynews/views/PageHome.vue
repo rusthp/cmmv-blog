@@ -6,7 +6,7 @@
             </svg>
             <h2 class="text-2xl font-bold mb-2 text-gray-800">Erro ao carregar posts</h2>
             <p class="text-gray-600 mb-4">Não foi possível carregar os posts. Por favor, tente novamente.</p>
-            <button @click="loadPosts" class="px-4 py-2 bg-[#0a5d28] text-white rounded-md hover:bg-[#064019] transition-colors">
+                            <button @click="loadPosts" class="px-4 py-2 bg-[#ffcc00] text-[#333333] rounded-md hover:bg-[#ffa500] transition-colors">
                 Tentar novamente
             </button>
         </div>
@@ -48,7 +48,7 @@
                                 <p v-if="coverPosts.full" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                     {{ coverPosts.full.excerpt || (stripHtml(coverPosts.full.content).length > 100 ? stripHtml(coverPosts.full.content).substring(0, 100) + '...' : stripHtml(coverPosts.full.content)) }}
                                 </p>
-                                <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
+                                <span class="inline-block bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] px-4 py-2 rounded-md transition-colors">
                                     Continuar lendo
                                 </span>
                             </div>
@@ -84,7 +84,7 @@
                                 <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                     {{ post.excerpt || (stripHtml(post.content).length > 100 ? stripHtml(post.content).substring(0, 100) + '...' : stripHtml(post.content)) }}
                                 </p>
-                                    <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -146,7 +146,7 @@
                                     <p v-if="coverPosts.splitMain" class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ coverPosts.splitMain.excerpt || (stripHtml(coverPosts.splitMain.content).length > 100 ? stripHtml(coverPosts.splitMain.content).substring(0, 100) + '...' : stripHtml(coverPosts.splitMain.content)) }}
                                     </p>
-                                    <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -206,7 +206,7 @@
                                     <p class="text-gray-100 mb-4 line-clamp-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] bg-black/25 p-2 rounded max-w-2xl">
                                         {{ post.excerpt || (stripHtml(post.content).length > 100 ? stripHtml(post.content).substring(0, 100) + '...' : stripHtml(post.content)) }}
                                     </p>
-                                    <span class="inline-block bg-[#0a5d28] hover:bg-[#064019] text-white px-4 py-2 rounded-md transition-colors">
+                                    <span class="inline-block bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] px-4 py-2 rounded-md transition-colors">
                                         Continuar lendo
                                     </span>
                                 </div>
@@ -353,14 +353,14 @@
                             <div v-if="hasMorePosts && !loadingMore" class="mt-8 flex justify-center">
                                 <button 
                                     @click="loadMorePosts"
-                                    class="bg-[#0a5d28] hover:bg-[#064019] text-white font-medium px-8 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1"
+                                    class="bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] font-medium px-8 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1"
                                 >
                                     Ver Mais Posts
                                 </button>
                             </div>
 
                             <div v-if="loadingMore" class="mt-8 flex justify-center items-center py-6">
-                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0a5d28]"></div>
+                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#ffcc00]"></div>
                                 <span class="ml-3 text-gray-600">Carregando mais posts...</span>
                             </div>
 
@@ -385,7 +385,7 @@
 
                             <!-- Popular Posts Widget -->
                             <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#333333] border-b-2 border-[#ffcc00]">
                                     Mais Populares
                                 </h2>
 
@@ -435,7 +435,7 @@
 
                             <!-- Categories Widget -->
                             <div class="bg-white rounded-lg shadow-md p-5 mb-6">
-                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#0a5d28] border-b-2 border-[#ffcc00]">
+                                <h2 class="text-xl font-bold mb-4 pb-2 text-[#333333] border-b-2 border-[#ffcc00]">
                                     Categorias
                                 </h2>
 
@@ -443,10 +443,10 @@
                                     <li v-for="category in categories" :key="category.id" class="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                                         <a
                                             :href="`/category/${category.slug}`"
-                                            class="flex justify-between items-center text-gray-700 hover:text-[#0a5d28] transition-colors"
+                                            class="flex justify-between items-center text-gray-700 hover:text-[#333333] transition-colors"
                                         >
                                             {{ category.name }}
-                                            <span class="bg-[#0a5d28] text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            <span class="bg-[#ffcc00] text-[#333333] px-2 py-1 rounded-full text-xs font-medium">
                                                 {{ category.postCount }}
                                             </span>
                                         </a>

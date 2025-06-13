@@ -272,16 +272,18 @@ main, .container, .content {
 .bg-purple-600,
 .bg-green-600,
 [class*="bg-green"] {
-    background: linear-gradient(135deg, #7c3aed, #6b21a8) !important;
-    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3) !important;
+    background: linear-gradient(135deg, #ffcc00, #ffa500) !important;
+    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.3) !important;
+    color: #333333 !important;
 }
 
 .bg-purple-600:hover,
 .bg-green-600:hover,
 [class*="bg-green"]:hover {
-    background: linear-gradient(135deg, #6b21a8, #581c87) !important;
-    box-shadow: 0 4px 12px rgba(107, 33, 168, 0.4) !important;
+    background: linear-gradient(135deg, #ffa500, #ff8c00) !important;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.4) !important;
     transform: translateY(-1px);
+    color: #333333 !important;
 }
 
 /* Estilo adicional para garantir que o botão fique destacado */
@@ -289,20 +291,22 @@ button[class*="bg-green"],
 a[class*="bg-green"],
 span[class*="bg-green"],
 .btn-primary {
-    background: linear-gradient(135deg, #7c3aed, #6b21a8) !important;
-    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3) !important;
-    border: 2px solid rgba(139, 92, 246, 0.3);
+    background: linear-gradient(135deg, #ffcc00, #ffa500) !important;
+    box-shadow: 0 4px 16px rgba(255, 204, 0, 0.3) !important;
+    border: 2px solid rgba(255, 204, 0, 0.3);
     transition: all 0.3s ease !important;
+    color: #333333 !important;
 }
 
 button[class*="bg-green"]:hover,
 a[class*="bg-green"]:hover,
 span[class*="bg-green"]:hover,
 .btn-primary:hover {
-    background: linear-gradient(135deg, #6b21a8, #581c87) !important;
-    box-shadow: 0 6px 20px rgba(107, 33, 168, 0.4) !important;
-    border-color: rgba(139, 92, 246, 0.5);
+    background: linear-gradient(135deg, #ffa500, #ff8c00) !important;
+    box-shadow: 0 6px 20px rgba(255, 165, 0, 0.4) !important;
+    border-color: rgba(255, 204, 0, 0.5);
     transform: translateY(-1px);
+    color: #333333 !important;
 }
 
 .article-container {
@@ -778,6 +782,7 @@ iframe {
 }
 
 /* Critical CSS optimizations */
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

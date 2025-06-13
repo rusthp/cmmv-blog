@@ -15,7 +15,7 @@
                             v-for="category in page.categories"
                             :key="category.id"
                             :href="`/category/${category.slug}`"
-                            class="px-3 py-1 bg-[#0a5d28] text-white text-sm font-medium rounded-full shadow-sm hover:bg-[#064019] transition-all"
+                            class="px-3 py-1 bg-[#ffcc00] text-[#333333] text-sm font-medium rounded-full shadow-sm hover:bg-[#ffa500] transition-all"
                         >
                             {{ category.name }}
                         </a>
@@ -88,7 +88,7 @@
 
                                 <!-- WhatsApp -->
                                 <a
-                                    class="bg-green-500 hover:bg-green-600 w-8 h-8 rounded-full flex items-center justify-center text-white transition-colors"
+                                    class="bg-[#ffcc00] hover:bg-[#ffa500] w-8 h-8 rounded-full flex items-center justify-center text-[#333333] transition-colors"
                                     rel="nofollow noopener"
                                     :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent(page.title + ' ' + pageUrl)"
                                     data-action="share/whatsapp/share"
@@ -208,7 +208,7 @@ useHead(headData);
 }
 
 .post-content :deep(blockquote) {
-    border-left: 4px solid #0a5d28;
+                    border-left: 4px solid #ffcc00;
     padding-left: 1rem;
     margin: 1rem 0;
     color: #666;
@@ -239,7 +239,7 @@ useHead(headData);
 }
 
 .post-content :deep(a) {
-    color: #0a5d28;
+                    color: #333333;
     text-decoration: underline;
 }
 

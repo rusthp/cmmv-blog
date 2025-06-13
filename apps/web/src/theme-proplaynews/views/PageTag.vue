@@ -260,7 +260,7 @@ onUnmounted(() => {
 }
 
 .post-content :deep(blockquote) {
-    border-left: 4px solid #0a5d28;
+                    border-left: 4px solid #ffcc00;
     padding-left: 1rem;
     margin: 1rem 0;
     color: #666;
@@ -291,7 +291,7 @@ onUnmounted(() => {
 }
 
 .post-content :deep(a) {
-    color: #0a5d28;
+                    color: #333333;
     text-decoration: underline;
 }
 

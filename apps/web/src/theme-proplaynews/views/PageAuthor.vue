@@ -21,7 +21,7 @@
                         <div class="absolute left-1/2 -translate-x-1/2 -top-16 flex items-center justify-center">
                             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
                                 <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="128" height="128" icon-size="lg" />
-                                <div v-else class="w-full h-full flex items-center justify-center bg-[#0a5d28] text-white text-3xl font-bold">
+                                <div v-else class="w-full h-full flex items-center justify-center bg-[#ffcc00] text-[#333333] text-3xl font-bold">
                                     {{ authorInitials }}
                                 </div>
                             </div>
@@ -87,7 +87,7 @@
                 </div>
 
                 <h2 class="text-xl font-bold text-neutral-900 mb-6 pb-2 border-b border-neutral-200 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#0a5d28]" viewBox="0 0 20 20" fill="currentColor">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#ffcc00]" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
                     </svg>
                     Publicações
@@ -101,7 +101,7 @@
                             <div class="flex items-center p-4 border-b border-neutral-100">
                                 <div class="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 mr-3">
                                     <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="40" height="40" icon-size="sm" />
-                                    <div v-else class="w-full h-full flex items-center justify-center bg-[#0a5d28] text-white font-bold text-sm">
+                                    <div v-else class="w-full h-full flex items-center justify-center bg-[#ffcc00] text-[#333333] font-bold text-sm">
                                         {{ authorInitials }}
                                     </div>
                                 </div>
@@ -124,7 +124,7 @@
                                 <h3 class="text-xl font-bold text-neutral-900 mb-3">
                                     <a
                                         :href="`/post/${post.slug}`"
-                                        class="hover:text-[#0a5d28] transition-colors"
+                                        class="hover:text-[#333333] transition-colors"
                                         aria-label="Ler mais sobre este post"
                                     >
                                         {{ post.title }}
@@ -156,7 +156,7 @@
 
                                 <a
                                     :href="`/post/${post.slug}`"
-                                    class="px-3 py-1.5 text-[#0a5d28] font-medium hover:bg-green-50 rounded-md transition-colors flex items-center"
+                                    class="px-3 py-1.5 text-[#333333] font-medium hover:bg-[#ffcc00]/20 rounded-md transition-colors flex items-center"
                                     aria-label="Ler mais sobre este post"
                                 >
                                     Ler mais

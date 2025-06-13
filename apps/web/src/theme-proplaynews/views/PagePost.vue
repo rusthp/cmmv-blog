@@ -375,7 +375,7 @@
                                         </a>
 
                                         <!-- WhatsApp -->
-                                        <a class="bg-green-500 hover:bg-green-600 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
+                                        <a class="bg-[#ffcc00] hover:bg-[#ffa500] w-10 h-10 rounded-full flex items-center justify-center text-[#333333] transition-colors"
                                             rel="nofollow noopener"
                                             :href="whatsappShareUrl"
                                             target="_blank"
@@ -399,7 +399,7 @@
                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                             </svg>
                                             <span v-if="linkCopied"
-                                                class="absolute -right-16 whitespace-nowrap bg-green-600 text-white text-xs py-1 px-2 rounded">
+                                                class="absolute -right-16 whitespace-nowrap bg-[#ffcc00] text-[#333333] text-xs py-1 px-2 rounded">
                                                 Copiado!
                                             </span>
                                         </button>
@@ -1282,7 +1282,7 @@ const sidebarLeftAdContainer = ref(null);
 }
 
 .post-content :deep(blockquote) {
-    border-left: 4px solid #0a5d28;
+                    border-left: 4px solid #ffcc00;
     padding-left: 1rem;
     margin: 1rem 0;
     color: #666;
@@ -1313,7 +1313,7 @@ const sidebarLeftAdContainer = ref(null);
 }
 
 .post-content :deep(a) {
-    color: #0a5d28;
+                    color: #333333;
     text-decoration: underline;
 }
 

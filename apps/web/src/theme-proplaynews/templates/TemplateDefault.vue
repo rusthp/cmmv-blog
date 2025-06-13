@@ -161,25 +161,23 @@
         </header>
 
         <!-- Dropdowns Portal - Renderizados fora do header -->
-        <Teleport to="body">
-            <template v-for="category in mainNavCategories.rootCategories" :key="`dropdown-${category.id}`">
-                <div
-                    v-if="mainNavCategories.childrenMap[category.id] && openDropdowns[category.id]"
-                    class="dropdown-menu fixed w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-[9999]"
-                    :style="{
-                        'top': (dropdownPositions[category.id]?.top || 65) + 'px',
-                        'left': (dropdownPositions[category.id]?.left || 170) + 'px'
-                    }"
+        <template v-for="category in mainNavCategories.rootCategories" :key="`dropdown-${category.id}`">
+                                        <div
+                v-if="mainNavCategories.childrenMap[category.id] && openDropdowns[category.id]"
+                class="dropdown-menu fixed w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-[9999] hidden md:block"
+                :style="{
+                    'top': (dropdownPositions[category.id]?.top || 65) + 'px',
+                    'left': (dropdownPositions[category.id]?.left || 170) + 'px'
+                }"
+            >
+                <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
+                    :href="`/category/${child.slug}`"
+                    class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
                 >
-                    <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
-                        :href="`/category/${child.slug}`"
-                        class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
-                    >
-                        {{ child.name }}
-                    </a>
-                </div>
-            </template>
-        </Teleport>
+                    {{ child.name }}
+                </a>
+            </div>
+        </template>
 
         <!-- Main content -->
         <main class="flex-grow container mx-auto md:px-4 md:py-6">
@@ -188,12 +186,12 @@
             </div>
         </main>
 
-        <!-- Newsletter Section -->
-        <section class="bg-transparent py-10 text-white mt-8">
+        <!-- Newsletter Section - ÚNICA -->
+        <section class="bg-transparent py-10 text-white mt-8" id="newsletter-section">
             <div class="max-w-[1200px] mx-auto px-4">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="md:w-1/2">
-                        <h3 class="text-2xl font-bold mb-2">Inscreva-se em nossa Newsletter</h3>
+                        <h3 class="text-2xl font-bold mb-2">📧 Inscreva-se em nossa Newsletter</h3>
                         <p class="text-gray-200 mb-4">
                             Receba as últimas notícias e atualizações diretamente no seu e-mail.
                             Fique por dentro de tudo sobre o universo gamer.
@@ -592,7 +590,12 @@ const formatDate = (dateString: string) => {
 };
 
 const categoriesColumns = computed(() => {
-    const allCategories = categories.value;
+    const allCategories = categories.value || [];
+    
+    if (allCategories.length === 0) {
+        return [[], [], []];
+    }
+    
     const columnSize = Math.ceil(allCategories.length / 3);
 
     return [
@@ -603,20 +606,18 @@ const categoriesColumns = computed(() => {
 });
 
 onMounted(async () => {
-    await Promise.all([
-        (async () => {
-            if (!categories.value.length) {
-                try {
-                    const categoriesResponse = await blogAPI.categories.getAll();
-                    if (categoriesResponse) {
-                        categories.value = categoriesResponse;
-                    }
-                } catch (err) {
-                    console.error('Failed to load categories:', err);
-                }
+    // Carrega categorias se não estiverem disponíveis
+    if (!categories.value || categories.value.length === 0) {
+        try {
+            const categoriesResponse = await blogAPI.categories.getAll();
+            if (categoriesResponse && Array.isArray(categoriesResponse)) {
+                categories.value = categoriesResponse;
+                categoriesStore.setCategories(categoriesResponse);
             }
-        })()
-    ]);
+        } catch (err) {
+            console.error('Failed to load categories:', err);
+        }
+    }
 
     isDarkMode.value = false;
     document.documentElement.classList.remove('dark');
