@@ -14,7 +14,7 @@
                     <!-- Desktop Navigation -->
                     <nav class="hidden md:flex items-center space-x-1">
                         <template v-for="category in mainNavCategories.rootCategories" :key="category.id">
-                            <div v-if="mainNavCategories.childrenMap[category.id]" class="relative" style="z-index: 9999;">
+                            <div v-if="mainNavCategories.childrenMap[category.id]" class="relative">
                                 <button
                                     @click="(e) => toggleDropdown(category.id, e)"
                                     class="dropdown-toggle text-white hover:bg-blue-400/30 hover:text-[#ffcc00] px-2 py-1 rounded text-sm flex items-center whitespace-nowrap transition-colors"
@@ -25,22 +25,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </button>
-                                <div
-                                    v-show="openDropdowns[category.id]"
-                                    class="dropdown-menu fixed w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5"
-                                    :style="{
-                                        'z-index': '99999',
-                                        'top': (dropdownPositions[category.id]?.top || 65) + 'px',
-                                        'left': (dropdownPositions[category.id]?.left || 170) + 'px'
-                                    }"
-                                >
-                                    <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
-                                        :href="`/category/${child.slug}`"
-                                        class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
-                                    >
-                                        {{ child.name }}
-                                    </a>
-                                </div>
                             </div>
                             <a v-else
                                 :href="`/category/${category.slug}`"
@@ -175,6 +159,27 @@
                 </div>
             </div>
         </header>
+
+        <!-- Dropdowns Portal - Renderizados fora do header -->
+        <Teleport to="body">
+            <template v-for="category in mainNavCategories.rootCategories" :key="`dropdown-${category.id}`">
+                <div
+                    v-if="mainNavCategories.childrenMap[category.id] && openDropdowns[category.id]"
+                    class="dropdown-menu fixed w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-[9999]"
+                    :style="{
+                        'top': (dropdownPositions[category.id]?.top || 65) + 'px',
+                        'left': (dropdownPositions[category.id]?.left || 170) + 'px'
+                    }"
+                >
+                    <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
+                        :href="`/category/${child.slug}`"
+                        class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
+                    >
+                        {{ child.name }}
+                    </a>
+                </div>
+            </template>
+        </Teleport>
 
         <!-- Main content -->
         <main class="flex-grow container mx-auto md:px-4 md:py-6">
