@@ -11,6 +11,4 @@ import {
 @Controller("blog")
 export class NotificationsController {
     constructor(private readonly notificationsService: NotificationsService){}
-
-
 }

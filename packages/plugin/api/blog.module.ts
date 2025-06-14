@@ -24,6 +24,7 @@ import { LogsModule } from './logs/logs.module';
 import { BackupModule } from './backup/backup.module';
 import { PromptsModule } from './prompts/prompts.modules';
 import { StorageModule } from './storage/storage.module';
+import { HealthModule } from './health/health.module';
 
 export const BlogModule = new Module('blog', {
     submodules: [
@@ -50,6 +51,7 @@ export const BlogModule = new Module('blog', {
         LogsModule,
         BackupModule,
         PromptsModule,
-        StorageModule
+        StorageModule,
+        HealthModule
     ]
 });

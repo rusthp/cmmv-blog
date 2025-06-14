@@ -508,9 +508,8 @@ const loadChannels = async (): Promise<void> => {
             sort: 'asc'
         });
 
-        if (response && response.data) {
+        if (response && response.data)
             channels.value = response.data || [];
-        }
     } catch (err: unknown) {
         console.error('Failed to load channels:', err);
     }
@@ -708,10 +707,8 @@ const saveBlogPost = async (): Promise<void> => {
         // Process the image for the blog post
         let processedImage = null;
         try {
-            const response = await adminClient.medias.processImage({
-                image: selectedVideo.value.thumbnailUrl,
-                format: 'webp',
-                maxWidth: 1200,
+            const response = await adminClient.medias.importFromUrl({
+                url: selectedVideo.value.thumbnailUrl,
                 alt: blogPost.value.title,
                 caption: ''
             });
@@ -830,6 +827,7 @@ onMounted(async () => {
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -837,6 +835,7 @@ onMounted(async () => {
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
 }
 

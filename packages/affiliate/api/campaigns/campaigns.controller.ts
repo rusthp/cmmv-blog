@@ -105,4 +105,56 @@ export class CampaignsControllerTools {
 
         response.res.end(data);
     }
+
+    @Get("update-all-coupon-counts")
+    @Auth("affiliatecampaigns:update")
+    async updateAllCampaignsCouponCounts(){
+        return await this.campaignsService.updateAllCampaignsCouponCount();
+    }
+
+    @Get("with-coupon-counts")
+    @Auth("affiliatecampaigns:get")
+    async getAllCampaignsWithCouponCounts(
+        @Query("limit") limit?: string,
+        @Query("offset") offset?: string,
+        @Query("active") active?: string,
+        @Query("search") search?: string,
+        @Query("searchField") searchField?: string,
+        @Query("sortBy") sortBy?: string,
+        @Query("sort") sort?: string
+    ) {
+        const filters = {
+            limit: limit || '10',
+            offset: offset || '0',
+            active: active,
+            search: search,
+            searchField: searchField || 'name',
+            sortBy: sortBy,
+            sort: sort
+        };
+        return await this.campaignsService.getAllCampaignsWithCouponCounts(filters);
+    }
+
+    @Get()
+    @Auth("affiliatecampaigns:get")
+    async getCampaigns(
+        @Query("limit") limit?: string,
+        @Query("offset") offset?: string,
+        @Query("active") active?: string,
+        @Query("search") search?: string,
+        @Query("searchField") searchField?: string,
+        @Query("sortBy") sortBy?: string,
+        @Query("sort") sort?: string
+    ) {
+        const filters = {
+            limit: limit || '10',
+            offset: offset || '0',
+            active: active,
+            search: search,
+            searchField: searchField || 'name',
+            sortBy: sortBy,
+            sort: sort
+        };
+        return await this.campaignsService.getCampaignsWithFilters(filters);
+    }
 }

@@ -64,6 +64,20 @@ export const useAffiliate = () => {
         getBySlug: async (slug: string) => {
             const { data } = await api.get<any[]>(`affiliate/campaigns/public/${slug}`, `campaign`);
             return data.value || [];
+        },
+        getBySpecialDate: async (specialDateId: string) => {
+            if (!specialDateId) {
+                return [];
+            }
+            const { data } = await api.get<any[]>(`affiliate/special-dates/campaigns/${specialDateId}`, `campaigns_special_date_${specialDateId}`);
+            return data.value || [];
+        },
+        getBySpecialDateSlug: async (slug: string) => {
+            if (!slug) {
+                return [];
+            }
+            const { data } = await api.get<any[]>(`affiliate/special-dates/campaigns/slug/${slug}`, `campaigns_special_date_slug_${slug}`);
+            return data.value || [];
         }
     };
 
@@ -121,9 +135,27 @@ export const useAffiliate = () => {
         }
     };
 
+    const dates = {
+        getAll: async () => {
+            const { data } = await api.get<any[]>("affiliate/special-dates/public", "special_dates_all");
+            return data.value || [];
+        },
+
+        getBySlug: async (slug: string) => {
+            try {
+                const { data } = await api.get<any>(`affiliate/special-dates/find-by-slug/${slug}`, `special_date_${slug}`);
+                return data.value || null;
+            } catch (error) {
+                console.error(`Error fetching special date by slug ${slug}:`, error);
+                return null;
+            }
+        },
+    };
+
     return {
         categories,
         campaigns,
-        coupons
+        coupons,
+        dates
     };
 };

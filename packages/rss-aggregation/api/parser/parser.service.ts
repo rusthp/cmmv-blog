@@ -26,18 +26,19 @@ export class ParserService {
      */
     async parseURL(url: string) {
         try {
-            this.logger.log(`Analyzing URL: ${url}`);
-            const html = await this.fetchHTML(url);
+            const urlDecoded = decodeURIComponent(url);
+            this.logger.log(`Analyzing URL: ${urlDecoded}`);
+            const html = await this.fetchHTML(urlDecoded);
 
             if (!html)
                 throw new Error("Failed to fetch HTML content from the URL");
 
             this.logger.log(`Successfully fetched HTML content (length: ${html.length} chars)`);
-            const analysisResult = await this.analyzeWithAI(html, url);
+            const analysisResult = await this.analyzeWithAI(html, urlDecoded);
             const processedResult = this.processAIResponse(analysisResult);
 
             return {
-                url,
+                url: urlDecoded,
                 ...processedResult
             };
         } catch (error: unknown) {
@@ -222,22 +223,14 @@ ${truncatedHtml}
 
             const textResponse = await this.aiContentService.generateContent(promptString);
 
-            try {
-                if (!textResponse) {
-                    throw new Error("AI service returned an empty response.");
-                }
-                const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+            if (!textResponse) throw new Error("AI response is empty");
+            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
 
-                if (!jsonMatch)
-                    throw new Error("No JSON found in AI response");
+            if (!jsonMatch)
+                throw new Error("No JSON found in AI response");
 
-                const jsonContent = jsonMatch[0];
-                return JSON.parse(jsonContent);
-            } catch (parseError: unknown) {
-                const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
-                this.logger.error(`Failed to parse AI response: ${errorMessage}`);
-                throw new Error("Failed to parse content analysis result");
-            }
+            const jsonContent = jsonMatch[0];
+            return JSON.parse(jsonContent);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             this.logger.error(`Error analyzing content with AI: ${errorMessage}`);
@@ -325,12 +318,13 @@ ${truncatedHtml}
      * @returns Parsed content with confidence score
      */
     async parseContent(parserId: string | null = null, url: string) {
+        const urlDecoded = decodeURIComponent(url);
         const FeedParserEntity = Repository.getEntity("FeedParserEntity");
         const FeedChannelsEntity = Repository.getEntity("FeedChannelsEntity");
         let parsers = [];
         const MAX_PARSERS = 5;
 
-        const parsedUrl = urlParser.parse(url);
+        const parsedUrl = urlParser.parse(urlDecoded);
 
         const channels = await Repository.findAll(FeedChannelsEntity, {
             limit: 1000,
@@ -357,17 +351,31 @@ ${truncatedHtml}
 
                 parsers = findResult?.data || [];
 
-                if (parsers.length === 0)
-                    throw new Error("No parsers found");
+                if (parsers.length === 0){
+                    this.logger.log(`No parsers found for URL ${urlDecoded}. Skipping detailed parsing.`);
+                    return {
+                        success: true,
+                        data: {
+                            title: '',
+                            content: '',
+                            featureImage: '',
+                            category: '',
+                            pubDate: new Date(),
+                            link: urlDecoded,
+                            confidence: 0
+                        },
+                        message: "No specific parser found. Content not updated."
+                    };
+                }
             }
 
-            this.logger.log(`Fetching HTML content from ${url}`);
-            const html = await this.fetchHTML(url);
+            this.logger.log(`Fetching HTML content from ${urlDecoded}`);
+            const html = await this.fetchHTML(urlDecoded);
 
             if (!html || html.length === 0)
                 throw new Error("Failed to fetch HTML content from the URL");
 
-            this.logger.log(`Processing ${parsers.length} parsers for URL: ${url}`);
+            this.logger.log(`Processing ${parsers.length} parsers for URL: ${urlDecoded}`);
 
             let bestResult = {
                 title: '',
@@ -375,13 +383,13 @@ ${truncatedHtml}
                 featureImage: '',
                 category: '',
                 pubDate: new Date(),
-                link: url,
+                link: urlDecoded,
                 confidence: 0
             };
 
             const parsePromises = parsers.map((parser: { id: any; }) => {
                 return Promise.race([
-                    this.processParserWithTimeout(parser, html, url),
+                    this.processParserWithTimeout(parser, html, urlDecoded),
                     new Promise(resolve => {
                         setTimeout(() => {
                             resolve(null);
@@ -433,7 +441,7 @@ ${truncatedHtml}
      */
     private async processParserWithTimeout(parser: any, html: string, url: string) {
         try {
-            this.logger.log(`Processing parser ${parser.id} for URL: ${url}`);
+            this.logger.log(`[ParserService] Iniciando processamento do parser ${parser.id} para URL: ${url}`);
 
             const result = {
                 title: '',
@@ -449,85 +457,87 @@ ${truncatedHtml}
 
             let confidenceScore = 0;
 
+            // Título
             if (parser.title) {
                 try {
+                    this.logger.log(`[ParserService] Executando regex de título para parser ${parser.id}`);
                     const titleRegex = new RegExp(parser.title, 'i');
                     const titleMatch = html.match(titleRegex);
+
                     if (titleMatch && titleMatch[1]) {
                         result.title = titleMatch[1].trim();
                         confidenceScore += 25;
                     }
                 } catch (error) {
-                    this.logger.error(`Error with title regex in parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(`[ParserService] Erro no regex de título do parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
 
+            // Conteúdo
             if (parser.content) {
                 try {
+                    this.logger.log(`[ParserService] Executando regex de conteúdo para parser ${parser.id}`);
                     const contentRegex = new RegExp(parser.content, 'igs');
                     const contentMatch = html.match(contentRegex);
-
+                    
                     if (contentMatch && contentMatch[0]) {
                         result.content = contentMatch[0].trim();
                         confidenceScore += 25;
                     }
                 } catch (error) {
-                    this.logger.error(`Error with content regex in parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(`[ParserService] Erro no regex de conteúdo do parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
 
+            // Categoria
             if (parser.category) {
                 try {
+                    this.logger.log(`[ParserService] Executando regex de categoria para parser ${parser.id}`);
                     const categoryRegex = new RegExp(parser.category, 'i');
                     const categoryMatch = html.match(categoryRegex);
+
                     if (categoryMatch && categoryMatch[1]) {
                         result.category = categoryMatch[1].trim();
                         confidenceScore += 20;
                     }
                 } catch (error) {
-                    this.logger.error(`Error with category regex in parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(`[ParserService] Erro no regex de categoria do parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
 
+            // Imagem destacada
             if (parser.featureImage) {
                 try {
+                    this.logger.log(`[ParserService] Executando regex de imagem destacada para parser ${parser.id}`);
                     const featureImageRegex = new RegExp(parser.featureImage, 'i');
                     const featureImageMatch = html.match(featureImageRegex);
-
+                    
                     if (featureImageMatch && featureImageMatch[1]) {
                         result.featureImage = this.resolveUrl(featureImageMatch[1], url);
                         confidenceScore += 20;
                     }
                 } catch (error) {
-                    this.logger.error(`Error with feature image regex in parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(`[ParserService] Erro no regex de imagem destacada do parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
 
-            if (!parser.featureImage || !result.featureImage) {
-                const imgRegexDefault = /<meta property="og:image" content="(.*?)" \/>/i;
-                const imgRegexFallback = /<img\s+[^>]*src=["']([^"']+)["'][^>]*>/i;
-
-                const imgMatch = html.match(imgRegexDefault) || html.match(imgRegexFallback);
-
-                if (imgMatch && imgMatch[1]) {
-                    result.featureImage = this.resolveUrl(imgMatch[1], url);
-                    confidenceScore += 10;
-                }
-            }
-
+            // Tags
             if (parser.tags) {
                 try {
+                    this.logger.log(`[ParserService] Executando regex de tags para parser ${parser.id}`);
                     const tagsRegex = new RegExp(parser.tags, 'i');
                     const tagsMatch = html.match(tagsRegex);
+
                     if (tagsMatch && tagsMatch[1]) {
                         result.tags = tagsMatch[1].trim();
                         confidenceScore += 10;
                     }
                 } catch (error) {
-                    this.logger.error(`Error with tags regex in parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+                    this.logger.error(`[ParserService] Erro no regex de tags do parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
 
+            // Data de publicação (padrão)
             const pubDateRegex = /<meta\s+property=["']article:published_time["']\s+content=["']([^"']+)["']/i;
             const pubDateMatch = html.match(pubDateRegex);
             if (pubDateMatch && pubDateMatch[1]) {
@@ -541,10 +551,10 @@ ${truncatedHtml}
 
             result.confidence = confidenceScore;
 
-            this.logger.log(`Parser ${parser.id} completed with confidence: ${confidenceScore}%`);
+            this.logger.log(`[ParserService] Parser ${parser.id} finalizado com confiança: ${confidenceScore}%`);
             return result;
         } catch (error) {
-            this.logger.error(`Error processing parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
+            this.logger.error(`[ParserService] Erro ao processar parser ${parser.id}: ${error instanceof Error ? error.message : String(error)}`);
             return null;
         }
     }
@@ -579,39 +589,223 @@ ${truncatedHtml}
         }
     }
 
-    async testContent(rules: Record<string, string>, url: string) {
-        this.logger.log(`Testing parser rules for URL: ${url}`);
+    async refineWithAI(url: string, currentParser: any) {
         try {
-            const html = await this.fetchHTML(url);
+            const urlDecoded = decodeURIComponent(url);
+            this.logger.log(`Refining parser for URL: ${urlDecoded}`);
+            const html = await this.fetchHTML(urlDecoded);
+
             if (!html) {
-                throw new Error("Failed to fetch HTML for testing.");
+                throw new Error("Failed to fetch HTML content from the URL");
             }
 
-            const extractedData: Record<string, any> = {};
-            const fields = ['title', 'content', 'category', 'featureImage', 'tags'];
+            // Build a dynamic prompt based on locked fields
+            const { prompt, unlockedFields } = this.buildRefinePrompt(html, currentParser);
 
-            for (const field of fields) {
-                const regexString = rules[field];
-                if (regexString) {
-                    try {
-                        // 's' flag para que . corresponda a novas linhas, útil para o conteúdo
-                        const regex = new RegExp(regexString, 's'); 
-                        const match = html.match(regex);
-                        // O resultado está geralmente no primeiro grupo de captura
-                        extractedData[field] = match && match[1] ? match[1].trim() : `No match for ${field}`;
-                    } catch (e) {
-                        this.logger.error(`Invalid regex for field ${field}: ${regexString}`);
-                        extractedData[field] = `Invalid regex for ${field}`;
+            // If all fields are locked, no need to call AI
+            if (unlockedFields.length === 0) {
+                this.logger.log("All fields are locked, no refinement needed.");
+                return currentParser;
+            }
+
+            const aiResult = await this.executeAIPrompt(prompt);
+
+            // Merge AI results with the locked fields
+            const refinedParser = this.mergeAIResults(currentParser, aiResult, unlockedFields);
+
+            return refinedParser;
+
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Error refining parser with AI: ${errorMessage}`);
+            throw new Error(`Failed to refine parser: ${errorMessage}`);
+        }
+    }
+
+    private buildRefinePrompt(html: string, parser: any): { prompt: string, unlockedFields: string[] } {
+        const truncatedHtml = html.length > 30000 ? html.substring(0, 30000) + "..." : html;
+        const unlockedFields = Object.keys(parser).filter(key => parser[key] && !parser[key].locked);
+        
+        let prompt = `
+You are an expert in HTML parsing and creating precise regular expressions.
+Your task is to refine an existing set of regex patterns to better extract structured content from a web page.
+
+**INSTRUCTIONS:**
+1.  Analyze the provided HTML.
+2.  You have been given a set of existing regex patterns. Some are "locked" and **MUST NOT BE CHANGED**.
+3.  You **MUST** generate new, improved regex patterns ONLY for the "unlocked" fields listed below.
+4.  For each unlocked field, provide the new regex, the extracted value, and a confidence score (high, medium, or low).
+5.  Always escape forward slashes in closing HTML tags (e.g., <\\/div>).
+6.  Return your response as a JSON object containing ONLY the unlocked fields.
+
+**LOCKED FIELDS (DO NOT CHANGE):**
+`;
+
+        Object.keys(parser).forEach(key => {
+            if (parser[key] && parser[key].locked) {
+                prompt += `- ${key}: ${parser[key].regex}\n`;
+            }
+        });
+
+        prompt += `
+**UNLOCKED FIELDS (IMPROVE THESE):**
+${unlockedFields.join(', ')}
+
+**EXPECTED JSON OUTPUT FORMAT (only include unlocked fields):**
+{
+  "fieldName": {
+    "value": "The extracted content for the unlocked field",
+    "regex": "The new, improved regular expression",
+    "confidence": "high|medium|low"
+  },
+  // ... other unlocked fields
+}
+
+**HTML to analyze:**
+${truncatedHtml}
+`;
+        return { prompt, unlockedFields };
+    }
+
+    private async executeAIPrompt(prompt: string): Promise<any> {
+        const textResponse = await this.aiContentService.generateContent(prompt);
+
+        if (!textResponse) throw new Error("AI response is empty");
+        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+
+        if (!jsonMatch) {
+            throw new Error("No JSON found in AI response");
+        }
+
+        const jsonContent = jsonMatch[0];
+        return JSON.parse(jsonContent);
+    }
+
+    private mergeAIResults(originalParser: any, aiResult: any, unlockedFields: string[]): any {
+        const refinedParser = JSON.parse(JSON.stringify(originalParser)); // Deep copy
+
+        for (const key of unlockedFields) {
+            if (aiResult[key]) {
+                const fixedRegex = this.fixRegexPattern(aiResult[key].regex, key);
+                refinedParser[key] = {
+                    ...aiResult[key],
+                    regex: fixedRegex,
+                    locked: false // Keep it unlocked
+                };
+            }
+        }
+        return refinedParser;
+    }
+
+    async testCustomParser(url: string, parserData: any) {
+        try {
+            const urlDecoded = decodeURIComponent(url);
+            this.logger.log(`Testing custom parser for URL: ${urlDecoded}`);
+            const html = await this.fetchHTML(urlDecoded);
+
+            if (!html || html.length === 0) {
+                throw new Error("Failed to fetch HTML content from the URL");
+            }
+
+            // Use the existing worker-based processing logic, but with the provided parser data
+            const result = await this.processParserWithTimeout(parserData, html, urlDecoded);
+
+            return {
+                success: true,
+                data: result
+            };
+
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Error testing custom parser: ${errorMessage}`);
+            throw new Error(`Failed to test custom parser: ${errorMessage}`);
+        }
+    }
+
+    async analyzeAllParsers() {
+        this.logger.log('Starting analysis of all parsers');
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        const problematicParsers = [];
+
+        try {
+            // Fetching all parsers. A limit of 2000 should be safe.
+            const allParsersResult = await Repository.findAll(FeedParserEntity, { limit: 2000 });
+
+            if (!allParsersResult || !allParsersResult.data || allParsersResult.data.length === 0) {
+                return {
+                    success: true,
+                    data: [],
+                    message: "No parsers found to analyze."
+                };
+            }
+
+            const allParsers = allParsersResult.data;
+
+            for (const parser of allParsers) {
+                const issues = [];
+                const regexFields = ['title', 'content', 'category', 'featureImage', 'tags'];
+
+                for (const field of regexFields) {
+                    const regex = parser[field];
+                    if (regex) {
+                        try {
+                            // This will throw an error if the regex is invalid
+                            new RegExp(regex, 'i');
+                        } catch (error) {
+                            issues.push({
+                                field,
+                                error: error instanceof Error ? error.message : String(error),
+                                regex: regex
+                            });
+                        }
                     }
-                } else {
-                    extractedData[field] = 'No rule provided';
+                }
+
+                if (issues.length > 0) {
+                    problematicParsers.push({
+                        parserId: parser.id,
+                        channelId: parser.channel,
+                        issues: issues
+                    });
                 }
             }
 
-            return { success: true, data: extractedData };
-        } catch (error: any) {
-            this.logger.error(`Error in testContent: ${error.message}`);
-            return { success: false, message: error.message };
+            return {
+                success: true,
+                data: problematicParsers,
+                message: `Analysis complete. Found ${problematicParsers.length} problematic parsers.`
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`Error analyzing parsers: ${errorMessage}`);
+            throw new Error(`Failed to analyze parsers: ${errorMessage}`);
         }
+    }
+
+    private _validateParser(data: any) {
+        const regexFields = ['title', 'content', 'category', 'featureImage', 'tags'];
+
+        for (const field of regexFields) {
+            const regex = data[field];
+            if (regex) {
+                try {
+                    new RegExp(regex, 'i');
+                } catch (e: any) {
+                    throw new Error(`Invalid regular expression for field "${field}": ${e.message}`);
+                }
+            }
+        }
+    }
+
+    async createParser(data: any) {
+        this._validateParser(data);
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        return Repository.insert(FeedParserEntity, data);
+    }
+
+    async updateParser(id: string, data: any) {
+        this._validateParser(data);
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        return Repository.update(FeedParserEntity, { id }, data);
     }
 }

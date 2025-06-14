@@ -13,21 +13,6 @@ export class FeedService {
     ){}
 
     /**
-     * Escape XML special characters
-     * @param str string to escape
-     * @returns escaped string
-     */
-    private escapeXml(str: string | null): string {
-        if (!str) return '';
-        return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&apos;');
-    }
-
-    /**
      * Get the RSS feed for the blog
      * @param queries - The queries to get the feed for
      * @param req - The request object
@@ -48,30 +33,32 @@ export class FeedService {
             status: "published"
         }, req);
 
-        let feed = [`<?xml version=\"1.0\" encoding=\"UTF-8\"?>`];
-        feed.push(`<rss xmlns:atom=\"http://www.w3.org/2005/Atom\" xmlns:media=\"http://search.yahoo.com/mrss/\" version=\"2.0\">`);
+        let feed = [`<?xml version="1.0" encoding="UTF-8"?>`];
+        feed.push(`<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">`);
         feed.push(`<channel>`);
-        feed.push(`<title>${this.escapeXml(title)}</title>`);
-        feed.push(`<link>${this.escapeXml(url)}</link>`);
-        feed.push(`<description>${this.escapeXml(description)}</description>`);
-        feed.push(`<language>${this.escapeXml(language.replace('_', '-'))}</language>`);
+        feed.push(`<title>${title}</title>`);
+        feed.push(`<link>${url}</link>`);
+        feed.push(`<description>${description}</description>`);
+        feed.push(`<language>${language.replace('_', '-')}</language>`);
 
         if(copyright)
-            feed.push(`<copyright>© Copyright ${this.escapeXml(copyright)}</copyright>`);
+            feed.push(`<copyright>© Copyright ${copyright}</copyright>`);
 
-        feed.push(`<atom:link href=\"${this.escapeXml(url)}/feed\" rel=\"self\" type=\"application/rss+xml\"/>`)
+        feed.push(`<atom:link href="${url}/feed" rel="self" type="application/rss+xml"/>`)
 
         for (const post of posts.posts) {
             feed.push(`<item>`);
-            feed.push(`<title>${this.escapeXml(post.title)}</title>`);
-            feed.push(`<link>${this.escapeXml(url)}/post/${this.escapeXml(post.slug)}</link>`);
+            feed.push(`<title>${post.title}</title>`);
+            feed.push(`<link>${url}/post/${post.slug}</link>`);
             feed.push(`<pubDate>${post.publishedAt.toGMTString()}</pubDate>`);
-            feed.push(`<guid isPermaLink=\"true\">${this.escapeXml(url)}/post/${this.escapeXml(post.slug)}</guid>`);
-            feed.push(`<description><![CDATA[ <img src="${this.escapeXml(post.featureImage)}" /><br /> ${this.stripHtml(post.content)} ]]></description>`);
-            feed.push(`<media:content url=\"${this.escapeXml(post.featureImage)}\" medium=\"image\"/>`);
+            feed.push(`<guid isPermaLink="true">${url}/post/${post.slug}</guid>`);
+            feed.push(`<description>
+                <![CDATA[ <img src="${post.featureImage}" /><br /> ]]>
+                ${this.stripHtml(post.content)}</description>`);
+            feed.push(`<media:content url="${post.featureImage}" medium="image"/>`);
 
             for (const category of post.categories) {
-                feed.push(`<category>${this.escapeXml(category.name)}</category>`);
+                feed.push(`<category>${category.name}</category>`);
             }
 
             feed.push(`</item>`);

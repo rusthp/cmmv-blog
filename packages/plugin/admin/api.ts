@@ -29,10 +29,47 @@ export function useApi() {
     const isAuthenticated = computed(() => !!token.value)
     const currentWhitelabelId = ref<string | null>(ssrLocalStorage.getItem('currentWhitelabelId') || null)
     const isWhitelabelMode = computed(() => !!currentWhitelabelId.value)
+    const whitelabelUrls = ref<Record<string, string>>(JSON.parse(ssrLocalStorage.getItem('whitelabelUrls') || '{}'))
+
+    const fetchWhitelabelUrls = async () => {
+        try {
+            const response = await fetch('/api/whitelabel/admin', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token.value && { Authorization: `Bearer ${token.value}` })
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const urls: Record<string, string> = {};
+
+                if (data.result?.data) {
+                    data.result.data.forEach((whitelabel: any) => {
+                        if (whitelabel.id && whitelabel.apiUrl) {
+                            urls[whitelabel.id] = whitelabel.apiUrl;
+                        }
+                    });
+                }
+
+                whitelabelUrls.value = urls;
+                ssrLocalStorage.setItem('whitelabelUrls', JSON.stringify(urls));
+                console.log('✅ Whitelabel URLs loaded:', urls);
+                return urls;
+            }
+        } catch (error) {
+            console.warn('Failed to fetch whitelabel URLs:', error);
+        }
+        return {};
+    };
 
     const getApiPath = (path: string) => {
-        if (currentWhitelabelId.value)
-            return `/${currentWhitelabelId.value}/${path}`;
+        if (currentWhitelabelId.value && whitelabelUrls.value[currentWhitelabelId.value]) {
+            const baseUrl = whitelabelUrls.value[currentWhitelabelId.value];
+            return window.location.origin.includes('localhost') ?
+            `${baseUrl}/${path}` : `/proxy?url=${encodeURIComponent(`${baseUrl}/${path}`)}`;
+        }
 
         return `/api/${path}`;
     }
@@ -109,6 +146,7 @@ export function useApi() {
                 router.push('/login')
             }
         } catch (error) {
+            console.error('API Request failed:', error);
             return { status: 500, message: error }
         }
     }
@@ -129,6 +167,10 @@ export function useApi() {
             ssrLocalStorage.setItem('refreshToken', data.result.refreshToken)
             token.value = data.result.token
             refreshToken.value = data.result.refreshToken
+
+            // Buscar URLs dos whitelabels após login
+            await fetchWhitelabelUrls();
+
             return data.result
         } else {
             throw new Error(data.result.message || 'Login failed')
@@ -149,6 +191,10 @@ export function useApi() {
         if (response.ok && data) {
             ssrLocalStorage.setItem('token', data)
             token.value = data
+
+            // Buscar URLs dos whitelabels após login
+            await fetchWhitelabelUrls();
+
             return data
         } else {
             throw new Error(data.result.message || 'Login failed')
@@ -223,9 +269,11 @@ export function useApi() {
     const logout = () => {
         ssrLocalStorage.removeItem('token')
         ssrLocalStorage.removeItem('refreshToken')
+        ssrLocalStorage.removeItem('whitelabelUrls')
         token.value = null
         refreshToken.value = null
         user.value = null
+        whitelabelUrls.value = {}
         router.push('/login')
     }
 
@@ -247,25 +295,41 @@ export function useApi() {
         } else {
             ssrLocalStorage.removeItem('token')
             ssrLocalStorage.removeItem('refreshToken')
+            ssrLocalStorage.removeItem('whitelabelUrls')
             token.value = null
             refreshToken.value = null
             user.value = null
+            whitelabelUrls.value = {}
             router.push('/login')
         }
     }
 
-    const setWhitelabel = (whitelabelId: string | null) => {
+    const setWhitelabel = async (whitelabelId: string | null) => {
         if (whitelabelId) {
+            // Garantir que temos as URLs dos whitelabels
+            if (Object.keys(whitelabelUrls.value).length === 0) {
+                await fetchWhitelabelUrls();
+            }
+
             currentWhitelabelId.value = whitelabelId;
             ssrLocalStorage.setItem('currentWhitelabelId', whitelabelId);
+
+            console.log(`🏷️  Switched to whitelabel: ${whitelabelId}`);
+            console.log(`🔗 URL: ${whitelabelUrls.value[whitelabelId] || 'not found'}`);
         } else {
             currentWhitelabelId.value = null;
             ssrLocalStorage.removeItem('currentWhitelabelId');
+            console.log('🏷️  Switched to main API');
         }
     }
 
     const getWhitelabel = async () => {
         return ssrLocalStorage.getItem('currentWhitelabelId') || null;
+    }
+
+    // Inicializar URLs dos whitelabels se já estivermos logados
+    if (token.value && Object.keys(whitelabelUrls.value).length === 0) {
+        fetchWhitelabelUrls();
     }
 
     const methods = {}
@@ -276,6 +340,7 @@ export function useApi() {
         isAuthenticated,
         isWhitelabelMode,
         currentWhitelabelId,
+        whitelabelUrls,
         getHeaders,
         authRequest,
         authRootRequest,
@@ -292,6 +357,7 @@ export function useApi() {
         setWhitelabel,
         getWhitelabel,
         getSignature,
+        fetchWhitelabelUrls,
         ...methods,
     }
 }

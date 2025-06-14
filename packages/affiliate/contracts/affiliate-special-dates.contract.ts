@@ -5,8 +5,8 @@ import {
 
 @Contract({
     namespace: 'Affiliate',
-    controllerName: 'AffiliateCategories',
-    controllerCustomPath: 'affiliate/categories',
+    controllerName: 'AffiliateSpecialDates',
+    controllerCustomPath: 'affiliate/special-dates',
     protoPackage: 'affiliate',
     subPath: '/affiliate',
     generateController: true,
@@ -14,25 +14,47 @@ import {
     auth: true,
     options: {
         moduleContract: true,
-        databaseSchemaName: "affiliate_categories",
+        databaseSchemaName: "affiliate_special_dates",
         databaseTimestamps: true
     }
 })
-export class AffiliateCategoriesContract extends AbstractContract {
+export class AffiliateSpecialDatesContract extends AbstractContract {
     @ContractField({
         protoType: 'string',
         nullable: false,
-        index: true
     })
-    name!: string;
+    name: string;
 
     @ContractField({
         protoType: 'string',
         nullable: false,
+    })
+    description: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
         index: true,
         unique: true
     })
     slug!: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
+    image?: string;
+
+    @ContractField({
+        protoType: 'array',
+        objectType: 'string',
+        entityType: 'string',
+        array: true,
+        nullable: true,
+        protoRepeated: true,
+        index: true
+    })
+    campaigns?: string[];
 
     @ContractField({
         protoType: 'boolean',
@@ -41,10 +63,4 @@ export class AffiliateCategoriesContract extends AbstractContract {
         index: true
     })
     active!: boolean;
-
-    @ContractField({
-        protoType: 'string',
-        nullable: true
-    })
-    icon!: string;
 }

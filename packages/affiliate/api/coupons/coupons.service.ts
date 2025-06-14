@@ -111,10 +111,11 @@ export class CouponsServiceTools {
         try {
             const aiService = Application.resolveProvider<any>(AIContentService);
 
+            // Retry logic for AI service calls
             let generatedText;
             let lastError;
             const maxRetries = 3;
-            const retryDelay = 5000;
+            const retryDelay = 5000; // 5 seconds
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
@@ -127,7 +128,6 @@ export class CouponsServiceTools {
                     }
                 } catch (error: any) {
                     lastError = error;
-                    console.warn(`Attempt ${attempt} failed:`, error.message);
 
                     const isTimeoutError = error.message?.includes('timeout') ||
                                          error.message?.includes('Timeout') ||
@@ -138,19 +138,16 @@ export class CouponsServiceTools {
                                             error.message?.includes('connect') ||
                                             error.message?.includes('ECONNREFUSED');
 
-                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError)) {
+                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError))
                         break;
-                    }
 
-                    if (attempt < maxRetries) {
+                    if (attempt < maxRetries)
                         await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    }
                 }
             }
 
-            if (!generatedText) {
+            if (!generatedText)
                 throw new Error(`Failed to generate content after ${maxRetries} attempts. Last error: ${lastError?.message || 'Unknown error'}`);
-            }
 
             let coupons = [];
 
@@ -212,10 +209,20 @@ export class CouponsServiceTools {
                 try {
                     const savedCoupon = await Repository.insert(AffiliateCouponsEntity, newCoupon);
                     savedCoupons.push(savedCoupon);
-                    //savedCoupons.push(newCoupon);
                 } catch (err) {
                     console.warn(`Failed to save coupon ${coupon.code}: ${err instanceof Error ? err.message : String(err)}`);
                 }
+            }
+
+            if (savedCoupons.length > 0) {
+                try {
+                    const totalCouponsResponse = await this.getCouponsCountByCampaignId(campaignId);
+                    const totalCoupons = totalCouponsResponse?.count || 0;
+
+                    await Repository.update(AffiliateCampaignsEntity, { id: campaignId }, {
+                        coupons: totalCoupons
+                    });
+                } catch (updateError: any) {}
             }
 
             return savedCoupons;
@@ -545,7 +552,6 @@ export class CouponsServiceTools {
                     }
                 } catch (error: any) {
                     lastError = error;
-                    console.warn(`Attempt ${attempt} failed:`, error.message);
 
                     const isTimeoutError = error.message?.includes('timeout') ||
                                          error.message?.includes('Timeout') ||
@@ -556,19 +562,16 @@ export class CouponsServiceTools {
                                             error.message?.includes('connect') ||
                                             error.message?.includes('ECONNREFUSED');
 
-                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError)) {
+                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError))
                         break;
-                    }
 
-                    if (attempt < maxRetries) {
+                    if (attempt < maxRetries)
                         await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    }
                 }
             }
 
-            if (!generatedText) {
+            if (!generatedText)
                 throw new Error(`Failed to generate content after ${maxRetries} attempts. Last error: ${lastError?.message || 'Unknown error'}`);
-            }
 
             let parsedContent;
             try {
@@ -580,9 +583,8 @@ export class CouponsServiceTools {
 
                 parsedContent = JSON.parse(jsonContent);
 
-                if (parsedContent.title && parsedContent.title.length > 100) {
+                if (parsedContent.title && parsedContent.title.length > 100)
                     parsedContent.title = parsedContent.title.substring(0, 97) + '...';
-                }
             } catch (parseError) {
                 throw new Error('Failed to parse AI generated content');
             }
@@ -618,17 +620,15 @@ export class CouponsServiceTools {
             }
             `;
 
+            // Retry logic for continuation AI service call
             let continuationText;
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                     continuationText = await aiService.generateContent(continuationPrompt);
 
-                    if (continuationText) {
+                    if (continuationText)
                         break;
-                    }
                 } catch (error: any) {
-                    console.warn(`Continuation attempt ${attempt} failed:`, error.message);
-
                     const isTimeoutError = error.message?.includes('timeout') ||
                                          error.message?.includes('Timeout') ||
                                          error.code === 'UND_ERR_CONNECT_TIMEOUT' ||
@@ -638,13 +638,11 @@ export class CouponsServiceTools {
                                             error.message?.includes('connect') ||
                                             error.message?.includes('ECONNREFUSED');
 
-                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError)) {
+                    if (attempt === maxRetries || (!isTimeoutError && !isConnectionError))
                         break;
-                    }
 
-                    if (attempt < maxRetries) {
+                    if (attempt < maxRetries)
                         await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    }
                 }
             }
 
@@ -670,22 +668,17 @@ export class CouponsServiceTools {
                             }
                         }
                     }
-                } catch (continuationError) {
-                    console.warn('Failed to parse continuation text, using only original content');
-                }
-            } else {
-                console.warn('Failed to generate continuation content, using only original content');
+                } catch (continuationError) {}
             }
 
             let coverImage = null;
-            try {
 
+            try {
                 const searchKeywords = [
                     campaign.name.toLowerCase(),
                     'discount', 'coupon', 'sale', 'shopping',
                     'deals', 'offers', 'savings'
                 ];
-
                 if (campaign.description) {
                     const descWords = campaign.description.toLowerCase()
                         .split(' ')
@@ -714,15 +707,9 @@ export class CouponsServiceTools {
 
                 coverImage = await this.searchCoverImage(searchQueries);
 
-                if (coverImage) {
-                    console.log(`[CouponsService] Cover image found: ${coverImage}`);
-                } else {
-                    console.log(`[CouponsService] No suitable cover image found, using campaign logo or default`);
+                if (!coverImage)
                     coverImage = campaign.logo || null;
-                }
-
             } catch (imageError) {
-                console.warn('Failed to search for cover image:', imageError);
                 coverImage = campaign.logo || null;
             }
 
@@ -743,7 +730,6 @@ export class CouponsServiceTools {
             };
 
         } catch (error: any) {
-            console.error('Error generating best coupons post:', error);
             throw new Error(`Failed to generate content: ${error.message}`);
         }
     }
@@ -813,6 +799,7 @@ export class CouponsServiceTools {
 
             this.logger.log(`Processing post job ${jobId} for campaign ${job.campaignId}`);
 
+            // Call the original generateBestCouponsPost method
             const result = await this.generateBestCouponsPost(job.campaignId);
 
             job.result = result;
@@ -879,17 +866,13 @@ export class CouponsServiceTools {
      */
     private async searchCoverImage(searchQueries: string[]): Promise<string | null> {
         try {
-            // Unsplash API configuration
             const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
 
-            if (!unsplashAccessKey) {
-                console.warn('[CouponsService] Unsplash access key not configured');
+            if (!unsplashAccessKey)
                 return null;
-            }
 
             for (const query of searchQueries) {
                 try {
-
                     const response = await fetch(
                         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=1&per_page=10&orientation=landscape`,
                         {
@@ -918,12 +901,10 @@ export class CouponsServiceTools {
                         if (suitableImages.length > 0) {
                             const randomIndex = Math.floor(Math.random() * Math.min(3, suitableImages.length));
                             const selectedImage = suitableImages[randomIndex];
-
                             return selectedImage.urls.regular;
                         }
                     }
                 } catch (queryError) {
-                    console.warn(`[CouponsService] Error searching for "${query}":`, queryError);
                     continue;
                 }
             }
@@ -947,13 +928,12 @@ export class CouponsServiceTools {
             }
 
             const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
-            
+
             let coupon = await Repository.findOne(AffiliateCouponsEntity, {
                 id: couponId
             });
 
             if (!coupon) {
-                this.logger.log(`Coupon not found by ID ${couponId}, trying by code`);
                 coupon = await Repository.findOne(AffiliateCouponsEntity, {
                     code: couponId
                 });
@@ -963,12 +943,9 @@ export class CouponsServiceTools {
                 throw new Error(`Coupon with ID or code ${couponId} not found`);
             }
 
-            this.logger.log(`Found coupon: ${JSON.stringify(coupon)}`);
-
             const currentViews = parseInt(String(coupon.views), 10) || 0;
             const updatedViews = currentViews + 1;
 
-            this.logger.log(`Incrementing views from ${currentViews} to ${updatedViews}`);
 
             await Repository.update(AffiliateCouponsEntity, {
                 id: coupon.id

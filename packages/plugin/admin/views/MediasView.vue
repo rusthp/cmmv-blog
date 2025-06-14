@@ -665,7 +665,7 @@
                         <p class="text-neutral-300 mb-4">
                             You are about to remove <strong class="text-white">{{ selectedMedias.size }}</strong> media:
                         </p>
-                        
+
                         <div class="bg-neutral-700 rounded-md p-4 mb-4 max-h-32 overflow-y-auto">
                             <div class="grid grid-cols-2 gap-2 text-sm">
                                 <div v-for="media in selectedMediasData" :key="media.id" class="text-neutral-300">
@@ -696,10 +696,10 @@
                                 </svg>
                                 <div class="flex-1">
                                     <div class="flex items-center mb-2">
-                                        <input 
-                                            type="checkbox" 
-                                            id="createBackup" 
-                                            v-model="createBackupBeforeDelete" 
+                                        <input
+                                            type="checkbox"
+                                            id="createBackup"
+                                            v-model="createBackupBeforeDelete"
                                             class="mr-2 h-4 w-4 text-blue-600 rounded bg-neutral-700 border-neutral-600 focus:ring-blue-500"
                                         >
                                         <label for="createBackup" class="text-blue-200 font-medium">Create backup before deletion</label>
@@ -888,10 +888,10 @@
                                 </svg>
                                 <div class="flex-1">
                                     <div class="flex items-center mb-2">
-                                        <input 
-                                            type="checkbox" 
-                                            id="createBackupAll" 
-                                            v-model="createBackupBeforeDeleteAll" 
+                                        <input
+                                            type="checkbox"
+                                            id="createBackupAll"
+                                            v-model="createBackupBeforeDeleteAll"
                                             class="mr-2 h-4 w-4 text-blue-600 rounded bg-neutral-700 border-neutral-600 focus:ring-blue-500"
                                         >
                                         <label for="createBackupAll" class="text-blue-200 font-medium">Create backup before deletion</label>
@@ -1189,7 +1189,7 @@ function openBulkDeleteDialog() {
         showNotification('warning', 'Select at least one media to remove')
         return
     }
-    
+
     bulkDeleteResult.value = null
     showBulkDeleteDialog.value = true
 }
@@ -1199,16 +1199,13 @@ async function executeBulkDelete() {
 
     try {
         bulkDeleteLoading.value = true
-        
+
         const selectedIds = Array.from(selectedMedias.value)
-        
         const response = await adminClient.medias.bulkDelete(selectedIds, createBackupBeforeDelete.value)
-        
-        if (!response) {
+
+        if (!response)
             throw new Error('Empty server response')
-        }
-        
-        // Se a resposta é primitiva, transformar em objeto estruturado
+
         let normalizedResponse = response;
         if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
             normalizedResponse = {
@@ -1220,36 +1217,28 @@ async function executeBulkDelete() {
                 errors: selectedIds.map(id => ({ id, error: 'Unexpected server response' }))
             };
         }
-        
+
         if (!normalizedResponse.summary) {
             console.error('Response missing summary:', normalizedResponse)
             throw new Error('Invalid server response: missing summary information')
         }
-        
-        // Use normalized response for the rest of the function
+
         const finalResponse = normalizedResponse;
-        
         bulkDeleteResult.value = finalResponse
-        
-        // Show appropriate notification based on results
-        if (finalResponse.summary.deleted > 0) {
+
+        if (finalResponse.summary.deleted > 0)
             showNotification('success', `${finalResponse.summary.deleted} media removed successfully`)
-        }
-        
-        if (finalResponse.summary.skipped > 0) {
+
+        if (finalResponse.summary.skipped > 0)
             showNotification('warning', `${finalResponse.summary.skipped} media protected as they are linked to posts`)
-        }
-        
-        if (finalResponse.summary.errors > 0) {
+
+        if (finalResponse.summary.errors > 0)
             showNotification('error', `${finalResponse.summary.errors} error(s) during deletion`)
-        }
-        
-        // Clear selection and refresh data if any were deleted
+
         if (finalResponse.summary.deleted > 0) {
             selectedMedias.value.clear()
             refreshData()
         }
-        
     } catch (err) {
         console.error('Failed to bulk delete medias:', err)
         showNotification('error', err.message || 'Failed to bulk delete')
@@ -1279,12 +1268,12 @@ async function openDeleteAllDialog() {
         // Get total count of all medias
         const response = await adminClient.medias.get({ limit: 1, offset: 0 })
         allMediasCount.value = response.count || 0
-        
+
         if (allMediasCount.value === 0) {
             showNotification('info', 'No media to remove')
             return
         }
-        
+
         deleteAllResult.value = null
         showDeleteAllDialog.value = true
     } catch (err) {
@@ -1296,81 +1285,73 @@ async function openDeleteAllDialog() {
 async function executeDeleteAll() {
     try {
         deleteAllLoading.value = true
-        
         let allMediaIds = []
         let offset = 0
-        const batchSize = 1000 // Process 1000 at a time
-        
+        const batchSize = 1000
+
         while (true) {
-            const response = await adminClient.medias.get({ 
-                limit: batchSize, 
+            const response = await adminClient.medias.get({
+                limit: batchSize,
                 offset: offset
             })
-            
+
             if (!response.data || response.data.length === 0) {
                 break
             }
-            
+
             allMediaIds.push(...response.data.map(media => media.id))
             offset += batchSize
-            
-            // Safety check to prevent infinite loops
+
             if (offset > 50000) {
                 console.warn('Stopping at 50k medias for safety')
                 break
             }
         }
-        
+
         if (allMediaIds.length === 0) {
             showNotification('info', 'No media found to remove')
             deleteAllLoading.value = false
             return
         }
-        
-        // Process deletions in smaller batches to avoid timeouts
-        const deleteBatchSize = 100 // Delete 100 at a time to avoid server timeout
+
+        const deleteBatchSize = 100
         let totalDeleted = 0
         let totalSkipped = 0
         let totalErrors = 0
         let allDeletedIds = []
         let allSkippedItems = []
         let allErrorItems = []
-        
+
         for (let i = 0; i < allMediaIds.length; i += deleteBatchSize) {
             const batch = allMediaIds.slice(i, i + deleteBatchSize)
             const batchNumber = Math.floor(i / deleteBatchSize) + 1
             const totalBatches = Math.ceil(allMediaIds.length / deleteBatchSize)
-            
-            
+
             try {
                 const response = await adminClient.medias.bulkDelete(batch, createBackupBeforeDeleteAll.value && i === 0)
-                
+
                 if (response && response.summary) {
                     totalDeleted += response.summary.deleted || 0
                     totalSkipped += response.summary.skipped || 0
                     totalErrors += response.summary.errors || 0
-                    
+
                     if (response.deleted) allDeletedIds.push(...response.deleted)
                     if (response.skipped) allSkippedItems.push(...response.skipped)
                     if (response.errors) allErrorItems.push(...response.errors)
                 }
-                
-                // Small delay between batches to not overwhelm the server
-                if (i + deleteBatchSize < allMediaIds.length) {
+
+                if (i + deleteBatchSize < allMediaIds.length)
                     await new Promise(resolve => setTimeout(resolve, 500))
-                }
-                
             } catch (batchError) {
                 console.error(`Error in batch ${batchNumber}:`, batchError)
                 totalErrors += batch.length
-                allErrorItems.push(...batch.map(id => ({ 
-                    id, 
-                    error: batchError.message || 'Batch error' 
+                allErrorItems.push(...batch.map(id => ({
+                    id,
+                    error: batchError.message || 'Batch error'
                 })))
             }
         }
-        
-        // Create consolidated response
+
         const response = {
             success: totalDeleted > 0,
             message: `Processing completed: ${totalDeleted} deleted, ${totalSkipped} protected, ${totalErrors} errors`,
@@ -1384,12 +1365,10 @@ async function executeDeleteAll() {
             skipped: allSkippedItems,
             errors: allErrorItems
         }
-        
-        if (!response) {
+
+        if (!response)
             throw new Error('Resposta vazia do servidor')
-        }
-        
-        // Se a resposta é primitiva, transformar em objeto estruturado
+
         let normalizedResponse = response;
         if (typeof response === 'string' || typeof response === 'boolean' || Array.isArray(response)) {
             normalizedResponse = {
@@ -1401,30 +1380,27 @@ async function executeDeleteAll() {
                 errors: allMediaIds.map(id => ({ id, error: 'Unexpected server response' }))
             };
         }
-        
+
         if (!normalizedResponse.summary) {
+            console.error('Response missing summary:', normalizedResponse)
             throw new Error('Invalid server response: missing summary information')
         }
-        
+
         deleteAllResult.value = normalizedResponse
-        
-        if (normalizedResponse.summary.deleted > 0) {
+
+        if (normalizedResponse.summary.deleted > 0)
             showNotification('success', `${normalizedResponse.summary.deleted} media removed successfully`)
-        }
-        
-        if (normalizedResponse.summary.skipped > 0) {
+
+        if (normalizedResponse.summary.skipped > 0)
             showNotification('warning', `${normalizedResponse.summary.skipped} media protected as they are linked to posts`)
-        }
-        
-        if (normalizedResponse.summary.errors > 0) {
+
+        if (normalizedResponse.summary.errors > 0)
             showNotification('error', `${normalizedResponse.summary.errors} error(s) during deletion`)
-        }
-        
+
         if (normalizedResponse.summary.deleted > 0) {
             selectedMedias.value.clear()
             refreshData()
         }
-        
     } catch (err) {
         console.error('Failed to delete all medias:', err)
         showNotification('error', err.message || 'Failed to delete all media')
@@ -1512,7 +1488,8 @@ const loadMedias = async () => {
         }
 
         loading.value = false
-        
+
+        // Clear selection when page changes or data is refreshed
         selectedMedias.value.clear()
     } catch (err) {
         console.error('Failed to load medias:', err)
@@ -1769,9 +1746,8 @@ const startReprocessing = async () => {
             bytes_saved: 0
         }
 
-        if (progressInterval) {
+        if (progressInterval)
             clearInterval(progressInterval)
-        }
 
         const checkProgress = async () => {
             try {
@@ -1796,12 +1772,9 @@ const startReprocessing = async () => {
         }
 
         await checkProgress()
-
         progressInterval = setInterval(checkProgress, 1000)
 
         adminClient.imports.reprocessImages()
-            .then(result => {
-            })
             .catch(err => {
                 console.error('Error reprocessing images:', err)
                 reprocessStatus.value.status = 'error'
@@ -1813,7 +1786,6 @@ const startReprocessing = async () => {
             })
 
     } catch (err) {
-        console.error('Failed to start reprocessing:', err)
         reprocessStatus.value.status = 'error'
         reprocessStatus.value.message = err.message || 'Failed to start reprocessing'
 
@@ -1835,6 +1807,7 @@ const startCleanup = async () => {
         reprocessStatus.value.details.removed = 0
         cleanupResult.value = null
 
+        // Limpar qualquer intervalo anterior
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
@@ -1845,6 +1818,7 @@ const startCleanup = async () => {
         const checkProgress = async () => {
             try {
                 const progress = await adminClient.imports.getCleanupProgress()
+
                 if (progress && typeof progress === 'object') {
                     reprocessStatus.value = {
                         ...reprocessStatus.value,
@@ -1857,9 +1831,8 @@ const startCleanup = async () => {
                             progressInterval = null
                         }
 
-                        if (progress.status === 'completed') {
+                        if (progress.status === 'completed')
                             showNotification('success', `Limpeza concluída: ${progress.details.removed} registros órfãos removidos.`)
-                        }
                     }
                 }
             } catch (err) {
@@ -1868,16 +1841,13 @@ const startCleanup = async () => {
         }
 
         await checkProgress()
-
         progressInterval = setInterval(checkProgress, 1000)
 
         try {
             const result = await adminClient.imports.cleanupOrphanedMedia(forceCleanup.value)
             cleanupResult.value = result
-
             await checkProgress()
         } catch (err) {
-            console.error('Error during cleanup:', err)
             reprocessStatus.value.status = 'error'
             reprocessStatus.value.message = `Error: ${err.message || 'Failed to clean up orphaned records'}`
 
@@ -1889,7 +1859,6 @@ const startCleanup = async () => {
             showNotification('error', err.message || 'Falha ao limpar registros órfãos')
         }
     } catch (err) {
-        console.error('Failed to start cleanup:', err)
         reprocessStatus.value.status = 'error'
         reprocessStatus.value.message = err.message || 'Falha ao iniciar a limpeza'
 
@@ -1911,9 +1880,8 @@ const closeReprocessDialog = () => {
             progressInterval = null
         }
 
-        if (reprocessStatus.value.status === 'completed') {
+        if (reprocessStatus.value.status === 'completed')
             refreshData()
-        }
     }
 }
 
@@ -1926,30 +1894,8 @@ const closeCleanupDialog = () => {
             progressInterval = null
         }
 
-        if (reprocessStatus.value.status === 'completed') {
+        if (reprocessStatus.value.status === 'completed')
             refreshData()
-        }
-    }
-}
-
-const openDuplicatesDialog = () => {
-    showDuplicatesDialog.value = true
-    isDuplicatesProcessing.value = false
-    duplicatesResult.value = null
-    reprocessStatus.value = {
-        total: 0,
-        processed: 0,
-        percentage: 0,
-        status: 'idle',
-        message: '',
-        details: {
-            scanned: 0,
-            added: 0,
-            removed: 0,
-            optimized: 0,
-            failed: 0,
-            bytes_saved: 0
-        }
     }
 }
 
@@ -1973,6 +1919,7 @@ const startRemoveDuplicates = async () => {
         const checkProgress = async () => {
             try {
                 const progress = await adminClient.imports.getCleanupProgress()
+
                 if (progress && typeof progress === 'object') {
                     reprocessStatus.value = {
                         ...reprocessStatus.value,
@@ -1996,17 +1943,13 @@ const startRemoveDuplicates = async () => {
         }
 
         await checkProgress()
-
         progressInterval = setInterval(checkProgress, 1000)
 
         try {
             const result = await adminClient.imports.cleanupDuplicatedImages()
-
             duplicatesResult.value = result
-
             await checkProgress()
         } catch (err) {
-            console.error('Error during duplicates removal:', err)
             reprocessStatus.value.status = 'error'
             reprocessStatus.value.message = `Error: ${err.message || 'Failed to remove duplicate images'}`
 
@@ -2018,7 +1961,6 @@ const startRemoveDuplicates = async () => {
             showNotification('error', err.message || 'Failed to remove duplicate images')
         }
     } catch (err) {
-        console.error('Failed to start duplicates removal:', err)
         reprocessStatus.value.status = 'error'
         reprocessStatus.value.message = err.message || 'Failed to start duplicates removal'
 
@@ -2086,6 +2028,7 @@ const startThumbnailGeneration = async () => {
         }
         thumbnailResult.value = null
 
+        // Clear any previous interval
         if (progressInterval) {
             clearInterval(progressInterval)
             progressInterval = null
@@ -2094,6 +2037,7 @@ const startThumbnailGeneration = async () => {
         const checkProgress = async () => {
             try {
                 const progress = await adminClient.imports.getReprocessProgress()
+
                 if (progress && typeof progress === 'object') {
                     thumbnailStatus.value = {
                         ...thumbnailStatus.value,
@@ -2117,17 +2061,13 @@ const startThumbnailGeneration = async () => {
         }
 
         await checkProgress()
-
         progressInterval = setInterval(checkProgress, 1000)
 
         try {
             const result = await adminClient.imports.generateMissingThumbnails()
-
             thumbnailResult.value = result
-
             await checkProgress()
         } catch (err) {
-            console.error('Error during thumbnail generation:', err)
             thumbnailStatus.value.status = 'error'
             thumbnailStatus.value.message = `Error: ${err.message || 'Failed to generate thumbnails'}`
 
@@ -2139,7 +2079,6 @@ const startThumbnailGeneration = async () => {
             showNotification('error', err.message || 'Failed to generate thumbnails')
         }
     } catch (err) {
-        console.error('Failed to start thumbnail generation:', err)
         thumbnailStatus.value.status = 'error'
         thumbnailStatus.value.message = err.message || 'Failed to start thumbnail generation'
 
@@ -2161,9 +2100,8 @@ const closeThumbnailDialog = () => {
             progressInterval = null
         }
 
-        if (thumbnailStatus.value.status === 'completed') {
+        if (thumbnailStatus.value.status === 'completed')
             refreshData()
-        }
     }
 }
 
@@ -2173,12 +2111,12 @@ onMounted(() => {
 
     document.addEventListener('click', (e) => {
         const target = e.target
-        
-        if (showSearchDropdown.value && !target.closest('[data-search-toggle]') 
+
+        if (showSearchDropdown.value && !target.closest('[data-search-toggle]')
             && !target.closest('.absolute')) {
             showSearchDropdown.value = false
         }
-        
+
         if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
             showMoreActionsDropdown.value = false
         }

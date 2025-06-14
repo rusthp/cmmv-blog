@@ -35,21 +35,21 @@ export const blogAdminRoutes: RouteRecordRaw[] = [
         children: [
             { path: '', component: HomeView },
             { path: '/posts', component: PostsView },
-            { path: '/pages', component: PagesView },
+            //{ path: '/pages', component: PagesView },
             { path: '/settings', component: SettingsView },
             { path: '/categories', component: CategoriesView },
             { path: '/tags', component: TagsView },
             { path: '/profile', component: ProfileView },
             { path: '/authors', component: AuthorsView },
             { path: '/medias', component: MediasView },
-            { path: '/media-backups', component: MediaBackupsView },
+            //{ path: '/media-backups', component: MediaBackupsView },
             { path: '/members', component: MembersView },
             { path: '/comments', component: CommentsView },
             { path: '/imports', component: ImportsView },
             { path: '/themes', component: ThemesView },
             { path: '/cover', component: CoverView },
             { path: '/whitelabel', component: WhitelabelView },
-            { path: '/whitelabel-access', component: WhitelabelAccessView },
+            //{ path: '/whitelabel-access', component: WhitelabelAccessView },
             { path: '/backup', component: BackupView },
             { path: '/prompts', component: PromptsView }
         ]
@@ -93,12 +93,12 @@ useNavbar().addItems([
         to: '/posts',
         group: 'CMS'
     },
-    {
+    /*{
         label: 'Pages',
         icon: 'fas fa-copy',
         to: '/pages',
         group: 'CMS'
-    },
+    },*/
     {
         label: 'Comments',
         icon: 'fas fa-comments',
@@ -111,12 +111,12 @@ useNavbar().addItems([
         to: '/medias',
         group: 'CMS'
     },
-    {
+    /*{
         label: 'Media Backups',
         icon: 'fas fa-archive',
         to: '/media-backups',
         group: 'CMS'
-    },
+    },*/
     {
         label: 'Categories',
         icon: 'fas fa-folder',
@@ -171,12 +171,12 @@ useNavbar().addItems([
         to: '/whitelabel',
         group: 'Settings'
     },
-    {
+    /*{
         label: 'Access',
         icon: 'fas fa-key',
         to: '/whitelabel-access',
         group: 'Settings'
-    },
+    },*/
     {
         label: 'Backup',
         icon: 'fas fa-database',

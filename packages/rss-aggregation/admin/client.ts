@@ -31,7 +31,7 @@ export const useFeedClient = () => {
         createRaw: (data: any) => api.authRequest(`feed/raw`, "POST", data),
         cleanAllRaws: () => api.authRequest(`feed/raw/cleanAllRaws`, "GET"),
         cleanChannelRaws: (channelId: string) => api.authRequest(`feed/raw/cleanChannelRaws/${channelId}`, "GET"),
-        classifyRawsWithAI: (rawIds?: string[]) => api.authRequest(`feed/raw/classifyRawsWithAI`, "POST", { rawIds }),
+        classifyRawsWithAI: () => api.authRequest(`feed/raw/classifyRawsWithAI`, "POST"),
         deleteRaw: (id: string) => api.authRequest(`feed/raw/${id}`, "DELETE")
     };
 
@@ -53,26 +53,26 @@ export const useFeedClient = () => {
             return api.authRequest(`feed/parser/parseContentAll?url=${encodedUrl}`, "GET");
         },
         createRaw: (data: any) => api.authRequest("feed/parser/createRaw", "POST", data),
-        testContent: (data: any, url: string) => {
-            const encodedUrl = encodeURIComponent(url);
-            return api.authRequest(`feed/parser/testContent?url=${encodedUrl}`, "POST", data);
-        }
-    };
-
-    const feedAIContent = {
-        get: (filters: Record<string, any>) => {
-            const query = new URLSearchParams(filters).toString();
-            return api.authRequest(`feed/ai-content/get?${query}`, "GET");
+        refine: async (payload: { url: string; parser: any }) => {
+            return await api.authRequest('feed/parser/refine', 'POST', payload);
         },
-        update: (id: string, data: any) => {
-            return api.authRequest(`feed/ai-content/update/${id}`, "POST", data);
+        testCustomParser: async (payload: { url:string, parserData: any}) => {
+            return await api.authRequest('feed/parser/test-custom', 'POST', payload);
+        },
+        analyzeAll: async () => {
+            return await api.authRequest('feed/parser/analyze-all', 'GET');
+        },
+        createParser: async (data: any) => {
+            return await api.authRequest('feed/parser', 'POST', data);
+        },
+        updateParser: async (id: string, data: any) => {
+            return await api.authRequest(`feed/parser/${id}`, 'PUT', data);
         }
     };
 
     return {
         channels,
         raw,
-        parser,
-        feedAIContent
+        parser
     };
 };

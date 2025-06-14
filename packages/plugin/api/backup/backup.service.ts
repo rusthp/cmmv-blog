@@ -389,12 +389,12 @@ export class BackupService {
         try {
             const MediasEntity = Repository.getEntity("MediasEntity");
             const blogStorageService = Application.resolveProvider(BlogStorageService);
-            
+
             // Get media records that will be deleted
             const medias: any[] = [];
             const downloadedFiles: string[] = [];
             let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
-            
+
             if (apiUrl.endsWith("/"))
                 apiUrl = apiUrl.slice(0, -1);
 
@@ -408,11 +408,9 @@ export class BackupService {
                     let filename = '';
 
                     if (media.filepath && fs.existsSync(media.filepath)) {
-                        // Local file
                         imageBuffer = fs.readFileSync(media.filepath);
                         filename = path.basename(media.filepath);
                     } else if (media.filepath && media.filepath.startsWith('http')) {
-                        // Remote file - download it
                         try {
                             const response = await fetch(media.filepath);
                             if (response.ok) {
@@ -424,7 +422,6 @@ export class BackupService {
                             console.error(`Failed to download ${media.filepath}:`, error);
                         }
                     } else if (media.sha1 && media.format) {
-                        // Try to find by hash
                         const hashFilePath = path.join(imagesPath, `${media.sha1}.${media.format}`);
                         if (fs.existsSync(hashFilePath)) {
                             imageBuffer = fs.readFileSync(hashFilePath);
@@ -437,7 +434,6 @@ export class BackupService {
                         fs.writeFileSync(backupFilePath, imageBuffer);
                         downloadedFiles.push(filename);
 
-                        // Also backup thumbnail if exists
                         if (media.thumbnail) {
                             let thumbnailBuffer: Buffer | null = null;
                             let thumbnailFilename = '';
@@ -471,11 +467,9 @@ export class BackupService {
                 }
             }
 
-            // Save medias database records as JSON
             const mediasDataPath = path.join(backupDirPath, 'medias_records.json');
             fs.writeFileSync(mediasDataPath, JSON.stringify(medias, null, 2));
 
-            // Save backup metadata
             const metadataPath = path.join(backupDirPath, 'backup_metadata.json');
             const metadata = {
                 type: 'medias_backup',
@@ -486,15 +480,14 @@ export class BackupService {
                 apiUrl,
                 created: now.toISOString()
             };
-            fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
-            // Create tar.gz archive
+            fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
             const archivePath = path.join(mediasPath, `${backupPrefix}.tar.gz`);
             await this.createTarGz(backupDirPath, archivePath);
 
-            // Clean up temporary directory
             for (const file of fs.readdirSync(backupDirPath))
                 fs.unlinkSync(path.join(backupDirPath, file));
+
             fs.rmdirSync(backupDirPath);
 
             return {
@@ -507,9 +500,6 @@ export class BackupService {
             };
 
         } catch (error) {
-            console.error(`Error during medias backup: ${error instanceof Error ? error.message : String(error)}`);
-
-            // Clean up on error
             if (fs.existsSync(backupDirPath)) {
                 try {
                     for (const file of fs.readdirSync(backupDirPath))
@@ -538,26 +528,25 @@ export class BackupService {
             throw new Error("Backup file not found");
 
         const tempDir = path.join(mediasPath, `temp_restore_${Date.now()}`);
-        
+
         try {
-            // Extract backup
             if (!fs.existsSync(tempDir))
                 fs.mkdirSync(tempDir, { recursive: true });
 
             await this.extractTarGz(backupFilePath, tempDir);
 
-            // Read metadata
             const metadataPath = path.join(tempDir, 'backup_metadata.json');
+
             if (!fs.existsSync(metadataPath))
                 throw new Error("Invalid backup file: metadata not found");
 
             const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-            
+
             if (metadata.type !== 'medias_backup')
                 throw new Error("Invalid backup file: not a medias backup");
 
-            // Read medias records
             const mediasDataPath = path.join(tempDir, 'medias_records.json');
+
             if (!fs.existsSync(mediasDataPath))
                 throw new Error("Invalid backup file: medias records not found");
 
@@ -566,30 +555,27 @@ export class BackupService {
             const MediasEntity = Repository.getEntity("MediasEntity");
             const blogStorageService = Application.resolveProvider(BlogStorageService);
             const storageType = Config.get("blog.storageType");
-            
+
             let restoredRecords = 0;
             let restoredFiles = 0;
             let uploadedToCloud = 0;
             let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
-            
+
             if (apiUrl.endsWith("/"))
                 apiUrl = apiUrl.slice(0, -1);
 
-            // Ensure images directory exists
             if (!fs.existsSync(imagesPath))
                 fs.mkdirSync(imagesPath, { recursive: true });
 
             for (const mediaRecord of mediasRecords) {
                 try {
-                    // Check if media record still exists (shouldn't if it was deleted)
                     const existingMedia = await Repository.findOne(MediasEntity, { id: mediaRecord.id });
-                    
-                    if (existingMedia) {
-                        continue;
-                    }
 
-                    // Restore image file
+                    if (existingMedia)
+                        continue;
+
                     let filename = '';
+
                     if (mediaRecord.sha1 && mediaRecord.format)
                         filename = `${mediaRecord.sha1}.${mediaRecord.format}`;
                     else if (mediaRecord.filepath)
@@ -599,13 +585,10 @@ export class BackupService {
                         const backupImagePath = path.join(tempDir, filename);
                         if (fs.existsSync(backupImagePath)) {
                             const imageBuffer = fs.readFileSync(backupImagePath);
-                            
-                            // Decide where to restore the image
                             let finalImagePath = '';
                             let finalImageUrl = '';
 
                             if (storageType && (storageType === 'spaces' || storageType === 's3')) {
-                                // Upload back to cloud storage
                                 try {
                                     const uploadResult = await blogStorageService.uploadFile({
                                         buffer: imageBuffer,
@@ -621,14 +604,11 @@ export class BackupService {
                                         throw new Error('Upload failed');
                                     }
                                 } catch (uploadError) {
-                                    console.error(`Failed to upload ${filename} to cloud, saving locally:`, uploadError);
-                                    // Fallback to local storage
                                     finalImagePath = path.join(imagesPath, filename);
                                     fs.writeFileSync(finalImagePath, imageBuffer);
                                     finalImageUrl = `${apiUrl}/images/${filename}`.toLowerCase();
                                 }
                             } else {
-                                // Restore to local storage
                                 finalImagePath = path.join(imagesPath, filename);
                                 fs.writeFileSync(finalImagePath, imageBuffer);
                                 finalImageUrl = `${apiUrl}/images/${filename}`.toLowerCase();
@@ -636,14 +616,13 @@ export class BackupService {
 
                             restoredFiles++;
 
-                            // Restore thumbnail if exists
                             let thumbnailUrl: string | null = null;
                             const thumbnailFilename = `${mediaRecord.sha1}_thumb.webp`;
                             const backupThumbnailPath = path.join(tempDir, thumbnailFilename);
-                            
+
                             if (fs.existsSync(backupThumbnailPath)) {
                                 const thumbnailBuffer = fs.readFileSync(backupThumbnailPath);
-                                
+
                                 if (storageType && (storageType === 'spaces' || storageType === 's3')) {
                                     try {
                                         const uploadResult = await blogStorageService.uploadFile({
@@ -668,13 +647,13 @@ export class BackupService {
                                 }
                             }
 
-                            // Restore database record
                             const restoreData = {
                                 ...mediaRecord,
                                 filepath: finalImagePath,
                                 thumbnail: thumbnailUrl
                             };
-                            delete restoreData.id; // Let database assign new ID
+
+                            delete restoreData.id;
 
                             await Repository.insert(MediasEntity, restoreData);
                             restoredRecords++;
@@ -685,13 +664,13 @@ export class BackupService {
                 }
             }
 
-            // Clean up temp directory
             for (const file of fs.readdirSync(tempDir))
                 fs.unlinkSync(path.join(tempDir, file));
+
             fs.rmdirSync(tempDir);
 
             const message = `Rollback completed: ${restoredRecords} media records and ${restoredFiles} files restored. ${uploadedToCloud} files uploaded to cloud storage.`;
-            
+
             return {
                 success: true,
                 message,
@@ -702,7 +681,6 @@ export class BackupService {
             };
 
         } catch (error) {
-            // Clean up temp directory on error
             if (fs.existsSync(tempDir)) {
                 try {
                     for (const file of fs.readdirSync(tempDir))
@@ -725,7 +703,7 @@ export class BackupService {
     private async extractTarGz(archivePath: string, outputDir: string): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const { spawn } = require('child_process');
-            
+
             const tar = spawn('tar', [
                 '-xzf',
                 archivePath,
@@ -761,17 +739,14 @@ export class BackupService {
         const compressed = fs.readFileSync(archivePath);
         const gunzip = promisify(zlib.gunzip);
         const decompressed = await gunzip(compressed);
-        
-        // Simple extraction - this is a basic implementation
-        // In a real scenario, you might want to use a proper tar parser
         const files = decompressed.toString('binary').split('FILE:');
-        
+
         for (let i = 1; i < files.length; i++) {
             const parts = files[i].split('\n');
             if (parts.length >= 2) {
                 const header = parts[0];
                 const [filename, size] = header.split(':');
-                
+
                 if (filename && size) {
                     const content = parts.slice(1).join('\n').substring(0, parseInt(size));
                     const outputPath = path.join(outputDir, filename);

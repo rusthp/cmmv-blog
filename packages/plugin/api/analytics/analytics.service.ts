@@ -1,7 +1,9 @@
-import { Service } from '@cmmv/core';
+import {
+    Service, Cron, CronExpression
+} from '@cmmv/core';
 
 import {
-    Repository, In, MoreThanOrEqual
+    Repository, In, MoreThanOrEqual, LessThan
 } from "@cmmv/repository"
 
 import {
@@ -18,6 +20,88 @@ export class AnalyticsService {
         setInterval(() => {
             this.generateReport();
         }, 1000 * 60 * 30);
+    }
+
+    /**
+     * Cron job to clean up old analytics access records
+     * Runs daily at 2:00 AM
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_2AM)
+    async handleDailyCleanup() {
+        return await this.cleanupOldAnalyticsAccess.call(this);
+    }
+
+    /**
+     * Clean up old analytics access records (older than 30 days)
+     * This helps maintain database performance and reduce storage usage
+     * @returns Summary of cleanup operation
+     */
+    async cleanupOldAnalyticsAccess() {
+        try {
+            const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
+
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const cutoffTime = thirtyDaysAgo.getTime();
+
+            const recordsToDelete = await Repository.count(AnalyticsAccessEntity, {
+                startTime: LessThan(cutoffTime)
+            });
+
+            if (recordsToDelete === 0) {
+                return {
+                    success: true,
+                    message: 'No old records found',
+                    deletedCount: 0
+                };
+            }
+
+            const batchSize = 1000;
+            let totalDeleted = 0;
+            let batchCount = 0;
+
+            while (true) {
+                const oldRecords = await Repository.findAll(AnalyticsAccessEntity, {
+                    startTime: LessThan(cutoffTime),
+                    limit: batchSize
+                }, [], {
+                    select: ["id"]
+                });
+
+                if (!oldRecords || !oldRecords.data || oldRecords.data.length === 0)
+                    break;
+
+                const idsToDelete = oldRecords.data.map((record: any) => record.id);
+
+                await Repository.delete(AnalyticsAccessEntity, {
+                    id: In(idsToDelete)
+                });
+
+                totalDeleted += idsToDelete.length;
+                batchCount++;
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                if (totalDeleted >= recordsToDelete)
+                    break;
+            }
+
+            const summary = {
+                success: true,
+                message: `Analytics access cleanup completed`,
+                deletedCount: totalDeleted,
+                cutoffDate: thirtyDaysAgo.toISOString(),
+                batchesProcessed: batchCount
+            };
+
+            return summary;
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message,
+                deletedCount: 0
+            };
+        }
     }
 
     /**
@@ -311,5 +395,13 @@ export class AnalyticsService {
             totalAccess,
             uniqueAccess
         };
+    }
+
+    /**
+     * Manual cleanup trigger for administrative purposes
+     * @returns Cleanup operation summary
+     */
+    async manualCleanup() {
+        return await this.cleanupOldAnalyticsAccess();
     }
 }

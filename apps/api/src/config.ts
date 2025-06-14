@@ -9,7 +9,15 @@ Config.assign({
     server: {
         host: process.env.HOST || '0.0.0.0',
         port: process.env.PORT || 5000,
-        cors: true
+        cors: {
+            enabled: true,
+            options: {
+                origin: '*',
+                methods: ['GET', 'POST', 'PUT', 'DELETE'],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+                credentials: true,
+            },
+        },
     },
 
     repository: {

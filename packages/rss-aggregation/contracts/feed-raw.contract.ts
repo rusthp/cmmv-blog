@@ -134,6 +134,4 @@ export class FeedRawContract extends AbstractContract {
         defaultValue: 0,
     })
     relevance!: number;
-
-    aiContents?: any[];
 }
