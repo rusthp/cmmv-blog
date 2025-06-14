@@ -12,14 +12,6 @@ import {
     ImagesService
 } from "./images.service";
 
-const ALLOWED_MIME_TYPES = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/gif'
-];
-
 @Controller("blog/images")
 export class ImagesController {
     constructor(private readonly imagesService: ImagesService){}
@@ -43,31 +35,10 @@ export class ImagesController {
         @Res() res: any
     ) {
         try {
-            if (!body.imageBase64) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Nenhuma imagem foi enviada'
-                });
-            }
-
-            // Converter Base64 para Buffer
-            const imageBuffer = this.base64ToBuffer(body.imageBase64);
-            const mimeType = this.getMimeTypeFromBase64(body.imageBase64);
-
-            const operations = body.operations || {};
-
-            const processedBuffer = await this.imagesService.processImageEdit(
-                imageBuffer,
-                operations
+            return await this.imagesService.processImageFromBase64(
+                body.imageBase64,
+                body.operations
             );
-
-            // Converter para base64 para retornar na resposta
-            const base64Image = processedBuffer.toString('base64');
-
-            return {
-                success: true,
-                processedImage: `data:${mimeType};base64,${base64Image}`
-            };
         } catch (error: any) {
             console.error('Erro ao processar imagem:', error);
             return res.status(500).json({
@@ -95,36 +66,13 @@ export class ImagesController {
         @Res() res: any
     ) {
         try {
-            if (!body.imageBase64) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Nenhuma imagem foi enviada'
-                });
-            }
-
-            // Converter Base64 para Buffer
-            const imageBuffer = this.base64ToBuffer(body.imageBase64);
-            const mimeType = this.getMimeTypeFromBase64(body.imageBase64);
-
-            const maskParams = {
-                left: body.left || 0,
-                top: body.top || 0,
-                width: body.width || 100,
-                height: body.height || 100
-            };
-
-            const processedBuffer = await this.imagesService.eraseImageArea(
-                imageBuffer,
-                maskParams
+            return await this.imagesService.eraseImageAreaFromBase64(
+                body.imageBase64,
+                body.left,
+                body.top,
+                body.width,
+                body.height
             );
-
-            // Converter para base64 para retornar na resposta
-            const base64Image = processedBuffer.toString('base64');
-
-            return {
-                success: true,
-                processedImage: `data:${mimeType};base64,${base64Image}`
-            };
         } catch (error: any) {
             console.error('Erro ao apagar área da imagem:', error);
             return res.status(500).json({
@@ -152,36 +100,13 @@ export class ImagesController {
         @Res() res: any
     ) {
         try {
-            if (!body.imageBase64) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Nenhuma imagem foi enviada'
-                });
-            }
-
-            // Converter Base64 para Buffer
-            const imageBuffer = this.base64ToBuffer(body.imageBase64);
-            const mimeType = this.getMimeTypeFromBase64(body.imageBase64);
-
-            const cropParams = {
-                left: body.left || 0,
-                top: body.top || 0,
-                width: body.width || 100,
-                height: body.height || 100
-            };
-
-            const processedBuffer = await this.imagesService.cropImage(
-                imageBuffer,
-                cropParams
+            return await this.imagesService.cropImageFromBase64(
+                body.imageBase64,
+                body.left,
+                body.top,
+                body.width,
+                body.height
             );
-
-            // Converter para base64 para retornar na resposta
-            const base64Image = processedBuffer.toString('base64');
-
-            return {
-                success: true,
-                processedImage: `data:${mimeType};base64,${base64Image}`
-            };
         } catch (error: any) {
             console.error('Erro ao cortar imagem:', error);
             return res.status(500).json({
@@ -208,35 +133,12 @@ export class ImagesController {
         @Res() res: any
     ) {
         try {
-            if (!body.imageBase64) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Nenhuma imagem foi enviada'
-                });
-            }
-
-            // Converter Base64 para Buffer
-            const imageBuffer = this.base64ToBuffer(body.imageBase64);
-            const mimeType = this.getMimeTypeFromBase64(body.imageBase64);
-
-            const resizeParams = {
-                width: body.width,
-                height: body.height,
-                fit: body.fit || 'cover'
-            };
-
-            const processedBuffer = await this.imagesService.resizeImage(
-                imageBuffer,
-                resizeParams
+            return await this.imagesService.resizeImageFromBase64(
+                body.imageBase64,
+                body.width,
+                body.height,
+                body.fit
             );
-
-            // Converter para base64 para retornar na resposta
-            const base64Image = processedBuffer.toString('base64');
-
-            return {
-                success: true,
-                processedImage: `data:${mimeType};base64,${base64Image}`
-            };
         } catch (error: any) {
             console.error('Erro ao redimensionar imagem:', error);
             return res.status(500).json({
@@ -246,29 +148,5 @@ export class ImagesController {
         }
     }
 
-    /**
-     * Converte uma string base64 para Buffer
-     * @param base64String String base64 da imagem, pode incluir o prefixo data:image/...
-     * @returns Buffer com os dados binários da imagem
-     */
-    private base64ToBuffer(base64String: string): Buffer {
-        // Remover prefixo "data:image/..." se presente
-        const base64Data = base64String.includes(';base64,')
-            ? base64String.split(';base64,')[1]
-            : base64String;
 
-        return Buffer.from(base64Data, 'base64');
-    }
-
-    /**
-     * Extrai o tipo MIME de uma string base64
-     * @param base64String String base64 da imagem com prefixo data:image/...
-     * @returns Tipo MIME da imagem
-     */
-    private getMimeTypeFromBase64(base64String: string): string {
-        if (base64String.includes('data:') && base64String.includes(';base64,')) {
-            return base64String.split(';base64,')[0].split(':')[1];
-        }
-        return 'image/jpeg'; // Default fallback
-    }
 }

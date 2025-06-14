@@ -1304,11 +1304,31 @@ export class MediasService extends AbstractService {
             }
 
             let backupResult: any = null;
+
+            // Handle backup creation if requested
+            if (createBackup) {
+                try {
+                    backupResult = await this.createBackupBeforeDeletion(ids);
+                } catch (backupError: any) {
+                    console.error('Backup creation failed:', backupError);
+                    return {
+                        success: false,
+                        message: `Backup creation failed: ${backupError.message}`,
+                        summary: { requested: ids.length, deleted: 0, skipped: 0, errors: ids.length },
+                        deleted: [],
+                        skipped: [],
+                        errors: ids.map((id: string) => ({ id, error: `Backup failed: ${backupError.message}` })),
+                        backup: null
+                    };
+                }
+            }
+
             const MediasEntity = Repository.getEntity("MediasEntity");
             const PostsEntity = Repository.getEntity("PostsEntity");
+            const CampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
 
             const deleted: string[] = [];
-            const skipped: Array<{id: string, reason: string, posts?: string[]}> = [];
+            const skipped: Array<{id: string, reason: string, posts?: string[], campaigns?: string[]}> = [];
             const errors: Array<{id: string, error: string}> = [];
 
             for (const id of ids) {
@@ -1331,6 +1351,19 @@ export class MediasService extends AbstractService {
                             id,
                             reason,
                             posts: postTitles
+                        });
+                        continue;
+                    }
+
+                    const linkedCampaigns = await this.findCampaignsUsingMedia(mediaUrl, CampaignsEntity);
+                    if (linkedCampaigns.length > 0) {
+                        const campaignNames = linkedCampaigns.map(c => c.name || c.id).slice(0, 3);
+                        const reason = `Used in ${linkedCampaigns.length} campaign(s): ${campaignNames.join(', ')}${linkedCampaigns.length > 3 ? '...' : ''}`;
+
+                        skipped.push({
+                            id,
+                            reason,
+                            campaigns: campaignNames
                         });
                         continue;
                     }
@@ -1399,6 +1432,40 @@ export class MediasService extends AbstractService {
     }
 
     /**
+     * Create backup before deletion using dynamic import of BackupService
+     * @param ids Array of media IDs to backup
+     * @returns Backup result
+     */
+    private async createBackupBeforeDeletion(ids: string[]): Promise<any> {
+        let backupService: any;
+
+        try {
+            const backupModulePath = require.resolve('../backup/backup.service');
+            delete require.cache[backupModulePath];
+            const { BackupService } = require('../backup/backup.service');
+
+            const storageModulePath = require.resolve('../storage/storage.service');
+            const { BlogStorageService } = require('../storage/storage.service');
+
+            const storageService = new BlogStorageService();
+            backupService = new BackupService(this, storageService);
+        } catch (importError: any) {
+            console.error('Failed to import BackupService:', importError);
+            throw new Error(`Failed to import BackupService: ${importError.message}`);
+        }
+
+        if (!backupService) {
+            throw new Error('BackupService could not be instantiated');
+        }
+
+        if (typeof backupService.backupMediasBeforeDeletion !== 'function') {
+            throw new Error('BackupService does not have backupMediasBeforeDeletion method');
+        }
+
+        return await backupService.backupMediasBeforeDeletion(ids);
+    }
+
+    /**
      * Helper method to build media URL from media record
      * @param media Media record
      * @returns Media URL
@@ -1432,9 +1499,8 @@ export class MediasService extends AbstractService {
         if (!mediaUrl) return [];
 
         try {
-            // Search for posts that reference this media in various fields
             const posts = await Repository.findAll(PostsEntity, {
-                limit: 1000, // Reasonable limit for safety
+                limit: 1000
             });
 
             const linkedPosts: any[] = [];
@@ -1463,7 +1529,6 @@ export class MediasService extends AbstractService {
     private getMediaUrlVariations(mediaUrl: string): string[] {
         const variations = [mediaUrl];
 
-        // Add variation without protocol
         if (mediaUrl.startsWith('http://')) {
             variations.push(mediaUrl.replace('http://', 'https://'));
             variations.push(mediaUrl.replace('http://', '//'));
@@ -1474,11 +1539,10 @@ export class MediasService extends AbstractService {
             variations.push(mediaUrl.replace('https://', ''));
         }
 
-        // Add just the filename part
         const filename = path.basename(mediaUrl);
-        if (filename) {
+
+        if (filename)
             variations.push(filename);
-        }
 
         return variations;
     }
@@ -1531,6 +1595,66 @@ export class MediasService extends AbstractService {
             const contentStr = JSON.stringify(post.lexicalContent);
             for (const variation of mediaVariations) {
                 if (contentStr.includes(variation)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Find campaigns that use a specific media URL
+     * @param mediaUrl The media URL to search for
+     * @param CampaignsEntity Campaigns entity
+     * @returns Array of campaigns using the media
+     */
+    private async findCampaignsUsingMedia(mediaUrl: string, CampaignsEntity: any): Promise<any[]> {
+        if (!mediaUrl) return [];
+
+        try {
+            const campaigns = await Repository.findAll(CampaignsEntity, {
+                limit: 10000
+            });
+
+            const linkedCampaigns: any[] = [];
+            const mediaVariations = this.getMediaUrlVariations(mediaUrl);
+
+            if (campaigns && campaigns.data) {
+                for (const campaign of campaigns.data) {
+                    if (this.campaignUsesMedia(campaign, mediaVariations)) {
+                        linkedCampaigns.push(campaign);
+                    }
+                }
+            }
+
+            return linkedCampaigns;
+        } catch (error) {
+            console.error('Error searching for campaigns using media:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Check if a campaign uses any of the media URL variations
+     * @param campaign Campaign record
+     * @param mediaVariations Array of media URL variations
+     * @returns True if campaign uses the media
+     */
+    private campaignUsesMedia(campaign: any, mediaVariations: string[]): boolean {
+        // Check logo field
+        if (campaign.logo) {
+            for (const variation of mediaVariations) {
+                if (campaign.logo.includes(variation)) {
+                    return true;
+                }
+            }
+        }
+
+        // Check seoLongText field
+        if (campaign.seoLongText) {
+             for (const variation of mediaVariations) {
+                if (campaign.seoLongText.includes(variation)) {
                     return true;
                 }
             }

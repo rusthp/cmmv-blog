@@ -56,11 +56,6 @@ export class DeeplinkService {
             network: account.network
         });
 
-        console.log({
-            id: campaignId,
-            network: account.network
-        });
-
         if (!campaignNetwork)
             throw new Error("Campaign network not found");
 

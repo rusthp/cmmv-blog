@@ -10,6 +10,7 @@ import AccountView from './views/AccountView.vue';
 import CategoryView from './views/CategoryView.vue';
 import NetworkCampaignsView from './views/NetworkCampaignsView.vue';
 import DeeplinkGeneratorView from './views/DeeplinkGeneratorView.vue';
+import SpecialDatesView from './views/SpecialDatesView.vue';
 
 export const affiliateRoutes: RouteRecordRaw[] = [
     {
@@ -50,6 +51,11 @@ export const affiliateRoutes: RouteRecordRaw[] = [
                 path: 'deeplink-generator',
                 component: DeeplinkGeneratorView,
                 name: 'affiliate.deeplink-generator'
+            },
+            {
+                path: 'special-dates',
+                component: SpecialDatesView,
+                name: 'affiliate.special-dates'
             }
         ]
     },
@@ -96,6 +102,12 @@ useNavbar().addItems([
         label: 'Deeplink',
         icon: 'fas fa-link',
         to: '/affiliate/deeplink-generator',
+        group: 'Affiliate'
+    },
+    {
+        label: 'Special Dates',
+        icon: 'fas fa-calendar-alt',
+        to: '/affiliate/special-dates',
         group: 'Affiliate'
     }
 ])

@@ -131,58 +131,6 @@ export class MediasController {
     @Post("bulk-delete", { exclude: true })
     @Auth("media:delete")
     async bulkDeleteMedias(@Body() body: {ids: string[], createBackup?: boolean}) {
-        try {
-            let backupResult: any = null;
-            if (body.createBackup) {
-                try {
-                    let backupService: any;
-
-                    try {
-                        const backupModulePath = require.resolve('../backup/backup.service');
-                        delete require.cache[backupModulePath];
-                        const { BackupService } = require('../backup/backup.service');
-
-                        const storageModulePath = require.resolve('../storage/storage.service');
-                        const { BlogStorageService } = require('../storage/storage.service');
-
-                        const storageService = new BlogStorageService();
-                        backupService = new BackupService(this.mediasService, storageService);
-                    } catch (importError: any) {
-                        console.error('Failed to import BackupService:', importError);
-                        throw new Error(`Failed to import BackupService: ${importError.message}`);
-                    }
-
-                    if (!backupService) {
-                        throw new Error('BackupService could not be instantiated');
-                    }
-
-                    if (typeof backupService.backupMediasBeforeDeletion !== 'function') {
-                        throw new Error('BackupService does not have backupMediasBeforeDeletion method');
-                    }
-
-                    backupResult = await backupService.backupMediasBeforeDeletion(body.ids);
-                } catch (backupError: any) {
-                    console.error('Backup creation failed:', backupError);
-                    return {
-                        success: false,
-                        message: `Backup creation failed: ${backupError.message}`,
-                        summary: { requested: body.ids.length, deleted: 0, skipped: 0, errors: body.ids.length },
-                        deleted: [],
-                        skipped: [],
-                        errors: body.ids.map((id: string) => ({ id, error: `Backup failed: ${backupError.message}` })),
-                        backup: null
-                    };
-                }
-            }
-
-            const result = await this.mediasService.bulkDeleteMedias(body.ids, false);
-
-            if (backupResult)
-                result.backup = backupResult;
-
-            return result;
-        } catch (error) {
-            throw error;
-        }
+        return await this.mediasService.bulkDeleteMedias(body.ids, body.createBackup || false);
     }
 }

@@ -66,6 +66,13 @@ export const useAffiliateClient = () => {
         },
         searchCampaigns: async (query: string) => {
             return api.authRequest(`affiliate/campaigns/search?query=${query}`, "GET");
+        },
+        updateAllCampaignsCouponCount: async () => {
+            return api.authRequest(`affiliate/campaigns/update-all-coupon-counts`, "GET");
+        },
+        getAllCampaignsWithCouponCounts: async (filters: Record<string, string>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`affiliate/campaigns/with-coupon-counts?${query}`, "GET");
         }
     }
 
@@ -172,6 +179,25 @@ export const useAffiliateClient = () => {
         }
     }
 
+    const specialDates = {
+        get: async (filters: Record<string, string>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`affiliate/special-dates?${query}`, "GET");
+        },
+        insert: async (data: any) => {
+            return api.authRequest("affiliate/special-dates", "POST", data);
+        },
+        update: async (id: string, data: any) => {
+            return api.authRequest(`affiliate/special-dates/${id}`, "PUT", data);
+        },
+        delete: async (id: string) => {
+            return api.authRequest(`affiliate/special-dates/${id}`, "DELETE");
+        },
+        getCampaignsBySpecialDate: async (specialDateId: string) => {
+            return api.authRequest(`affiliate/special-dates/campaigns/${specialDateId}`, "GET");
+        }
+    }
+
     return {
         networks,
         campaigns,
@@ -179,6 +205,7 @@ export const useAffiliateClient = () => {
         accounts,
         categories,
         campaignsNetworks,
-        deeplink
+        deeplink,
+        specialDates
     };
 };

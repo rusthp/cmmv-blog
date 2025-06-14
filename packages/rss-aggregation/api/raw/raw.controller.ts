@@ -84,7 +84,7 @@ export class RawController {
 
     @Post("classifyRawsWithAI", {exclude: true })
     @Auth("feedraw:update")
-    async classifyRawsWithAI(@Body() data: { rawIds?: string[] }) {
-        return await this.rawService.classifyRawsWithAI(data?.rawIds);
+    async classifyRawsWithAI() {
+        return await this.rawService.classifyRawsWithAI();
     }
 }

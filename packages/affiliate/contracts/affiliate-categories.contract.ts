@@ -29,7 +29,8 @@ export class AffiliateCategoriesContract extends AbstractContract {
     @ContractField({
         protoType: 'string',
         nullable: false,
-        index: true
+        index: true,
+        unique: true
     })
     slug!: string;
 

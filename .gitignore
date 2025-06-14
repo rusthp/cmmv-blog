@@ -398,6 +398,7 @@ dist
 .generated
 .turbo
 pnpm-lock.yaml
+.env.production
 
 /apps/api-invasao
 /apps/web-invasao

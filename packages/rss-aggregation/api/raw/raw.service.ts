@@ -14,7 +14,6 @@ import { AIContentService } from "@cmmv/ai-content";
 import { PromptsServiceTools } from "@cmmv/blog/prompts/prompts.service";
 //@ts-ignore
 import { ParserService } from "../parser/parser.service";
-import { FeedRawContract } from "../../contracts";
 
 interface AIJob {
     id: string;
@@ -44,52 +43,21 @@ export class RawService {
      */
     async getRaws(queries: any) {
         const FeedRawEntity = Repository.getEntity("FeedRawEntity");
-        const shouldIncludeAiContents = queries.include?.includes('aiContents');
-        
+
         queries.rejected = false;
+        queries.pubDate = MoreThanOrEqual(new Date(Date.now() - 1000 * 60 * 60 * 24 * 2));
         queries.postRef = IsNull();
-        
-        const repoQueries = { ...queries };
-        if (repoQueries.include) {
-            delete repoQueries.include;
-        }
-        
-        const response = await Repository.findAll(FeedRawEntity, repoQueries, [], {
+        delete queries.sortBy;
+        delete queries.sort;
+
+        const raw = await Repository.findAll(FeedRawEntity, queries, [], {
             order: {
                 relevance: "DESC",
                 pubDate: "DESC"
             }
         });
 
-        if (shouldIncludeAiContents && response && response.data?.length > 0) {
-            const AIContentEntity = Repository.getEntity("AIContentEntity");
-            const rawIds = response.data.map((r: any) => r.id);
-            
-            const aiContentsResponse = await Repository.findAll(AIContentEntity, {
-                criteria: {
-                    rawId: { $in: rawIds }
-                },
-                limit: 1000
-            });
-
-            if (aiContentsResponse && aiContentsResponse.data) {
-                const allAiContents = aiContentsResponse.data;
-                const aiContentsByRawId = allAiContents.reduce((acc: Record<string, any[]>, ai: any) => {
-                    const rawId = ai.rawId;
-                    if (!acc[rawId]) {
-                        acc[rawId] = [];
-                    }
-                    acc[rawId].push(ai);
-                    return acc;
-                }, {});
-
-                response.data.forEach((raw: any) => {
-                    raw.aiContents = aiContentsByRawId[raw.id] || [];
-                });
-            }
-        }
-
-        return response;
+        return raw;
     }
 
     /**
@@ -284,31 +252,7 @@ export class RawService {
                     processedAt: new Date()
                 };
 
-                const FeedAIContentEntity = Repository.getEntity("FeedAIContentEntity");
-                const existingAiContent = await Repository.findOne(FeedAIContentEntity, { rawId: job.rawId });
-                let savedContent;
-
-                const contentData = {
-                    rawId: job.rawId,
-                    title: result.title,
-                    content: result.content,
-                    featureImage: raw.featureImage,
-                    suggestedTags: JSON.stringify(result.suggestedTags || []),
-                    suggestedCategories: JSON.stringify(result.suggestedCategories || []),
-                };
-
-                if (existingAiContent) {
-                    await Repository.updateOne(FeedAIContentEntity, { id: existingAiContent.id }, contentData);
-                    savedContent = await Repository.findOne(FeedAIContentEntity, { id: existingAiContent.id });
-                    this.logger.log(`Updated existing AI content for raw ${job.rawId}`);
-                } else {
-                    await Repository.insert(FeedAIContentEntity, contentData);
-                    // Re-fetch to get the full object with ID
-                    savedContent = await Repository.findOne(FeedAIContentEntity, { rawId: job.rawId });
-                    this.logger.log(`Created new AI content for raw ${job.rawId} with id ${savedContent.id}`);
-                }
-
-                job.result = savedContent;
+                job.result = result;
                 job.status = 'completed';
                 this.aiJobs.set(jobId, job);
 
@@ -827,39 +771,30 @@ export class RawService {
      * Automatically classify raw feed items based on game development relevance using AI
      * @returns Information about the classification operation
      */
-    async classifyRawsWithAI(rawIds?: string[]) {
+    async classifyRawsWithAI() {
         try {
             const classifyPrompt = Config.get("blog.classifyPrompt");
             const FeedRawEntity = Repository.getEntity("FeedRawEntity");
             this.logger.log("Starting AI classification of raw feed items...");
 
-            let rawItems;
-            if (rawIds && rawIds.length > 0) {
-                this.logger.log(`Classifying ${rawIds.length} specific raw items.`);
-                const response = await Repository.findAll(FeedRawEntity, {
-                    id: { $in: rawIds }
-                });
-                rawItems = response?.data || [];
-            } else {
-                this.logger.log("No specific IDs provided, fetching latest unclassified items.");
-                const response = await Repository.findAll(FeedRawEntity, {
-                    rejected: false,
-                    relevance: 0,
-                    postRef: IsNull(),
-                    limit: 20,
-                    sortBy: "pubDate",
-                    sort: "DESC"
-                });
-                rawItems = response?.data || [];
-            }
+            const rawItemsResponse = await Repository.findAll(FeedRawEntity, {
+                rejected: false,
+                relevance: 0,
+                postRef: IsNull(),
+                limit: 20,
+                sortBy: "pubDate",
+                sort: "DESC"
+            });
 
-            if (!rawItems || rawItems.length === 0) {
+            if (!rawItemsResponse || rawItemsResponse.data.length === 0) {
                 this.logger.log("No unclassified raw items found for AI classification");
                 return;
             }
             else{
-                this.logger.log(`Found ${rawItems.length} unclassified raw items for AI classification`);
+                this.logger.log(`Found ${rawItemsResponse.data.length} unclassified raw items for AI classification`);
             }
+
+            const rawItems = rawItemsResponse.data;
 
             const itemsForAI = rawItems.map((item: any) => ({
                 id: item.id,

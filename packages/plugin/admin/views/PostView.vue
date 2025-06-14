@@ -6,9 +6,9 @@
             <!-- Top Toolbar -->
             <div class="bg-neutral-900 border-b border-neutral-900 p-2 flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <a href="/posts" class="text-neutral-400 hover:text-white flex items-center justify-center">
+                    <router-link to="/posts" class="text-neutral-400 hover:text-white flex items-center justify-center">
                         <i class="fas fa-arrow-left"></i>
-                    </a>
+                    </router-link>
                     <div class="flex items-center">
                         <div class="relative">
                             <div class="h-3 w-3 rounded-full bg-yellow-500 absolute -top-1 -right-1"

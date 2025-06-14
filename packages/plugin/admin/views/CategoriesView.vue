@@ -154,9 +154,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
                                 <span :style="{ paddingLeft: category.depth * 20 + 'px' }" class="flex items-center">
-                                    <button 
+                                    <button
                                         v-if="category.hasChildren"
-                                        @click.stop="toggleExpand(category.id)" 
+                                        @click.stop="toggleExpand(category.id)"
                                         class="mr-2 text-neutral-500 hover:text-neutral-300 focus:outline-none"
                                         :aria-expanded="expandedCategories.has(category.id) ? 'true' : 'false'"
                                         :title="expandedCategories.has(category.id) ? 'Collapse' : 'Expand'"
@@ -169,7 +169,7 @@
                                         </svg>
                                     </button>
                                     <span v-else-if="category.depth > 0 || (categories.filter(c => c.parentCategory === null).length > 1 && !category.hasChildren)" class="w-4 mr-2"></span> <!-- Espaçador para alinhar com itens que têm botão -->
-                                    
+
                                     <span v-if="category.depth > 0 && !category.hasChildren && !category.children?.length" class="mr-1 text-neutral-500">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" transform="scale(0.1)" />
@@ -183,8 +183,8 @@
                                 {{ category.postCount || 0 }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400 hidden md:table-cell">
-                                <div v-if="category.mainNav" 
-                                     class="flex items-center" 
+                                <div v-if="category.mainNav"
+                                     class="flex items-center"
                                      :title="`Label: ${category.navigationLabel || category.name}\nGroup: ${category.mainNavGroup || 'N/A'}\nOrder: ${category.mainNavIndex !== undefined ? category.mainNavIndex : 'N/A'}`">
                                     <span class="flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -263,25 +263,25 @@
 
                 <!-- Tab Navigation -->
                 <div class="px-6 pt-4 border-b border-neutral-700 flex space-x-1">
-                    <button 
+                    <button
                         type="button"
                         @click="activeTab = 'basic'"
                         :class="[
                             'px-4 py-2 text-sm font-medium rounded-t-md',
-                            activeTab === 'basic' 
-                                ? 'bg-neutral-700 text-white' 
+                            activeTab === 'basic'
+                                ? 'bg-neutral-700 text-white'
                                 : 'text-neutral-400 hover:bg-neutral-750 hover:text-neutral-200'
                         ]"
                     >
                         Basic Info
                     </button>
-                    <button 
+                    <button
                         type="button"
                         @click="activeTab = 'navigation'"
                         :class="[
                             'px-4 py-2 text-sm font-medium rounded-t-md',
-                            activeTab === 'navigation' 
-                                ? 'bg-neutral-700 text-white' 
+                            activeTab === 'navigation'
+                                ? 'bg-neutral-700 text-white'
                                 : 'text-neutral-400 hover:bg-neutral-750 hover:text-neutral-200'
                         ]"
                     >
@@ -528,9 +528,9 @@ const toggleExpand = (categoryId) => {
     } else {
         expandedCategories.value.add(categoryId);
     }
-    // É importante que o Vue reaja à mudança no Set. 
+    // É importante que o Vue reaja à mudança no Set.
     // Forçar uma reatribuição pode ser necessário em alguns casos, mas Set é geralmente reativo.
-    // expandedCategories.value = new Set(expandedCategories.value); 
+    // expandedCategories.value = new Set(expandedCategories.value);
 };
 
 function toggleSearchDropdown() {
@@ -679,7 +679,7 @@ const refreshData = async () => {
 
     try {
         // Assumindo que você adicionará este método ao seu adminClient
-        // Exemplo: await adminClient.posts.recalculateCategoryCounts(); 
+        // Exemplo: await adminClient.posts.recalculateCategoryCounts();
         // Por enquanto, vamos simular a chamada direta se você não tiver o client atualizado ainda:
         await adminClient.posts.recalculateCategoryCounts();
         showNotification('success', 'Post counts recalculated. Refreshing list...');
@@ -694,7 +694,7 @@ const refreshData = async () => {
     // Carrega as categorias após a tentativa de recálculo
     await loadCategories();
     // Opcionalmente, recarregar todas as categorias para o dropdown se as contagens são usadas lá
-    // await loadAllCategoriesForDropdown(); 
+    // await loadAllCategoriesForDropdown();
 };
 
 // Pagination methods
@@ -988,7 +988,7 @@ const buildCategoryHierarchy = (categoriesRaw) => {
             if (parentNode) {
                 catNode.hasChildren = catNode.children && catNode.children.length > 0;
                 parentNode.children.push(catNode);
-                parentNode.hasChildren = true; 
+                parentNode.hasChildren = true;
             }
         } else {
             catNode.hasChildren = catNode.children && catNode.children.length > 0;
@@ -1013,17 +1013,13 @@ const buildCategoryHierarchy = (categoriesRaw) => {
             }
             return a.name.localeCompare(b.name);
         });
-        
+
         for (const node of nodes) {
-            if (node._visited && !flattenedList.find(n => n.id === node.id)) {
-            }
-            node._visited = true;
             node.depth = depth;
             flattenedList.push(node);
 
-            if (expandedCategories.value.has(node.id) && node.children && node.children.length > 0) {
+            if (expandedCategories.value.has(node.id) && node.children && node.children.length > 0)
                 flatten(node.children, depth + 1);
-            }
         }
     }
 
@@ -1031,14 +1027,14 @@ const buildCategoryHierarchy = (categoriesRaw) => {
     rootNodes.forEach(rn => rn.hasChildren = rn.children && rn.children.length > 0);
 
     flatten(rootNodes, 0);
-    
+
     return flattenedList;
 };
 
 const displayedCategories = computed(() => {
-    if (categories.value && categories.value.length > 0) {
+    if (categories.value && categories.value.length > 0)
         return buildCategoryHierarchy(JSON.parse(JSON.stringify(categories.value)));
-    }
+
     return [];
 });
 </script>

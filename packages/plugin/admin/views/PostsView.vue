@@ -152,15 +152,15 @@
                                 <div v-if="post.authorImage" class="h-5 w-5 rounded-full bg-cover bg-center flex-shrink-0 mr-2 text-white"
                                      :style="{ backgroundImage: `url(${post.authorImage})` }"></div>
                                 <div v-else class="h-5 w-5 rounded-full bg-neutral-600 flex-shrink-0 mr-2"></div>
-                                {{ post.author }}
+                                {{ post.author.name }}
                             </div>
                         </div>
                         <div class="flex items-start">
                             <div class="text-neutral-400 text-sm w-24">Categories:</div>
                             <div class="flex flex-wrap gap-1">
-                                <span v-for="category in post.categories" :key="category"
+                                <span v-for="category in post.categoryNames" :key="category"
                                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
-                                    {{ category?.name }}
+                                    {{ category }}
                                 </span>
                             </div>
                         </div>
@@ -262,7 +262,7 @@
                                                 <div v-if="post.authorImage" class="h-5 w-5 rounded-full bg-cover bg-center flex-shrink-0"
                                                      :style="{ backgroundImage: `url(${post.authorImage})` }"></div>
                                                 <div v-else class="h-5 w-5 rounded-full bg-neutral-600 flex-shrink-0"></div>
-                                                <span class="ml-1.5 text-xs text-neutral-400">{{ post.author }}</span>
+                                                <span class="ml-1.5 text-xs text-neutral-400">{{ post.author.name }}</span>
                                             </div>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                                                 :class="getStatusClass(post.status)">
@@ -285,9 +285,9 @@
                                 </td>
                                 <td class="p-4">
                                     <div class="flex flex-wrap gap-1">
-                                        <span v-for="category in (post.categories || [])" :key="category"
+                                        <span v-for="category in (post.categoryNames || [])" :key="category"
                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
-                                            {{ category?.name }}
+                                            {{ category }}
                                         </span>
                                     </div>
                                 </td>
@@ -885,15 +885,10 @@ async function loadPosts() {
 
         if (response && response.posts) {
             posts.value = response.posts.map(post => {
-                const authorData = response.authors?.find(author =>
-                    author.user === post.author ||
-                    (post.authors && post.authors.includes(author.user))
-                );
-
                 return {
                     ...post,
-                    author: authorData?.name || 'Unknown',
-                    authorImage: authorData?.image || null,
+                    author: post.author || 'Unknown',
+                    authorImage: post.author?.image || null,
                     categories: Array.isArray(post.categories) ? post.categories : [post.categories],
                     categoryNames: Array.isArray(post.categories)
                         ? response.categories
@@ -1564,7 +1559,6 @@ async function processBulkImages() {
 
                 imageProcessingProgress.value.completed++;
             } catch (err) {
-                console.error(`Falha ao processar imagem para o post ${postId}:`, err);
                 const failedResult = {
                     id: postId,
                     title: postsWithUnprocessedImages.value.find(p => p.id === postId)?.title || postId,
@@ -1591,9 +1585,6 @@ async function processBulkImages() {
         } else {
             showNotification('warning', `Processadas ${successCount} de ${selectedPostsForImageProcess.value.length} imagens. ${failedCount} imagens não puderam ser processadas mas foram preservadas.`);
         }
-
-        if (failedImages.length > 0)
-            console.log('Imagens que não puderam ser processadas (preservadas):', failedImages);
 
         imageProcessingLoading.value = false;
         closeBulkImageProcessDialog();

@@ -439,9 +439,7 @@ const findCampaignByDomain = () => {
                     selectedNetworkCampaign.value = matchingNetworkCampaign
             }
         }
-    } catch (err) {
-        console.error('Invalid URL or domain extraction failed:', err)
-    }
+    } catch (err) {}
 }
 
 const generateDeeplink = async () => {

@@ -666,7 +666,6 @@ const handleProfileImageSelect = (event) => {
         img.crossOrigin = "Anonymous"
 
         img.onload = () => {
-            console.log('Image loaded', { width: img.width, height: img.height })
             selectedImage.value = img
             cropModalOpen.value = true
 
@@ -787,7 +786,6 @@ const stopDrag = () => {
     isDragging.value = false
 }
 
-// Initialize crop canvas
 const initCropCanvas = () => {
     if (!cropCanvas.value || !selectedImage.value) return
 
@@ -795,78 +793,56 @@ const initCropCanvas = () => {
     const ctx = canvas.getContext('2d')
     cropContext.value = ctx
 
-    // Set fixed dimensions for the canvas
     canvas.width = 300
     canvas.height = 300
 
-    // Reset zoom and position
     zoomLevel.value = 1
     imagePosition.value = { x: 0, y: 0 }
-
-    // Draw initial image
     drawImageOnCanvas()
 }
 
-// Adjust zoom level
 const adjustZoom = (delta) => {
     zoomLevel.value = Math.max(0.5, Math.min(3, zoomLevel.value + delta))
     drawImageOnCanvas()
 }
 
-// Crop the image and convert to base64
 const cropImage = () => {
     if (!cropCanvas.value || !cropContext.value) return
 
     const canvas = cropCanvas.value
-
-    // Calculate the circle center and radius
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
-    const radius = Math.min(canvas.width, canvas.height) * 0.375 // 3/4 of half the canvas (as per overlay)
+    const radius = Math.min(canvas.width, canvas.height) * 0.375
 
-    // Create a temporary canvas for the circular crop
     const tempCanvas = document.createElement('canvas')
     const tempCtx = tempCanvas.getContext('2d')
 
-    // Set dimensions for output (reasonable size for avatar)
     tempCanvas.width = 400
     tempCanvas.height = 400
 
-    // Draw circular mask
     tempCtx.beginPath()
     tempCtx.arc(tempCanvas.width / 2, tempCanvas.height / 2, tempCanvas.width / 2, 0, Math.PI * 2)
     tempCtx.closePath()
     tempCtx.clip()
 
-    // Scale the source canvas to fit the temp canvas
     const scale = tempCanvas.width / (radius * 2)
 
-    // Draw the source canvas onto the temp canvas
     tempCtx.drawImage(
         canvas,
         centerX - radius, centerY - radius, radius * 2, radius * 2,
         0, 0, tempCanvas.width, tempCanvas.height
     )
 
-    // Convert to base64
     const base64Image = tempCanvas.toDataURL('image/jpeg', 0.9)
-
-    // Update profile
     profile.value.image = base64Image
-
-    // Close modal
     cropModalOpen.value = false
-
-    // Show confirmation
     showNotification('success', 'Profile image updated')
 }
 
-// Form validation
 const validateForm = () => {
     errors.value = {}
     let isValid = true
 
-    // Required fields
     if (!profile.value.name) {
         errors.value.name = 'Name is required'
         isValid = false
@@ -875,7 +851,6 @@ const validateForm = () => {
     return isValid
 }
 
-// Notification
 const showNotification = (type, message) => {
     notification.value = {
         show: true,
@@ -889,68 +864,52 @@ const showNotification = (type, message) => {
     }, notification.value.duration)
 }
 
-// Add wheel event for mouse zoom
 const handleWheel = (e) => {
     e.preventDefault();
-
-    // Determine zoom direction and amount
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-
-    // Apply zoom
     adjustZoom(delta);
 }
 
-// Crop state for cover image
 const startCoverDrag = (e) => {
     isCoverDragging.value = true
 
-    // Get initial position
     if (e.type.includes('mouse')) {
         coverDragStart.value = { x: e.clientX, y: e.clientY }
-    } else { // touch event
+    } else {
         coverDragStart.value = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     }
 }
 
-// Handle drag movement for cover image
 const onCoverDrag = (e) => {
     if (!isCoverDragging.value) return
 
-    // Prevent default to avoid scrolling on touch devices
     e.preventDefault()
 
     let currentX, currentY
     if (e.type.includes('mouse')) {
         currentX = e.clientX
         currentY = e.clientY
-    } else { // touch event
+    } else {
         currentX = e.touches[0].clientX
         currentY = e.touches[0].clientY
     }
 
-    // Calculate the distance moved
     const deltaX = currentX - coverDragStart.value.x
     const deltaY = currentY - coverDragStart.value.y
 
-    // Update image position
     coverImagePosition.value = {
         x: coverImagePosition.value.x + deltaX,
         y: coverImagePosition.value.y + deltaY
     }
 
-    // Update drag start for next movement
     coverDragStart.value = { x: currentX, y: currentY }
-
-    // Redraw canvas
     drawCoverImageOnCanvas()
 }
 
-// Stop dragging for cover image
 const stopCoverDrag = () => {
     isCoverDragging.value = false
 }
 
-// Draw cover image on canvas
 const drawCoverImage = () => {
     if (!coverCropCanvas.value || !profile.value.coverImage) return;
 
@@ -959,32 +918,24 @@ const drawCoverImage = () => {
     const img = new Image();
 
     img.onload = () => {
-        // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Calculate dimensions for centered, zoomed image
         const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * coverZoomLevel.value;
         const scaledWidth = img.width * scale;
         const scaledHeight = img.height * scale;
-
-        // Use imagePosition for x,y coordinates (for dragging)
         const x = coverImagePosition.value.x + (canvas.width - scaledWidth) / 2;
         const y = coverImagePosition.value.y + (canvas.height - scaledHeight) / 2;
 
-        // Draw the image
         ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
     };
 
     img.src = profile.value.coverImage;
 }
 
-// Adjust zoom level for cover image
 const adjustCoverZoom = (delta) => {
     coverZoomLevel.value = Math.max(0.5, Math.min(3, coverZoomLevel.value + delta))
     drawCoverImage()
 }
 
-// Crop cover image and update profile
 const cropCoverImage = () => {
     if (!coverCropCanvas.value || !selectedCoverImage.value || !coverCropContext.value) return
 
@@ -992,26 +943,21 @@ const cropCoverImage = () => {
     const ctx = coverCropContext.value
     const img = selectedCoverImage.value
 
-    // Create a temporary canvas for the crop
     const tempCanvas = document.createElement('canvas')
     const tempCtx = tempCanvas.getContext('2d')
 
-    // Set output dimensions (use reasonable size for web display)
     const outputWidth = 1200
     const outputHeight = 400
 
-    // Set temp canvas size
     tempCanvas.width = outputWidth
     tempCanvas.height = outputHeight
 
-    // Calculate dimensions for centered, zoomed image (same as in drawCoverImageOnCanvas)
     const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * coverZoomLevel.value
     const scaledWidth = img.width * scale
     const scaledHeight = img.height * scale
     const x = coverImagePosition.value.x + (canvas.width - scaledWidth) / 2
     const y = coverImagePosition.value.y + (canvas.height - scaledHeight) / 2
 
-    // Draw only the visible portion of the image directly to the temp canvas
     tempCtx.drawImage(
         img,                         // source image
         -x / scale,                  // source x (adjust for position)
@@ -1022,43 +968,30 @@ const cropCoverImage = () => {
         outputWidth, outputHeight    // destination width, height
     )
 
-    // Convert to base64 with compression
-    const base64Image = tempCanvas.toDataURL('image/jpeg', 0.8) // 0.8 quality for compression
-
-    // Update profile
+    const base64Image = tempCanvas.toDataURL('image/jpeg', 0.8)
     profile.value.coverImage = base64Image
-
-    // Close modal
     coverCropModalOpen.value = false
 
-    // Show confirmation
     showNotification('success', 'Cover image updated')
 }
 
-// Update cover image button handler
 const openCoverImageUpload = () => {
-    // Trigger file input click
     coverImageInput.value.click()
 }
 
-// Handle cover image file selection
 const handleCoverImageSelect = (event) => {
     const file = event.target.files[0]
     if (!file) return
 
-    // Read the selected file
     const reader = new FileReader()
     reader.onload = (e) => {
-        // Create an image object to get dimensions
         const img = new Image()
         img.crossOrigin = "Anonymous"
 
         img.onload = () => {
-            console.log('Cover image loaded', { width: img.width, height: img.height })
             selectedCoverImage.value = img
             coverCropModalOpen.value = true
 
-            // Initialize canvas after modal is open
             setTimeout(() => {
                 initCoverCropCanvas()
             }, 100)

@@ -6,7 +6,8 @@ import {
     AffiliateCouponsContract,
     AffiliateAccountsContract,
     AffiliateCategoriesContract,
-    AffiliateCampaignsNetworksContract
+    AffiliateCampaignsNetworksContract,
+    AffiliateSpecialDatesContract
 } from '../contracts';
 
 import {
@@ -41,6 +42,10 @@ import {
     AffiliateSitemapModule
 } from './sitemap/sitemap.module';
 
+import {
+    AffiliateSpecialDatesModule
+} from './special-dates/special-dates.module';
+
 export const AffiliateModule = new Module('affiliate', {
     contracts: [
         AffiliateNetworksContract,
@@ -48,7 +53,8 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateCouponsContract,
         AffiliateAccountsContract,
         AffiliateCategoriesContract,
-        AffiliateCampaignsNetworksContract
+        AffiliateCampaignsNetworksContract,
+        AffiliateSpecialDatesContract
     ],
     submodules: [
         AffiliateCouponsModule,
@@ -58,6 +64,7 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateNetworkApiModule,
         AffiliateDeeplinkModule,
         AffiliateNetworksModule,
-        AffiliateSitemapModule
+        AffiliateSitemapModule,
+        AffiliateSpecialDatesModule
     ]
 });

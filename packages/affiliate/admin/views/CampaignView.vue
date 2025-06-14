@@ -66,8 +66,22 @@
                         </svg>
                         More
                     </button>
-                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-56 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
                         <div class="py-1">
+                            <button
+                                @click="updateAllCouponCounts"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                                :disabled="updateCouponCountsLoading"
+                            >
+                                <svg v-if="updateCouponCountsLoading" class="animate-spin h-3.5 w-3.5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Update Coupon Counts
+                            </button>
                             <button
                                 @click="exportCampaigns"
                                 class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
@@ -141,18 +155,18 @@
                                 scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider cursor-pointer hover:text-white"
                             >
-                                Name
+                                Campaign Info
                                 <span v-if="filters.sortBy === 'name'" class="ml-1">
                                     {{ filters.sortOrder === 'asc' ? '↑' : '↓' }}
                                 </span>
                             </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
-                                Slug
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider w-20">
+                                Coupons
                             </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
-                                Network
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
+                                SEO
                             </th>
-                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
                                 Active
                             </th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-300 uppercase tracking-wider w-24">
@@ -165,29 +179,62 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400" :title="campaign.id">
                                 {{ campaign.id.substring(0, 6) }}...
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                                <div class="flex items-center">
-                                    <img v-if="campaign.logo" :src="campaign.logo" alt="Campaign logo" class="h-8 w-8 mr-3 rounded-full object-cover" />
-                                    <span>{{ campaign.name }}</span>
-                                    <span v-if="campaign.highlight" class="ml-2 bg-yellow-500 text-xs rounded-full px-2 py-0.5 text-black font-medium">Highlight</span>
+                            <td class="px-6 py-4 text-sm text-white">
+                                <div class="flex items-start space-x-3">
+                                    <img v-if="campaign.logo" :src="campaign.logo" alt="Campaign logo" class="h-10 w-10 mt-0.5 rounded-lg object-cover flex-shrink-0" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <span class="font-medium text-white truncate">{{ campaign.name }}</span>
+                                            <span v-if="campaign.network" class="bg-neutral-700 text-xs rounded px-2 py-1 text-neutral-300 flex-shrink-0">
+                                                {{ getNetworkName(campaign.network) }}
+                                            </span>
+                                            <span v-if="campaign.highlight" class="bg-yellow-500 text-xs rounded-full px-2 py-0.5 text-black font-medium flex-shrink-0">Highlight</span>
+                                        </div>
+                                        <div v-if="campaign.slug">
+                                            <a
+                                                :href="`${baseUrl}/desconto/${campaign.slug}`"
+                                                target="_blank"
+                                                class="text-xs text-blue-400 hover:text-blue-300 font-mono truncate inline-flex items-center group"
+                                                :title="`Ver página da campanha: ${baseUrl}/desconto/${campaign.slug}`"
+                                            >
+                                                /desconto/{{ campaign.slug }}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400 truncate max-w-xs">
-                                <span v-if="campaign.slug" class="font-mono">
-                                    {{ campaign.slug }}
-                                </span>
-                                <span v-else class="text-neutral-500 italic">No slug</span>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-lg font-medium text-white">
+                                        {{ campaign.coupons || 0 }}
+                                    </span>
+                                    <span class="text-xs text-neutral-400">cupons</span>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-neutral-400">
-                                <span
-                                    v-if="campaign.network"
-                                    class="bg-neutral-700 text-xs rounded px-2 py-1"
-                                >
-                                    {{ getNetworkName(campaign.network) }}
-                                </span>
-                                <span v-else class="text-neutral-500 italic">
-                                    No network
-                                </span>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                <div class="flex justify-center">
+                                    <span
+                                        v-if="hasSEOContent(campaign)"
+                                        class="inline-flex items-center justify-center w-6 h-6 bg-green-600 rounded-full"
+                                        title="SEO content filled"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center justify-center w-6 h-6 bg-neutral-600 rounded-full"
+                                        title="SEO content missing"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                 <button
@@ -1066,6 +1113,8 @@ import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue
 
 const affiliateClient = useAffiliateClient()
 const adminClient = useAdminClient()
+const settings = ref(null)
+const baseUrl = computed(() => settings.value["blog.url"])
 
 const campaigns = ref([])
 const loading = ref(true)
@@ -1130,6 +1179,7 @@ const filters = ref({
 
 const aiLoadingMap = ref({});
 const exportLoading = ref(false);
+const updateCouponCountsLoading = ref(false);
 const seoGenerating = ref(false);
 const postGeneratingMap = ref({});
 const showPostPreview = ref(false);
@@ -1150,11 +1200,8 @@ const logoImagePosition = ref({ x: 0, y: 0 })
 
 const showSearchDropdown = ref(false)
 const searchInput = ref(null)
-
-// More actions dropdown state
 const showMoreActionsDropdown = ref(false)
 
-// Import functionality
 const importFileInput = ref(null)
 const showImportProgress = ref(false)
 const importInProgress = ref(false)
@@ -1189,7 +1236,9 @@ const loadCampaigns = async () => {
             apiFilters.searchField = 'name'
         }
 
-        const response = await affiliateClient.campaigns.get(apiFilters)
+                const response = await affiliateClient.campaigns.getAllCampaignsWithCouponCounts ?
+            await affiliateClient.campaigns.getAllCampaignsWithCouponCounts(apiFilters) :
+            await affiliateClient.campaigns.get(apiFilters)
 
         if (response && response.data) {
             campaigns.value = response.data || []
@@ -1424,6 +1473,7 @@ const saveCampaign = async () => {
         });
 
         const campaignData = {
+            ...campaignForm.value,
             name: campaignForm.value.name.trim(),
             url: campaignForm.value.url.trim(),
             logo: campaignForm.value.logo,
@@ -1438,7 +1488,8 @@ const saveCampaign = async () => {
             seoTitle: campaignForm.value.seoTitle || '',
             seoSubtitle: campaignForm.value.seoSubtitle || '',
             seoSmallText: campaignForm.value.seoSmallText || '',
-            seoLongText: campaignForm.value.seoLongText || ''
+            seoLongText: campaignForm.value.seoLongText || '',
+            coupons: campaignForm.value.coupons
         }
 
         if (campaignForm.value.logo && campaignForm.value.logo.startsWith('data:')) {
@@ -1571,6 +1622,12 @@ const toggleSort = (column) => {
 const getNetworkName = (networkId) => {
     const network = availableNetworks.value.find(n => n.id === networkId)
     return network ? network.name : 'Unknown Network'
+}
+
+const hasSEOContent = (campaign) => {
+    return !!(campaign.seoTitle && campaign.seoTitle.trim() &&
+              campaign.seoSmallText && campaign.seoSmallText.trim() &&
+              campaign.seoLongText && campaign.seoLongText.trim())
 }
 
 const addMetadataItem = () => {
@@ -2149,7 +2206,6 @@ const openImportFileDialog = () => {
     importFileInput.value.click();
 }
 
-// Handle JSON file selection
 const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -2259,7 +2315,6 @@ const processCampaigns = async (campaigns) => {
     }
 }
 
-// Cancel the import process
 const cancelImport = () => {
     if (importInProgress.value) {
         importCancelled.value = true;
@@ -2268,7 +2323,6 @@ const cancelImport = () => {
     }
 }
 
-// Close import dialog
 const closeImportDialog = () => {
     showImportProgress.value = false;
     importCancelled.value = false;
@@ -2339,6 +2393,32 @@ const toggleActive = async (campaign) => {
     }
 }
 
+const updateAllCouponCounts = async () => {
+    try {
+        updateCouponCountsLoading.value = true;
+        showNotification('info', 'Starting coupon count update for all campaigns...');
+
+        const response = await affiliateClient.campaigns.updateAllCampaignsCouponCount();
+
+        if (response && response.success) {
+            showNotification(
+                'success',
+                `Coupon counts updated successfully! ${response.updated} campaigns updated, ${response.errors || 0} errors.`
+            );
+
+            await loadCampaigns();
+        } else {
+            showNotification('error', response?.message || 'Failed to update coupon counts');
+        }
+    } catch (err) {
+        console.error('Failed to update coupon counts:', err);
+        showNotification('error', err.message || 'Failed to update coupon counts');
+    } finally {
+        updateCouponCountsLoading.value = false;
+        showMoreActionsDropdown.value = false;
+    }
+};
+
 const exportCampaigns = async () => {
     try {
         exportLoading.value = true;
@@ -2367,17 +2447,17 @@ const exportCampaigns = async () => {
     }
 }
 
-onMounted(() => {
+onMounted(async () => {
+    settings.value = await adminClient.settings.get();
+
     document.addEventListener('click', (event) => {
         const target = event.target
-        if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value) {
-            showSearchDropdown.value = false
-        }
 
-        // Handle more actions dropdown
-        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value) {
+        if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value)
+            showSearchDropdown.value = false
+
+        if (!target.closest('[data-more-actions-toggle]') && showMoreActionsDropdown.value)
             showMoreActionsDropdown.value = false
-        }
     })
 
     loadCampaigns()
@@ -2385,16 +2465,11 @@ onMounted(() => {
     loadCategories()
 })
 
-// Add this to the script section, somewhere before the saveCampaign method
 const cleanDomain = () => {
     if (campaignForm.value.domain) {
-        // Remove http:// or https:// protocol
         let cleanedDomain = campaignForm.value.domain.replace(/^https?:\/\//, '');
-        // Remove www.
         cleanedDomain = cleanedDomain.replace(/^www\./, '');
-        // Remove trailing slashes
         cleanedDomain = cleanedDomain.replace(/\/+$/, '');
-
         campaignForm.value.domain = cleanedDomain;
     }
 }

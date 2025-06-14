@@ -100,117 +100,57 @@ export class PostsPublicService {
             select: [
                 "id", "title", "slug", "content", "status", "autoPublishAt",
                 "authors", "author", "categories", "featureImage", "publishedAt",
-                "updatedAt", "createdAt", "comments", "views"
+                "updatedAt", "createdAt", "comments", "views", "tags", "excerpt",
+                "categories"
             ],
             order: {
                 publishedAt: "DESC",
                 status: "ASC",
                 autoPublishAt: "DESC",
-
             }
         });
 
         let authors: any[] = [];
         let categories: any[] = [];
 
+        const categoriesData = await Repository.findAll(CategoriesEntity, {
+            limit: 100
+        }, [], {
+            select: [ "id", "name", "slug", "description" ]
+        });
+
+        const authorsData = await Repository.findAll(ProfilesEntity, {
+            limit: 100
+        }, [], {
+            select: [
+                'id', 'user', 'name', 'slug', 'image', 'coverImage',
+                'bio', 'website', 'location', 'facebook', 'twitter', 'locale',
+                'visibility', 'metaTitle', 'metaDescription', 'lastSeen',
+                'commentNotifications', 'mentionNotifications', 'recommendationNotifications'
+            ]
+        });
+
         if(posts){
             let userIdsIn: string[] = [];
-            let categoryIdsIn: string[] = [];
 
             for (const post of posts.data) {
                 if (post.status === 'cron' && post.autoPublishAt)
                     post.scheduledPublishDate = new Date(post.autoPublishAt).toLocaleString();
 
-                userIdsIn = [...userIdsIn, ...post.authors];
-
                 if(post.author !== "current-user-id")
                     userIdsIn.push(post.author);
 
-                if(post.categories && post.categories.length > 0){
-                    categoryIdsIn = [...categoryIdsIn, ...post.categories];
-
-                    const categoriesData = await Repository.findAll(CategoriesEntity, {
-                        id: In(post.categories),
-                        limit: 100
-                    }, [], {
-                        select: [ "id", "name", "slug", "description" ]
-                    });
-
-                    post.categories = (categoriesData) ? categoriesData.data : [];
-                }
-
-                if(post.featureImage){
-                    post.featureImage = await this.processImageIfNeeded(
-                        post.featureImage,
-                        "webp", 
-                        1200, 
-                        675, 
-                        80,
-                        "",
-                        ""
-                    );
-                }
+                if(post.author)
+                    post.author = authorsData?.data?.find((author: any) => author.user === post.author);
             }
-
-            //@ts-ignore
-            const usersIn = [...new Set(userIdsIn)];
-            //@ts-ignore
-            const categoryIn = [...new Set(categoryIdsIn)];
-
-            const authorsData = await Repository.findAll(ProfilesEntity, {
-                user: In(usersIn),
-                limit: 100
-            }, [], {
-                select: [
-                    'id', 'user', 'name', 'slug', 'image', 'coverImage',
-                    'bio', 'website', 'location', 'facebook', 'twitter', 'locale',
-                    'visibility', 'metaTitle', 'metaDescription', 'lastSeen',
-                    'commentNotifications', 'mentionNotifications', 'recommendationNotifications'
-                ]
-            });
-
-            if(authorsData){
-                for(const author of authorsData.data){
-                    author.image = await this.processImageIfNeeded(
-                        author.image,
-                        "webp", 
-                        128, 
-                        128, 
-                        80,
-                        author.name,
-                        author.name
-                    );
-
-                    author.coverImage = await this.processImageIfNeeded(
-                        author.coverImage,
-                        "webp", 
-                        1024, 
-                        300, 
-                        80,
-                        author.name,
-                        author.name
-                    );
-                }
-            }
-
-            authors = (authorsData) ? authorsData.data : [];
-
-            const categoriesData = await Repository.findAll(CategoriesEntity, {
-                id: In(categoryIn),
-                limit: 100
-            }, [], {
-                select: [ "id", "name", "slug", "description" ]
-            });
-
-            categories = (categoriesData) ? categoriesData.data : [];
         }
 
         return {
             posts: (posts) ? posts.data : [],
             count: (posts) ? posts.count : 0,
             pagination: (posts) ? posts.pagination : null,
-            authors,
-            categories
+            authors: authorsData?.data,
+            categories: categoriesData?.data
         };
     }
 
@@ -261,7 +201,8 @@ export class PostsPublicService {
             select: [
                 "id", "title", "slug",
                 "authors", "author", "featureImage", "publishedAt",
-                "updatedAt", "createdAt", "comments", "views"
+                "updatedAt", "createdAt", "comments", "views", "tags", "excerpt",
+                "categories"
             ],
             order: {
                 publishedAt: "DESC",
@@ -303,9 +244,9 @@ export class PostsPublicService {
                 if(post.featureImage){
                     post.featureImage = await this.processImageIfNeeded(
                         post.featureImage,
-                        "webp", 
-                        1200, 
-                        675, 
+                        "webp",
+                        1200,
+                        675,
                         80,
                         "",
                         ""
@@ -334,9 +275,9 @@ export class PostsPublicService {
                 for(const author of authorsData.data){
                     author.image = await this.processImageIfNeeded(
                         author.image,
-                        "webp", 
-                        128, 
-                        128, 
+                        "webp",
+                        128,
+                        128,
                         80,
                         author.name,
                         author.name
@@ -344,9 +285,9 @@ export class PostsPublicService {
 
                     author.coverImage = await this.processImageIfNeeded(
                         author.coverImage,
-                        "webp", 
-                        1024, 
-                        300, 
+                        "webp",
+                        1024,
+                        300,
                         80,
                         author.name,
                         author.name
@@ -1800,19 +1741,19 @@ export class PostsPublicService {
      * @returns URL da imagem processada ou a original se já for uma URL
      */
     private async processImageIfNeeded(
-        imageData: string | null | undefined, 
-        format: string = "webp", 
-        width: number, 
-        height: number, 
+        imageData: string | null | undefined,
+        format: string = "webp",
+        width: number,
+        height: number,
         quality: number = 80,
         alt: string = "",
         caption: string = ""
     ): Promise<string | null | undefined> {
         if (!imageData) return imageData;
-        
+
         // Se a imagem já for uma URL, não reprocessa
         if (imageData.startsWith('http')) return imageData;
-        
+
         return await this.mediasService.getImageUrl(
             imageData,
             format,

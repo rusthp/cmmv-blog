@@ -15,6 +15,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+const ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif'
+];
+
 @Service('blog_images')
 export class ImagesService {
     private readonly logger = new Logger("ImagesService");
@@ -190,5 +198,169 @@ export class ImagesService {
             this.logger.error(`Erro ao processar edição de imagem: ${error}`);
             throw new Error('Falha ao processar as operações de edição de imagem');
         }
+    }
+
+    /**
+     * Process image with full validation and conversion from base64
+     * @param imageBase64 Base64 image string
+     * @param operations Edit operations to apply
+     * @returns Processed image data with base64 result
+     */
+    async processImageFromBase64(
+        imageBase64: string,
+        operations: {
+            crop?: { left: number; top: number; width: number; height: number; };
+            resize?: { width?: number; height?: number; fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'; };
+            erase?: { left: number; top: number; width: number; height: number; };
+        }
+    ) {
+        if (!imageBase64)
+            throw new Error('Nenhuma imagem foi enviada');
+
+        const imageBuffer = this.base64ToBuffer(imageBase64);
+        const mimeType = this.getMimeTypeFromBase64(imageBase64);
+        const processedBuffer = await this.processImageEdit(imageBuffer, operations || {});
+        const base64Image = processedBuffer.toString('base64');
+
+        return {
+            success: true,
+            processedImage: `data:${mimeType};base64,${base64Image}`
+        };
+    }
+
+    /**
+     * Erase image area with full validation and conversion from base64
+     * @param imageBase64 Base64 image string
+     * @param left Left position
+     * @param top Top position
+     * @param width Width of area
+     * @param height Height of area
+     * @returns Processed image data with base64 result
+     */
+    async eraseImageAreaFromBase64(
+        imageBase64: string,
+        left: number,
+        top: number,
+        width: number,
+        height: number
+    ) {
+        if (!imageBase64)
+            throw new Error('Nenhuma imagem foi enviada');
+
+        const imageBuffer = this.base64ToBuffer(imageBase64);
+        const mimeType = this.getMimeTypeFromBase64(imageBase64);
+
+        const maskParams = {
+            left: left || 0,
+            top: top || 0,
+            width: width || 100,
+            height: height || 100
+        };
+
+        const processedBuffer = await this.eraseImageArea(imageBuffer, maskParams);
+        const base64Image = processedBuffer.toString('base64');
+
+        return {
+            success: true,
+            processedImage: `data:${mimeType};base64,${base64Image}`
+        };
+    }
+
+    /**
+     * Crop image with full validation and conversion from base64
+     * @param imageBase64 Base64 image string
+     * @param left Left position
+     * @param top Top position
+     * @param width Width of crop
+     * @param height Height of crop
+     * @returns Processed image data with base64 result
+     */
+    async cropImageFromBase64(
+        imageBase64: string,
+        left: number,
+        top: number,
+        width: number,
+        height: number
+    ) {
+        if (!imageBase64)
+            throw new Error('Nenhuma imagem foi enviada');
+
+        const imageBuffer = this.base64ToBuffer(imageBase64);
+        const mimeType = this.getMimeTypeFromBase64(imageBase64);
+
+        const cropParams = {
+            left: left || 0,
+            top: top || 0,
+            width: width || 100,
+            height: height || 100
+        };
+
+        const processedBuffer = await this.cropImage(imageBuffer, cropParams);
+        const base64Image = processedBuffer.toString('base64');
+
+        return {
+            success: true,
+            processedImage: `data:${mimeType};base64,${base64Image}`
+        };
+    }
+
+    /**
+     * Resize image with full validation and conversion from base64
+     * @param imageBase64 Base64 image string
+     * @param width New width
+     * @param height New height
+     * @param fit Resize fit mode
+     * @returns Processed image data with base64 result
+     */
+    async resizeImageFromBase64(
+        imageBase64: string,
+        width?: number,
+        height?: number,
+        fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
+    ) {
+        if (!imageBase64)
+            throw new Error('Nenhuma imagem foi enviada');
+
+        const imageBuffer = this.base64ToBuffer(imageBase64);
+        const mimeType = this.getMimeTypeFromBase64(imageBase64);
+
+        const resizeParams = {
+            width: width,
+            height: height,
+            fit: fit || 'cover'
+        };
+
+        const processedBuffer = await this.resizeImage(imageBuffer, resizeParams);
+        const base64Image = processedBuffer.toString('base64');
+
+        return {
+            success: true,
+            processedImage: `data:${mimeType};base64,${base64Image}`
+        };
+    }
+
+    /**
+     * Convert a base64 string to Buffer
+     * @param base64String Base64 image string, may include data:image/... prefix
+     * @returns Buffer with binary image data
+     */
+    private base64ToBuffer(base64String: string): Buffer {
+        const base64Data = base64String.includes(';base64,')
+            ? base64String.split(';base64,')[1]
+            : base64String;
+
+        return Buffer.from(base64Data, 'base64');
+    }
+
+    /**
+     * Extract MIME type from a base64 string
+     * @param base64String Base64 image string with data:image/... prefix
+     * @returns MIME type of the image
+     */
+    private getMimeTypeFromBase64(base64String: string): string {
+        if (base64String.includes('data:') && base64String.includes(';base64,'))
+            return base64String.split(';base64,')[0].split(':')[1];
+
+        return 'image/jpeg'; // Default fallback
     }
 }

@@ -30,26 +30,66 @@ export class ThemesPublicService {
      * @returns List of themes
      */
     async getInstalledThemes() {
-        const themeCurrentName = Config.get("blog.theme", "default");
-        const themes = await fetch(`${process.env.FRONTEND_URL}/themas`);
-        const themeList: any[] = await themes.json();
-        let themesData: any[] = [];
+        try {
+            const themeCurrentName = Config.get("blog.theme", "default");
 
-        themeList?.map(theme => {
-            themesData.push({
-                namespace: theme.namespace,
-                name: theme.name,
-                active: (theme.name.toLowerCase() === themeCurrentName.toLowerCase()),
-                description: theme.description,
-                author: theme.author,
-                version: theme.version,
-                preview: theme.preview,
+            // Garantir que a URL tenha um protocolo válido
+            let frontendUrl = process.env.FRONTEND_URL || '';
+            if (frontendUrl && !frontendUrl.startsWith('http')) {
+                frontendUrl = `http://${frontendUrl}`;
+            }
+
+            // Verificar se temos uma URL válida
+            if (!frontendUrl) {
+                console.warn('FRONTEND_URL not defined, returning default theme only');
+                return {
+                    data: [{
+                        namespace: 'default',
+                        name: 'Default',
+                        active: true,
+                        description: 'Default theme',
+                        author: 'CMMV',
+                        version: '1.0.0',
+                        preview: null,
+                    }]
+                };
+            }
+
+            const themes = await fetch(`${frontendUrl}/themas`);
+            const themeList: any[] = await themes.json();
+            let themesData: any[] = [];
+
+            themeList?.map(theme => {
+                themesData.push({
+                    namespace: theme.namespace,
+                    name: theme.name,
+                    active: (theme.name.toLowerCase() === themeCurrentName.toLowerCase()),
+                    description: theme.description,
+                    author: theme.author,
+                    version: theme.version,
+                    preview: theme.preview,
+                });
+
+                return theme;
             });
 
-            return theme;
-        });
+            return { data: themesData };
+        } catch (error) {
+            console.error('Error fetching themes:', error);
 
-        return { data: themesData };
+            // Retornar pelo menos o tema padrão para não quebrar a interface
+            return {
+                data: [{
+                    namespace: 'default',
+                    name: 'Default',
+                    active: true,
+                    description: 'Default theme',
+                    author: 'CMMV',
+                    version: '1.0.0',
+                    preview: null,
+                }]
+            };
+        }
     }
 
     /**
@@ -92,19 +132,30 @@ export class ThemesPublicService {
      * @returns {Promise<{ message: string }>}
      */
     async setActiveTheme(themeName: string) {
-        Config.set("blog.theme", themeName.toLowerCase());
-        await this.settingsService.updateSetting("blog.theme", themeName.toLowerCase());
-        const response = await fetch(`${process.env.FRONTEND_URL}/set-thema`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.API_SIGNATURE}`
-            },
-            body: JSON.stringify({
-                theme: themeName.toLowerCase()
-            })
-        });
+        try {
+            Config.set("blog.theme", themeName.toLowerCase());
+            await this.settingsService.updateSetting("blog.theme", themeName.toLowerCase());
 
-        return { message: "Theme set as active" };
+            let frontendUrl = process.env.FRONTEND_URL || '';
+            if (frontendUrl && !frontendUrl.startsWith('http'))
+                frontendUrl = `http://${frontendUrl}`;
+
+            if (frontendUrl) {
+                await fetch(`${frontendUrl}/set-thema`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.API_SIGNATURE}`
+                    },
+                    body: JSON.stringify({
+                        theme: themeName.toLowerCase()
+                    })
+                });
+            }
+
+            return { message: "Theme set as active" };
+        } catch (error) {
+            return { message: "Theme set as active (frontend sync failed)" };
+        }
     }
 }

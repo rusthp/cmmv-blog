@@ -4,3 +4,4 @@ export * from "./affiliate-networks.contract";
 export * from "./affiliate-coupons.contract";
 export * from "./affiliate-categories.contract";
 export * from "./affiliate-campaigns-networks.contract";
+export * from "./affiliate-special-dates.contract";

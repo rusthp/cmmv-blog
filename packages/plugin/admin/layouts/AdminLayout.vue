@@ -283,7 +283,7 @@ const switchWhitelabel = (whitelabel) => {
     currentWhitelabel.value = whitelabel
     localStorage.setItem('currentWhitelabelId', whitelabel.id)
     whitelabelDropdownOpen.value = false
-    window.location = window.location.href
+    window.location = window.location.origin
 }
 
 const handleClickOutside = (event) => {
@@ -298,7 +298,7 @@ const handleFaviconError = (event) => {
 
 const logout = () => {
     api.session.logout()
-    window.location = window.location.href
+    window.location = window.location.origin
 }
 
 onMounted(async () => {

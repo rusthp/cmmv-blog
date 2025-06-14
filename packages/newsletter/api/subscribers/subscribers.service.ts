@@ -13,13 +13,11 @@ export class NewsletterSubscribersService {
     async subscribe(data: { email: string; name?: string; source?: string }) {
         const NewsletterSubscribersEntity = Repository.getEntity("NewsletterSubscribersEntity");
 
-        // Check if email already exists
         const existingSubscriber = await Repository.findOne(NewsletterSubscribersEntity, {
             email: data.email.toLowerCase().trim()
         });
 
         if (existingSubscriber) {
-            // If already exists but inactive, reactivate
             if (!existingSubscriber.active) {
                 await Repository.update(NewsletterSubscribersEntity, existingSubscriber.id, {
                     active: true,
@@ -30,8 +28,7 @@ export class NewsletterSubscribersService {
             return { success: true, message: "Already subscribed" };
         }
 
-        // Create new subscriber
-        const subscriber = await Repository.insert(NewsletterSubscribersEntity, {
+        await Repository.insert(NewsletterSubscribersEntity, {
             email: data.email.toLowerCase().trim(),
             name: data.name || null,
             source: data.source || "website",
@@ -49,14 +46,13 @@ export class NewsletterSubscribersService {
      */
     async unsubscribe(email: string) {
         const NewsletterSubscribersEntity = Repository.getEntity("NewsletterSubscribersEntity");
-        
+
         const subscriber = await Repository.findOne(NewsletterSubscribersEntity, {
             email: email.toLowerCase().trim()
         });
 
-        if (!subscriber) {
+        if (!subscriber)
             return { success: false, message: "Email not found in our subscriber list" };
-        }
 
         await Repository.update(NewsletterSubscribersEntity, subscriber.id, {
             active: false
@@ -64,4 +60,4 @@ export class NewsletterSubscribersService {
 
         return { success: true, message: "Successfully unsubscribed" };
     }
-} 
+}

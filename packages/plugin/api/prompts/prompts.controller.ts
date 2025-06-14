@@ -15,5 +15,4 @@ import {
 @Controller("blog")
 export class PromptsControllerTools {
     constructor(private readonly promptsService: PromptsServiceTools){}
-
 }

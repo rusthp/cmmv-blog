@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/rss-aggregation",
-    "version": "0.0.1",
+    "version": "0.1.45",
     "description": "RSS Aggregation package for CMMV",
     "scripts": {
         "build": "tsup"
@@ -10,15 +10,10 @@
         "typescript": "^5.8.2"
     },
     "dependencies": {
+        "@cmmv/blog": "workspace:plugin",
         "@cmmv/ai-content": "workspace:ai-content",
         "@cmmv/auth": "latest",
-        "@cmmv/blog": "workspace:plugin",
         "@cmmv/core": "latest",
-        "@cmmv/http": "latest",
-        "@dagrejs/dagre": "^1.1.4",
-        "@vue-flow/background": "^1.3.2",
-        "@vue-flow/controls": "^1.1.2",
-        "@vue-flow/core": "^1.45.0",
-        "@vue-flow/minimap": "^1.5.3"
+        "@cmmv/http": "latest"
     }
 }
