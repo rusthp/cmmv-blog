@@ -591,7 +591,7 @@ export class BackupService {
                             if (storageType && (storageType === 'spaces' || storageType === 's3')) {
                                 try {
                                     const uploadResult = await blogStorageService.uploadFile({
-                                        buffer: imageBuffer,
+                                        buffer: Buffer.from(imageBuffer),
                                         originalname: filename,
                                         mimetype: mediaRecord.format ? `image/${mediaRecord.format}` : 'image/jpeg'
                                     });
@@ -626,7 +626,7 @@ export class BackupService {
                                 if (storageType && (storageType === 'spaces' || storageType === 's3')) {
                                     try {
                                         const uploadResult = await blogStorageService.uploadFile({
-                                            buffer: thumbnailBuffer,
+                                            buffer: Buffer.from(thumbnailBuffer),
                                             originalname: thumbnailFilename,
                                             mimetype: 'image/webp'
                                         });

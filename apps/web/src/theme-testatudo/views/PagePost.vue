@@ -678,18 +678,15 @@ const adSettings = computed(() => {
     return result;
 });
 
-// Helper to get appropriate ad HTML based on position
 const getAdHtml = (position) => {
     if (!adSettings.value.enableAds) return '';
 
-    // Check if position is enabled
     const positionSetting = `articlePage${position.charAt(0).toUpperCase() + position.slice(1)}`;
-    if (positionSetting in adSettings.value && !adSettings.value[positionSetting]) {
+
+    if (positionSetting in adSettings.value && !adSettings.value[positionSetting])
         return '';
-    }
 
     if (adSettings.value.enableAdSense) {
-        // Map position to the correct AdSense setting key
         let adSenseSetting = '';
         switch (position) {
             case 'header':
@@ -726,7 +723,6 @@ const getAdHtml = (position) => {
     }
 
     if (adSettings.value.enableCustomAds) {
-        // Map position to the correct custom ad setting key
         let customSetting = '';
         switch (position) {
             case 'header':
@@ -1301,6 +1297,8 @@ const loadAdScripts = () => {
                         script.src = scriptSrc;
                         script.crossOrigin = "anonymous";
                         head.appendChild(script);
+                    } else {
+                        console.error('Could not extract AdSense script URL from:', adSettings.value.adSenseAutoAdsCode);
                     }
                 } catch (e) {
                     console.error('Error parsing AdSense code:', e);

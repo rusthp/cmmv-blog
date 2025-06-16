@@ -21,7 +21,7 @@ export const rssFeedRoutes: RouteRecordRaw[] = [
 
 useNavbar().addItems([
     {
-        label: 'Channels',
+        label: 'RSS',
         icon: 'fas fa-rss',
         to: '/feed/channels',
         group: 'Feeds'

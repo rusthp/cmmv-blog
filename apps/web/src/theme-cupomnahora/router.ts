@@ -80,6 +80,11 @@ export function createRouter() {
                         path: '/blog',
                         name: 'Blog',
                         component: () => import('./views/PageBlog.vue')
+                    },
+                    {
+                        path: '/ofertas/:slug',
+                        name: 'SpecialDate',
+                        component: () => import('./views/PageSpecialDate.vue')
                     }
                 ]
             }

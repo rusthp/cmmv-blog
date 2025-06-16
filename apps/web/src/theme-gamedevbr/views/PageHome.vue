@@ -459,9 +459,6 @@
             </div>
         </div>
     </div>
-
-        <!-- Taboola JS Code -->
-    <div v-if="adSettings.enableAds && adSettings.enableTaboolaAds && adSettings.taboolaJsCode" v-html="adSettings.taboolaJsCode"></div>
 </template>
 
 <script setup lang="ts">
@@ -713,17 +710,6 @@ const loadPosts = async () => {
             };
 
             hasMorePosts.value = posts.value.length < response.count;
-
-            if (!categories.value.length) {
-                try {
-                    const categoriesResponse = await blogAPI.categories.getAll();
-                    if (categoriesResponse) {
-                        categories.value = categoriesResponse;
-                    }
-                } catch (err) {
-                    console.error('Failed to load categories:', err);
-                }
-            }
         }
     } catch (err: any) {
         console.error('Failed to load posts:', err);

@@ -25,16 +25,16 @@ export const accessControlRoutes: RouteRecordRaw[] = [
 
 useNavbar().addItems([
     {
-        label: 'Users',
-        icon: 'fas fa-users',
-        to: '/access/users',
-        group: 'Access'
-    },
-    {
         label: 'Groups',
         icon: 'fas fa-user-friends',
         to: '/access/groups',
-        group: 'Access'
+        group: 'Settings'
+    },
+    {
+        label: 'Users',
+        icon: 'fas fa-users',
+        to: '/access/users',
+        group: 'Settings'
     }
 ])
 

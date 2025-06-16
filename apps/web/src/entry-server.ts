@@ -10,6 +10,7 @@ import { useCategoriesStore } from "./store/categories.js";
 import { usePostsStore } from './store/posts.js';
 import { useMostAccessedPostsStore } from './store/mostaccessed.js';
 import { useCouponsStore } from './store/coupons.js';
+import { useSpecialDatesStore } from './store/specialdates.js';
 
 import App from './App.vue';
 
@@ -21,6 +22,7 @@ let postsData: any;
 let mostAccessedPostsData: any;
 let featuredCouponsData: any;
 let top25CouponsData: any;
+let specialDatesData: any;
 
 export async function setup(){
     const urlQueries = new URLSearchParams({
@@ -35,6 +37,7 @@ export async function setup(){
     const categories = await fetch(`${env.VITE_API_URL}/blog/categories`);
     const posts = await fetch(`${env.VITE_API_URL}/blog/posts?${urlQueries}`);
     const mostAccessedPosts = await fetch(`${env.VITE_API_URL}/blog/posts/most-accessed`);
+    const specialDates = await fetch(`${env.VITE_API_URL}/affiliate/special-dates`);
 
     if (!settings.ok)
         throw new Error('Failed to fetch settings');
@@ -46,6 +49,16 @@ export async function setup(){
     categoriesData = await categories.json();
     postsData = await posts.json();
     mostAccessedPostsData = await mostAccessedPosts.json();
+
+    if (specialDates.ok) {
+        try {
+            specialDatesData = await specialDates.json();
+        } catch (error) {
+            specialDatesData = { data: [] };
+        }
+    } else {
+        specialDatesData = { data: [] };
+    }
 }
 
 export async function render(url: string) {
@@ -68,6 +81,7 @@ export async function render(url: string) {
         const postsStore = usePostsStore();
         const mostAccessedPostsStore = useMostAccessedPostsStore();
         const couponsStore = useCouponsStore();
+        const specialDatesStore = useSpecialDatesStore();
 
         settingsStore.setSettings(settingsData);
         categoriesStore.setCategories(categoriesData);
@@ -75,6 +89,7 @@ export async function render(url: string) {
         mostAccessedPostsStore.setMostAccessedPosts(mostAccessedPostsData);
         couponsStore.setFeaturedCoupons(featuredCouponsData);
         couponsStore.setTop25Coupons(top25CouponsData);
+        specialDatesStore.setSpecialDates(specialDatesData);
 
         const { router } = await useTheme();
         router.push(url);
@@ -114,7 +129,8 @@ export async function render(url: string) {
             posts: postsData.result,
             mostAccessedPosts: mostAccessedPostsData,
             featuredCoupons: featuredCouponsData,
-            top25Coupons: top25CouponsData
+            top25Coupons: top25CouponsData,
+            specialDates: specialDatesData
         }
     } catch (e: any) {
         console.error('Render error:', e);

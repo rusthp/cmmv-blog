@@ -333,7 +333,7 @@
                                     : 'border-transparent text-neutral-400 hover:text-neutral-300'
                             ]"
                         >
-                            Basic Information
+                            Basic
                         </button>
                         <button
                             @click="activeTab = 'extra'"
@@ -356,6 +356,17 @@
                             ]"
                         >
                             SEO
+                        </button>
+                        <button
+                            @click="activeTab = 'references'"
+                            :class="[
+                                'pb-2 px-1 text-sm font-medium transition-colors border-b-2',
+                                activeTab === 'references'
+                                    ? 'border-blue-500 text-blue-400'
+                                    : 'border-transparent text-neutral-400 hover:text-neutral-300'
+                            ]"
+                        >
+                            References
                         </button>
                     </div>
                 </div>
@@ -755,6 +766,122 @@
                                 <p v-if="formErrors.seoLongText" class="mt-1 text-sm text-red-500">{{ formErrors.seoLongText }}</p>
                             </div>
                         </div>
+
+                        <!-- References Tab -->
+                        <div v-if="activeTab === 'references'">
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-medium text-white">Site References</h3>
+                                    <button
+                                        type="button"
+                                        @click="addSiteReference"
+                                        class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors flex items-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Add Reference
+                                    </button>
+                                </div>
+                                <p class="text-sm text-neutral-400 mb-4">
+                                    Add reference URLs related to this campaign (competitor sites, research sources, etc.)
+                                </p>
+                            </div>
+
+                            <div class="bg-neutral-750 p-4 rounded-md">
+                                <div v-if="campaignForm.sitesRefs.length === 0" class="text-center py-8 text-neutral-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.1a3 3 0 105.656-5.656l-1.1-1.102zM9 12l2 2 4-4" />
+                                    </svg>
+                                    <p class="text-sm">No reference URLs added yet</p>
+                                    <p class="text-xs text-neutral-600 mt-1">Click "Add Reference" to get started</p>
+                                </div>
+
+                                <div v-else class="space-y-3 max-h-[400px] overflow-y-auto">
+                                    <div
+                                        v-for="(reference, index) in campaignForm.sitesRefs"
+                                        :key="index"
+                                        class="bg-neutral-700 p-4 rounded-md border border-neutral-600"
+                                    >
+                                        <div class="flex items-start space-x-3">
+                                            <div class="flex-1 space-y-3">
+                                                <div>
+                                                    <label :for="`refUrl${index}`" class="block text-xs font-medium text-neutral-400 mb-1">URL</label>
+                                                    <input
+                                                        :id="`refUrl${index}`"
+                                                        v-model="reference.url"
+                                                        type="url"
+                                                        class="w-full px-3 py-2 text-sm bg-neutral-600 border border-neutral-500 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        placeholder="https://example.com"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label :for="`refTitle${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Title (Optional)</label>
+                                                    <input
+                                                        :id="`refTitle${index}`"
+                                                        v-model="reference.title"
+                                                        type="text"
+                                                        class="w-full px-3 py-2 text-sm bg-neutral-600 border border-neutral-500 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        placeholder="Reference title or description"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label :for="`refType${index}`" class="block text-xs font-medium text-neutral-400 mb-1">Type</label>
+                                                    <select
+                                                        :id="`refType${index}`"
+                                                        v-model="reference.type"
+                                                        class="w-full px-3 py-2 text-sm bg-neutral-600 border border-neutral-500 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    >
+                                                        <option value="competitor">Competitor</option>
+                                                        <option value="research">Research</option>
+                                                        <option value="inspiration">Inspiration</option>
+                                                        <option value="partner">Partner</option>
+                                                        <option value="other">Other</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col space-y-2 pt-6">
+                                                <button
+                                                    type="button"
+                                                    @click="visitReference(reference.url)"
+                                                    :disabled="!reference.url"
+                                                    class="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white rounded-md transition-colors"
+                                                    title="Visit URL"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    @click="removeSiteReference(index)"
+                                                    class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                                                    title="Remove reference"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="campaignForm.sitesRefs.length > 0" class="mt-4 pt-3 border-t border-neutral-600">
+                                    <div class="flex items-center justify-between text-sm text-neutral-400">
+                                        <span>{{ campaignForm.sitesRefs.length }} reference{{ campaignForm.sitesRefs.length !== 1 ? 's' : '' }} added</span>
+                                        <button
+                                            type="button"
+                                            @click="clearAllReferences"
+                                            class="text-red-400 hover:text-red-300 text-xs"
+                                        >
+                                            Clear all
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="p-6 border-t border-neutral-700 bg-neutral-800 flex justify-end space-x-3">
@@ -1143,7 +1270,9 @@ const campaignForm = ref({
     seoTitle: '',
     seoSubtitle: '',
     seoSmallText: '',
-    seoLongText: ''
+    seoLongText: '',
+    coupons: 0,
+    sitesRefs: []
 })
 const campaignToEdit = ref(null)
 const formErrors = ref({})
@@ -1360,7 +1489,9 @@ const openAddDialog = async () => {
         seoTitle: '',
         seoSubtitle: '',
         seoSmallText: '',
-        seoLongText: ''
+        seoLongText: '',
+        coupons: 0,
+        sitesRefs: []
     }
     formErrors.value = {}
     categorySearch.value = ''
@@ -1397,7 +1528,9 @@ const openEditDialog = async (campaign) => {
         seoTitle: campaign.seoTitle || '',
         seoSubtitle: campaign.seoSubtitle || '',
         seoSmallText: campaign.seoSmallText || '',
-        seoLongText: campaign.seoLongText || ''
+        seoLongText: campaign.seoLongText || '',
+        coupons: campaign.coupons || 0,
+        sitesRefs: parseSitesRefs(campaign.sitesRefs)
     }
     formErrors.value = {}
     categorySearch.value = ''
@@ -1429,7 +1562,9 @@ const closeDialog = () => {
         seoTitle: '',
         seoSubtitle: '',
         seoSmallText: '',
-        seoLongText: ''
+        seoLongText: '',
+        coupons: 0,
+        sitesRefs: []
     }
     formErrors.value = {}
     campaignToEdit.value = null
@@ -1489,7 +1624,8 @@ const saveCampaign = async () => {
             seoSubtitle: campaignForm.value.seoSubtitle || '',
             seoSmallText: campaignForm.value.seoSmallText || '',
             seoLongText: campaignForm.value.seoLongText || '',
-            coupons: campaignForm.value.coupons
+            coupons: campaignForm.value.coupons,
+            sitesRefs: campaignForm.value.sitesRefs.length > 0 ? JSON.stringify(campaignForm.value.sitesRefs) : null
         }
 
         if (campaignForm.value.logo && campaignForm.value.logo.startsWith('data:')) {
@@ -2471,6 +2607,49 @@ const cleanDomain = () => {
         cleanedDomain = cleanedDomain.replace(/^www\./, '');
         cleanedDomain = cleanedDomain.replace(/\/+$/, '');
         campaignForm.value.domain = cleanedDomain;
+    }
+}
+
+// Site References functions
+const addSiteReference = () => {
+    campaignForm.value.sitesRefs.push({
+        url: '',
+        title: '',
+        type: 'competitor'
+    });
+}
+
+const removeSiteReference = (index) => {
+    campaignForm.value.sitesRefs.splice(index, 1);
+}
+
+const clearAllReferences = () => {
+    campaignForm.value.sitesRefs = [];
+    showNotification('info', 'All references cleared');
+}
+
+const visitReference = (url) => {
+    if (url && url.trim()) {
+        window.open(url, '_blank');
+    }
+}
+
+const parseSitesRefs = (sitesRefsJson) => {
+    try {
+        if (!sitesRefsJson) return [];
+
+        const parsed = JSON.parse(sitesRefsJson);
+        if (Array.isArray(parsed)) {
+            return parsed.map(ref => ({
+                url: ref.url || '',
+                title: ref.title || '',
+                type: ref.type || 'competitor'
+            }));
+        }
+        return [];
+    } catch (e) {
+        console.error('Failed to parse sitesRefs:', e);
+        return [];
     }
 }
 </script>

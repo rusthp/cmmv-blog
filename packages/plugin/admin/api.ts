@@ -22,6 +22,7 @@ const ssrLocalStorage: any =
           };
 
 export function useApi() {
+    const env = getEnv('NODE_ENV');
     const router = useRouter()
     const user = ref<any>(null)
     const token = ref<string | null>(ssrLocalStorage.getItem('token') || null)
@@ -67,8 +68,8 @@ export function useApi() {
     const getApiPath = (path: string) => {
         if (currentWhitelabelId.value && whitelabelUrls.value[currentWhitelabelId.value]) {
             const baseUrl = whitelabelUrls.value[currentWhitelabelId.value];
-            return window.location.origin.includes('localhost') ?
-            `${baseUrl}/${path}` : `/proxy?url=${encodeURIComponent(`${baseUrl}/${path}`)}`;
+            return env === 'dev' ?
+            `${baseUrl}/${path}` : `${baseUrl}/${path}`;
         }
 
         return `/api/${path}`;
@@ -107,6 +108,7 @@ export function useApi() {
                     method == 'GET'
                         ? {
                             method: method,
+                            mode: "cors",
                             headers: {
                                 'Content-Type': 'application/json',
                                 Authorization: `Bearer ${token.value}`,
@@ -115,6 +117,7 @@ export function useApi() {
                         }
                         : {
                             method: method,
+                            mode: "cors",
                             headers: {
                                 'Content-Type': 'application/json',
                                 Authorization: `Bearer ${token.value}`,

@@ -30,13 +30,13 @@ useNavbar().addItems([
         label: 'Channels',
         icon: 'fab fa-youtube',
         to: '/ytfeed/channels',
-        group: 'Youtube'
+        group: 'Feeds'
     },
     {
         label: 'Videos',
         icon: 'fas fa-video',
         to: '/ytfeed/videos',
-        group: 'Youtube'
+        group: 'Feeds'
     }
 ])
 

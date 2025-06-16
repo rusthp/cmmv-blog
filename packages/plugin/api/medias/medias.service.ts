@@ -113,9 +113,8 @@ export class MediasService extends AbstractService {
         alt: string = "",
         caption: string = ""
     ) {
-        if (!image) {
+        if (!image)
             throw new Error("No image provided");
-        }
 
         if(image.startsWith("http"))
             return image;
@@ -183,7 +182,7 @@ export class MediasService extends AbstractService {
             const finalMetadata = await sharp(finalImageBuffer).metadata();
 
             const uploadedFile = await blogStorageService.uploadFile({
-                buffer: finalImageBuffer,
+                buffer: Buffer.from(finalImageBuffer),
                 originalname: `${imageHash}.${format}`,
                 mimetype: `image/${format}`
             });
@@ -231,7 +230,7 @@ export class MediasService extends AbstractService {
                 .toBuffer();
 
             const uploadedThumbnail = await storageService.uploadFile({
-                buffer: thumbnailBuffer,
+                buffer: Buffer.from(thumbnailBuffer),
                 originalname: `${imageHash}_thumb.webp`,
                 mimetype: 'image/webp'
             });

@@ -7,44 +7,20 @@ import {
     AffiliateAccountsContract,
     AffiliateCategoriesContract,
     AffiliateCampaignsNetworksContract,
-    AffiliateSpecialDatesContract
+    AffiliateSpecialDatesContract,
+    AffiliateWebscraperContract
 } from '../contracts';
 
-import {
-    AffiliateCouponsModule
-} from './coupons/coupons.module';
-
-import {
-    AffiliateCategoriesModule
-} from './categories/categories.module';
-
-import {
-    AffiliateCampaignsModule
-} from './campaigns/campaigns.module';
-
-import {
-    AffiliateCampaignsNetworksModule
-} from './campaigns-network/campaigns-nentwork.module';
-
-import {
-    AffiliateNetworkApiModule
-} from './network-api/network-api.module';
-
-import {
-    AffiliateDeeplinkModule
-} from './deeplink/deeplink.module';
-
-import {
-    AffiliateNetworksModule
-} from './networks/networks.module';
-
-import {
-    AffiliateSitemapModule
-} from './sitemap/sitemap.module';
-
-import {
-    AffiliateSpecialDatesModule
-} from './special-dates/special-dates.module';
+import { AffiliateCouponsModule } from './coupons/coupons.module';
+import { AffiliateCategoriesModule } from './categories/categories.module';
+import { AffiliateCampaignsModule } from './campaigns/campaigns.module';
+import { AffiliateCampaignsNetworksModule } from './campaigns-network/campaigns-nentwork.module';
+import { AffiliateNetworkApiModule } from './network-api/network-api.module';
+import { AffiliateDeeplinkModule } from './deeplink/deeplink.module';
+import { AffiliateNetworksModule } from './networks/networks.module';
+import { AffiliateSitemapModule } from './sitemap/sitemap.module';
+import { AffiliateSpecialDatesModule } from './special-dates/special-dates.module';
+import { AffiliateWebscraperModule } from './webscraper/webscraper.module';
 
 export const AffiliateModule = new Module('affiliate', {
     contracts: [
@@ -54,7 +30,8 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateAccountsContract,
         AffiliateCategoriesContract,
         AffiliateCampaignsNetworksContract,
-        AffiliateSpecialDatesContract
+        AffiliateSpecialDatesContract,
+        AffiliateWebscraperContract
     ],
     submodules: [
         AffiliateCouponsModule,
@@ -65,6 +42,7 @@ export const AffiliateModule = new Module('affiliate', {
         AffiliateDeeplinkModule,
         AffiliateNetworksModule,
         AffiliateSitemapModule,
-        AffiliateSpecialDatesModule
+        AffiliateSpecialDatesModule,
+        AffiliateWebscraperModule
     ]
 });

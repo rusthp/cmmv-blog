@@ -160,7 +160,7 @@
                             <div class="flex flex-wrap gap-1">
                                 <span v-for="category in post.categoryNames" :key="category"
                                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
-                                    {{ category }}
+                                    {{ category?.name || category }}
                                 </span>
                             </div>
                         </div>
@@ -287,7 +287,7 @@
                                     <div class="flex flex-wrap gap-1">
                                         <span v-for="category in (post.categoryNames || [])" :key="category"
                                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
-                                            {{ category }}
+                                            {{ category?.name || category }}
                                         </span>
                                     </div>
                                 </td>

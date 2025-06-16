@@ -1,0 +1,9 @@
+# Executar version bump antes do commit
+echo "🚀 Running version bump..."
+node tools/version-bump.js
+
+# Adicionar arquivos package.json modificados ao commit
+git add package.json packages/*/package.json apps/*/package.json
+
+# Continuar com outros hooks se existirem
+echo "✅ Version bump completed and files staged"

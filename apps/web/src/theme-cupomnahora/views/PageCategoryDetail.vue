@@ -115,30 +115,30 @@ const relatedCampaigns = computed(() => {
 
     const campaignsInCategory = campaigns.value.filter(campaign => {
         const hasCoupons = campaign.couponCount > 0;
-        
+
         let hasCategory = false;
-        
+
         if (campaign.categories && Array.isArray(campaign.categories)) {
             hasCategory = campaign.categories.includes(category.value.id);
-            
+
             if (!hasCategory) {
-                hasCategory = campaign.categories.some(catId => 
+                hasCategory = campaign.categories.some(catId =>
                     String(catId) === String(category.value.id)
                 );
             }
         }
-        
+
         if (!hasCategory && category.value.name && campaign.name) {
             const categoryName = category.value.name.toLowerCase();
             const campaignName = campaign.name.toLowerCase();
             const campaignDesc = (campaign.description || '').toLowerCase();
-            
+
             if (campaignName.includes(categoryName) || categoryName.includes(campaignName) ||
                 campaignDesc.includes(categoryName)) {
                 hasCategory = true;
             }
         }
-        
+
         return hasCategory && hasCoupons;
     });
 
@@ -190,7 +190,6 @@ const loadData = async () => {
 
         loading.value = false;
     } catch (err: any) {
-        console.error('Erro ao carregar categoria:', err);
         error.value = err.message || 'Erro ao carregar a categoria';
         loading.value = false;
     }

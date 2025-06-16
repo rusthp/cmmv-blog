@@ -147,4 +147,14 @@ export class AffiliateCampaignsContract extends AbstractContract {
         nullable: true
     })
     seoLongText?: string;
+
+    @ContractField({
+        protoType: 'array',
+        objectType: 'string',
+        entityType: 'string',
+        array: true,
+        nullable: true,
+        protoRepeated: true,
+    })
+    sitesRefs?: string[];
 }

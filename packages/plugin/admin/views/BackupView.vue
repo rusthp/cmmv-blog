@@ -4,10 +4,6 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-white">Backup</h1>
             <div class="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                <button @click="refreshCurrentTab" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <i class="fas fa-sync-alt h-3.5 w-3.5 mr-1"></i>
-                    Refresh
-                </button>
                 <button
                     v-if="activeTab === 'database'"
                     @click="createBackup"
@@ -25,6 +21,10 @@
                         <i class="fas fa-save h-3.5 w-3.5 mr-1"></i>
                         Create Database Backup
                     </span>
+                </button>
+                <button @click="refreshCurrentTab" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <i class="fas fa-sync-alt h-3.5 w-3.5 mr-1"></i>
+                    Refresh
                 </button>
             </div>
         </div>

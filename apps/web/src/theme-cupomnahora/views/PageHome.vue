@@ -4,14 +4,14 @@
         <section v-if="posts.length > 0" class="mb-8 mt-4 md:block hidden">
             <!-- Full Layout (default) -->
             <div v-if="coverSettings.layoutType === 'full' || !coverSettings.layoutType" class="bg-white rounded-lg overflow-hidden shadow-md">
-                <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block">
+                <a v-if="coverPosts.full" :href="`/post/${coverPosts.full.slug}`" class="block" :aria-label="coverPosts.full.title">
                     <div class="relative h-[400px]">
                         <img
                             v-if="coverPosts.full && coverPosts.full.featureImage"
-                            :src="getThumbnailUrl(coverPosts.full.featureImage)"
+                            :src="coverPosts.full.featureImage"
                             :data-src="coverPosts.full.featureImage"
                             :alt="coverPosts.full.title"
-                            class="lazy-image w-full h-full object-cover"
+                            class="w-full h-full object-cover"
                             loading="lazy"
                             width="890"
                             height="606"
@@ -48,13 +48,13 @@
                     <div v-for="(post, index) in coverPosts.carousel" :key="post.id"
                             class="absolute w-full h-full transition-opacity duration-500 ease-in-out"
                             :class="{ 'opacity-100': currentCarouselIndex === index, 'opacity-0': currentCarouselIndex !== index }">
-                        <a :href="`/post/${post.slug}`" class="block h-full">
+                        <a :href="`/post/${post.slug}`" class="block h-full" :aria-label="post.title">
                             <img
                                 v-if="post.featureImage"
-                                :src="getThumbnailUrl(post.featureImage)"
+                                :src="post.featureImage"
                                 :data-src="post.featureImage"
                                 :alt="post.title"
-                                class="lazy-image w-full h-full object-cover"
+                                class="w-full h-full object-cover"
                                 loading="lazy"
                                 width="890"
                                 height="606"
@@ -86,14 +86,24 @@
 
                     <!-- Carousel Controls -->
                     <div class="absolute top-0 bottom-0 left-0 flex items-center">
-                        <button @click="prevCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none z-10">
+                        <button
+                            @click="prevCarouselSlide"
+                            aria-label="Voltar"
+                            :title="`Voltar para o post anterior`"
+                            class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-r-md focus:outline-none z-10"
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
                     </div>
                     <div class="absolute top-0 bottom-0 right-0 flex items-center">
-                        <button @click="nextCarouselSlide" class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none z-10">
+                        <button
+                            @click="nextCarouselSlide"
+                            aria-label="Avançar"
+                            :title="`Avançar para o próximo post`"
+                            class="bg-black/30 hover:bg-black/50 text-white p-2 rounded-l-md focus:outline-none z-10"
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
@@ -108,6 +118,7 @@
                             @click="currentCarouselIndex = index"
                             class="w-3 h-3 rounded-full bg-white/50 focus:outline-none"
                             :class="{ 'bg-white': currentCarouselIndex === index }"
+                            :aria-label="`Ir para o post ${index + 1}`"
                         ></button>
                     </div>
                 </div>
@@ -120,10 +131,10 @@
                         <div class="relative h-full">
                             <img
                                 v-if="coverPosts.splitMain && coverPosts.splitMain.featureImage"
-                                :src="getThumbnailUrl(coverPosts.splitMain.featureImage)"
+                                :src="coverPosts.splitMain.featureImage"
                                 :data-src="coverPosts.splitMain.featureImage"
                                 :alt="coverPosts.splitMain.title"
-                                class="lazy-image w-full h-full object-cover"
+                                class="w-full h-full object-cover"
                                 loading="lazy"
                                 width="890"
                                 height="606"
@@ -159,11 +170,13 @@
                             <div class="relative h-full">
                                 <img
                                     v-if="post.featureImage"
-                                    :src="getThumbnailUrl(post.featureImage)"
+                                    :src="post.featureImage"
                                     :data-src="post.featureImage"
                                     :alt="post.title"
-                                    class="lazy-image w-full h-full object-cover"
+                                    class="w-full h-full object-cover"
                                     loading="lazy"
+                                    :title="post.title"
+                                    :aria-label="post.title"
                                 />
                                 <div v-else class="w-full h-full bg-gray-300 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -194,10 +207,10 @@
                         <div class="relative h-[350px]">
                             <img
                                 v-if="post.featureImage"
-                                :src="getThumbnailUrl(post.featureImage)"
+                                :src="post.featureImage"
                                 :data-src="post.featureImage"
                                 :alt="post.title"
-                                class="lazy-image w-full h-full object-cover"
+                                class="w-full h-full object-cover"
                                 loading="lazy"
                                 width="890"
                                 height="606"
@@ -230,12 +243,12 @@
             </div>
         </section>
 
-        <div class="container mx-auto md:px-0 px-2 pb-12">
+        <div class="container mx-auto md:px-0 px-2 pb-12 mt-8 md:mt-0">
             <!-- Lojas em Destaque -->
             <section class="mb-12">
                 <div class="flex items-center justify-between mb-8">
                     <h2 class="text-2xl font-bold text-gray-800">Lojas em Destaque</h2>
-                    <a href="/desconto" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todas</a>
+                    <a href="/desconto" class="text-indigo-600 hover:text-indigo-800 font-medium" aria-label="Ver todas as lojas">Ver todas</a>
                 </div>
 
                 <div v-if="loading" class="flex justify-center items-center py-10">
@@ -243,16 +256,23 @@
                 </div>
 
                 <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <a v-for="campaign in featuredCampaigns.slice(0, 18)" :key="campaign.id" :href="`/desconto/${campaign.slug}`"
-                        class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all">
+                    <a
+                        v-for="campaign in featuredCampaigns.slice(0, 18)"
+                        :key="campaign.id"
+                        :href="`/desconto/${campaign.slug}`"
+                        :aria-label="campaign.name"
+                        :title="campaign.name"
+                        class="store-card bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-center hover:shadow-lg transition-all"
+                    >
                         <div class="text-center">
                             <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
                                 <img v-if="campaign.logo"
-                                     :src="getThumbnailUrl(campaign.logo)"
+                                     :src="campaign.logo"
                                      :data-src="campaign.logo"
                                      :alt="campaign.name"
-                                     class="lazy-image max-w-full max-h-full"
-                                     loading="lazy" width="64" height="64">
+                                     class="max-w-full max-h-full"
+                                     loading="lazy" width="64" height="64"
+                                     :aria-label="campaign.name">
                                 <div v-else class="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-full">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -270,7 +290,7 @@
             <section class="container card-carousel mb-12">
                 <div class="flex items-center justify-between mb-8">
                     <h2 class="text-2xl font-bold text-gray-800">Top cupons</h2>
-                    <a href="#top-25-cupons" class="text-indigo-600 hover:text-indigo-800 font-medium">Ver todos</a>
+                    <a href="#top-25-cupons" class="text-indigo-600 hover:text-indigo-800 font-medium" aria-label="Ver todos os cupons">Ver todos</a>
                 </div>
                 <div id="coupon-cards" class="relative">
                     <div class="overflow-hidden">
@@ -279,14 +299,17 @@
                             <div v-for="coupon in featuredCoupons.slice(0, 10)" :key="coupon.id"
                                 class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-2 flex-shrink-0">
                                 <a :href="coupon.campaignSlug ? `/desconto/${coupon.campaignSlug}` : '#'"
-                                   class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all h-full flex flex-col p-0 block">
+                                   class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all h-full flex flex-col p-0 block"
+                                   :aria-label="coupon.title"
+                                   :title="coupon.title"
+                                >
                                     <div class="p-4 pb-3">
                                         <div class="flex-shrink-0 h-24 flex items-center justify-center">
                                             <img v-if="coupon.campaignLogo"
-                                                 :src="getThumbnailUrl(coupon.campaignLogo)"
+                                                 :src="coupon.campaignLogo"
                                                  :data-src="coupon.campaignLogo"
                                                  :alt="coupon.campaignName"
-                                                 class="lazy-image max-h-20 max-w-full object-contain"
+                                                 class="max-h-20 max-w-full object-contain"
                                                  loading="lazy" width="102" height="80">
                                             <div v-else class="w-20 h-20 bg-gray-200 flex items-center justify-center rounded-md">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -305,21 +328,31 @@
 
                     <!-- Carousel Controls -->
                     <button @click="prevCouponSlide"
-                            class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full w-10 h-10 p-2 z-10 -ml-3 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors">
-                        <i class="fas fa-chevron-left"></i>
+                            aria-label="Voltar"
+                            :title="`Voltar para o cupom anterior`"
+                            class="absolute left-0 top-1/3 -translate-y-1/2 bg-white shadow-md rounded-full w-10 h-10 p-2 z-10 -ml-3 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
 
                     <button @click="nextCouponSlide"
-                            class="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-full w-10 h-10 p-2 z-10 -mr-3 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors">
-                        <i class="fas fa-chevron-right"></i>
+                            aria-label="Avançar"
+                            :title="`Avançar para o próximo cupom`"
+                            class="absolute right-0 top-1/3 -translate-y-1/2 bg-white shadow-md rounded-full w-10 h-10 p-2 z-10 -mr-3 flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
                     </button>
 
                     <!-- Carousel Bullets -->
-                    <div class="flex justify-center mt-6 space-x-2">
-                        <button v-for="i in Math.ceil(Math.min(10, featuredCoupons.length) / couponSlidesVisible)" :key="i"
-                            @click="currentCouponIndex = (i-1) * couponSlidesVisible"
-                            class="w-2.5 h-2.5 rounded-full bg-gray-300 hover:bg-gray-400 focus:outline-none transition-colors"
-                            :class="{'bg-indigo-600': Math.floor(currentCouponIndex / couponSlidesVisible) === i-1}"></button>
+                    <div v-if="Math.min(10, featuredCoupons.length) > couponSlidesVisible" class="flex justify-center mt-6 space-x-2">
+                        <button v-for="i in Math.max(1, Math.min(10, featuredCoupons.length) - couponSlidesVisible + 1)" :key="i"
+                            @click="currentCouponIndex = i - 1"
+                            class="w-2.5 h-2.5 rounded-full bg-gray-300 hover:bg-gray-400 focus:outline-none transition-colors cursor-pointer"
+                            :class="{'bg-indigo-600': currentCouponIndex === i - 1}"
+                            :aria-label="`Ir para a posição ${i}`"
+                        ></button>
                     </div>
                 </div>
             </section>
@@ -344,13 +377,14 @@
                          class="bg-white border border-gray-200 rounded-lg p-4 md:p-6 flex flex-col md:flex-row items-center hover:shadow-lg transition-shadow duration-300">
 
                         <div class="w-24 h-16 md:w-32 md:h-20 flex-shrink-0 mb-4 md:mb-0 md:mr-6 flex items-center justify-center">
-                            <a :href="coupon.campaignSlug ? `/desconto/${coupon.campaignSlug}` : '#'" class="block">
+                            <a :href="coupon.campaignSlug ? `/desconto/${coupon.campaignSlug}` : '#'" class="block" :aria-label="coupon.campaignName">
                                 <img v-if="coupon.campaignLogo"
-                                     :src="getThumbnailUrl(coupon.campaignLogo)"
+                                     :src="coupon.campaignLogo"
                                      :data-src="coupon.campaignLogo"
                                      :alt="coupon.campaignName"
-                                     class="lazy-image max-w-full max-h-full object-contain rounded"
-                                     loading="lazy" width="102" height="80">
+                                     class="max-w-full max-h-full object-contain rounded"
+                                     loading="lazy" width="102" height="80"
+                                     :aria-label="coupon.campaignName">
                                 <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center rounded-md">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -377,13 +411,14 @@
                             <button v-if="coupon.code"
                                 @click="openScratchModal(coupon)"
                                 class="coupon-button group relative w-full h-12 overflow-visible bg-white border border-gray-300 rounded-lg transition-all duration-200 hover:shadow-lg"
+                                :aria-label="coupon.title"
                                 :class="[
                                     new Date(coupon.expiration) < new Date() ?
                                         'border-gray-400 bg-gray-100 expired' :
                                         'border-green-400 hover:border-green-500'
-                                ]">
-
-                                <!-- Área do código completo (sempre visível por baixo) -->
+                                ]"
+                                :title="coupon.title"
+                            >
                                 <div class="absolute inset-0 flex items-center justify-end px-4 z-5"
                                     :class="[new Date(coupon.expiration) < new Date() ?
                                         'bg-gray-100' :
@@ -396,13 +431,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Parte verde "Ver Cupom" que funciona como tampa -->
                                 <div class="coupon-cover absolute inset-0 flex items-center px-4 transition-all duration-200 ease-in-out z-10"
                                     :class="[new Date(coupon.expiration) < new Date() ?
                                         'bg-gray-400' :
                                         'bg-green-600']">
 
-                                    <!-- Texto VER CUPOM -->
                                     <div class="flex items-center text-white">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -436,10 +469,10 @@
                             class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all flex flex-col">
                             <a :href="`/post/${post.slug}`" class="block h-48 overflow-hidden">
                                 <img v-if="post.featureImage"
-                                     :src="getThumbnailUrl(post.featureImage)"
+                                     :src="post.featureImage"
                                      :data-src="post.featureImage"
                                      :alt="post.title"
-                                     class="lazy-image w-full h-full object-cover"
+                                     class="w-full h-full object-cover"
                                      loading="lazy" width="360" height="192">
                                 <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -521,81 +554,6 @@ const couponSlidesVisible = ref(3);
 
 const isScratchModalOpen = ref(false);
 const selectedCouponForScratch = ref<any | null>(null);
-let lazyLoadObserver: IntersectionObserver | null = null;
-
-/**
- * Get thumbnail URL by adding _thumb to the filename and forcing .webp format
- */
-const getThumbnailUrl = (originalUrl: string): string => {
-    if (!originalUrl) return originalUrl;
-
-    if (originalUrl.includes('_thumb')) return originalUrl;
-    if (originalUrl.startsWith('data:')) return originalUrl;
-
-    const lastDotIndex = originalUrl.lastIndexOf('.');
-
-    if (lastDotIndex === -1)
-        return originalUrl + '_thumb.webp';
-
-    const beforeExtension = originalUrl.substring(0, lastDotIndex);
-    return `${beforeExtension}_thumb.webp`;
-};
-
-/**
- * Initialize lazy loading observer
- */
-const initLazyLoading = () => {
-    if (!('IntersectionObserver' in window)) return;
-
-    lazyLoadObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-                const img = entry.target as HTMLImageElement;
-                const fullSrc = img.dataset.src;
-
-                if (fullSrc && fullSrc !== img.src) {
-                    const newImg = new Image();
-                    newImg.onload = () => {
-                        img.src = fullSrc;
-                        img.classList.add('loaded');
-                    };
-                    newImg.onerror = () => {
-                        img.classList.add('error');
-                    };
-                    newImg.src = fullSrc;
-                }
-
-                lazyLoadObserver?.unobserve(img);
-            }
-        });
-    }, {
-        rootMargin: '50px 0px',
-        threshold: 0.1
-    });
-
-    const observeLazyImages = () => {
-        const lazyImages = document.querySelectorAll('img.lazy-image');
-        lazyImages.forEach((img) => {
-            lazyLoadObserver?.observe(img);
-        });
-    };
-
-    setTimeout(observeLazyImages, 100);
-
-    watch([posts, campaigns, featuredCoupons, top25Coupons], () => {
-        setTimeout(observeLazyImages, 100);
-    }, { deep: true });
-};
-
-/**
- * Cleanup lazy loading observer
- */
-const cleanupLazyLoading = () => {
-    if (lazyLoadObserver) {
-        lazyLoadObserver.disconnect();
-        lazyLoadObserver = null;
-    }
-};
 
 const coverSettings = computed(() => {
     try {
@@ -815,31 +773,29 @@ const loadData = async () => {
 };
 
 const prevCouponSlide = () => {
-    const numDisplayableCoupons = Math.min(10, featuredCoupons.value.length);
-    if (couponSlidesVisible.value >= numDisplayableCoupons) {
-        currentCouponIndex.value = 0;
-        return;
+    const totalCoupons = Math.min(10, featuredCoupons.value.length);
+    if (totalCoupons <= couponSlidesVisible.value) {
+        return; // Não há necessidade de navegação se todos os cupons cabem na tela
     }
 
-    const maxStartIndex = Math.max(0, numDisplayableCoupons - couponSlidesVisible.value);
+    const maxIndex = Math.max(0, totalCoupons - couponSlidesVisible.value);
 
     if (currentCouponIndex.value > 0) {
         currentCouponIndex.value--;
     } else {
-        currentCouponIndex.value = maxStartIndex;
+        currentCouponIndex.value = maxIndex;
     }
 };
 
 const nextCouponSlide = () => {
-    const numDisplayableCoupons = Math.min(10, featuredCoupons.value.length);
-    if (couponSlidesVisible.value >= numDisplayableCoupons) {
-        currentCouponIndex.value = 0;
-        return;
+    const totalCoupons = Math.min(10, featuredCoupons.value.length);
+    if (totalCoupons <= couponSlidesVisible.value) {
+        return; // Não há necessidade de navegação se todos os cupons cabem na tela
     }
 
-    const maxStartIndex = Math.max(0, numDisplayableCoupons - couponSlidesVisible.value);
+    const maxIndex = Math.max(0, totalCoupons - couponSlidesVisible.value);
 
-    if (currentCouponIndex.value < maxStartIndex) {
+    if (currentCouponIndex.value < maxIndex) {
         currentCouponIndex.value++;
     } else {
         currentCouponIndex.value = 0;
@@ -877,18 +833,18 @@ const openScratchModal = (coupon: any) => {
 const incrementCouponView = async (couponId: string, coupon: any) => {
     try {
         const result = await affiliateAPI.coupons.incrementView(couponId);
-        
+
         if (result && result.success && result.views !== undefined) {
             // Atualizar o valor local para refletir imediatamente na UI
             coupon.views = parseInt(String(result.views), 10) || 0;
-            
+
             // Forçar atualização dos arrays para refletir a mudança na UI
             if (featuredCoupons.value.includes(coupon)) {
                 const updatedFeaturedCoupons = [...featuredCoupons.value];
                 featuredCoupons.value = updatedFeaturedCoupons;
                 couponsStore.setFeaturedCoupons(updatedFeaturedCoupons);
             }
-            
+
             if (top25Coupons.value.includes(coupon)) {
                 const updatedTop25Coupons = [...top25Coupons.value];
                 top25Coupons.value = updatedTop25Coupons;
@@ -912,20 +868,18 @@ onServerPrefetch(async () => {
 onMounted(async () => {
     await loadData();
     startCarouselInterval();
-    initLazyLoading();
-    
-    // Calcular o número adequado de slides visíveis com base no viewport
     updateCouponSlidesVisible();
     window.addEventListener('resize', updateCouponSlidesVisible);
 });
 
 onUnmounted(() => {
     stopCarouselInterval();
-    cleanupLazyLoading();
     window.removeEventListener('resize', updateCouponSlidesVisible);
 });
 
 const updateCouponSlidesVisible = () => {
+    const oldValue = couponSlidesVisible.value;
+
     // Ajustar o número de slides visíveis baseado na largura da tela
     if (window.innerWidth < 640) { // sm
         couponSlidesVisible.value = 1;
@@ -936,6 +890,14 @@ const updateCouponSlidesVisible = () => {
     } else {
         couponSlidesVisible.value = 4;
     }
+
+    if (oldValue !== couponSlidesVisible.value) {
+        const totalCoupons = Math.min(10, featuredCoupons.value.length);
+        const maxIndex = Math.max(0, totalCoupons - couponSlidesVisible.value);
+        if (currentCouponIndex.value > maxIndex) {
+            currentCouponIndex.value = Math.max(0, maxIndex);
+        }
+    }
 };
 
 watch(() => settings.value['blog.cover'], () => {
@@ -945,11 +907,6 @@ watch(() => settings.value['blog.cover'], () => {
 </script>
 
 <style scoped>
-.lazy-image {
-    transition: opacity 0.3s ease-in-out;
-    opacity: 0.8;
-}
-
 .lazy-image.loaded {
     opacity: 1;
 }

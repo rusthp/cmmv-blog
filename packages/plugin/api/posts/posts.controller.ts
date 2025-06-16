@@ -163,6 +163,7 @@ export class PostsController {
     @Post("posts", { exclude: true })
     @Auth("post:insert")
     async savePost(@Body() body: any, @User() user: any) {
+        console.log(body);
         return this.postsPublicService.savePost(body, user);
     }
 

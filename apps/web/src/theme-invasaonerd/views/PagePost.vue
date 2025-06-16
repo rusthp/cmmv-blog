@@ -1170,9 +1170,7 @@ const loadAdScripts = () => {
                         script.crossOrigin = "anonymous";
                         head.appendChild(script);
                     }
-                } catch (e) {
-                    console.error('Error parsing AdSense code:', e);
-                }
+                } catch (e) {}
             }
         }
 

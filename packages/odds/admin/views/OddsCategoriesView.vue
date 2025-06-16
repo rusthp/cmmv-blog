@@ -666,7 +666,6 @@ const saveCategory = async () => {
         formLoading.value = true
         formErrors.value = {}
 
-        // Validate
         if (!categoryForm.value.name.trim()) {
             formErrors.value.name = 'Category name is required'
             formLoading.value = false
@@ -679,12 +678,10 @@ const saveCategory = async () => {
             image: categoryForm.value.image && categoryForm.value.image.trim() ? categoryForm.value.image.trim() : null
         }
 
-        // If image is base64 (starts with 'data:'), handle it like CampaignView.vue
         if (isEditing.value && categoryForm.value.image && categoryForm.value.image.startsWith('data:')) {
             try {
                 const imageBackup = categoryForm.value.image
 
-                // First save without the image (set to existing image if editing, empty if creating)
                 if (isEditing.value && categoryToEdit.value)
                     categoryData.image = categoryToEdit.value.image || null
                 else
@@ -709,6 +706,7 @@ const saveCategory = async () => {
                 const imageResponse = await oddsClient.categories.updateImage(categoryId, imageBackup)
 
                 let processedImageUrl = null
+
                 if (imageResponse && imageResponse.url) {
                     processedImageUrl = imageResponse.url
                 } else if (imageResponse && imageResponse.data && imageResponse.data.url) {
@@ -718,6 +716,7 @@ const saveCategory = async () => {
                 }
 
                 if (processedImageUrl) {
+                    // Update category with the processed image URL
                     await oddsClient.categories.update(categoryId, {
                         ...categoryData,
                         image: processedImageUrl
@@ -739,7 +738,6 @@ const saveCategory = async () => {
                 return
             }
         } else {
-
             if (isEditing.value) {
                 await oddsClient.categories.update(categoryToEdit.value.id, categoryData)
                 showNotification('success', 'Category updated successfully')
@@ -858,6 +856,7 @@ const removeImage = () => {
 onMounted(() => {
     loadCategories()
 
+    // Close search dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (showSearchDropdown.value && !e.target.closest('.relative')
             && e.target !== document.querySelector('button[data-search-toggle]')) {

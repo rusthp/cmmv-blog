@@ -28,7 +28,7 @@ self.addEventListener("install", e => {
 });
 clientsClaim();
 
-const VERSION = "v0.0.7";
+const VERSION = "v0.0.9";
 
 const CACHE_NAMES = {
     ASSETS: "assets-cache-" + VERSION,
@@ -68,54 +68,6 @@ const lastVisitedStoresExpirationPlugin = new ExpirationPlugin({
     maxAgeSeconds: 60,
     purgeOnQuotaError: true
 });
-
-// Lista de domínios do Google Ads/AdSense que devem ser excluídos do cache
-const GOOGLE_ADS_DOMAINS = [
-    'googlesyndication.com',
-    'googleadservices.com',
-    'doubleclick.net',
-    'adtrafficquality.google',
-    'googletagmanager.com',
-    'googletagservices.com',
-    'gstatic.com',
-    'adsystem.google.com',
-    'pagead2.googlesyndication.com'
-];
-
-// Função helper para verificar se uma URL é do Google Ads
-const isGoogleAdsUrl = (url) => {
-    return GOOGLE_ADS_DOMAINS.some(domain => url.hostname.includes(domain)) ||
-           url.hostname.includes('google') && url.pathname.includes('/pagead/');
-};
-
-// 🚫 Excluir completamente requisições do Google Ads/AdSense do service worker
-registerRoute(
-    ({ url }) => isGoogleAdsUrl(url) || 
-                 url.hostname.includes('google') && url.pathname.includes('/pagead/') ||
-                 url.pathname.includes('sodar'),
-    new NetworkFirst({
-        networkTimeoutSeconds: 3,
-        plugins: [
-            new CacheableResponsePlugin({ 
-                statuses: [0, 200] // Aceita respostas opacas também
-            })
-        ]
-    })
-);
-
-// ⚡️ Cache JS/CSS com CacheFirst (exceto AdSense)
-registerRoute(
-    ({ request, url }) =>
-        (request.destination === 'script' || request.destination === 'style') &&
-        !isGoogleAdsUrl(url),
-    new CacheFirst({
-        cacheName: CACHE_NAMES.ASSETS,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [200] }),
-            assetsExpirationPlugin
-        ]
-    })
-);
 
 // ⚡️ Cache imagens
 registerRoute(
@@ -157,36 +109,6 @@ registerRoute(ROUTE_REGEX.LAST_VISITED, new CacheFirst({
     cacheName: CACHE_NAMES.LAST_VISITED,
     plugins: [lastVisitedStoresExpirationPlugin]
 }));
-
-// 🛡️ Catch handler para requisições que falham (evita erros no console)
-setCatchHandler(async ({ event, request, url }) => {
-    // Se for uma requisição do Google Ads/AdSense que falhou, ignore silenciosamente
-    if (isGoogleAdsUrl(url) || 
-        url.hostname.includes('google') || 
-        url.pathname.includes('pagead') ||
-        url.pathname.includes('sodar')) {
-        console.log('Ignorando falha em requisição do Google Ads:', url.href);
-        return;
-    }
-
-    // Para outras requisições, tente o cache ou retorne uma resposta offline
-    switch (request.destination) {
-        case 'document':
-            // Para páginas, retorne uma resposta de offline se disponível
-            return caches.match('/offline.html') || new Response('Página offline indisponível', {
-                status: 503,
-                statusText: 'Service Unavailable'
-            });
-        
-        case 'image':
-            // Para imagens, retorne um placeholder se disponível
-            return caches.match('/assets/offline-image.svg') || new Response();
-        
-        default:
-            console.log('Requisição falhou:', url.href);
-            return new Response();
-    }
-});
 
 // 🎯 Mensagens
 self.addEventListener("message", e => {

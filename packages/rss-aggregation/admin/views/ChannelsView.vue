@@ -4,6 +4,13 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-white">Feed Channels</h1>
             <div class="flex flex-wrap gap-2 mt-2 sm:mt-0">
+                <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Channel
+                </button>
+
                 <button @click="refreshData" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -62,32 +69,39 @@
                         </div>
                     </div>
                 </div>
-                <button
-                    @click="processFeeds"
-                    class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
-                    :disabled="processingFeeds"
-                    title="Process all feeds to fetch new content"
-                >
-                    <span v-if="processingFeeds" class="flex items-center">
-                        <svg class="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                    </span>
-                    <span v-else class="flex items-center">
+                <!-- More actions dropdown -->
+                <div class="relative" data-more-actions-toggle>
+                    <button
+                        @click="toggleMoreActionsDropdown"
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
-                        Process Feeds
-                    </span>
-                </button>
-                <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Channel
-                </button>
+                        More
+                    </button>
+                    <!-- More actions dropdown menu -->
+                    <div v-if="showMoreActionsDropdown" class="absolute right-0 mt-2 w-48 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="showProcessFeedsWarning"
+                                class="w-full px-4 py-2 text-left text-sm text-white hover:bg-neutral-700 flex items-center"
+                                :disabled="processingFeeds"
+                                title="Manual feed processing - Use sparingly as feeds are automatically processed every 30 minutes"
+                            >
+                                <svg v-if="processingFeeds" class="animate-spin h-3.5 w-3.5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                </svg>
+                                {{ processingFeeds ? 'Processing...' : 'Process All Feeds' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -190,12 +204,12 @@
                                 <div class="flex justify-end space-x-2">
                                     <button
                                         @click="processSingleFeed(channel)"
-                                        title="Process Feed"
-                                        class="text-neutral-400 hover:text-blue-500 transition-colors"
+                                        title="Manual feed processing - Use sparingly as feeds are automatically processed every 30 minutes"
+                                        class="text-neutral-400 hover:text-red-500 transition-colors"
                                         :disabled="processingChannels.includes(channel.id)"
                                     >
                                         <template v-if="processingChannels.includes(channel.id)">
-                                            <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -369,6 +383,69 @@
             </div>
         </div>
 
+        <!-- Process Feeds Warning Dialog -->
+        <div v-if="showProcessWarning" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" style="backdrop-filter: blur(4px);">
+            <div class="bg-neutral-800 rounded-lg shadow-lg w-full max-w-md mx-auto">
+                <div class="p-6 border-b border-neutral-700">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-4.93 4.93A10 10 0 1119.07 4.93 10 10 0 017.07 19.93z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-white">Manual Feed Processing</h3>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <p class="text-neutral-300 mb-3">
+                            <strong>Important:</strong> Feeds are automatically processed every 30 minutes by the system.
+                        </p>
+                        <div class="bg-yellow-900/20 border border-yellow-700 rounded-md p-3 mb-4">
+                            <div class="flex">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-4.93 4.93A10 10 0 1119.07 4.93 10 10 0 017.07 19.93z" />
+                                </svg>
+                                <div class="text-yellow-200 text-sm">
+                                    <p class="font-medium mb-1">Please avoid frequent manual processing:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-yellow-300">
+                                        <li>Can slow down the system</li>
+                                        <li>May impact server performance</li>
+                                        <li>Automatic processing is more efficient</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-neutral-400 text-sm">
+                            Only use manual processing if you need immediate updates for testing or urgent content synchronization.
+                        </p>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-neutral-700 flex justify-end space-x-3">
+                    <button
+                        @click="closeProcessWarning"
+                        class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="confirmProcessFeeds"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                        :disabled="processingFeeds"
+                    >
+                        <span v-if="processingFeeds" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </span>
+                        <span v-else>
+                            Process Anyway
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Delete Confirmation Dialog -->
         <DeleteDialog
             :show="showDeleteDialog"
@@ -449,6 +526,9 @@ const filters = ref({
 
 const processingFeeds = ref(false)
 const processingChannels = ref([])
+
+// Process feeds warning dialog
+const showProcessWarning = ref(false)
 
 // Search dropdown functionality
 const showSearchDropdown = ref(false)
@@ -736,6 +816,20 @@ const toggleActive = async (channel) => {
     }
 }
 
+const showProcessFeedsWarning = () => {
+    showMoreActionsDropdown.value = false
+    showProcessWarning.value = true
+}
+
+const closeProcessWarning = () => {
+    showProcessWarning.value = false
+}
+
+const confirmProcessFeeds = async () => {
+    showProcessWarning.value = false
+    await processFeeds()
+}
+
 const processFeeds = async () => {
     try {
         processingFeeds.value = true
@@ -788,15 +882,28 @@ const clearSearch = () => {
     showSearchDropdown.value = false
 }
 
+// More actions dropdown functionality
+const showMoreActionsDropdown = ref(false)
+const toggleMoreActionsDropdown = () => {
+    showMoreActionsDropdown.value = !showMoreActionsDropdown.value
+}
+
 onMounted(() => {
     loadChannels()
 
-    // Close search dropdown when clicking outside
+    // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
+        // Close search dropdown
         if (showSearchDropdown.value &&
             !e.target.closest('[data-search-toggle]') &&
             !e.target.closest('.absolute')) {
             showSearchDropdown.value = false
+        }
+
+        // Close more actions dropdown
+        if (showMoreActionsDropdown.value &&
+            !e.target.closest('[data-more-actions-toggle]')) {
+            showMoreActionsDropdown.value = false
         }
     })
 })

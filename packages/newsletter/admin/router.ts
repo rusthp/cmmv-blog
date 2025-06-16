@@ -24,6 +24,6 @@ useNavbar().addItems([
         label: 'Subscribers',
         icon: 'fas fa-envelope',
         to: '/newsletter/subscribers',
-        group: 'Newsletter'
+        group: 'CMS'
     }
-]) 
+])

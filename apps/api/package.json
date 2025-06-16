@@ -1,6 +1,6 @@
 {
     "name": "cmmv-blog-api",
-    "version": "0.0.46",
+    "version": "0.0.63",
     "private": true,
     "description": "Blog API sample",
     "dev": {
@@ -19,7 +19,9 @@
             "../../packages/odds/api",
             "../../packages/odds/contracts",
             "../../packages/newsletter/api",
-            "../../packages/newsletter/contracts"
+            "../../packages/newsletter/contracts",
+            "../../packages/special-dates/api",
+            "../../packages/special-dates/contracts"
         ],
         "ignore": [
             ".generated",
@@ -43,12 +45,12 @@
         "@cmmv/access-control": "workspace:access-control",
         "@cmmv/affiliate": "workspace:affiliate",
         "@cmmv/ai-content": "workspace:ai-content",
-        "@cmmv/auth": "latest",
+        "@cmmv/auth": "^0.17.0",
         "@cmmv/blog": "workspace:plugin",
-        "@cmmv/cache": "^0.15.0",
-        "@cmmv/cli": "latest",
-        "@cmmv/http": "latest",
-        "@cmmv/repository": "latest",
+        "@cmmv/cache": "^0.17.0",
+        "@cmmv/cli": "^0.11.0",
+        "@cmmv/http": "^0.17.0",
+        "@cmmv/repository": "^0.17.0",
         "@cmmv/rss-aggregation": "workspace:rss-aggregation",
         "@cmmv/yt-aggregation": "workspace:yt-aggregation",
         "@cmmv/newsletter": "workspace:newsletter",

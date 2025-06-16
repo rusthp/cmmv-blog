@@ -456,7 +456,6 @@ const postsStore = usePostsStore();
 const mostAccessedStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog();
 
-// State
 const rawSettings = computed(() => settingsStore.getSettings);
 const settings = computed<Record<string, any>>(() => {
     const settingsObj = rawSettings.value || {};
@@ -536,7 +535,6 @@ const initLazyLoading = () => {
         threshold: 0.1
     });
 
-    // Observe all lazy images
     const observeLazyImages = () => {
         const lazyImages = document.querySelectorAll('img.lazy-image');
         lazyImages.forEach((img) => {
@@ -544,10 +542,8 @@ const initLazyLoading = () => {
         });
     };
 
-    // Initial observation
     setTimeout(observeLazyImages, 100);
 
-    // Re-observe when data changes
     watch([posts, popularPosts], () => {
         setTimeout(observeLazyImages, 100);
     }, { deep: true });
@@ -883,6 +879,7 @@ img {
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

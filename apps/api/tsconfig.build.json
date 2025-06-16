@@ -17,6 +17,7 @@
         { "path": "../../packages/plugin/tsconfig.build.json" },
         { "path": "../../packages/rss-aggregation/tsconfig.build.json" },
         { "path": "../../packages/odds/tsconfig.build.json" },
-        { "path": "../../packages/newsletter/tsconfig.build.json" }
+        { "path": "../../packages/newsletter/tsconfig.build.json" },
+        { "path": "../../packages/special-dates/tsconfig.build.json" }
     ]
 }

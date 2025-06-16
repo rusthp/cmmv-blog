@@ -11,6 +11,7 @@ import CategoryView from './views/CategoryView.vue';
 import NetworkCampaignsView from './views/NetworkCampaignsView.vue';
 import DeeplinkGeneratorView from './views/DeeplinkGeneratorView.vue';
 import SpecialDatesView from './views/SpecialDatesView.vue';
+import WebscraperView from './views/WebscraperView.vue';
 
 export const affiliateRoutes: RouteRecordRaw[] = [
     {
@@ -56,6 +57,11 @@ export const affiliateRoutes: RouteRecordRaw[] = [
                 path: 'special-dates',
                 component: SpecialDatesView,
                 name: 'affiliate.special-dates'
+            },
+            {
+                path: 'webscraper',
+                component: WebscraperView,
+                name: 'affiliate.webscraper'
             }
         ]
     },
@@ -108,6 +114,12 @@ useNavbar().addItems([
         label: 'Special Dates',
         icon: 'fas fa-calendar-alt',
         to: '/affiliate/special-dates',
+        group: 'Affiliate'
+    },
+    {
+        label: 'Webscraper',
+        icon: 'fas fa-robot',
+        to: '/affiliate/webscraper',
         group: 'Affiliate'
     }
 ])

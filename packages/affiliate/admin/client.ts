@@ -198,6 +198,34 @@ export const useAffiliateClient = () => {
         }
     }
 
+    const webscraper = {
+        get: async (filters: Record<string, string>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`affiliate/webscraper?${query}`, "GET");
+        },
+        insert: async (data: any) => {
+            return api.authRequest("affiliate/webscraper", "POST", data);
+        },
+        update: async (id: string, data: any) => {
+            return api.authRequest(`affiliate/webscraper/${id}`, "PUT", data);
+        },
+        delete: async (id: string) => {
+            return api.authRequest(`affiliate/webscraper/${id}`, "DELETE");
+        },
+        analyze: async (data: { url: string, type: string }) => {
+            return api.authRequest("affiliate/webscraper/analyze", "POST", data);
+        },
+        testRegex: async (data: { url: string, fields: Array<{name: string, regex: string}> }) => {
+            return api.authRequest("affiliate/webscraper/test-regex", "POST", data);
+        },
+        preview: async (url: string) => {
+            return api.authRequest(`affiliate/webscraper/preview?url=${encodeURIComponent(url)}`, "GET");
+        },
+        health: async () => {
+            return api.authRequest("affiliate/webscraper/health", "GET");
+        }
+    }
+
     return {
         networks,
         campaigns,
@@ -206,6 +234,7 @@ export const useAffiliateClient = () => {
         categories,
         campaignsNetworks,
         deeplink,
-        specialDates
+        specialDates,
+        webscraper
     };
 };

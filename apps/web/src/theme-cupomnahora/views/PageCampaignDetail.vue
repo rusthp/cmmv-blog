@@ -1,17 +1,17 @@
 <template>
     <div class="w-full relative">
-        <div class="w-full max-w-[1200px] mx-auto px-4 py-8">
+        <div class="w-full max-w-[1200px] mx-auto px-0 md:px-4 py-4 md:py-8">
             <div v-if="loading" class="flex justify-center items-center py-10">
                 <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-indigo-600"></div>
                 <span class="ml-3 text-gray-500">Carregando cupons...</span>
             </div>
 
-            <div v-else-if="error" class="text-center py-10 bg-white rounded-lg p-6">
+            <div v-else-if="error" class="text-center py-10 bg-white rounded-lg p-2 md:p-6">
                 <p class="text-lg text-red-500">{{ error }}</p>
                 <p class="text-gray-500 mt-2">Não foi possível carregar os cupons. Tente novamente mais tarde.</p>
             </div>
 
-            <div v-else-if="!campaign" class="text-center py-10 bg-white rounded-lg p-6">
+            <div v-else-if="!campaign" class="text-center py-10 bg-white rounded-lg p-2 md:p-6">
                 <p class="text-lg text-gray-600">Campanha não encontrada</p>
                 <p class="text-gray-500 mt-2">A loja ou campanha que você está procurando não existe.</p>
                 <a href="/desconto" class="mt-4 inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors">
@@ -19,10 +19,11 @@
                 </a>
             </div>
 
-            <div v-else class="bg-white rounded-lg p-6">
-                <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
-                    <div class="w-[160px] h-[125px] flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
-                        <img v-if="campaign.logo" :src="campaign.logo" :alt="campaign.name" width="160" height="125">
+            <div v-else class="bg-white rounded-lg p-2 md:p-6">
+                <!-- Desktop Layout -->
+                <div class="hidden md:flex md:flex-row items-start gap-6 mb-8">
+                    <div class="w-[160px] h-full flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+                        <img v-if="campaign.logo" :src="campaign.logo" :alt="campaign.name" width="160" height="125" :aria-label="campaign.name">
                         <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -30,12 +31,11 @@
                         </div>
                     </div>
                     <div class="flex-1">
-                        <div class="flex flex-col text-center md:text-left">
+                        <div class="flex flex-col text-left">
                             <h1 v-if="campaign.seoTitle" class="text-3xl font-bold text-gray-800 mb-2">{{ campaign.seoTitle }}</h1>
                             <h1 v-else class="text-3xl font-bold text-gray-800 mb-2">Cupons de desconto {{ campaign.name }}</h1>
                             <p class="text-gray-500 mb-2 text-sm">Atualizado em {{ formatDate(new Date()) }}</p>
                             <h2 v-if="campaign.seoSubtitle" class="text-md text-gray-800 mb-2">{{ campaign.seoSubtitle }}</h2>
-
                             <p v-if="campaign.seoSmallText" class="text-gray-600 mt-2 text-sm">{{ campaign.seoSmallText }}</p>
                             <p v-else-if="campaign.description" class="text-gray-600 mt-2 text-sm">{{ campaign.description }}</p>
                             <p class="text-gray-700 mt-4">Encontramos {{ coupons.length }} cupons de desconto para {{ campaign.name }} →</p>
@@ -43,14 +43,64 @@
                     </div>
                 </div>
 
+                <!-- Mobile Layout -->
+                <div class="flex md:hidden flex-row gap-3 mb-6">
+                    <div class="w-[160px] h-[125px] flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+                        <img v-if="campaign.logo" :src="campaign.logo" :alt="campaign.name" width="160" height="125" :aria-label="campaign.name">
+                        <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col">
+                            <h1 v-if="campaign.seoTitle" class="text-lg font-bold text-gray-800 mb-1 leading-tight">{{ campaign.seoTitle }}</h1>
+                            <h1 v-else class="text-lg font-bold text-gray-800 mb-1 leading-tight">Cupons {{ campaign.name }}</h1>
+                            <p class="text-gray-500 text-xs mb-2">Atualizado em {{ formatDate(new Date()) }}</p>
+
+                            <!-- Collapsible content on mobile -->
+                            <div class="overflow-hidden transition-all duration-300 ease-in-out"
+                                 :class="isExpandedMobile ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'">
+                                <h2 v-if="campaign.seoSubtitle" class="text-sm text-gray-800 mb-2 font-medium">{{ campaign.seoSubtitle }}</h2>
+                                <p v-if="campaign.seoSmallText" class="text-gray-600 text-xs leading-relaxed">{{ campaign.seoSmallText }}</p>
+                                <p v-else-if="campaign.description" class="text-gray-600 text-xs leading-relaxed">{{ campaign.description }}</p>
+                            </div>
+
+                            <!-- Toggle button -->
+                            <button
+                                @click="isExpandedMobile = !isExpandedMobile"
+                                v-if="campaign.seoSubtitle || campaign.seoSmallText || campaign.description"
+                                class="text-indigo-600 text-xs font-medium mt-2 text-left hover:text-indigo-700 transition-colors flex items-center"
+                            >
+                                <span>{{ isExpandedMobile ? 'Leia menos' : 'Leia mais' }}</span>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-3 w-3 ml-1 transition-transform duration-200"
+                                    :class="isExpandedMobile ? 'rotate-180' : ''"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <p class="text-gray-700 text-sm mt-3 font-medium">{{ coupons.length }} cupons disponíveis →</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Filtro -->
-                <div class="border-t border-b border-gray-200 py-4 mb-8">
-                    <div class="flex flex-wrap gap-2">
+                <div class="border-t border-b border-gray-200 py-4 mb-6 md:mb-8">
+                    <!-- Desktop Layout -->
+                    <div class="hidden md:flex md:flex-wrap gap-2">
                         <div class="text-gray-700 font-medium mr-2 flex items-center">Filtrar por:</div>
                         <button
                             @click="setFilter('all')"
                             class="px-3 py-1.5 rounded-md text-sm font-medium"
                             :class="activeFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            :aria-label="`Filtrar por todos os cupons`"
                         >
                             Todos ({{ coupons.length }})
                         </button>
@@ -62,6 +112,7 @@
                                 activeFilter === 'codes' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
                                 codesCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
                             ]"
+                            :aria-label="`Filtrar por cupons com código`"
                         >
                             Códigos ({{ codesCount }})
                         </button>
@@ -73,6 +124,7 @@
                                 activeFilter === 'offers' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
                                 offersCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
                             ]"
+                            :aria-label="`Filtrar por cupons sem código`"
                         >
                             Ofertas ({{ offersCount }})
                         </button>
@@ -84,9 +136,61 @@
                                 activeFilter === 'expired' ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
                                 expiredCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
                             ]"
+                            :aria-label="`Filtrar por cupons expirados`"
                         >
                             Expirados ({{ expiredCount }})
                         </button>
+                    </div>
+
+                    <!-- Mobile Layout -->
+                    <div class="md:hidden">
+                        <div class="text-gray-700 font-medium mb-2 text-xs">Filtrar por:</div>
+                        <div class="flex gap-1.5 overflow-x-auto pb-1">
+                            <button
+                                @click="setFilter('all')"
+                                class="px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors"
+                                :class="activeFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                :aria-label="`Filtrar por todos os cupons`"
+                            >
+                                Todos ({{ coupons.length }})
+                            </button>
+                            <button
+                                @click="setFilter('codes')"
+                                :disabled="codesCount === 0"
+                                class="px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors"
+                                :class="[
+                                    activeFilter === 'codes' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                                    codesCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                                ]"
+                                :aria-label="`Filtrar por cupons com código`"
+                            >
+                                Códigos ({{ codesCount }})
+                            </button>
+                            <button
+                                @click="setFilter('offers')"
+                                :disabled="offersCount === 0"
+                                class="px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors"
+                                :class="[
+                                    activeFilter === 'offers' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                                    offersCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                                ]"
+                                :aria-label="`Filtrar por cupons sem código`"
+                            >
+                                Ofertas ({{ offersCount }})
+                            </button>
+                            <button
+                                @click="setFilter('expired')"
+                                :disabled="expiredCount === 0"
+                                class="px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors"
+                                :class="[
+                                    activeFilter === 'expired' ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                                    expiredCount === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                                ]"
+                                :aria-label="`Filtrar por cupons expirados`"
+                            >
+                                Expirados ({{ expiredCount }})
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -124,7 +228,6 @@
                                 <div class="flex-grow md:pr-6">
                                     <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-2">{{ coupon.title }}</h3>
 
-                                    <!-- Cashback info -->
                                     <div v-if="coupon.cashbackPercentage" class="text-sm text-indigo-600 font-medium mb-2 flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -134,8 +237,6 @@
                                     </div>
 
                                     <p class="text-gray-600 text-sm mb-3">{{ coupon.description }}</p>
-
-                                    <!-- Validade e verificação -->
                                     <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500 mb-4">
                                         <div class="flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,7 +269,10 @@
                                             new Date(coupon.expiration) < new Date() ?
                                                 'border-gray-400 bg-gray-100 expired' :
                                                 'border-green-400 hover:border-green-500'
-                                        ]">
+                                        ]"
+                                        :aria-label="coupon.title"
+                                        :title="coupon.title"
+                                    >
 
                                         <!-- Para cupons expirados - mostrar código completo diretamente -->
                                         <div v-if="new Date(coupon.expiration) < new Date()"
@@ -206,8 +310,10 @@
                                     <a v-else
                                         :href="coupon.link || coupon.linkRef || '#'"
                                         target="_blank"
-                                        class="group relative w-full h-12 overflow-hidden bg-orange-500 to-red-600 border border-orange-400 rounded-lg transition-all duration-300 hover:shadow-lg hover:from-orange-600 hover:to-red-700 flex items-center justify-center">
-
+                                        :aria-label="coupon.title"
+                                        :title="coupon.title"
+                                        class="group relative w-full h-12 overflow-hidden bg-orange-500 to-red-600 border border-orange-400 rounded-lg transition-all duration-300 hover:shadow-lg hover:from-orange-600 hover:to-red-700 flex items-center justify-center"
+                                    >
                                         <div class="flex items-center text-white font-medium">
                                             <span class="text-sm text-white font-medium">VER OFERTA</span>
                                         </div>
@@ -221,7 +327,7 @@
                     </div>
                 </div>
 
-                <div v-if="campaign.seoLongText" class="mt-8 longText-content">
+                <div v-if="campaign.seoLongText" class="mt-8 longText-content px-2 md:px-0">
                     <div v-html="campaign.seoLongText" class="text-gray-600 text-md"></div>
                 </div>
             </div>
@@ -235,7 +341,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onServerPrefetch } from 'vue';
+import { ref, computed, onMounted, onServerPrefetch } from 'vue';
 import { useHead } from '@unhead/vue';
 import { useRoute } from 'vue-router';
 import { vue3 as affiliateVue3 } from '@cmmv/affiliate/client';
@@ -264,17 +370,18 @@ if(!isSSR)
 const activeFilter = ref('all');
 const isScratchModalOpen = ref(false);
 const selectedCouponForScratch = ref<any | null>(null);
+const isExpandedMobile = ref(false);
 
-const codesCount = computed(() => coupons.value.filter(coupon => coupon.code).length);
-const offersCount = computed(() => coupons.value.filter(coupon => !coupon.code).length);
+const codesCount = computed(() => coupons.value.filter(coupon => coupon.code && new Date(coupon.expiration) >= new Date()).length);
+const offersCount = computed(() => coupons.value.filter(coupon => !coupon.code && new Date(coupon.expiration) >= new Date()).length);
 const expiredCount = computed(() => coupons.value.filter(coupon => new Date(coupon.expiration) < new Date()).length);
 
 const totalViews = computed(() => coupons.value.reduce((acc, coupon) => acc + coupon.views, 0));
 
 const filteredCoupons = computed(() => {
     if (activeFilter.value === 'all') return coupons.value;
-    if (activeFilter.value === 'codes') return coupons.value.filter(coupon => coupon.code);
-    if (activeFilter.value === 'offers') return coupons.value.filter(coupon => !coupon.code);
+    if (activeFilter.value === 'codes') return coupons.value.filter(coupon => coupon.code && new Date(coupon.expiration) >= new Date());
+    if (activeFilter.value === 'offers') return coupons.value.filter(coupon => !coupon.code && new Date(coupon.expiration) >= new Date());
     if (activeFilter.value === 'expired') return coupons.value.filter(coupon => new Date(coupon.expiration) < new Date());
     if (activeFilter.value === 'views') return coupons.value.filter(coupon => coupon.views > 0);
     return coupons.value;
@@ -333,11 +440,10 @@ const loadData = async () => {
         let campaignCoupons = campaign.value.coupons;
 
         if (campaignCoupons && campaignCoupons.length > 0) {
-            
-            coupons.value = campaignCoupons.map((c: any) => {                
-                // Converter views para número, independentemente do tipo
+
+            coupons.value = campaignCoupons.map((c: any) => {
                 const viewsAsNumber = parseInt(String(c.views), 10) || 0;
-                
+
                 return {
                     ...c,
                     campaignName: campaign.value.name,
@@ -394,17 +500,13 @@ const openCouponModal = (coupon: any) => {
 
     isScratchModalOpen.value = true;
 
-    // Incrementar a contagem de visualizações
-    
-    // Verificar se temos um ID disponível ou usar outra propriedade única
     if (coupon) {
-        // Se não tiver ID, vamos usar o código como identificador único
         const identifier = coupon.id || coupon.code;
-        if (identifier) {
+
+        if (identifier)
             incrementCouponView(identifier, coupon);
-        } else {
+        else
             console.error('Não foi possível identificar o cupom para incrementar visualizações:', coupon);
-        }
     }
 
     if (coupon && coupon.code)
@@ -419,18 +521,13 @@ const closeCouponModal = () => {
     selectedCouponForScratch.value = null;
 };
 
-// Função para incrementar as visualizações do cupom
 const incrementCouponView = async (couponId: string, coupon: any) => {
     try {
         if (!isSSR) {
             const result = await affiliateAPI.coupons.incrementView(couponId);
 
             if (result && result.success && result.views !== undefined) {
-                // Atualizar o valor local para refletir imediatamente na UI
-                // Garantir que views seja um número
                 coupon.views = parseInt(String(result.views), 10) || 0;
-                
-                // Forçar atualização da UI - como estamos modificando um objeto dentro de um array
                 const updatedCoupons = [...coupons.value];
                 coupons.value = updatedCoupons;
             }
@@ -609,6 +706,7 @@ const extractDiscountValue = (title: string) => {
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

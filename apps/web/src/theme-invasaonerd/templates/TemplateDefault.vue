@@ -495,7 +495,6 @@ const subscribeNewsletter = async () => {
         alert('Obrigado por se inscrever na nossa newsletter!');
         newsletterEmail.value = '';
     } catch (error) {
-        console.error('Failed to subscribe to newsletter:', error);
         alert('Houve um erro ao inscrever-se. Por favor, tente novamente mais tarde.');
     }
 };

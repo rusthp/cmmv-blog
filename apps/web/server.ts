@@ -445,6 +445,11 @@ if ('requestIdleCallback' in window) {
                     template = template.replace(/<script[^>]*type="[^"]*"[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
                 }
 
+                if (process.env.NODE_ENV === 'production') {
+                    template = template.replace(/<script[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
+                    template = template.replace(/<script[^>]*type="[^"]*"[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
+                }
+
                 for(const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 

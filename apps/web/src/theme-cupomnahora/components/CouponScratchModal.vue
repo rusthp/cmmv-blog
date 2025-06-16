@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps({
@@ -72,7 +72,6 @@ const logoImg = ref<HTMLImageElement | null>(null);
 const closeModal = () => {
     emit('close');
 
-    // Se o modal foi aberto via parâmetro URL, remover o parâmetro ao fechar
     if (router.currentRoute.value.query.display) {
         router.replace({
             query: { ...router.currentRoute.value.query, display: undefined }
@@ -82,6 +81,7 @@ const closeModal = () => {
 
 const copyCode = async () => {
     if (!props.coupon || !props.coupon.code) return;
+
     try {
         await navigator.clipboard.writeText(props.coupon.code);
         copyButtonText.value = 'Copiado!';
@@ -97,27 +97,12 @@ const copyCode = async () => {
 };
 
 const visitStore = () => {
-    if (props.coupon && props.coupon.deeplink) {
+    if (props.coupon && props.coupon.deeplink)
         window.open(props.coupon.deeplink, '_blank');
-    }
 };
 
 const handleImageError = (event: Event) => {
-    if (props.coupon) {
+    if (props.coupon)
         props.coupon.campaignLogo = null;
-    }
 };
-
-watch(() => props.visible, (isVisible) => {
-    if (isVisible && props.coupon) {
-    }
-});
-
-onMounted(() => {
-    if (props.visible && props.coupon) {
-    }
-});
 </script>
-
-<style scoped>
-</style>
