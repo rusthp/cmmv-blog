@@ -754,9 +754,8 @@ const loadMorePosts = async () => {
         const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
 
         if (response && response.posts && response.posts.length > 0) {
-            // Usar a função addPosts do store para evitar duplicações
-            postsStore.addPosts(response.posts);
-            posts.value = postsStore.getPosts;
+            // Concatenar diretamente os arrays
+            posts.value = [...posts.value, ...response.posts];
 
             pagination.value = {
                 total: response.meta?.pagination?.total || 0,
