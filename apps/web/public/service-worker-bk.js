@@ -39,7 +39,7 @@ const CACHE_NAMES = {
 };
 
 const ROUTE_REGEX = {
-    IMAGES: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+    IMAGES: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i,
     ASSETS: /\.(?:js|css|woff2?|eot|ttf|otf|map)$/i,
     COUPONS: /(?:\?|&)c=(\d+)(?:&|#|$)/,
     LAST_VISITED: /.*(?:static\.com\.br\/widget\/lastvisitedstores)/,

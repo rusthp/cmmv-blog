@@ -20,7 +20,8 @@ const ALLOWED_MIME_TYPES = [
     'image/jpg',
     'image/png',
     'image/webp',
-    'image/gif'
+    'image/gif',
+    'image/avif'
 ];
 
 @Service('blog_images')

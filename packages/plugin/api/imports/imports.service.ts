@@ -484,7 +484,7 @@ export class ImportService {
             }
 
             let attachments: Record<string, string> = {};
-            let imagesFormat = ["jpg", "jpeg", "png", "gif", "webp"];
+            let imagesFormat = ["jpg", "jpeg", "png", "gif", "webp", "avif"];
             const apiUrl = Config.get<string>("blog.url", process.env.API_URL);
 
             // First process attachments
@@ -754,7 +754,7 @@ export class ImportService {
             }
         });
 
-        const imgTagPattern = /<img[^>]*src="([^"]+)\/([^\/]+\.(jpg|jpeg|png|gif|webp))"[^>]*>/g;
+        const imgTagPattern = /<img[^>]*src="([^"]+)\/([^\/]+\.(jpg|jpeg|png|gif|webp|avif))"[^>]*>/g;
 
         processedContent = processedContent.replace(imgTagPattern, (match, urlPath, filename) => {
             try {

@@ -32,7 +32,7 @@
                             type="file"
                             id="media-upload"
                             @change="handleFileUpload"
-                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
                             class="hidden"
                         />
                     </div>
@@ -135,7 +135,7 @@
                             type="file"
                             id="media-upload-empty"
                             @change="handleFileUpload"
-                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
                             class="hidden"
                         />
                     </div>
