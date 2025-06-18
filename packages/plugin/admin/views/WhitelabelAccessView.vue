@@ -580,7 +580,7 @@ const saveAccess = async () => {
             whitelabel: accessForm.value.whitelabel
         }
 
-        await adminClient.whitelabelAccess.insert(accessData)
+        await adminClient.whitelabelAccess.create(accessData)
         showNotification('success', 'Access granted successfully')
 
         formLoading.value = false

@@ -1152,7 +1152,7 @@ const saveWhitelabel = async () => {
             await adminClient.whitelabel.update(whitelabelToEdit.value.id, whitelabelData)
             showNotification('success', 'Domain updated successfully')
         } else {
-            await adminClient.whitelabel.insert(whitelabelData)
+            await adminClient.whitelabel.create(whitelabelData)
             showNotification('success', 'Domain created successfully')
         }
 
@@ -1233,7 +1233,7 @@ const saveAccess = async () => {
             whitelabel: accessForm.value.whitelabel
         }
 
-        await adminClient.whitelabelAccess.insert(accessData)
+        await adminClient.whitelabelAccess.create(accessData)
         showNotification('success', 'Access granted successfully')
 
         accessFormLoading.value = false

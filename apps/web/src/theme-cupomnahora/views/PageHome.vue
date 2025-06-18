@@ -244,7 +244,6 @@
         </section>
 
         <div class="container mx-auto md:px-0 px-2 pb-12 mt-8 md:mt-0">
-            <!-- Lojas em Destaque -->
             <section class="mb-12">
                 <div class="flex items-center justify-between mb-8">
                     <h2 class="text-2xl font-bold text-gray-800">Lojas em Destaque</h2>
@@ -400,11 +399,11 @@
                                 <span v-if="coupon.oldCashbackPercentage" class="text-gray-500 line-through">(era {{coupon.oldCashbackPercentage}}%)</span>
                             </p>
                             <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ coupon.description }}</p>
-                            <p class="text-xs text-gray-500">
+                            <!--<p class="text-xs text-gray-500">
                                 <span v-if="coupon.verifiedToday">Verificado hoje</span>
                                 <span v-if="coupon.verifiedToday && coupon.views" class="mx-1">•</span>
                                 <span v-if="coupon.views">{{ coupon.views || 0 }} total de visualizações</span>
-                            </p>
+                            </p>-->
                         </div>
 
                         <div class="mt-4 md:mt-0 md:ml-6 flex-shrink-0 w-full md:w-48">

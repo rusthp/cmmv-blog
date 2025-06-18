@@ -10,6 +10,8 @@ import {
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
 import { DeeplinkService } from "../deeplink/deeplink.service";
+//@ts-ignore
+import { ShortUrlServiceTools } from "@cmmv/blog";
 
 interface PostJob {
     id: string;
@@ -27,7 +29,8 @@ export class CouponsServiceTools {
     private postJobs: Map<string, PostJob> = new Map();
 
     constructor(
-        private readonly aiContentService: AIContentService
+        private readonly aiContentService: AIContentService,
+        private readonly shortUrlService: ShortUrlServiceTools
     ) {}
 
     /**
@@ -111,11 +114,10 @@ export class CouponsServiceTools {
         try {
             const aiService = Application.resolveProvider<any>(AIContentService);
 
-            // Retry logic for AI service calls
             let generatedText;
             let lastError;
             const maxRetries = 3;
-            const retryDelay = 5000; // 5 seconds
+            const retryDelay = 5000;
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
@@ -190,6 +192,7 @@ export class CouponsServiceTools {
                     continue;
 
                 const deeplink = await deeplinkService.getDeeplink(account.id, campaignNetwork.id, coupon.linkRef);
+                const shortUrl = await this.shortUrlService.createShortUrl(deeplink.deeplink);
 
                 const newCoupon = {
                     title: coupon.title || `${campaign.name} ${coupon.code}`,
@@ -203,7 +206,8 @@ export class CouponsServiceTools {
                     campaignName: campaign.name,
                     network: campaign.network || null,
                     linkRef: coupon.linkRef || null,
-                    deeplink: deeplink.deeplink
+                    deeplink: deeplink.deeplink,
+                    shortUrl: shortUrl
                 };
 
                 try {
@@ -243,12 +247,17 @@ export class CouponsServiceTools {
         const coupons = await Repository.findAll(AffiliateCouponsEntity, {
             limit: 50,
             active: true,
-            campaign: campaignId
+            campaign: campaignId,
+            deeplink: Not(IsNull()),
+            link: Not(IsNull()),
         }, [], {
             order: {
                 expiration: "DESC"
             },
-            select: ["title", "code", "description", "expiration", "type", "typeDiscount", "linkRef", "deeplink", "views"]
+            select: [
+                "title", "code", "description", "expiration", "type", "typeDiscount",
+                "linkRef", "deeplink", "views", "shortUrl"
+            ]
         });
 
         return (coupons) ? coupons.data : [];
@@ -264,7 +273,9 @@ export class CouponsServiceTools {
 
         const count = await Repository.count(AffiliateCouponsEntity, {
             active: true,
-            campaign: campaignId
+            campaign: campaignId,
+            deeplink: Not(IsNull()),
+            link: Not(IsNull()),
         });
 
         return { count: count || 0 };
@@ -283,14 +294,16 @@ export class CouponsServiceTools {
             limit: 10000,
             active: true,
             campaign: Not(IsNull()),
-            expiration: MoreThan(new Date())
+            expiration: MoreThan(new Date()),
+            deeplink: Not(IsNull()),
+            link: Not(IsNull()),
         }, [], {
             order: {
                 views: "DESC"
             },
             select: [
                 "title", "code", "description", "expiration", "type", "typeDiscount",
-                "views", "campaign", "deeplink"
+                "views", "campaign", "deeplink", "shortUrl"
             ]
         });
 
@@ -340,6 +353,8 @@ export class CouponsServiceTools {
             active: true,
             campaign: Not(IsNull()),
             expiration: MoreThan(new Date()),
+            deeplink: Not(IsNull()),
+            link: Not(IsNull()),
             type: "Cupom",
             limit: 50
         },
@@ -350,7 +365,7 @@ export class CouponsServiceTools {
             },
             select: [
                 "title", "code", "description", "expiration", "type", "typeDiscount",
-                "views", "campaign", "linkRef", "deeplink"
+                "views", "campaign", "linkRef", "deeplink", "shortUrl"
             ]
         });
 
@@ -393,13 +408,12 @@ export class CouponsServiceTools {
                     };
                 }
             }
-            return null; // Or handle as an error/log
+            return null;
         }).filter((coupon: any) => coupon !== null);
 
 
-        if (processedCoupons.length === 0) {
+        if (processedCoupons.length === 0)
             return [];
-        }
 
         const campaignCouponsMap = new Map<string, any[]>();
         for (const coupon of processedCoupons) {
@@ -412,9 +426,8 @@ export class CouponsServiceTools {
             }
         }
 
-        if (campaignCouponsMap.size === 0) {
+        if (campaignCouponsMap.size === 0)
             return [];
-        }
 
         const finalTop25Coupons: any[] = [];
         const uniqueCampaignIds = Array.from(campaignCouponsMap.keys());
@@ -454,7 +467,6 @@ export class CouponsServiceTools {
         const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
         const AffiliateCampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
 
-        // Get campaign details
         const campaign = await Repository.findOne(AffiliateCampaignsEntity, {
             id: campaignId
         });
@@ -462,8 +474,9 @@ export class CouponsServiceTools {
         if (!campaign)
             throw new Error(`Campaign with ID ${campaignId} not found`);
 
-        // Get last 20 active coupons for the campaign
         const couponsResult = await Repository.findAll(AffiliateCouponsEntity, {
+            deeplink: Not(IsNull()),
+            link: Not(IsNull()),
             campaign: campaignId,
             active: true,
             limit: 20
@@ -471,7 +484,10 @@ export class CouponsServiceTools {
             order: {
                 createdAt: "DESC"
             },
-            select: ["title", "code", "description", "expiration", "type", "typeDiscount", "views"]
+            select: [
+                "title", "code", "description", "expiration",
+                "type", "typeDiscount", "views", "shortUrl"
+            ]
         });
 
         if (!couponsResult || !couponsResult.data || couponsResult.data.length === 0) {
@@ -798,8 +814,6 @@ export class CouponsServiceTools {
             this.postJobs.set(jobId, job);
 
             this.logger.log(`Processing post job ${jobId} for campaign ${job.campaignId}`);
-
-            // Call the original generateBestCouponsPost method
             const result = await this.generateBestCouponsPost(job.campaignId);
 
             job.result = result;
@@ -923,9 +937,8 @@ export class CouponsServiceTools {
      */
     async incrementCouponView(couponId: string) {
         try {
-            if (!couponId) {
+            if (!couponId)
                 throw new Error('Coupon ID or code is required');
-            }
 
             const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
 
@@ -963,6 +976,119 @@ export class CouponsServiceTools {
             return {
                 success: false,
                 error: error.message
+            };
+        }
+    }
+
+    /**
+     * Generate short URLs for all coupons that don't have them
+     * @param batchSize Number of coupons to process at once (default: 50)
+     * @returns Processing results with counts and any errors
+     */
+    async generateMissingShortUrls(batchSize: number = 50) {
+        try {
+            this.logger.log('Starting to generate short URLs for coupons without them');
+
+            const AffiliateCouponsEntity = Repository.getEntity("AffiliateCouponsEntity");
+
+            const couponsWithoutShortUrl = await Repository.findAll(AffiliateCouponsEntity, {
+                deeplink: Not(IsNull()),
+                link: Not(IsNull()),
+                active: true,
+                limit: 10000
+            }, [], {
+                select: ["id", "code", "deeplink", "title"]
+            });
+
+            if (!couponsWithoutShortUrl || !couponsWithoutShortUrl.data || couponsWithoutShortUrl.data.length === 0) {
+                this.logger.log('No coupons found without short URLs');
+                return {
+                    success: true,
+                    message: 'No coupons found without short URLs',
+                    processed: 0,
+                    updated: 0,
+                    errors: []
+                };
+            }
+
+            const coupons = couponsWithoutShortUrl.data;
+            this.logger.log(`Found ${coupons.length} coupons without short URLs`);
+
+            let processed = 0;
+            let updated = 0;
+            const errors: Array<{ couponId: string; error: string }> = [];
+
+            for (let i = 0; i < coupons.length; i += batchSize) {
+                const batch = coupons.slice(i, i + batchSize);
+                this.logger.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(coupons.length / batchSize)} (${batch.length} coupons)`);
+
+                const batchPromises = batch.map(async (coupon: any) => {
+                    try {
+                        processed++;
+                        const shortUrl = await this.shortUrlService.createShortUrl(coupon.deeplink);
+
+                        await Repository.update(AffiliateCouponsEntity, {
+                            id: coupon.id
+                        }, {
+                            shortUrl: shortUrl
+                        });
+
+                        updated++;
+                        this.logger.log(`Generated short URL for coupon ${coupon.code} (${coupon.id}): ${shortUrl}`);
+
+                        return {
+                            success: true,
+                            couponId: coupon.id,
+                            shortUrl: shortUrl
+                        };
+
+                    } catch (error: any) {
+                        console.log(coupon.deeplink);
+                        const errorMessage = error.message || 'Unknown error';
+                        this.logger.error(`Failed to generate short URL for coupon ${coupon.code} (${coupon.id}): ${errorMessage}`);
+
+                        errors.push({
+                            couponId: coupon.id,
+                            error: errorMessage
+                        });
+
+                        return {
+                            success: false,
+                            couponId: coupon.id,
+                            error: errorMessage
+                        };
+                    }
+                });
+
+                await Promise.all(batchPromises);
+
+                if (i + batchSize < coupons.length)
+                    await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const result = {
+                success: true,
+                message: `Short URL generation completed. Processed ${processed} coupons, updated ${updated} successfully`,
+                totalFound: coupons.length,
+                processed: processed,
+                updated: updated,
+                errors: errors.length,
+                errorDetails: errors.slice(0, 10)
+            };
+
+            this.logger.log(`Short URL generation completed: ${JSON.stringify(result)}`);
+            return result;
+
+        } catch (error: any) {
+            const errorMessage = `Failed to generate missing short URLs: ${error.message}`;
+            this.logger.error(errorMessage);
+
+            return {
+                success: false,
+                message: errorMessage,
+                processed: 0,
+                updated: 0,
+                errors: []
             };
         }
     }

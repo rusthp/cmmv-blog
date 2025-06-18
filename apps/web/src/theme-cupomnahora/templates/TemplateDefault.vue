@@ -679,7 +679,13 @@ const isScratchModalOpen = ref(false);
 const selectedCouponForScratch = ref<any | null>(null);
 
 const checkCouponInUrl = async () => {
+    // Skip coupon search if we're on a campaign page (/desconto/)
+    if (route.path.startsWith('/desconto/')) {
+        return;
+    }
+
     const displayCode = route.query.display;
+    console.log('displayCode', displayCode);
 
     if (displayCode && typeof displayCode === 'string') {
         try {
@@ -741,6 +747,8 @@ const checkCouponInUrl = async () => {
                     console.warn('Não foi possível buscar cupons via API:', error);
                 }
             }
+
+            console.log('foundCoupon', foundCoupon);
 
             if (foundCoupon) {
                 if (!foundCoupon.campaignName || !foundCoupon.campaignLogo) {
@@ -828,7 +836,7 @@ const isValidEmail = (email: string) => {
 };
 
 const loadTemplateData = async () => {
-    const promises = [];
+    const promises: Promise<void>[] = [];
 
     if (!campaigns.value || campaigns.value.length === 0) {
         promises.push(

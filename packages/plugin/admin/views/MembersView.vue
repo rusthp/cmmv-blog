@@ -826,7 +826,7 @@ const saveMember = async () => {
             await membersAPI.update(memberToEdit.value.id, memberData);
             showNotification('success', 'Member updated successfully');
         } else {
-            await membersAPI.insert(memberData);
+            await membersAPI.create(memberData);
             showNotification('success', 'Member created successfully');
         }
 

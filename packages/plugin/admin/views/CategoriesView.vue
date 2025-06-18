@@ -844,7 +844,7 @@ const saveCategory = async () => {
             await adminClient.categories.update(categoryToEdit.value.id, categoryData)
             showNotification('success', 'Category updated successfully')
         } else {
-            await adminClient.categories.insert(categoryData)
+            await adminClient.categories.create(categoryData)
             showNotification('success', 'Category created successfully')
         }
 

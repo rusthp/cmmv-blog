@@ -1,7 +1,8 @@
 import {
     Controller, Get, RouterSchema,
     Queries, Req, Param,
-    CacheControl, ContentType, Raw
+    CacheControl, ContentType, Raw,
+    Post, Body
 } from "@cmmv/http";
 
 import {
@@ -9,11 +10,17 @@ import {
 } from "@cmmv/auth";
 
 import {
-    OddsCountriesService
+    OddsSyncCountriesService
 } from "./countries.service";
 
 @Controller("odds/countries")
 export class OddsCountriesController {
-    constructor(private readonly oddsCountriesService: OddsCountriesService){}
+    constructor(private oddsCountriesService: OddsSyncCountriesService){}
 
+    @Post("sync")
+    @Auth("oddscountries:update")
+    async syncCountries(@Body() body: { settingId: string; endpoint: string }) {
+        const { settingId, endpoint } = body;
+        return await this.oddsCountriesService.syncCountriesFromAPI(settingId, endpoint);
+    }
 }

@@ -4,21 +4,17 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-white">Coupons</h1>
             <div class="flex flex-wrap gap-2 mt-2 sm:mt-0">
+                <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Coupon
+                </button>
                 <button @click="refreshData" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Refresh
-                </button>
-                <button @click="exportCoupons" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center" :disabled="exportLoading">
-                    <svg v-if="exportLoading" class="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Export
                 </button>
                 <!-- Add search dropdown button -->
                 <div class="relative">
@@ -28,7 +24,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         Search
-                        <!-- Indicator dot for active search -->
                         <span
                             v-if="filters.search.trim()"
                             class="absolute -top-1 -right-1 h-2.5 w-2.5 bg-blue-500 rounded-full"
@@ -47,7 +42,6 @@
                                     @keydown.esc="showSearchDropdown = false"
                                     ref="searchInput"
                                 >
-                                <!-- Clear button -->
                                 <button
                                     v-if="filters.search.trim()"
                                     @click="clearSearch"
@@ -61,12 +55,49 @@
                         </div>
                     </div>
                 </div>
-                <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Coupon
-                </button>
+                <!-- More dropdown -->
+                <div class="relative">
+                    <button @click="toggleMoreDropdown" data-more-toggle
+                        class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        More
+                    </button>
+                    <!-- More dropdown menu -->
+                    <div v-if="showMoreDropdown" class="absolute right-0 mt-2 w-56 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-10">
+                        <div class="py-1">
+                            <button
+                                @click="exportCoupons"
+                                :disabled="exportLoading"
+                                class="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 hover:text-white flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg v-if="exportLoading" class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Export Coupons
+                            </button>
+                            <button
+                                @click="generateMissingShortUrls"
+                                :disabled="shortUrlLoading"
+                                class="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 hover:text-white flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg v-if="shortUrlLoading" class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                Generate Short URLs
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -109,16 +140,6 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider w-16">
                                 ID
                             </th>
-                            <th
-                                @click="toggleSort('title')"
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider cursor-pointer hover:text-white"
-                            >
-                                Title
-                                <span v-if="filters.sortBy === 'title'" class="ml-1">
-                                    {{ filters.sortOrder === 'asc' ? '↑' : '↓' }}
-                                </span>
-                            </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
                                 Code
                             </th>
@@ -140,9 +161,6 @@
                         <tr v-for="coupon in coupons" :key="coupon.id" class="hover:bg-neutral-750">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400" :title="coupon.id">
                                 {{ coupon.id.substring(0, 6) }}...
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
-                                <span :title="coupon.title">{{ truncateTitle(coupon.title) }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                 <span class="bg-neutral-700 px-2 py-1 rounded text-xs font-mono">
@@ -501,8 +519,10 @@ const filters = ref({
 })
 
 const showSearchDropdown = ref(false)
+const showMoreDropdown = ref(false)
 const searchInput = ref(null)
 const exportLoading = ref(false)
+const shortUrlLoading = ref(false)
 
 const filteredCampaigns = computed(() => {
     if (!couponForm.value.network) {
@@ -876,6 +896,10 @@ const toggleSearchDropdown = () => {
     }
 }
 
+const toggleMoreDropdown = () => {
+    showMoreDropdown.value = !showMoreDropdown.value;
+}
+
 const clearSearch = () => {
     filters.value.search = '';
     showSearchDropdown.value = false;
@@ -883,6 +907,7 @@ const clearSearch = () => {
 
 const exportCoupons = async () => {
     try {
+        showMoreDropdown.value = false;
         exportLoading.value = true;
 
         // Get signature token first (requires root access)
@@ -911,12 +936,48 @@ const exportCoupons = async () => {
     }
 }
 
+const generateMissingShortUrls = async () => {
+    try {
+        showMoreDropdown.value = false;
+        shortUrlLoading.value = true;
+
+        showNotification('info', 'Starting to generate short URLs for coupons...');
+
+        const response = await affiliateClient.coupons.generateMissingShortUrls(50);
+
+        if (response.success) {
+            showNotification('success',
+                `Short URL generation completed! Processed ${response.processed} coupons, updated ${response.updated} successfully.` +
+                (response.errors > 0 ? ` ${response.errors} errors occurred.` : '')
+            );
+
+            // Refresh the coupons list to show updated data
+            await refreshData();
+        } else {
+            throw new Error(response.message || 'Failed to generate short URLs');
+        }
+
+    } catch (err) {
+        console.error('Failed to generate short URLs:', err);
+        showNotification('error', err.message || 'Failed to generate short URLs for coupons');
+    } finally {
+        shortUrlLoading.value = false;
+    }
+}
+
 onMounted(() => {
-    // Add click-outside handling for search dropdown
+    // Add click-outside handling for search and more dropdowns
     document.addEventListener('click', (event) => {
         const target = event.target
+
+        // Handle search dropdown
         if (!target.closest('[data-search-toggle]') && !target.closest('.absolute') && showSearchDropdown.value) {
             showSearchDropdown.value = false
+        }
+
+        // Handle more dropdown
+        if (!target.closest('[data-more-toggle]') && !target.closest('.absolute') && showMoreDropdown.value) {
+            showMoreDropdown.value = false
         }
     })
 

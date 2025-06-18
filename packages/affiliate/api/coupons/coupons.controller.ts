@@ -102,4 +102,12 @@ export class CouponsControllerTools {
     async incrementCouponView(@Body() body: { couponId: string }) {
         return await this.couponsService.incrementCouponView(body.couponId);
     }
+
+    @Post("generate-missing-shorturls")
+    @Auth("affiliatecoupons:update")
+    @ContentType('application/json')
+    async generateMissingShortUrls(@Body() body: { batchSize?: number }) {
+        const batchSize = body.batchSize || 50;
+        return await this.couponsService.generateMissingShortUrls(batchSize);
+    }
 }

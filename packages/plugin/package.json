@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.62",
+    "version": "0.1.71",
     "description": "Blog package for CMMV",
     "scripts": {
         "build": "tsup"

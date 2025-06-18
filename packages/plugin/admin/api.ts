@@ -364,3 +364,18 @@ export function useApi() {
         ...methods,
     }
 }
+
+export function defaultCRUD(path: string, auth: boolean = true){
+    const { authRequest, authRootRequest } = useApi();
+
+    return {
+        get: (queries: Record<string, any>) => {
+            const query = new URLSearchParams(queries).toString();
+            return auth ? authRootRequest(`${path}?${query}`, 'GET') : authRequest(`${path}?${query}`, 'GET');
+        },
+        create: (data: any) => auth ? authRootRequest(`${path}`, 'POST', data) : authRequest(`${path}`, 'POST', data),
+        insert: (data: any) => auth ? authRootRequest(`${path}`, 'POST', data) : authRequest(`${path}`, 'POST', data),//Compatibility
+        update: (id: string, data: any) => auth ? authRootRequest(`${path}/${id}`, 'PUT', data) : authRequest(`${path}/${id}`, 'PUT', data),
+        delete: (id: string) => auth ? authRootRequest(`${path}/${id}`, 'DELETE') : authRequest(`${path}/${id}`, 'DELETE'),
+    }
+}

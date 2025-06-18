@@ -550,7 +550,7 @@ const saveTag = async () => {
             await adminClient.tags.update(tagToEdit.value.id, tagData)
             showNotification('success', 'Tag updated successfully')
         } else {
-            await adminClient.tags.insert(tagData)
+            await adminClient.tags.create(tagData)
             showNotification('success', 'Tag created successfully')
         }
 

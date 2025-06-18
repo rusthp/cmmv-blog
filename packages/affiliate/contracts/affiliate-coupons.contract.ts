@@ -117,9 +117,18 @@ export class AffiliateCouponsContract extends AbstractContract {
 
     @ContractField({
         protoType: 'text',
-        nullable: true
+        nullable: true,
+        index: true
     })
     deeplink?: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        index: true,
+        unique: true
+    })
+    shortUrl?: string;
 
     @ContractField({
         protoType: 'number',

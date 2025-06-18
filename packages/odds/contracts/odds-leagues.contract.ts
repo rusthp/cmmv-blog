@@ -3,10 +3,6 @@ import {
     ContractField
 } from "@cmmv/core";
 
-import {
-    OddsCountriesContract
-} from "./odds-countries.contract";
-
 @Contract({
     namespace: 'Odds',
     controllerName: 'OddsLeagues',
@@ -23,66 +19,33 @@ import {
     }
 })
 export class OddsLeaguesContract extends AbstractContract {
-    @ContractField({
-        protoType: 'string',
-        objectType: 'object',
-        entityType: 'OddsCountriesEntity',
-        protoRepeated: false,
-        nullable: false,
-        index: true,
-        readOnly: true,
-        link: [
-            {
-                createRelationship: true,
-                contract: OddsCountriesContract,
-                entityName: 'country',
-                field: 'id',
-            },
-        ],
-    })
-    country!: string;
+    @ContractField({ protoType: 'number', unique: true, index: true })
+    external_id!: number;
 
-    @ContractField({
-        protoType: 'string',
-        nullable: false,
-        index: true,
-    })
-    code!: string;
-
-    @ContractField({
-        protoType: 'string',
-        nullable: false,
-        index: true
-    })
+    @ContractField({ protoType: 'string', index: true })
     name!: string;
 
-    @ContractField({
-        protoType: 'text',
-        nullable: true,
-    })
-    logo!: string;
+    @ContractField({ protoType: 'string' })
+    type!: string;
 
-    @ContractField({
-        protoType: 'boolean',
-        nullable: true,
-        index: true,
-        defaultValue: true
-    })
+    @ContractField({ protoType: 'string', nullable: true })
+    logo?: string;
+
+    @ContractField({ protoType: 'boolean', defaultValue: false })
+    odds!: boolean;
+
+    @ContractField({ protoType: 'number' })
+    year!: number;
+
+    @ContractField({ protoType: 'datetime' })
+    start_date!: Date;
+
+    @ContractField({ protoType: 'datetime' })
+    end_date!: Date;
+
+    @ContractField({ protoType: 'boolean', defaultValue: false })
     current!: boolean;
 
-    @ContractField({
-        protoType: 'date',
-        nullable: true,
-        index: true
-    })
-    startDate!: Date;
-
-    @ContractField({
-        protoType: 'date',
-        nullable: true,
-        index: true
-    })
-    endDate!: Date;
-
-
+    @ContractField({ protoType: 'string', nullable: true, index: true })
+    country_id?: string;
 }

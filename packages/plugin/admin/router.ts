@@ -23,6 +23,7 @@ import WhitelabelView from './views/WhitelabelView.vue';
 import WhitelabelAccessView from './views/WhitelabelAccessView.vue';
 import BackupView from './views/BackupView.vue';
 import PromptsView from './views/PromptsView.vue';
+import ShortUrlView from './views/ShortUrlView.vue';
 
 import SetupView from './views/SetupView.vue';
 import PostView from './views/PostView.vue';
@@ -51,7 +52,8 @@ export const blogAdminRoutes: RouteRecordRaw[] = [
             { path: '/whitelabel', component: WhitelabelView },
             //{ path: '/whitelabel-access', component: WhitelabelAccessView },
             { path: '/backup', component: BackupView },
-            { path: '/prompts', component: PromptsView }
+            { path: '/prompts', component: PromptsView },
+            { path: '/shorturl', component: ShortUrlView }
         ]
     },
     {
@@ -189,5 +191,11 @@ useNavbar().addItems([
         to: '/settings',
         group: 'Settings'
     },
+    {
+        label: 'Short URLs',
+        icon: 'fas fa-link',
+        to: '/shorturl',
+        group: 'Settings'
+    }
 ])
 

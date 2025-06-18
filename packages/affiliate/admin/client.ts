@@ -104,6 +104,9 @@ export const useAffiliateClient = () => {
         },
         export: async (token: string) => {
             return api.authRequest(`affiliate/coupons/export?token=${token}`, "GET");
+        },
+        generateMissingShortUrls: async (batchSize?: number) => {
+            return api.authRequest("affiliate/coupons/generate-missing-shorturls", "POST", { batchSize });
         }
     }
 

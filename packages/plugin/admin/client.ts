@@ -1,7 +1,19 @@
-import { useApi } from './api';
+import { useApi, defaultCRUD } from './api';
 
 export const useAdminClient = () => {
     const api = useApi();
+
+    const categories = { ...defaultCRUD('categories', false) };
+    const tags = { ...defaultCRUD('tags', false) };
+    const authors = { ...defaultCRUD('authors', false) };
+    const whitelabelAccess = { ...defaultCRUD('whitelabel-access', false) };
+    const users = { ...defaultCRUD('user', false) };
+    const prompts = { ...defaultCRUD('prompts') };
+    const shorturl = {
+        ...defaultCRUD('shorturl', false),
+        create: (data: any) => api.authRequest('blog/shorturl', 'POST', data),
+        insert: (data: any) => api.authRequest('blog/shorturl', 'POST', data),
+    };
 
     const settings = {
         get: (root: boolean = false) => api.getSettings(root),
@@ -17,26 +29,6 @@ export const useAdminClient = () => {
     const profile = {
         get: () => api.authRootRequest('profile', 'GET'),
         update: (data: any) => api.authRootRequest('profile', 'PUT', data),
-    };
-
-    const categories = {
-        get: (filters: Record<string, string>) => {
-            const query = new URLSearchParams(filters).toString();
-            return api.authRequest(`categories?${query}`, 'GET');
-        },
-        insert: (data: { name: string }) => api.authRequest('categories', 'POST', data),
-        update: (id: string, data: { name: string }) => api.authRequest(`categories/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRequest(`categories/${id}`, 'DELETE'),
-    };
-
-    const tags = {
-        get: (filters: Record<string, string>) => {
-            const query = new URLSearchParams(filters).toString();
-            return api.authRequest(`tags?${query}`, 'GET');
-        },
-        insert: (data: { name: string }) => api.authRequest('tags', 'POST', data),
-        update: (id: string, data: { name: string }) => api.authRequest(`tags/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRequest(`tags/${id}`, 'DELETE'),
     };
 
     const session = {
@@ -72,16 +64,6 @@ export const useAdminClient = () => {
         save: (data: any) => api.authRequest('blog/pages', 'POST', data),
         update: (id: string, data: any) => api.authRequest(`blog/pages/${id}`, 'PUT', data),
         delete: (id: string) => api.authRequest(`blog/pages/${id}`, 'DELETE'),
-    };
-
-    const authors = {
-        get: (filters: Record<string, any>) => {
-            const query = new URLSearchParams(filters).toString();
-            return api.authRequest(`authors?${query}`, 'GET');
-        },
-        create: (data: any) => api.authRequest('authors', 'POST', data),
-        update: (id: string, data: any) => api.authRequest(`authors/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRequest(`authors/${id}`, 'DELETE'),
     };
 
     const medias = {
@@ -171,7 +153,6 @@ export const useAdminClient = () => {
                 }
             });
         },
-
         erase: (imageFile: File, params: { left: number; top: number; width: number; height: number }) => {
             const formData = new FormData();
             formData.append('image', imageFile);
@@ -185,7 +166,6 @@ export const useAdminClient = () => {
                 }
             });
         },
-
         crop: (imageFile: File, params: { left: number; top: number; width: number; height: number }) => {
             const formData = new FormData();
             formData.append('image', imageFile);
@@ -199,7 +179,6 @@ export const useAdminClient = () => {
                 }
             });
         },
-
         resize: (imageFile: File, params: { width?: number; height?: number; fit?: string }) => {
             const formData = new FormData();
             formData.append('image', imageFile);
@@ -222,37 +201,11 @@ export const useAdminClient = () => {
     };
 
     const whitelabel = {
-        get: (queries: Record<string, any>) => {
-            const query = new URLSearchParams(queries).toString();
-            return api.authRootRequest(`whitelabel?${query}`, 'GET');
-        },
+        ...defaultCRUD('whitelabel', false),
         getAccess: (queries: Record<string, any>) => {
             const query = new URLSearchParams(queries).toString();
             return api.authRootRequest(`whitelabel/access?${query}`, 'GET');
-        },
-        insert: (data: any) => api.authRootRequest('whitelabel', 'POST', data),
-        update: (id: string, data: any) => api.authRootRequest(`whitelabel/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRootRequest(`whitelabel/${id}`, 'DELETE'),
-    };
-
-    const whitelabelAccess = {
-        get: (queries: Record<string, any>) => {
-            const query = new URLSearchParams(queries).toString();
-            return api.authRootRequest(`whitelabel-access?${query}`, 'GET');
-        },
-        insert: (data: any) => api.authRootRequest('whitelabel-access', 'POST', data),
-        update: (id: string, data: any) => api.authRootRequest(`whitelabel-access/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRootRequest(`whitelabel-access/${id}`, 'DELETE'),
-    };
-
-    const users = {
-        get: (queries: Record<string, any>) => {
-            const query = new URLSearchParams(queries).toString();
-            return api.authRootRequest(`user?${query}`, 'GET');
-        },
-        insert: (data: any) => api.authRootRequest('user', 'POST', data),
-        update: (id: string, data: any) => api.authRootRequest(`user/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRootRequest(`user/${id}`, 'DELETE'),
+        }
     };
 
     const backup = {
@@ -260,18 +213,9 @@ export const useAdminClient = () => {
         getBackups: () => api.authRequest('blog/backup', 'GET'),
         download: (filename: string) => api.authRequest(`blog/backup/download?filename=${filename}`, 'GET'),
         delete: (filename: string) => api.authRequest(`blog/backup/delete?filename=${filename}`, 'DELETE'),
-        // Media backup methods
         getMediaBackups: () => api.authRequest('blog/backup/medias', 'GET'),
         createMediaBackup: (mediaIds: string[]) => api.authRequest('blog/backup/medias/create', 'POST', { mediaIds }),
         rollbackMediaBackup: (filename: string) => api.authRequest('blog/backup/medias/rollback', 'POST', { filename }),
-    };
-
-    const prompts = {
-        get: () => api.authRequest('prompts', 'GET'),
-        getById: (id: string) => api.authRequest(`prompts/${id}`, 'GET'),
-        create: (data: any) => api.authRequest('prompts', 'POST', data),
-        update: (id: string, data: any) => api.authRequest(`prompts/${id}`, 'PUT', data),
-        delete: (id: string) => api.authRequest(`prompts/${id}`, 'DELETE'),
     };
 
     return {
@@ -295,5 +239,6 @@ export const useAdminClient = () => {
         users,
         backup,
         prompts,
+        shorturl
     };
 };

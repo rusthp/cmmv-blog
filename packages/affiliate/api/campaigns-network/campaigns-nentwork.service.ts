@@ -5,6 +5,8 @@ import {
 
 import { Repository } from "@cmmv/repository";
 
+//@ts-ignore
+import { ShortUrlServiceTools } from "@cmmv/blog";
 import { AwinService } from "../network-api/awin.service";
 import { AfilioService } from "../network-api/afilio.service";
 import { CityadsService } from "../network-api/cityads.service";
@@ -15,6 +17,10 @@ import { KwankoService } from "../network-api/kwanko.service";
 
 @Service()
 export class CampaignsNetworksToolsService {
+    constructor(
+        private readonly shortUrlService: ShortUrlServiceTools
+    ) {}
+
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async getNetworkCampaignsCron(){
         await this.getNetworkCampaigns();
@@ -302,6 +308,7 @@ export class CampaignsNetworksToolsService {
 
                                 if(!affiliateCampaignsNetwork && affiliateCampaign){
                                     const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
+                                    const shortUrl = await this.shortUrlService.createShortUrl(coupon.deeplink);
 
                                     if(coupon.code.trim() !== ""){
                                         await Repository.insert(AffiliateCouponsEntity, {
@@ -316,7 +323,8 @@ export class CampaignsNetworksToolsService {
                                             link: coupon.link,
                                             campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
                                             campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
-                                            deeplink: coupon.deeplink
+                                            deeplink: coupon.deeplink,
+                                            shortUrl: shortUrl
                                         });
                                     }
                                 }
@@ -393,6 +401,7 @@ export class CampaignsNetworksToolsService {
 
                                 if(!affiliateCampaignsNetwork && affiliateCampaign){
                                     const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
+                                    const shortUrl = await this.shortUrlService.createShortUrl(coupon.deeplink);
 
                                     await Repository.insert(AffiliateCouponsEntity, {
                                         network: affiliateNetwork.id,
@@ -406,7 +415,8 @@ export class CampaignsNetworksToolsService {
                                         link: coupon.link,
                                         campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
                                         campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
-                                        deeplink: coupon.deeplink
+                                        deeplink: coupon.deeplink,
+                                        shortUrl: shortUrl
                                     });
                                 }
                             });

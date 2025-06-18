@@ -1,7 +1,7 @@
 import { Module } from '@cmmv/core';
 
 import {
-    OddsCountriesService
+    OddsSyncCountriesService
 } from "./countries.service";
 
 import {
@@ -9,6 +9,6 @@ import {
 } from "./countries.controller";
 
 export const OddsCountriesModule = new Module('odds-countries', {
-    providers: [OddsCountriesService],
+    providers: [OddsSyncCountriesService],
     controllers: [OddsCountriesController]
 });
