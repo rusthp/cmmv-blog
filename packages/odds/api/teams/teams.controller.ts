@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { Controller, Post, Body, Get, Query } from "@cmmv/http";
-=======
 import { Controller, Post, Body, Get, Query, Param } from "@cmmv/http";
->>>>>>> upstream/main
 import { Auth } from "@cmmv/auth";
 import { OddsSyncTeamsService } from './teams.service';
 
@@ -32,8 +28,6 @@ export class OddsTeamsController {
     getSyncProgress(@Query('syncId') syncId: string) {
         return this.oddsSyncTeamsService.getSyncProgress(syncId);
     }
-<<<<<<< HEAD
-=======
 
     @Post(":id/process-image")
     @Auth("oddsteams:update")
@@ -52,5 +46,4 @@ export class OddsTeamsController {
     async getProcessAllImagesStatus(@Param("jobId") jobId: string) {
         return this.oddsSyncTeamsService.getProcessAllImagesStatus(jobId);
     }
->>>>>>> upstream/main
 } 

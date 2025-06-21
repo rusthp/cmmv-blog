@@ -17,14 +17,6 @@ import * as path from "node:path";
 import * as xml2js from 'xml2js';
 const sharp = require('sharp');
 
-<<<<<<< HEAD
-//@ts-ignore
-// import { MediasService } from "@cmmv/blog"; // Removido pois não será mais usado
-import { Buffer } from 'buffer';
-
-@Service()
-export class OddsSyncCountriesService {
-=======
 @Service()
 export class OddsSyncCountriesService {
     constructor(
@@ -32,7 +24,6 @@ export class OddsSyncCountriesService {
         private readonly httpService: HttpService
     ) {}
 
->>>>>>> upstream/main
     /**
      * Syncs countries from a configured third-party API.
      * @param settingId - The ID of the API setting to use.
@@ -51,10 +42,6 @@ export class OddsSyncCountriesService {
         const url = `${setting.baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
         const headers: Record<string, string> = {};
 
-<<<<<<< HEAD
-        // Build authentication and custom headers
-=======
->>>>>>> upstream/main
         if (setting.authType === 'API Key' || setting.authType === 'Bearer Token') {
             const customHeaders = JSON.parse(setting.headers || '{}');
             for (const key in customHeaders) {
@@ -89,18 +76,6 @@ export class OddsSyncCountriesService {
 
         let createdCount = 0;
         let updatedCount = 0;
-<<<<<<< HEAD
-        // const mediasService: any = Application.resolveProvider(MediasService); // Removido pois não será mais usado
-
-        for (const country of countriesFromAPI) {
-            if (!country.name || !country.code) {
-                continue; // Skip entries without name or code
-            }
-
-            let localFlagUrl = null;
-            if (country.flag && country.flag.startsWith('http')) {
-                // Salva diretamente a URL da API, como solicitado.
-=======
 
         for (const country of countriesFromAPI) {
             if (!country.name || !country.code)
@@ -108,7 +83,6 @@ export class OddsSyncCountriesService {
 
             let localFlagUrl = null;
             if (country.flag && country.flag.startsWith('http')) {
->>>>>>> upstream/main
                 localFlagUrl = country.flag;
             }
 
@@ -117,12 +91,6 @@ export class OddsSyncCountriesService {
             const countryData = {
                 name: country.name,
                 code: country.code,
-<<<<<<< HEAD
-                flag: localFlagUrl || (existingCountry ? existingCountry.flag : null)
-            };
-
-            if (existingCountry) {
-=======
                 flag: localFlagUrl || (existingCountry ? existingCountry.flag : null),
                 flagProcessed: false,
                 processedFlagUrl: null
@@ -137,7 +105,6 @@ export class OddsSyncCountriesService {
                     countryData.processedFlagUrl = existingCountry.processedFlagUrl;
                 }
 
->>>>>>> upstream/main
                 await Repository.update(OddsCountriesEntity, existingCountry.id, countryData);
                 updatedCount++;
             } else {
@@ -153,8 +120,6 @@ export class OddsSyncCountriesService {
             updated: updatedCount
         };
     }
-<<<<<<< HEAD
-=======
 
     /**
      * Process a single country flag through the media system
@@ -301,5 +266,4 @@ export class OddsSyncCountriesService {
         const countries = await Repository.findAll(OddsCountriesEntity, queries);
         return countries;
     }
->>>>>>> upstream/main
 }

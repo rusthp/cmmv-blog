@@ -57,8 +57,6 @@
                     </svg>
                     Sync All Countries
                 </button>
-<<<<<<< HEAD
-=======
                 <button
                     @click="processAllImages"
                     class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
@@ -82,7 +80,6 @@
             </div>
             <div v-if="imageProgress.failed > 0" class="text-xs text-red-400">
                 {{ imageProgress.failed }} images failed to process.
->>>>>>> upstream/main
             </div>
         </div>
 
@@ -122,10 +119,6 @@
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="venue in venues" :key="venue.id" class="hover:bg-neutral-750">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-<<<<<<< HEAD
-                                <img v-if="venue.image" :src="venue.image" :alt="venue.name" class="w-16 h-10 object-cover rounded border border-neutral-600">
-                                <div v-else class="w-16 h-10 bg-neutral-600 rounded"></div>
-=======
                                 <div class="flex items-center space-x-2">
                                     <img v-if="venue.processedImageUrl || venue.image" :src="venue.processedImageUrl || venue.image" :alt="venue.name" class="w-16 h-10 object-cover rounded border border-neutral-600">
                                     <div v-else class="w-16 h-10 bg-neutral-600 rounded"></div>
@@ -138,7 +131,6 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                     </button>
                                 </div>
->>>>>>> upstream/main
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ venue.name }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">{{ venue.city }}</td>
@@ -219,8 +211,6 @@
                                 <div>
                                     <label for="venueImage" class="block text-sm font-medium text-neutral-300 mb-1">Image URL</label>
                                     <input id="venueImage" v-model="venueForm.image" type="url" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white" />
-<<<<<<< HEAD
-=======
                                      <div v-if="venueForm.image" class="mt-2">
                                         <p class="text-xs text-neutral-400 mb-1">Preview:</p>
                                         <img
@@ -239,7 +229,6 @@
                                         class="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-neutral-400 cursor-not-allowed"
                                         readonly
                                     />
->>>>>>> upstream/main
                                 </div>
                             </div>
                         </div>
@@ -461,14 +450,11 @@ const syncAllForm = ref({
     settingId: ''
 });
 
-<<<<<<< HEAD
-=======
 // Image processing progress
 const processingAllImages = ref(false);
 const imageProgress = ref({ total: 0, processed: 0, failed: 0, status: 'idle' });
 let imageProgressPollInterval = null;
 
->>>>>>> upstream/main
 // Variáveis para acompanhar o progresso da sincronização
 const syncInProgress = ref(false);
 const currentSyncId = ref(null);
@@ -611,13 +597,9 @@ const resetVenueForm = () => {
         country_id: '',
         capacity: null,
         surface: '',
-<<<<<<< HEAD
-        image: ''
-=======
         image: '',
         imageProcessed: false,
         processedImageUrl: ''
->>>>>>> upstream/main
     };
 };
 
@@ -813,8 +795,6 @@ const startProgressMonitoring = (syncId) => {
         });
 };
 
-<<<<<<< HEAD
-=======
 const processImage = async (venue) => {
     try {
         const result = await oddsClient.venues.processImage(venue.id);
@@ -865,19 +845,15 @@ const processAllImages = async () => {
     }
 };
 
->>>>>>> upstream/main
 // Limpar recursos ao desmontar o componente
 onBeforeUnmount(() => {
     if (syncProgressEventSource.value) {
         syncProgressEventSource.value.close();
         syncProgressEventSource.value = null;
     }
-<<<<<<< HEAD
-=======
     if(imageProgressPollInterval) {
         clearInterval(imageProgressPollInterval);
     }
->>>>>>> upstream/main
 });
 
 onMounted(() => {

@@ -80,8 +80,6 @@
                     </svg>
                     Sync from API
                 </button>
-<<<<<<< HEAD
-=======
                 <div class="relative">
                     <button
                         @click="processAllFlags"
@@ -98,7 +96,6 @@
                         {{ processingAllFlags ? 'Processing...' : 'Process All Flags' }}
                     </button>
                 </div>
->>>>>>> upstream/main
             </div>
         </div>
 
@@ -471,11 +468,8 @@ const syncForm = ref({
     endpoint: '/countries'
 })
 
-<<<<<<< HEAD
-=======
 const processingAllFlags = ref(false)
 
->>>>>>> upstream/main
 const notification = ref({
     show: false,
     type: 'success',
@@ -815,8 +809,6 @@ const runSync = async () => {
     }
 };
 
-<<<<<<< HEAD
-=======
 const processFlag = async (country) => {
     try {
         const result = await oddsClient.countries.processFlag(country.id);
@@ -852,7 +844,6 @@ const processAllFlags = async () => {
     }
 };
 
->>>>>>> upstream/main
 onMounted(() => {
     loadCountries()
 

@@ -1,12 +1,4 @@
 import { Service } from "@cmmv/core";
-<<<<<<< HEAD
-import { Repository } from "@cmmv/repository";
-import { Buffer } from 'buffer';
-import { OddsTeamsContract } from "../../contracts/odds-teams.contract";
-import { Logger } from "@cmmv/core";
-
-// Interface para o progresso da sincronização
-=======
 import { Repository, Not, IsNull } from "@cmmv/repository";
 import { Buffer } from 'buffer';
 import { OddsTeamsContract } from "../../contracts/odds-teams.contract";
@@ -16,7 +8,6 @@ import { MediasService } from "@cmmv/blog";
 import { randomUUID } from "crypto";
 const sharp = require('sharp');
 
->>>>>>> upstream/main
 export interface SyncProgress {
     totalItems: number;
     processedItems: number;
@@ -28,26 +19,6 @@ export interface SyncProgress {
     percentage: number;
 }
 
-<<<<<<< HEAD
-@Service()
-export class OddsSyncTeamsService {
-    private readonly logger = new Logger("OddsSyncTeamsService");
-    
-    // Armazenamento do progresso da sincronização
-    private syncProgressStore: Record<string, SyncProgress> = {};
-    
-    /**
-     * Inicia a sincronização de times e retorna um ID para acompanhar o progresso
-     * @param settingId ID da configuração da API
-     * @param params Parâmetros de busca (country, league, season, etc.)
-     * @returns ID da sincronização para acompanhar o progresso
-     */
-    async startSyncTeams(settingId: string, params: Record<string, string>) {
-        // Gerar um ID único para esta sincronização
-        const syncId = `sync_${Date.now()}`;
-        
-        // Inicializar o progresso
-=======
 export interface ImageJobStatus {
     total: number;
     processed: number;
@@ -73,7 +44,6 @@ export class OddsSyncTeamsService {
     async startSyncTeams(settingId: string, params: Record<string, string>) {
         const syncId = `sync_${Date.now()}`;
 
->>>>>>> upstream/main
         this.syncProgressStore[syncId] = {
             totalItems: 0,
             processedItems: 0,
@@ -83,18 +53,6 @@ export class OddsSyncTeamsService {
             status: 'running',
             percentage: 0
         };
-<<<<<<< HEAD
-        
-        // Iniciar a sincronização em background
-        this.syncTeamsFromAPI(settingId, "/teams", params, syncId)
-            .then(result => {
-                // Atualizar o status quando concluir
-                if (this.syncProgressStore[syncId]) {
-                    this.syncProgressStore[syncId].status = 'completed';
-                    this.syncProgressStore[syncId].percentage = 100;
-                    
-                    // Remover o progresso após 5 minutos
-=======
 
         this.syncTeamsFromAPI(settingId, "/teams", params, syncId)
             .then(result => {
@@ -102,47 +60,29 @@ export class OddsSyncTeamsService {
                     this.syncProgressStore[syncId].status = 'completed';
                     this.syncProgressStore[syncId].percentage = 100;
 
->>>>>>> upstream/main
                     setTimeout(() => {
                         delete this.syncProgressStore[syncId];
                     }, 5 * 60 * 1000);
                 }
             })
             .catch(error => {
-<<<<<<< HEAD
-                // Atualizar o status em caso de erro
-=======
->>>>>>> upstream/main
                 if (this.syncProgressStore[syncId]) {
                     this.syncProgressStore[syncId].status = 'error';
                     this.syncProgressStore[syncId].error = error.message;
                 }
             });
-<<<<<<< HEAD
-        
-        // Retornar imediatamente o ID da sincronização
-=======
 
->>>>>>> upstream/main
         return {
             success: true,
             message: 'Synchronization started',
             syncId
         };
     }
-<<<<<<< HEAD
-    
-    /**
-     * Obtém o progresso atual de uma sincronização
-     * @param syncId ID da sincronização
-     * @returns Progresso da sincronização ou erro se não encontrado
-=======
 
     /**
      * Get the progress of the synchronization
      * @param syncId The ID of the synchronization
      * @returns The progress of the synchronization
->>>>>>> upstream/main
      */
     getSyncProgress(syncId: string) {
         const progress = this.syncProgressStore[syncId];
@@ -153,17 +93,6 @@ export class OddsSyncTeamsService {
     }
 
     /**
-<<<<<<< HEAD
-     * Sincroniza times da API externa
-     * @param settingId ID da configuração da API
-     * @param endpoint Endpoint da API
-     * @param params Parâmetros de busca (country, league, season, etc.)
-     * @param syncId ID da sincronização para rastrear o progresso
-     * @returns Resultado da sincronização
-     */
-    async syncTeamsFromAPI(
-        settingId: string, 
-=======
      * Sync teams from API
      * @param settingId The ID of the setting
      * @param endpoint The endpoint to sync teams from
@@ -173,17 +102,12 @@ export class OddsSyncTeamsService {
      */
     async syncTeamsFromAPI(
         settingId: string,
->>>>>>> upstream/main
         endpoint: string,
         params: Record<string, string> = {},
         syncId?: string
     ) {
         this.logger.log(`Iniciando sincronização de times. SettingId: ${settingId}, Endpoint: ${endpoint}`);
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> upstream/main
         try {
             const OddsSettingsEntity = Repository.getEntity("OddsSettingsEntity");
             const OddsCountriesEntity = Repository.getEntity("OddsCountriesEntity");
@@ -196,49 +120,27 @@ export class OddsSyncTeamsService {
             }
 
             let url = `${setting.baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-<<<<<<< HEAD
-            
-            const queryParams = new URLSearchParams();
-            
-            // Adicionar todos os parâmetros de busca fornecidos
-=======
 
             const queryParams = new URLSearchParams();
 
->>>>>>> upstream/main
             Object.entries(params).forEach(([key, value]) => {
                 if (value) {
                     queryParams.append(key, value);
                 }
             });
-<<<<<<< HEAD
-            
-            // Se nenhum parâmetro foi fornecido, use um padrão
-=======
 
->>>>>>> upstream/main
             if (queryParams.toString() === '') {
                 queryParams.append('country', 'England');
                 this.logger.log(`Nenhum parâmetro fornecido, usando busca padrão: país='England'`);
             }
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             const queryString = queryParams.toString();
             if (queryString) {
                 url += `?${queryString}`;
             }
-<<<<<<< HEAD
-            
-            this.logger.log(`Fazendo requisição para: ${url}`);
-            
-=======
 
             this.logger.log(`Fazendo requisição para: ${url}`);
 
->>>>>>> upstream/main
             const headers: Record<string, string> = {};
             if (setting.authType === 'API Key' || setting.authType === 'Bearer Token') {
                 const customHeaders = JSON.parse(setting.headers || '{}');
@@ -249,15 +151,9 @@ export class OddsSyncTeamsService {
                 const token = Buffer.from(`${setting.username}:${setting.password}`).toString('base64');
                 headers['Authorization'] = `Basic ${token}`;
             }
-<<<<<<< HEAD
-            
-            const response = await fetch(url, { headers });
-            
-=======
 
             const response = await fetch(url, { headers });
 
->>>>>>> upstream/main
             if (!response.ok) {
                 const errorBody = await response.text();
                 throw new Error(`External API request failed with status ${response.status}: ${errorBody}`);
@@ -265,11 +161,7 @@ export class OddsSyncTeamsService {
 
             const data = await response.json();
             this.logger.log(`Resposta da API recebida. Estrutura: ${JSON.stringify(Object.keys(data))}`);
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             const teamsFromAPI = data.response;
 
             if (!Array.isArray(teamsFromAPI)) {
@@ -277,11 +169,7 @@ export class OddsSyncTeamsService {
             }
 
             this.logger.log(`Total de times recebidos da API: ${teamsFromAPI.length}`);
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             if (teamsFromAPI.length === 0) {
                 return {
                     success: true,
@@ -291,10 +179,6 @@ export class OddsSyncTeamsService {
                 };
             }
 
-<<<<<<< HEAD
-            // Atualizar progresso inicial se estivermos rastreando
-=======
->>>>>>> upstream/main
             if (syncId && this.syncProgressStore[syncId]) {
                 this.syncProgressStore[syncId].totalItems = teamsFromAPI.length;
                 this.syncProgressStore[syncId].percentage = 0;
@@ -304,17 +188,9 @@ export class OddsSyncTeamsService {
             let updatedCount = 0;
             let processedItems = 0;
 
-<<<<<<< HEAD
-            // Buscar países uma única vez antes do loop
-            const countriesResult = await Repository.findAll(OddsCountriesEntity, { limit: 10000 }, [], { select: ["id", "name"] });
-            const countriesArray = (countriesResult && countriesResult.data) ? countriesResult.data : [];
-            
-            // Criar mapa de países para busca eficiente
-=======
             const countriesResult = await Repository.findAll(OddsCountriesEntity, { limit: 10000 }, [], { select: ["id", "name"] });
             const countriesArray = (countriesResult && countriesResult.data) ? countriesResult.data : [];
 
->>>>>>> upstream/main
             const countriesMapByName = new Map();
             countriesArray.forEach((country: any) => {
                 if (country && country.name) {
@@ -322,19 +198,10 @@ export class OddsSyncTeamsService {
                     countriesMapByName.set(normalizedName, country);
                 }
             });
-<<<<<<< HEAD
-            
-            // Buscar venues uma única vez antes do loop
-            const venuesResult = await Repository.findAll(OddsVenuesEntity, { limit: 10000 }, [], { select: ["id", "external_id"] });
-            const venuesArray = (venuesResult && venuesResult.data) ? venuesResult.data : [];
-            
-            // Criar mapa de venues para busca eficiente
-=======
 
             const venuesResult = await Repository.findAll(OddsVenuesEntity, { limit: 10000 }, [], { select: ["id", "external_id"] });
             const venuesArray = (venuesResult && venuesResult.data) ? venuesResult.data : [];
 
->>>>>>> upstream/main
             const venuesMapById = new Map();
             venuesArray.forEach((venue: any) => {
                 if (venue && venue.external_id) {
@@ -352,10 +219,6 @@ export class OddsSyncTeamsService {
                     const team = teamData.team;
                     this.logger.log(`Processando time: ${team.name} (ID: ${team.id})`);
 
-<<<<<<< HEAD
-                    // Atualizar progresso
-=======
->>>>>>> upstream/main
                     processedItems++;
                     if (syncId && this.syncProgressStore[syncId]) {
                         this.syncProgressStore[syncId].processedItems = processedItems;
@@ -363,10 +226,6 @@ export class OddsSyncTeamsService {
                         this.syncProgressStore[syncId].percentage = Math.round((processedItems / teamsFromAPI.length) * 100);
                     }
 
-<<<<<<< HEAD
-                    // Buscar país pelo nome
-=======
->>>>>>> upstream/main
                     let countryId = null;
                     if (team.country) {
                         const countryName = String(team.country).toLowerCase().trim();
@@ -378,12 +237,7 @@ export class OddsSyncTeamsService {
                             this.logger.error(`País não encontrado: ${team.country}`);
                         }
                     }
-<<<<<<< HEAD
-                    
-                    // Buscar venue pelo ID externo
-=======
 
->>>>>>> upstream/main
                     let venueId = null;
                     if (teamData.venue && teamData.venue.id) {
                         const venue = venuesMapById.get(teamData.venue.id);
@@ -395,10 +249,6 @@ export class OddsSyncTeamsService {
                         }
                     }
 
-<<<<<<< HEAD
-                    // Preparar dados para inserção/atualização
-=======
->>>>>>> upstream/main
                     const teamPayload: Partial<OddsTeamsContract> = {
                         external_id: team.id,
                         name: team.name,
@@ -411,29 +261,6 @@ export class OddsSyncTeamsService {
                         venue_id: venueId
                     };
 
-<<<<<<< HEAD
-                    // Verificar se o time já existe
-                    const existingTeam = await Repository.findOne(OddsTeamsEntity, { external_id: team.id });
-                    
-                    if (existingTeam) {
-                        this.logger.log(`Atualizando time existente: ${existingTeam.id}`);
-                        await Repository.update(OddsTeamsEntity, existingTeam.id, teamPayload);
-                        updatedCount++;
-                        
-                        // Atualizar contadores de progresso
-                        if (syncId && this.syncProgressStore[syncId]) {
-                            this.syncProgressStore[syncId].totalUpdated++;
-                        }
-                    } else {
-                        this.logger.log(`Criando novo time: ${team.name}`);
-                        await Repository.insert(OddsTeamsEntity, teamPayload);
-                        createdCount++;
-                        
-                        // Atualizar contadores de progresso
-                        if (syncId && this.syncProgressStore[syncId]) {
-                            this.syncProgressStore[syncId].totalCreated++;
-                        }
-=======
                     const existingTeam = await Repository.findOne(OddsTeamsEntity, { external_id: team.id });
 
                     if (existingTeam) {
@@ -459,7 +286,6 @@ export class OddsSyncTeamsService {
 
                         if (syncId && this.syncProgressStore[syncId])
                             this.syncProgressStore[syncId].totalCreated++;
->>>>>>> upstream/main
                     }
                 } catch (error) {
                     this.logger.error(`Erro ao processar time ${teamData?.team?.name || 'desconhecido'}: ${error instanceof Error ? error.message : String(error)}`);
@@ -479,9 +305,6 @@ export class OddsSyncTeamsService {
             throw error;
         }
     }
-<<<<<<< HEAD
-} 
-=======
 
     /**
      * Process a team image
@@ -600,4 +423,3 @@ export class OddsSyncTeamsService {
         }
     }
 }
->>>>>>> upstream/main

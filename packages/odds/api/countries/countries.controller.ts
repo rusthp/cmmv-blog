@@ -15,15 +15,6 @@ import {
 
 @Controller("odds/countries")
 export class OddsCountriesController {
-<<<<<<< HEAD
-    constructor(private oddsCountriesService: OddsSyncCountriesService){}
-
-    @Post("sync")
-    @Auth("oddscountries:update")
-    async syncCountries(@Body() body: { settingId: string; endpoint: string }) {
-        const { settingId, endpoint } = body;
-        return await this.oddsCountriesService.syncCountriesFromAPI(settingId, endpoint);
-=======
     constructor(private readonly syncService: OddsSyncCountriesService) {}
 
     @Get()
@@ -46,6 +37,5 @@ export class OddsCountriesController {
     @Post("process-all-flags")
     async processAllFlags() {
         return this.syncService.processAllFlags();
->>>>>>> upstream/main
     }
 }

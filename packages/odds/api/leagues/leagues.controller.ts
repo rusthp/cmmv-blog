@@ -1,14 +1,10 @@
 import {
     Controller,
     Post,
-<<<<<<< HEAD
-    Body
-=======
     Body,
     Get,
     Queries,
     Param
->>>>>>> upstream/main
 } from "@cmmv/http";
 
 import {
@@ -21,23 +17,18 @@ import { OddsSyncLeaguesService } from './leagues.service';
 export class OddsLeaguesController {
     constructor(private oddsSyncLeaguesService: OddsSyncLeaguesService) {}
 
-<<<<<<< HEAD
-=======
     @Get()
     @Auth("oddsleagues:get")
     async getLeagues(@Queries() queries: any) {
         return this.oddsSyncLeaguesService.getLeagues(queries);
     }
 
->>>>>>> upstream/main
     @Post("sync")
     @Auth("oddsleagues:update")
     async syncLeagues(@Body() body: { settingId: string; endpoint: string }) {
         const { settingId, endpoint } = body;
         return await this.oddsSyncLeaguesService.syncLeaguesFromAPI(settingId, endpoint);
     }
-<<<<<<< HEAD
-=======
 
     @Post(":id/process-logo")
     @Auth("oddsleagues:update")
@@ -56,5 +47,4 @@ export class OddsLeaguesController {
     async getProcessAllLogosStatus(@Param("jobId") jobId: string) {
         return this.oddsSyncLeaguesService.getProcessAllLogosStatus(jobId);
     }
->>>>>>> upstream/main
 } 

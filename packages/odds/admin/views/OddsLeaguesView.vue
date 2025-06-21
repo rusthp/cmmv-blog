@@ -73,8 +73,6 @@
                     </svg>
                     Sync from API
                 </button>
-<<<<<<< HEAD
-=======
                 <button
                     @click="processAllLogos"
                     class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
@@ -103,7 +101,6 @@
             </div>
             <div v-if="progress.failed > 0" class="text-xs text-red-400">
                 {{ progress.failed }} items failed to process.
->>>>>>> upstream/main
             </div>
         </div>
 
@@ -157,10 +154,6 @@
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="league in leagues" :key="league.id" class="hover:bg-neutral-750">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-<<<<<<< HEAD
-                                <img v-if="league.logo" :src="league.logo" :alt="`${league.name} logo`" class="w-8 h-8 object-contain rounded border border-neutral-600">
-                                <div v-else class="w-8 h-8 bg-neutral-600 rounded"></div>
-=======
                                 <div class="flex items-center space-x-2">
                                     <img v-if="league.processedLogoUrl || league.logo" :src="league.processedLogoUrl || league.logo" :alt="`${league.name} logo`" class="w-8 h-8 object-contain rounded border border-neutral-600">
                                     <div v-else class="w-8 h-8 bg-neutral-600 rounded"></div>
@@ -175,7 +168,6 @@
                                         </svg>
                                     </button>
                                 </div>
->>>>>>> upstream/main
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ league.name }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">{{ league.external_id }}</td>
@@ -249,8 +241,6 @@
                                 <div>
                                     <label for="leagueLogo" class="block text-sm font-medium text-neutral-300 mb-1">Logo URL</label>
                                     <input id="leagueLogo" v-model="leagueForm.logo" type="url" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white" />
-<<<<<<< HEAD
-=======
                                      <div v-if="leagueForm.logo" class="mt-2">
                                         <p class="text-xs text-neutral-400 mb-1">Preview:</p>
                                         <img
@@ -269,7 +259,6 @@
                                         class="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-neutral-400 cursor-not-allowed"
                                         readonly
                                     />
->>>>>>> upstream/main
                                 </div>
                                 <div>
                                     <label for="leagueCountryId" class="block text-sm font-medium text-neutral-300 mb-1">Country ID</label>
@@ -347,11 +336,7 @@
                             </div>
                             <div>
                                 <label for="apiEndpoint" class="block text-sm font-medium text-neutral-300 mb-1">API Endpoint</label>
-<<<<<<< HEAD
-                                <input id="apiEndpoint" v-model="syncForm.endpoint" type="text" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/leagues" required />
-=======
                                 <input id="apiEndpoint" v-model="syncForm.endpoint" type="text" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/leagues?current=true" required />
->>>>>>> upstream/main
                             </div>
                         </div>
                         <div class="flex justify-end space-x-3 mt-6">
@@ -374,11 +359,7 @@
 </template>
 
 <script setup>
-<<<<<<< HEAD
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
-=======
 import { ref, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
->>>>>>> upstream/main
 import { useOddsClient } from '../client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
 import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue'
@@ -406,11 +387,7 @@ const syncLoading = ref(false);
 const apiSettings = ref([]);
 const syncForm = ref({
     settingId: '',
-<<<<<<< HEAD
-    endpoint: '/leagues'
-=======
     endpoint: '/leagues?current=true'
->>>>>>> upstream/main
 });
 
 const notification = ref({ show: false, type: 'success', message: '', duration: 3000 });
@@ -422,13 +399,10 @@ const searchInput = ref(null);
 const showYearFilterDropdown = ref(false);
 const yearInput = ref(null);
 
-<<<<<<< HEAD
-=======
 const processingAllLogos = ref(false);
 const progress = ref({ total: 0, processed: 0, failed: 0, status: 'idle' });
 let progressPollInterval = null;
 
->>>>>>> upstream/main
 const countries = ref([]);
 const countriesMap = computed(() => Object.fromEntries(countries.value.map(c => [c.id, c])));
 
@@ -568,13 +542,9 @@ const resetLeagueForm = () => {
         start_date: '',
         end_date: '',
         current: false,
-<<<<<<< HEAD
-        country_id: ''
-=======
         country_id: '',
         processedLogoUrl: '',
         logoProcessed: false
->>>>>>> upstream/main
     };
 };
 
@@ -587,19 +557,12 @@ const openAddDialog = () => {
 const openEditDialog = (league) => {
     isEditing.value = true;
     leagueToEdit.value = league;
-<<<<<<< HEAD
-    leagueForm.value = { 
-        ...league,
-        start_date: formatDateForInput(league.start_date),
-        end_date: formatDateForInput(league.end_date),
-=======
     leagueForm.value = {
         ...league,
         start_date: formatDateForInput(league.start_date),
         end_date: formatDateForInput(league.end_date),
         processedLogoUrl: league.processedLogoUrl || '',
         logoProcessed: league.logoProcessed || false
->>>>>>> upstream/main
     };
     showDialog.value = true;
 };
@@ -692,8 +655,6 @@ const runSync = async () => {
     }
 };
 
-<<<<<<< HEAD
-=======
 const processLogo = async (league) => {
     try {
         const result = await oddsClient.leagues.processLogo(league.id);
@@ -758,14 +719,10 @@ const processAllLogos = async () => {
     }
 };
 
->>>>>>> upstream/main
 onMounted(() => {
     loadLeagues();
     fetchCountries();
 });
-<<<<<<< HEAD
-</script> 
-=======
 
 onUnmounted(() => {
     if (progressPollInterval) {
@@ -773,4 +730,3 @@ onUnmounted(() => {
     }
 });
 </script>
->>>>>>> upstream/main

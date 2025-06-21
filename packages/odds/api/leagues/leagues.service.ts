@@ -3,15 +3,6 @@ import {
 } from "@cmmv/core";
 
 import {
-<<<<<<< HEAD
-    Repository
-} from "@cmmv/repository";
-import { Buffer } from 'buffer';
-import { OddsLeaguesContract } from "../../contracts/odds-leagues.contract";
-
-@Service()
-export class OddsSyncLeaguesService {
-=======
     Repository, Not, IsNull
 } from "@cmmv/repository";
 //@ts-ignore
@@ -40,7 +31,6 @@ export class OddsSyncLeaguesService {
      * @param endpoint The endpoint to sync leagues from
      * @returns The synchronization result
      */
->>>>>>> upstream/main
     async syncLeaguesFromAPI(settingId: string, endpoint: string) {
         const OddsSettingsEntity = Repository.getEntity("OddsSettingsEntity");
         const OddsCountriesEntity = Repository.getEntity("OddsCountriesEntity");
@@ -63,11 +53,7 @@ export class OddsSyncLeaguesService {
             const token = Buffer.from(`${setting.username}:${setting.password}`).toString('base64');
             headers['Authorization'] = `Basic ${token}`;
         }
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> upstream/main
         const response = await fetch(url, { headers });
         if (!response.ok) {
             const errorBody = await response.text();
@@ -91,21 +77,14 @@ export class OddsSyncLeaguesService {
             }
 
             const season = seasons[0];
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             let countryEntity = null;
             if (country && country.code) {
                 countryEntity = await Repository.findOne(OddsCountriesEntity, { code: country.code });
             }
 
-<<<<<<< HEAD
-=======
             const existingLeague = await Repository.findOne(OddsLeaguesEntity, { external_id: league.id });
 
->>>>>>> upstream/main
             const leaguePayload: Partial<OddsLeaguesContract> = {
                 external_id: league.id,
                 name: league.name,
@@ -116,14 +95,6 @@ export class OddsSyncLeaguesService {
                 start_date: new Date(season.start),
                 end_date: new Date(season.end),
                 current: season.current,
-<<<<<<< HEAD
-                country_id: countryEntity ? countryEntity.id : null,
-            };
-
-            const existingLeague = await Repository.findOne(OddsLeaguesEntity, { external_id: league.id });
-
-            if (existingLeague) {
-=======
                 country_id: countryEntity ? countryEntity.id : undefined,
                 logoProcessed: false, // Reset on sync
                 processedLogoUrl: undefined,
@@ -135,7 +106,6 @@ export class OddsSyncLeaguesService {
                     leaguePayload.logoProcessed = existingLeague.logoProcessed;
                     leaguePayload.processedLogoUrl = existingLeague.processedLogoUrl;
                 }
->>>>>>> upstream/main
                 await Repository.update(OddsLeaguesEntity, existingLeague.id, leaguePayload);
                 updatedCount++;
             } else {
@@ -151,9 +121,6 @@ export class OddsSyncLeaguesService {
             updated: updatedCount
         };
     }
-<<<<<<< HEAD
-} 
-=======
 
     /**
      * Process a league logo
@@ -315,4 +282,3 @@ export class OddsSyncLeaguesService {
         return leagues;
     }
 }
->>>>>>> upstream/main

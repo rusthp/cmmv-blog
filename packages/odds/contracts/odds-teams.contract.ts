@@ -45,8 +45,6 @@ export class OddsTeamsContract extends AbstractContract {
 
     @ContractField({ protoType: 'string', nullable: true })
     venue_id?: string;
-<<<<<<< HEAD
-=======
 
     @ContractField({
         protoType: 'boolean',
@@ -60,5 +58,4 @@ export class OddsTeamsContract extends AbstractContract {
         nullable: true,
     })
     processedImageUrl?: string;
->>>>>>> upstream/main
 } 

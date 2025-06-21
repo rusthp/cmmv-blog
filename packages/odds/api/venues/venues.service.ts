@@ -1,10 +1,4 @@
 import { Service } from "@cmmv/core";
-<<<<<<< HEAD
-import { Repository } from "@cmmv/repository";
-import { Buffer } from 'buffer';
-import { OddsVenuesContract } from "../../contracts/odds-venues.contract";
-import { Logger } from "@cmmv/core";
-=======
 import { Repository, Not, IsNull } from "@cmmv/repository";
 import { Buffer } from 'buffer';
 import { OddsVenuesContract } from "../../contracts/odds-venues.contract";
@@ -13,7 +7,6 @@ import { Logger } from "@cmmv/core";
 import { MediasService } from "@cmmv/blog";
 import { randomUUID } from "crypto";
 const sharp = require('sharp');
->>>>>>> upstream/main
 
 // Interface para o progresso da sincronização
 export interface SyncProgress {
@@ -27,25 +20,6 @@ export interface SyncProgress {
     percentage: number;
 }
 
-<<<<<<< HEAD
-@Service()
-export class OddsSyncVenuesService {
-    private readonly logger = new Logger("OddsSyncVenuesService");
-    
-    // Armazenamento do progresso da sincronização
-    private syncProgressStore: Record<string, SyncProgress> = {};
-    
-    /**
-     * Inicia a sincronização de venues de todos os países e retorna um ID para acompanhar o progresso
-     * @param settingId ID da configuração da API
-     * @returns ID da sincronização para acompanhar o progresso
-     */
-    async startSyncAllVenuesByCountries(settingId: string) {
-        // Gerar um ID único para esta sincronização
-        const syncId = `sync_${Date.now()}`;
-        
-        // Inicializar o progresso
-=======
 // Interface para o progresso do processamento de imagens
 export interface ImageJobStatus {
     total: number;
@@ -73,7 +47,6 @@ export class OddsSyncVenuesService {
     async startSyncAllVenuesByCountries(settingId: string) {
         const syncId = `sync_${Date.now()}`;
 
->>>>>>> upstream/main
         this.syncProgressStore[syncId] = {
             totalCountries: 0,
             processedCountries: 0,
@@ -83,18 +56,6 @@ export class OddsSyncVenuesService {
             status: 'running',
             percentage: 0
         };
-<<<<<<< HEAD
-        
-        // Iniciar a sincronização em background
-        this.syncAllVenuesByCountries(settingId, syncId)
-            .then(result => {
-                // Atualizar o status quando concluir
-                if (this.syncProgressStore[syncId]) {
-                    this.syncProgressStore[syncId].status = 'completed';
-                    this.syncProgressStore[syncId].percentage = 100;
-                    
-                    // Remover o progresso após 5 minutos
-=======
 
         this.syncAllVenuesByCountries(settingId, syncId)
             .then(result => {
@@ -102,47 +63,29 @@ export class OddsSyncVenuesService {
                     this.syncProgressStore[syncId].status = 'completed';
                     this.syncProgressStore[syncId].percentage = 100;
 
->>>>>>> upstream/main
                     setTimeout(() => {
                         delete this.syncProgressStore[syncId];
                     }, 5 * 60 * 1000);
                 }
             })
             .catch(error => {
-<<<<<<< HEAD
-                // Atualizar o status em caso de erro
-=======
->>>>>>> upstream/main
                 if (this.syncProgressStore[syncId]) {
                     this.syncProgressStore[syncId].status = 'error';
                     this.syncProgressStore[syncId].error = error.message;
                 }
             });
-<<<<<<< HEAD
-        
-        // Retornar imediatamente o ID da sincronização
-=======
 
->>>>>>> upstream/main
         return {
             success: true,
             message: 'Synchronization started',
             syncId
         };
     }
-<<<<<<< HEAD
-    
-    /**
-     * Obtém o progresso atual de uma sincronização
-     * @param syncId ID da sincronização
-     * @returns Progresso da sincronização ou erro se não encontrado
-=======
 
     /**
      * Get the progress of the synchronization
      * @param syncId The ID of the synchronization
      * @returns The progress of the synchronization
->>>>>>> upstream/main
      */
     getSyncProgress(syncId: string) {
         const progress = this.syncProgressStore[syncId];
@@ -153,15 +96,6 @@ export class OddsSyncVenuesService {
     }
 
     /**
-<<<<<<< HEAD
-     * Sincroniza venues de todos os países disponíveis no banco de dados
-     * @param settingId ID da configuração da API
-     * @param syncId ID da sincronização para rastrear o progresso
-     * @returns Resultado da sincronização
-     */
-    async syncAllVenuesByCountries(
-        settingId: string, 
-=======
      * Sync venues by countries
      * @param settingId The ID of the setting
      * @param syncId The ID of the synchronization
@@ -169,29 +103,17 @@ export class OddsSyncVenuesService {
      */
     async syncAllVenuesByCountries(
         settingId: string,
->>>>>>> upstream/main
         syncId?: string
     ) {
         this.logger.log(`Iniciando sincronização de venues para todos os países`);
 
         try {
-<<<<<<< HEAD
-            // Buscar todos os países
-            const OddsCountriesEntity = Repository.getEntity("OddsCountriesEntity");
-            const countriesResult = await Repository.findAll(OddsCountriesEntity, { limit: 10000 }, [], { select: ["id", "name"] });
-            const countries = (countriesResult && countriesResult.data) ? countriesResult.data : [];
-            
-            this.logger.log(`Encontrados ${countries.length} países para buscar venues`);
-
-            // Atualizar progresso inicial se estivermos rastreando
-=======
             const OddsCountriesEntity = Repository.getEntity("OddsCountriesEntity");
             const countriesResult = await Repository.findAll(OddsCountriesEntity, { limit: 10000 }, [], { select: ["id", "name"] });
             const countries = (countriesResult && countriesResult.data) ? countriesResult.data : [];
 
             this.logger.log(`Encontrados ${countries.length} países para buscar venues`);
 
->>>>>>> upstream/main
             if (syncId && this.syncProgressStore[syncId]) {
                 this.syncProgressStore[syncId].totalCountries = countries.length;
                 this.syncProgressStore[syncId].percentage = 0;
@@ -201,41 +123,16 @@ export class OddsSyncVenuesService {
             let totalUpdated = 0;
             let processedCountries = 0;
 
-<<<<<<< HEAD
-            // Processar países em lotes para não sobrecarregar a API
-            const batchSize = 5;
-            for (let i = 0; i < countries.length; i += batchSize) {
-                const batch = countries.slice(i, i + batchSize);
-                
-                this.logger.log(`Processando lote de países ${i+1} até ${Math.min(i+batchSize, countries.length)} de ${countries.length}`);
-                
-                // Processar cada país do lote em paralelo
-=======
             const batchSize = 5;
             for (let i = 0; i < countries.length; i += batchSize) {
                 const batch = countries.slice(i, i + batchSize);
 
                 this.logger.log(`Processando lote de países ${i+1} até ${Math.min(i+batchSize, countries.length)} de ${countries.length}`);
 
->>>>>>> upstream/main
                 const results = await Promise.all(
                     batch.map(async (country: { id: string; name: string }) => {
                         try {
                             this.logger.log(`Buscando venues para país: ${country.name}`);
-<<<<<<< HEAD
-                            
-                            // Atualizar progresso se estivermos rastreando
-                            if (syncId && this.syncProgressStore[syncId]) {
-                                this.syncProgressStore[syncId].currentCountry = country.name;
-                            }
-                            
-                            const result = await this.syncVenuesFromAPI(settingId, "/venues", country.name);
-                            processedCountries++;
-                            
-                            this.logger.log(`Concluído país ${processedCountries}/${countries.length}: ${country.name} - Criados: ${result.created}, Atualizados: ${result.updated}`);
-                            
-                            // Atualizar progresso se estivermos rastreando
-=======
 
                             if (syncId && this.syncProgressStore[syncId])
                                 this.syncProgressStore[syncId].currentCountry = country.name;
@@ -245,65 +142,35 @@ export class OddsSyncVenuesService {
 
                             this.logger.log(`Concluído país ${processedCountries}/${countries.length}: ${country.name} - Criados: ${result.created}, Atualizados: ${result.updated}`);
 
->>>>>>> upstream/main
                             if (syncId && this.syncProgressStore[syncId]) {
                                 this.syncProgressStore[syncId].processedCountries = processedCountries;
                                 this.syncProgressStore[syncId].percentage = Math.round((processedCountries / countries.length) * 100);
                                 this.syncProgressStore[syncId].totalCreated += result.created || 0;
                                 this.syncProgressStore[syncId].totalUpdated += result.updated || 0;
                             }
-<<<<<<< HEAD
-                            
-                            return result;
-                        } catch (error) {
-                            this.logger.error(`Erro ao buscar venues para país ${country.name}: ${error instanceof Error ? error.message : String(error)}`);
-                            
-                            // Ainda assim incrementar o contador de países processados
-                            processedCountries++;
-                            
-                            // Atualizar progresso mesmo em caso de erro
-=======
 
                             return result;
                         } catch (error) {
                             this.logger.error(`Erro ao buscar venues para país ${country.name}: ${error instanceof Error ? error.message : String(error)}`);
                             processedCountries++;
 
->>>>>>> upstream/main
                             if (syncId && this.syncProgressStore[syncId]) {
                                 this.syncProgressStore[syncId].processedCountries = processedCountries;
                                 this.syncProgressStore[syncId].percentage = Math.round((processedCountries / countries.length) * 100);
                             }
-<<<<<<< HEAD
-                            
-=======
 
->>>>>>> upstream/main
                             return { created: 0, updated: 0 };
                         }
                     })
                 );
-<<<<<<< HEAD
-                
-                // Somar resultados
-=======
 
->>>>>>> upstream/main
                 for (const result of results) {
                     totalCreated += result.created || 0;
                     totalUpdated += result.updated || 0;
                 }
-<<<<<<< HEAD
-                
-                // Aguardar um pouco entre lotes para não sobrecarregar a API
-                if (i + batchSize < countries.length) {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-=======
 
                 if (i + batchSize < countries.length)
                     await new Promise(resolve => setTimeout(resolve, 2000));
->>>>>>> upstream/main
             }
 
             this.logger.log(`Sincronização completa para todos os países. Total criados: ${totalCreated}, Total atualizados: ${totalUpdated}`);
@@ -321,21 +188,6 @@ export class OddsSyncVenuesService {
     }
 
     /**
-<<<<<<< HEAD
-     * Sincroniza venues da API externa
-     * @param settingId ID da configuração da API
-     * @param endpoint Endpoint da API
-     * @param countryName Nome do país (opcional)
-     * @param searchTerm Termo de busca (opcional)
-     * @param venueId ID do venue (opcional)
-     * @param venueName Nome do venue (opcional)
-     * @param cityName Nome da cidade (opcional)
-     * @returns Resultado da sincronização
-     */
-    async syncVenuesFromAPI(
-        settingId: string, 
-        endpoint: string, 
-=======
      * Sync venues from API
      * @param settingId The ID of the setting
      * @param endpoint The endpoint to sync venues from
@@ -349,7 +201,6 @@ export class OddsSyncVenuesService {
     async syncVenuesFromAPI(
         settingId: string,
         endpoint: string,
->>>>>>> upstream/main
         countryName?: string,
         searchTerm?: string,
         venueId?: number,
@@ -357,11 +208,7 @@ export class OddsSyncVenuesService {
         cityName?: string
     ) {
         this.logger.log(`Iniciando sincronização de venues. SettingId: ${settingId}, Endpoint: ${endpoint}, Country: ${countryName || 'não especificado'}`);
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> upstream/main
         try {
             const OddsSettingsEntity = Repository.getEntity("OddsSettingsEntity");
             const OddsCountriesEntity = Repository.getEntity("OddsCountriesEntity");
@@ -373,38 +220,13 @@ export class OddsSyncVenuesService {
             }
 
             let url = `${setting.baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-<<<<<<< HEAD
-            
-            const queryParams = new URLSearchParams();
-            
-=======
 
             const queryParams = new URLSearchParams();
 
->>>>>>> upstream/main
             // Adicionar parâmetros de busca - pelo menos um é necessário
             if (countryName) {
                 queryParams.append('country', countryName);
             }
-<<<<<<< HEAD
-            
-            if (searchTerm) {
-                queryParams.append('search', searchTerm);
-            }
-            
-            if (venueId) {
-                queryParams.append('id', venueId.toString());
-            }
-            
-            if (venueName) {
-                queryParams.append('name', venueName);
-            }
-            
-            if (cityName) {
-                queryParams.append('city', cityName);
-            }
-            
-=======
 
             if (searchTerm) {
                 queryParams.append('search', searchTerm);
@@ -422,7 +244,6 @@ export class OddsSyncVenuesService {
                 queryParams.append('city', cityName);
             }
 
->>>>>>> upstream/main
             // Se nenhum parâmetro foi fornecido, use um padrão
             if (queryParams.toString() === '') {
                 if (countryName) {
@@ -433,24 +254,14 @@ export class OddsSyncVenuesService {
                     this.logger.log(`Nenhum parâmetro fornecido, usando busca padrão: 'stadium'`);
                 }
             }
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             const queryString = queryParams.toString();
             if (queryString) {
                 url += `?${queryString}`;
             }
-<<<<<<< HEAD
-            
-            this.logger.log(`Fazendo requisição para: ${url}`);
-            
-=======
 
             this.logger.log(`Fazendo requisição para: ${url}`);
 
->>>>>>> upstream/main
             const headers: Record<string, string> = {};
             if (setting.authType === 'API Key' || setting.authType === 'Bearer Token') {
                 const customHeaders = JSON.parse(setting.headers || '{}');
@@ -461,15 +272,9 @@ export class OddsSyncVenuesService {
                 const token = Buffer.from(`${setting.username}:${setting.password}`).toString('base64');
                 headers['Authorization'] = `Basic ${token}`;
             }
-<<<<<<< HEAD
-            
-            const response = await fetch(url, { headers });
-            
-=======
 
             const response = await fetch(url, { headers });
 
->>>>>>> upstream/main
             if (!response.ok) {
                 const errorBody = await response.text();
                 throw new Error(`External API request failed with status ${response.status}: ${errorBody}`);
@@ -477,11 +282,7 @@ export class OddsSyncVenuesService {
 
             const data = await response.json();
             this.logger.log(`Resposta da API recebida. Estrutura: ${JSON.stringify(Object.keys(data))}`);
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             const venuesFromAPI = data.response;
 
             if (!Array.isArray(venuesFromAPI)) {
@@ -489,11 +290,7 @@ export class OddsSyncVenuesService {
             }
 
             this.logger.log(`Total de venues recebidos da API: ${venuesFromAPI.length}`);
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             if (venuesFromAPI.length === 0) {
                 return {
                     success: true,
@@ -509,11 +306,7 @@ export class OddsSyncVenuesService {
             // Buscar países uma única vez antes do loop
             const countriesResult = await Repository.findAll(OddsCountriesEntity, { limit: 10000 }, [], { select: ["id", "name"] });
             const countriesArray = (countriesResult && countriesResult.data) ? countriesResult.data : [];
-<<<<<<< HEAD
-            
-=======
 
->>>>>>> upstream/main
             // Criar mapa de países para busca eficiente
             const countriesMapByName = new Map();
             countriesArray.forEach((country: any) => {
@@ -554,22 +347,13 @@ export class OddsSyncVenuesService {
                         capacity: venueData.capacity,
                         surface: venueData.surface,
                         image: venueData.image,
-<<<<<<< HEAD
-                        country_id: countryId
-=======
                         country_id: countryId,
                         imageProcessed: false,
                         processedImageUrl: undefined
->>>>>>> upstream/main
                     };
 
                     // Verificar se o venue já existe
                     const existingVenue = await Repository.findOne(OddsVenuesEntity, { external_id: venueData.id });
-<<<<<<< HEAD
-                    
-                    if (existingVenue) {
-                        this.logger.log(`Atualizando venue existente: ${existingVenue.id}`);
-=======
 
                     if (existingVenue) {
                         this.logger.log(`Atualizando venue existente: ${existingVenue.id}`);
@@ -577,7 +361,6 @@ export class OddsSyncVenuesService {
                             venuePayload.imageProcessed = existingVenue.imageProcessed;
                             venuePayload.processedImageUrl = existingVenue.processedImageUrl;
                         }
->>>>>>> upstream/main
                         await Repository.update(OddsVenuesEntity, existingVenue.id, venuePayload);
                         updatedCount++;
                     } else {
@@ -603,9 +386,6 @@ export class OddsSyncVenuesService {
             throw error;
         }
     }
-<<<<<<< HEAD
-} 
-=======
 
     /**
      * Process a venue image
@@ -726,4 +506,3 @@ export class OddsSyncVenuesService {
         }
     }
 }
->>>>>>> upstream/main

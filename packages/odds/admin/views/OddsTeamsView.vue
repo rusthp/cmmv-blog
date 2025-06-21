@@ -4,13 +4,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-white">Teams</h1>
             <div class="flex flex-wrap gap-2 mt-2 sm:mt-0">
-<<<<<<< HEAD
-=======
                 <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                     Add Team
                 </button>
->>>>>>> upstream/main
                 <button @click="refreshData" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -30,19 +27,10 @@
                         </div>
                     </div>
                 </div>
-<<<<<<< HEAD
-                <button @click="openAddDialog" class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                    Add Team
-                </button>
-=======
->>>>>>> upstream/main
                 <button @click="openSyncDialog" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                     Sync from API
                 </button>
-<<<<<<< HEAD
-=======
                 <button
                     @click="processAllImages"
                     class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
@@ -66,7 +54,6 @@
             </div>
             <div v-if="imageProgress.failed > 0" class="text-xs text-red-400">
                 {{ imageProgress.failed }} images failed to process.
->>>>>>> upstream/main
             </div>
         </div>
 
@@ -92,11 +79,7 @@
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> upstream/main
         <!-- Loading/Error/Empty/Table states -->
         <div v-if="loading" class="bg-neutral-800 rounded-lg p-12 flex justify-center items-center">
             <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
@@ -125,9 +108,6 @@
                     </thead>
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="team in teams" :key="team.id">
-<<<<<<< HEAD
-                            <td class="px-6 py-4"><img v-if="team.logo" :src="team.logo" class="w-8 h-8 object-contain rounded border border-neutral-600"></td>
-=======
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-2">
                                     <img v-if="team.processedImageUrl || team.logo" :src="team.processedImageUrl || team.logo" class="w-8 h-8 object-contain rounded border border-neutral-600">
@@ -142,7 +122,6 @@
                                     </button>
                                 </div>
                             </td>
->>>>>>> upstream/main
                             <td class="px-6 py-4 text-white">{{ team.name }}</td>
                             <td class="px-6 py-4 text-neutral-300">{{ team.code }}</td>
                             <td class="px-6 py-4 text-neutral-300">{{ countriesMap[team.country_id]?.name || 'N/A' }}</td>
@@ -183,8 +162,6 @@
                         <input v-model.number="teamForm.founded" type="number" placeholder="Founded Year" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white">
                         <input v-model="teamForm.logo" placeholder="Logo URL" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white">
                         <div class="flex items-center"><input v-model="teamForm.national" type="checkbox" class="h-4 w-4"><label class="ml-2 text-white">National Team</label></div>
-<<<<<<< HEAD
-=======
                         <div v-if="teamForm.processedImageUrl" class="mt-2">
                             <label class="block text-sm font-medium text-neutral-400 mb-1">Processed Image URL</label>
                             <input
@@ -194,7 +171,6 @@
                                 readonly
                             />
                         </div>
->>>>>>> upstream/main
                         <div class="flex justify-end space-x-3">
                             <button type="button" @click="closeDialog" class="px-4 py-2 bg-neutral-700 text-white rounded-md">Cancel</button>
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md" :disabled="formLoading">{{ formLoading ? 'Saving...' : 'Save' }}</button>
@@ -240,11 +216,7 @@
 </template>
 
 <script setup>
-<<<<<<< HEAD
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
-=======
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue';
->>>>>>> upstream/main
 import { useOddsClient } from '../client';
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue';
 import DeleteDialog from '@cmmv/blog/admin/components/DeleteDialog.vue';
@@ -279,12 +251,6 @@ const syncForm = ref({
 const syncProgress = ref(null);
 let progressInterval = null;
 
-<<<<<<< HEAD
-const notification = ref({ show: false, message: '', type: 'success' });
-
-const pagination = ref({ current: 1, lastPage: 1, perPage: 10, total: 0, from: 0, to: 0 });
-const filters = ref({ search: '', page: 1 });
-=======
 const processingAllImages = ref(false);
 const imageProgress = ref({ total: 0, processed: 0, failed: 0, status: 'idle' });
 let imageProgressPollInterval = null;
@@ -293,7 +259,6 @@ const notification = ref({ show: false, message: '', type: 'success' });
 
 const pagination = ref({ current: 1, lastPage: 1, perPage: 10, total: 0, from: 0, to: 0 });
 const filters = ref({ search: '', searchField: 'name', sortBy: 'name', sortOrder: 'asc', page: 1 });
->>>>>>> upstream/main
 const showSearchDropdown = ref(false);
 const searchInput = ref(null);
 
@@ -304,16 +269,6 @@ const loadTeams = async () => {
         const apiFilters = {
             limit: pagination.value.perPage.toString(),
             offset: ((filters.value.page - 1) * pagination.value.perPage).toString(),
-<<<<<<< HEAD
-            search: filters.value.search
-        };
-
-        const response = await oddsClient.teams.get(apiFilters);
-        
-        if (response && response.data) {
-            teams.value = response.data;
-            
-=======
             search: filters.value.search,
             searchField: filters.value.searchField
         };
@@ -323,7 +278,6 @@ const loadTeams = async () => {
         if (response && response.data) {
             teams.value = response.data;
 
->>>>>>> upstream/main
             const paginationData = response.pagination || {};
             const totalCount = response.count || 0;
             const currentOffset = paginationData.offset || 0;
@@ -374,11 +328,7 @@ watch(filters, loadTeams, { deep: true });
 
 const openAddDialog = () => {
     isEditing.value = false;
-<<<<<<< HEAD
-    teamForm.value = { name: '', code: '', country_id: '', founded: null, national: false, logo: '', venue_id: '' };
-=======
     teamForm.value = { name: '', code: '', country_id: '', founded: null, national: false, logo: '', venue_id: '', imageProcessed: false, processedImageUrl: '' };
->>>>>>> upstream/main
     showDialog.value = true;
 };
 
@@ -475,8 +425,6 @@ const trackSyncProgress = (syncId) => {
     }, 2000);
 };
 
-<<<<<<< HEAD
-=======
 const processImage = async (team) => {
     try {
         const result = await oddsClient.teams.processImage(team.id);
@@ -527,7 +475,6 @@ const processAllImages = async () => {
     }
 };
 
->>>>>>> upstream/main
 const showNotification = (type, message) => {
     notification.value = { show: true, type, message };
     setTimeout(() => notification.value.show = false, 3000);
@@ -538,13 +485,10 @@ const toggleSearchDropdown = () => {
     if (showSearchDropdown.value) nextTick(() => searchInput.value?.focus());
 };
 
-<<<<<<< HEAD
-=======
 onBeforeUnmount(() => {
     if (progressInterval) clearInterval(progressInterval);
     if(imageProgressPollInterval) clearInterval(imageProgressPollInterval);
 });
 
->>>>>>> upstream/main
 onMounted(loadInitialData);
 </script>
