@@ -704,7 +704,7 @@ const loadData = async () => {
 
         if (needToFetchPosts) {
             promises.push(
-                blogAPI.posts.getAll(0).then(postsResponse => {
+                blogAPI.posts.getAll({ offset: 0, limit: 12 }).then(postsResponse => {
                     if (postsResponse) {
                         posts.value = postsResponse.posts;
                         postsStore.setPosts(postsResponse.posts);

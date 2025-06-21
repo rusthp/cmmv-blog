@@ -736,7 +736,7 @@ const loadPosts = async () => {
         loading.value = true;
         error.value = null;
 
-        const response: any = await blogAPI.posts.getAll(currentPage.value * pagination.value.limit);
+        const response: any = await blogAPI.posts.getAll({ offset: currentPage.value * pagination.value.limit, limit: pagination.value.limit });
 
         if (response) {
             posts.value = response.posts;
@@ -775,7 +775,7 @@ const loadMorePosts = async () => {
         loadingMore.value = true;
         currentPage.value++;
 
-        const response: any = await blogAPI.posts.getAll(posts.value.length);
+        const response: any = await blogAPI.posts.getAll({ offset: posts.value.length, limit: pagination.value.limit });
 
         if (response && response.posts && response.posts.length > 0) {
             posts.value = [...posts.value, ...response.posts];

@@ -603,7 +603,7 @@ const loadRecentPosts = async () => {
     isLoadingRecentPosts.value = true;
 
     try {
-        const response = await blogAPI.posts.getAll(0);
+        const response = await blogAPI.posts.getAll({ offset: 0, limit: 12 });
 
         if (Array.isArray(response)) {
             recentPosts.value = response.slice(0, 5);
