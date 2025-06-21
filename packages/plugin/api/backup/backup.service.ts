@@ -28,9 +28,10 @@ export class BackupService {
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async handleCronBackup() {
         await this.backupDatabase.call(this);
+        await this.backupSQLiteDatabase.call(this);
         await this.clearOldBackups.call(this);
+        await this.clearOldSQLiteBackups.call(this);
     }
-    /** */
 
     /**
      * Backup the database
@@ -215,6 +216,147 @@ export class BackupService {
 
             if (stats.birthtime < oneMonthAgo)
                 fs.unlinkSync(file);
+        }
+    }
+
+    /**
+     * Backup SQLite database file
+     * @returns A promise that resolves to an object containing a success property and a message property
+     */
+    async backupSQLiteDatabase() {
+        try {
+            // Get database configuration
+            const dbConfig = Config.get("repository");
+
+            if (!dbConfig || dbConfig.type !== 'sqlite') {
+                return {
+                    success: false,
+                    message: "Database is not SQLite, skipping database file backup"
+                };
+            }
+
+            const dbPath = dbConfig.database;
+            if (!dbPath || !fs.existsSync(dbPath)) {
+                return {
+                    success: false,
+                    message: "SQLite database file not found"
+                };
+            }
+
+            const mediasPath = path.join(cwd(), "medias", "backup");
+            if (!fs.existsSync(mediasPath))
+                fs.mkdirSync(mediasPath, { recursive: true });
+
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+            const backupPrefix = `sqlite_backup_${timestamp}`;
+            const backupDirPath = path.join(mediasPath, backupPrefix);
+
+            if (!fs.existsSync(backupDirPath))
+                fs.mkdirSync(backupDirPath, { recursive: true });
+
+            try {
+                // Copy SQLite database file
+                const dbFileName = path.basename(dbPath);
+                const backupDbPath = path.join(backupDirPath, dbFileName);
+                fs.copyFileSync(dbPath, backupDbPath);
+
+                // Also backup WAL and SHM files if they exist (SQLite journal files)
+                const dbDir = path.dirname(dbPath);
+                const dbName = path.parse(dbPath).name;
+                const walFile = path.join(dbDir, `${dbName}.db-wal`);
+                const shmFile = path.join(dbDir, `${dbName}.db-shm`);
+
+                if (fs.existsSync(walFile)) {
+                    fs.copyFileSync(walFile, path.join(backupDirPath, `${dbName}.db-wal`));
+                }
+
+                if (fs.existsSync(shmFile)) {
+                    fs.copyFileSync(shmFile, path.join(backupDirPath, `${dbName}.db-shm`));
+                }
+
+                // Create metadata file
+                const metadata = {
+                    type: 'sqlite_backup',
+                    timestamp,
+                    originalDbPath: dbPath,
+                    dbFileName,
+                    created: now.toISOString(),
+                    hasWalFile: fs.existsSync(walFile),
+                    hasShmFile: fs.existsSync(shmFile)
+                };
+
+                const metadataPath = path.join(backupDirPath, 'backup_metadata.json');
+                fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+                // Create compressed archive
+                const archivePath = path.join(mediasPath, `${backupPrefix}.tar.gz`);
+                await this.createTarGz(backupDirPath, archivePath);
+
+                // Clean up temporary directory
+                for (const file of fs.readdirSync(backupDirPath))
+                    fs.unlinkSync(path.join(backupDirPath, file));
+                fs.rmdirSync(backupDirPath);
+
+                return {
+                    success: true,
+                    message: "SQLite database backup completed successfully",
+                    filename: path.basename(archivePath),
+                    metadata
+                };
+
+            } catch (error) {
+                // Clean up on error
+                if (fs.existsSync(backupDirPath)) {
+                    try {
+                        for (const file of fs.readdirSync(backupDirPath))
+                            fs.unlinkSync(path.join(backupDirPath, file));
+                        fs.rmdirSync(backupDirPath);
+                    } catch (cleanupError) {
+                        console.error(`Error during cleanup: ${cleanupError}`);
+                    }
+                }
+                throw error;
+            }
+
+        } catch (error) {
+            console.error(`Error during SQLite backup: ${error instanceof Error ? error.message : String(error)}`);
+            return {
+                success: false,
+                message: `SQLite backup failed: ${error instanceof Error ? error.message : String(error)}`
+            };
+        }
+    }
+
+    /**
+     * Clear old SQLite backups
+     * @returns A promise that resolves to void
+     */
+    async clearOldSQLiteBackups() {
+        const mediasPath = path.join(cwd(), "medias", "backup");
+
+        if (!fs.existsSync(mediasPath))
+            return;
+
+        const files = fs.readdirSync(mediasPath)
+            .filter(file => file.endsWith('.tar.gz') && file.startsWith('sqlite_backup_'))
+            .map(filename => path.join(mediasPath, filename));
+
+        const now = new Date();
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        let deletedCount = 0;
+        for (const file of files) {
+            const stats = fs.statSync(file);
+
+            if (stats.birthtime < oneMonthAgo) {
+                fs.unlinkSync(file);
+                deletedCount++;
+            }
+        }
+
+        if (deletedCount > 0) {
+            console.log(`Cleaned up ${deletedCount} old SQLite backup files`);
         }
     }
 
@@ -773,8 +915,8 @@ export class BackupService {
                 .map(filename => {
                     const filePath = path.join(mediasPath, filename);
                     const stats = fs.statSync(filePath);
-
                     let date = new Date();
+
                     try {
                         const datePart = filename.replace('medias_backup_', '').replace('.tar.gz', '');
                         const [datePortion, timePortion] = datePart.split('_');
@@ -799,6 +941,53 @@ export class BackupService {
             return { data: files };
         } catch (error) {
             console.error(`Error getting media backups: ${error}`);
+            return { data: [] };
+        }
+    }
+
+    /**
+     * Get SQLite database backups (filter only SQLite backup files)
+     * @returns Array of SQLite backup files
+     */
+    async getSQLiteBackups() {
+        const mediasPath = path.join(cwd(), "medias", "backup");
+
+        if (!fs.existsSync(mediasPath)) {
+            return { data: [] };
+        }
+
+        try {
+            const files = fs.readdirSync(mediasPath)
+                .filter(file => file.endsWith('.tar.gz') && file.startsWith('sqlite_backup_'))
+                .map(filename => {
+                    const filePath = path.join(mediasPath, filename);
+                    const stats = fs.statSync(filePath);
+                    let date = new Date();
+
+                    try {
+                        const datePart = filename.replace('sqlite_backup_', '').replace('.tar.gz', '');
+                        const [datePortion, timePortion] = datePart.split('_');
+                        const [year, month, day] = datePortion.split('-').map(Number);
+                        const [hour, minute] = timePortion.split('-').map(Number);
+                        date = new Date(year, month - 1, day, hour, minute);
+                    } catch (e) {
+                        date = stats.birthtime;
+                    }
+
+                    return {
+                        filename,
+                        path: filePath,
+                        size: stats.size,
+                        created: date.toISOString(),
+                        formattedSize: this.formatFileSize(stats.size),
+                        type: 'sqlite_backup'
+                    };
+                })
+                .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+            return { data: files };
+        } catch (error) {
+            console.error(`Error getting SQLite backups: ${error}`);
             return { data: [] };
         }
     }

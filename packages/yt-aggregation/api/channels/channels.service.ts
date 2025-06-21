@@ -453,7 +453,6 @@ export class YTChannelsServiceAdmin {
         if (thumbnails.high) return thumbnails.high.url;
         if (thumbnails.medium) return thumbnails.medium.url;
         if (thumbnails.default) return thumbnails.default.url;
-
         return '';
     }
 

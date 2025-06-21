@@ -582,7 +582,7 @@ export class RawService {
     async proxyAudio(audioUrl: string, res: any): Promise<any> {
         try {
             this.logger.log(`Proxying audio request for: ${audioUrl}`);
-            
+
             if (!audioUrl || typeof audioUrl !== 'string') {
                 this.logger.error('Invalid audioUrl provided');
                 res.status(400).json({ error: 'URL inválida' });
@@ -590,7 +590,7 @@ export class RawService {
             }
 
             this.logger.log(`Fetching audio from: ${audioUrl}`);
-            
+
             const response = await fetch(audioUrl, {
                 method: 'get',
                 headers: {
@@ -610,9 +610,9 @@ export class RawService {
 
             const contentType = response.headers.get('content-type');
             const contentLength = response.headers.get('content-length');
-            
+
             this.logger.log(`Content-Type: ${contentType}, Content-Length: ${contentLength}`);
-            
+
             // Detectar tipo de áudio se não especificado
             let audioContentType = contentType;
             if (!audioContentType || !audioContentType.includes('audio')) {
@@ -621,7 +621,7 @@ export class RawService {
                 else if (audioUrl.includes('.ogg')) audioContentType = 'audio/ogg';
                 else if (audioUrl.includes('.m4a')) audioContentType = 'audio/mp4';
                 else audioContentType = 'audio/mpeg'; // fallback
-                
+
                 this.logger.log(`Auto-detected content type: ${audioContentType}`);
             }
 
@@ -632,17 +632,17 @@ export class RawService {
             res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Range, Content-Length');
             res.setHeader('Accept-Ranges', 'bytes');
             res.setHeader('Cache-Control', 'public, max-age=3600');
-            
+
             if (contentLength) {
                 res.setHeader('Content-Length', contentLength);
             }
 
             this.logger.log('Successfully fetched audio, sending response');
-            
+
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             res.send(buffer);
-            
+
             this.logger.log(`Audio proxy completed successfully. Buffer size: ${buffer.length} bytes`);
         } catch (error) {
             this.logger.error(`Error proxying audio: ${error}`);

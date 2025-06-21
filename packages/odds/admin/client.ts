@@ -24,9 +24,12 @@ export const useOddsClient = () => {
     }
 
     const countries = {
-        get: async (filters: Record<string, string>) => {
+        get: async (filters: Record<string, any>) => {
             const query = new URLSearchParams(filters).toString();
             return api.authRequest(`odds/countries?${query}`, "GET");
+        },
+        getById: async (id: string) => {
+            return api.authRequest(`odds/countries/${id}`, "GET");
         },
         insert: async (data: any) => {
             return api.authRequest("odds/countries", "POST", data);
@@ -39,6 +42,15 @@ export const useOddsClient = () => {
         },
         sync: async (settingId: string, endpoint: string) => {
             return api.authRequest("odds/countries/sync", "POST", { settingId, endpoint });
+<<<<<<< HEAD
+=======
+        },
+        processFlag: async (id: string) => {
+            return api.authRequest(`odds/countries/${id}/process-flag`, "POST");
+        },
+        processAllFlags: async () => {
+            return api.authRequest("odds/countries/process-all-flags", "POST");
+>>>>>>> upstream/main
         }
     }
 
@@ -61,14 +73,36 @@ export const useOddsClient = () => {
         },
         sync: async (settingId: string, endpoint: string) => {
             return api.authRequest("odds/leagues/sync", "POST", { settingId, endpoint });
+<<<<<<< HEAD
+=======
+        },
+        processLogo: async (id: string) => {
+            return api.authRequest(`odds/leagues/${id}/process-logo`, "POST");
+        },
+        startProcessAllLogos: async () => {
+            return api.authRequest("odds/leagues/process-all-logos/start", "POST");
+        },
+        getProcessAllLogosStatus: async (jobId: string) => {
+            return api.authRequest(`odds/leagues/process-all-logos/progress/${jobId}`, "GET");
+>>>>>>> upstream/main
         }
     }
 
     const settings = {
+<<<<<<< HEAD
         get: async (filters: Record<string, string>) => {
             const query = new URLSearchParams(filters).toString();
             return api.authRequest(`odds/settings?${query}`, "GET");
         },
+=======
+        get: async (filters: Record<string, any>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`odds/settings?${query}`, "GET");
+        },
+        getById: async (id: string) => {
+            return api.authRequest(`odds/settings/${id}`, "GET");
+        },
+>>>>>>> upstream/main
         insert: async (data: any) => {
             return api.authRequest("odds/settings", "POST", data);
         },
@@ -107,6 +141,18 @@ export const useOddsClient = () => {
             const baseUrl = api.getBaseUrl();
             const token = api.getToken();
             return new EventSource(`${baseUrl}/odds/venues/sync-progress-stream/${syncId}?token=${token}`);
+<<<<<<< HEAD
+=======
+        },
+        processImage: async (id: string) => {
+            return api.authRequest(`odds/venues/${id}/process-image`, "POST");
+        },
+        startProcessAllImages: async () => {
+            return api.authRequest("odds/venues/process-all-images/start", "POST");
+        },
+        getProcessAllImagesStatus: async (jobId: string) => {
+            return api.authRequest(`odds/venues/process-all-images/progress/${jobId}`, "GET");
+>>>>>>> upstream/main
         }
     }
 
@@ -138,6 +184,18 @@ export const useOddsClient = () => {
         },
         getSyncProgress: async (syncId: string) => {
             return api.authRequest(`odds/teams/sync-progress/${syncId}`, "GET");
+<<<<<<< HEAD
+=======
+        },
+        processImage: async (id: string) => {
+            return api.authRequest(`odds/teams/${id}/process-image`, "POST");
+        },
+        startProcessAllImages: async () => {
+            return api.authRequest("odds/teams/process-all-images/start", "POST");
+        },
+        getProcessAllImagesStatus: async (jobId: string) => {
+            return api.authRequest(`odds/teams/process-all-images/progress/${jobId}`, "GET");
+>>>>>>> upstream/main
         }
     }
 

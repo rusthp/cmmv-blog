@@ -73,6 +73,37 @@
                     </svg>
                     Sync from API
                 </button>
+<<<<<<< HEAD
+=======
+                <button
+                    @click="processAllLogos"
+                    class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    :disabled="processingAllLogos"
+                >
+                    <svg v-if="!processingAllLogos" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <svg v-else class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ processingAllLogos ? 'Processing...' : 'Process All Logos' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div v-if="processingAllLogos && progress.total > 0" class="bg-neutral-800 rounded-lg p-4 space-y-2">
+            <div class="flex justify-between text-sm font-medium text-neutral-300">
+                <span>Processing Logos...</span>
+                <span>{{ progress.processed }} / {{ progress.total }}</span>
+            </div>
+            <div class="w-full bg-neutral-700 rounded-full h-2.5">
+                <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: `${(progress.processed / progress.total) * 100}%` }"></div>
+            </div>
+            <div v-if="progress.failed > 0" class="text-xs text-red-400">
+                {{ progress.failed }} items failed to process.
+>>>>>>> upstream/main
             </div>
         </div>
 
@@ -126,8 +157,25 @@
                     <tbody class="bg-neutral-800 divide-y divide-neutral-700">
                         <tr v-for="league in leagues" :key="league.id" class="hover:bg-neutral-750">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
+<<<<<<< HEAD
                                 <img v-if="league.logo" :src="league.logo" :alt="`${league.name} logo`" class="w-8 h-8 object-contain rounded border border-neutral-600">
                                 <div v-else class="w-8 h-8 bg-neutral-600 rounded"></div>
+=======
+                                <div class="flex items-center space-x-2">
+                                    <img v-if="league.processedLogoUrl || league.logo" :src="league.processedLogoUrl || league.logo" :alt="`${league.name} logo`" class="w-8 h-8 object-contain rounded border border-neutral-600">
+                                    <div v-else class="w-8 h-8 bg-neutral-600 rounded"></div>
+                                    <button
+                                        v-if="league.logo && !league.logoProcessed"
+                                        @click="processLogo(league)"
+                                        title="Process logo"
+                                        class="text-purple-400 hover:text-purple-300 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </button>
+                                </div>
+>>>>>>> upstream/main
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ league.name }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">{{ league.external_id }}</td>
@@ -201,6 +249,27 @@
                                 <div>
                                     <label for="leagueLogo" class="block text-sm font-medium text-neutral-300 mb-1">Logo URL</label>
                                     <input id="leagueLogo" v-model="leagueForm.logo" type="url" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white" />
+<<<<<<< HEAD
+=======
+                                     <div v-if="leagueForm.logo" class="mt-2">
+                                        <p class="text-xs text-neutral-400 mb-1">Preview:</p>
+                                        <img
+                                            :src="leagueForm.processedLogoUrl || leagueForm.logo"
+                                            :alt="`${leagueForm.name} logo preview`"
+                                            class="w-12 h-12 object-contain rounded border border-neutral-600"
+                                        >
+                                    </div>
+                                </div>
+                                <div v-if="leagueForm.processedLogoUrl" class="mt-4">
+                                    <label for="processedLogoUrl" class="block text-sm font-medium text-neutral-300 mb-1">Processed Logo URL</label>
+                                    <input
+                                        id="processedLogoUrl"
+                                        :value="leagueForm.processedLogoUrl"
+                                        type="text"
+                                        class="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-neutral-400 cursor-not-allowed"
+                                        readonly
+                                    />
+>>>>>>> upstream/main
                                 </div>
                                 <div>
                                     <label for="leagueCountryId" class="block text-sm font-medium text-neutral-300 mb-1">Country ID</label>
@@ -278,7 +347,11 @@
                             </div>
                             <div>
                                 <label for="apiEndpoint" class="block text-sm font-medium text-neutral-300 mb-1">API Endpoint</label>
+<<<<<<< HEAD
                                 <input id="apiEndpoint" v-model="syncForm.endpoint" type="text" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/leagues" required />
+=======
+                                <input id="apiEndpoint" v-model="syncForm.endpoint" type="text" class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/leagues?current=true" required />
+>>>>>>> upstream/main
                             </div>
                         </div>
                         <div class="flex justify-end space-x-3 mt-6">
@@ -301,7 +374,11 @@
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { ref, onMounted, watch, nextTick, computed } from 'vue'
+=======
+import { ref, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
+>>>>>>> upstream/main
 import { useOddsClient } from '../client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
 import ToastNotification from '@cmmv/blog/admin/components/ToastNotification.vue'
@@ -329,7 +406,11 @@ const syncLoading = ref(false);
 const apiSettings = ref([]);
 const syncForm = ref({
     settingId: '',
+<<<<<<< HEAD
     endpoint: '/leagues'
+=======
+    endpoint: '/leagues?current=true'
+>>>>>>> upstream/main
 });
 
 const notification = ref({ show: false, type: 'success', message: '', duration: 3000 });
@@ -341,6 +422,13 @@ const searchInput = ref(null);
 const showYearFilterDropdown = ref(false);
 const yearInput = ref(null);
 
+<<<<<<< HEAD
+=======
+const processingAllLogos = ref(false);
+const progress = ref({ total: 0, processed: 0, failed: 0, status: 'idle' });
+let progressPollInterval = null;
+
+>>>>>>> upstream/main
 const countries = ref([]);
 const countriesMap = computed(() => Object.fromEntries(countries.value.map(c => [c.id, c])));
 
@@ -480,7 +568,13 @@ const resetLeagueForm = () => {
         start_date: '',
         end_date: '',
         current: false,
+<<<<<<< HEAD
         country_id: ''
+=======
+        country_id: '',
+        processedLogoUrl: '',
+        logoProcessed: false
+>>>>>>> upstream/main
     };
 };
 
@@ -493,10 +587,19 @@ const openAddDialog = () => {
 const openEditDialog = (league) => {
     isEditing.value = true;
     leagueToEdit.value = league;
+<<<<<<< HEAD
     leagueForm.value = { 
         ...league,
         start_date: formatDateForInput(league.start_date),
         end_date: formatDateForInput(league.end_date),
+=======
+    leagueForm.value = {
+        ...league,
+        start_date: formatDateForInput(league.start_date),
+        end_date: formatDateForInput(league.end_date),
+        processedLogoUrl: league.processedLogoUrl || '',
+        logoProcessed: league.logoProcessed || false
+>>>>>>> upstream/main
     };
     showDialog.value = true;
 };
@@ -589,8 +692,85 @@ const runSync = async () => {
     }
 };
 
+<<<<<<< HEAD
+=======
+const processLogo = async (league) => {
+    try {
+        const result = await oddsClient.leagues.processLogo(league.id);
+
+        if (result && result.success) {
+            showNotification('success', `Logo processed for ${league.name}`);
+            refreshData();
+        } else {
+            showNotification('error', result.message || 'Failed to process logo');
+        }
+    } catch (error) {
+        showNotification('error', error.message || 'An unexpected error occurred');
+    }
+};
+
+const processAllLogos = async () => {
+    processingAllLogos.value = true;
+    progress.value = { total: 0, processed: 0, failed: 0, status: 'starting' };
+    showNotification('info', 'Starting batch processing of all logos...', 5000);
+
+    try {
+        const { jobId } = await oddsClient.leagues.startProcessAllLogos();
+
+        if (!jobId) {
+            throw new Error("Failed to start processing job.");
+        }
+
+        // Começar a verificar o progresso
+        progressPollInterval = setInterval(async () => {
+            try {
+                const status = await oddsClient.leagues.getProcessAllLogosStatus(jobId);
+                if(status) {
+                    progress.value = {
+                        total: status.total,
+                        processed: status.processed,
+                        failed: status.failed,
+                        status: status.status
+                    };
+
+                    if (status.status === 'completed' || status.status === 'error') {
+                        clearInterval(progressPollInterval);
+                        processingAllLogos.value = false;
+                        if (status.status === 'completed') {
+                            showNotification('success', `Processing complete! ${status.processed} logos processed, ${status.failed} failed.`, 5000);
+                        } else {
+                            showNotification('error', 'An error occurred during processing.', 5000);
+                        }
+                        refreshData();
+                    }
+                }
+            } catch (err) {
+                clearInterval(progressPollInterval);
+                processingAllLogos.value = false;
+                showNotification('error', 'Failed to get processing status.');
+            }
+        }, 2000); // Poll every 2 seconds
+
+    } catch (err) {
+        console.error('Failed to start processing logos:', err);
+        showNotification('error', err.message || 'Failed to start processing job');
+        processingAllLogos.value = false;
+    }
+};
+
+>>>>>>> upstream/main
 onMounted(() => {
     loadLeagues();
     fetchCountries();
 });
+<<<<<<< HEAD
 </script> 
+=======
+
+onUnmounted(() => {
+    if (progressPollInterval) {
+        clearInterval(progressPollInterval);
+    }
+});
+</script>
+>>>>>>> upstream/main

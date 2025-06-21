@@ -65,4 +65,16 @@ export class BackupController {
     async rollbackMediaBackup(@Body() body: {filename: string}) {
         return this.backupService.rollbackMediasBackup(body.filename);
     }
+
+    @Get("backup/sqlite")
+    @Auth({ rootOnly: true })
+    async getSQLiteBackups() {
+        return this.backupService.getSQLiteBackups();
+    }
+
+    @Post("backup/sqlite/create")
+    @Auth({ rootOnly: true })
+    async createSQLiteBackup() {
+        return this.backupService.backupSQLiteDatabase();
+    }
 }

@@ -216,6 +216,8 @@ export const useAdminClient = () => {
         getMediaBackups: () => api.authRequest('blog/backup/medias', 'GET'),
         createMediaBackup: (mediaIds: string[]) => api.authRequest('blog/backup/medias/create', 'POST', { mediaIds }),
         rollbackMediaBackup: (filename: string) => api.authRequest('blog/backup/medias/rollback', 'POST', { filename }),
+        getSQLiteBackups: () => api.authRequest('blog/backup/sqlite', 'GET'),
+        createSQLiteBackup: () => api.authRequest('blog/backup/sqlite/create', 'POST'),
     };
 
     return {

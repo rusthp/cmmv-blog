@@ -80,6 +80,25 @@
                     </svg>
                     Sync from API
                 </button>
+<<<<<<< HEAD
+=======
+                <div class="relative">
+                    <button
+                        @click="processAllFlags"
+                        class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                        :disabled="processingAllFlags"
+                    >
+                        <svg v-if="!processingAllFlags" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <svg v-else class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ processingAllFlags ? 'Processing...' : 'Process All Flags' }}
+                    </button>
+                </div>
+>>>>>>> upstream/main
             </div>
         </div>
 
@@ -168,8 +187,8 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <div class="flex items-center justify-center w-8 h-6">
                                     <img
-                                        v-if="country.flag"
-                                        :src="country.flag"
+                                        v-if="country.processedFlagUrl || country.flag"
+                                        :src="country.processedFlagUrl || country.flag"
                                         :alt="`${country.name} flag`"
                                         class="w-8 h-6 object-cover rounded border border-neutral-600"
                                         @error="handleImageError"
@@ -179,6 +198,17 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                     </div>
+                                    <!-- Process flag button -->
+                                    <button
+                                        v-if="country.flag && !country.flagProcessed"
+                                        @click="processFlag(country)"
+                                        title="Process flag"
+                                        class="ml-2 text-purple-400 hover:text-purple-300 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
@@ -283,13 +313,25 @@
                                 <div v-if="countryForm.flag" class="mt-2">
                                     <p class="text-xs text-neutral-400 mb-1">Preview:</p>
                                     <img
-                                        :src="countryForm.flag"
+                                        :src="countryForm.processedFlagUrl || countryForm.flag"
                                         :alt="`${countryForm.name} flag preview`"
                                         class="w-12 h-8 object-cover rounded border border-neutral-600"
                                         @error="handleImageError"
                                     >
                                 </div>
                                 <p v-if="formErrors.flag" class="mt-1 text-sm text-red-500">{{ formErrors.flag }}</p>
+
+                                <!-- Mostra a URL processada se existir -->
+                                <div v-if="countryForm.processedFlagUrl" class="mt-4">
+                                    <label for="processedFlagUrl" class="block text-sm font-medium text-neutral-300 mb-1">Processed Flag URL</label>
+                                    <input
+                                        id="processedFlagUrl"
+                                        :value="countryForm.processedFlagUrl"
+                                        type="text"
+                                        class="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-neutral-400 cursor-not-allowed"
+                                        readonly
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -391,7 +433,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useOddsClient } from '../client'
 import Pagination from '@cmmv/blog/admin/components/Pagination.vue'
@@ -410,7 +452,8 @@ const isEditing = ref(false)
 const countryForm = ref({
     name: '',
     code: '',
-    flag: ''
+    flag: '',
+    processedFlagUrl: ''
 })
 const countryToEdit = ref(null)
 const formErrors = ref({})
@@ -428,6 +471,11 @@ const syncForm = ref({
     endpoint: '/countries'
 })
 
+<<<<<<< HEAD
+=======
+const processingAllFlags = ref(false)
+
+>>>>>>> upstream/main
 const notification = ref({
     show: false,
     type: 'success',
@@ -559,7 +607,8 @@ const openAddDialog = () => {
     countryForm.value = {
         name: '',
         code: '',
-        flag: ''
+        flag: '',
+        processedFlagUrl: ''
     }
     formErrors.value = {}
     showDialog.value = true
@@ -571,7 +620,8 @@ const openEditDialog = (country) => {
     countryForm.value = {
         name: country.name,
         code: country.code,
-        flag: country.flag || ''
+        flag: country.flag || '',
+        processedFlagUrl: country.processedFlagUrl || ''
     }
     formErrors.value = {}
     showDialog.value = true
@@ -582,7 +632,8 @@ const closeDialog = () => {
     countryForm.value = {
         name: '',
         code: '',
-        flag: ''
+        flag: '',
+        processedFlagUrl: ''
     }
     formErrors.value = {}
     countryToEdit.value = null
@@ -764,6 +815,44 @@ const runSync = async () => {
     }
 };
 
+<<<<<<< HEAD
+=======
+const processFlag = async (country) => {
+    try {
+        const result = await oddsClient.countries.processFlag(country.id);
+
+        if (result && result.success) {
+            showNotification('success', `Flag processed for ${country.name}`);
+            refreshData();
+        } else {
+            showNotification('error', result.message || 'Failed to process flag');
+        }
+    } catch (error: any) {
+        showNotification('error', error.message || 'An unexpected error occurred');
+    }
+};
+
+const processAllFlags = async () => {
+    processingAllFlags.value = true;
+    showNotification('info', 'Starting to process all flags. This may take a moment...', 5000);
+
+    try {
+        const result = await oddsClient.countries.processAllFlags();
+        if (result.success) {
+            showNotification('success', `Processing complete! ${result.processed} flags processed, ${result.failed} failed.`, 5000);
+            refreshData();
+        } else {
+            throw new Error(result.message || 'Failed to process flags');
+        }
+    } catch (err) {
+        console.error('Failed to process flags:', err);
+        showNotification('error', err.message || 'Failed to process flags');
+    } finally {
+        processingAllFlags.value = false;
+    }
+};
+
+>>>>>>> upstream/main
 onMounted(() => {
     loadCountries()
 

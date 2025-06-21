@@ -1,4 +1,5 @@
 import * as urlParser from "node:url";
+import { Worker } from "node:worker_threads";
 
 import {
     Service, Logger
@@ -224,7 +225,7 @@ ${truncatedHtml}
             const textResponse = await this.aiContentService.generateContent(promptString);
 
             if (!textResponse) throw new Error("AI response is empty");
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+            const jsonMatch = await this.runRegexWithTimeout(textResponse, "\\{[\\s\\S]*\\}");
 
             if (!jsonMatch)
                 throw new Error("No JSON found in AI response");
@@ -461,11 +462,12 @@ ${truncatedHtml}
             if (parser.title) {
                 try {
                     this.logger.log(`[ParserService] Executando regex de título para parser ${parser.id}`);
-                    const titleRegex = new RegExp(parser.title, 'i');
-                    const titleMatch = html.match(titleRegex);
+                    const titleMatch = await this.runRegexWithTimeout(html, parser.title);
 
-                    if (titleMatch && titleMatch[1]) {
-                        result.title = titleMatch[1].trim();
+                    if (titleMatch) {
+                        // Extract first capture group if it exists, otherwise use full match
+                        const extractedTitle = titleMatch[1] ? titleMatch[1].trim() : titleMatch[0].trim();
+                        result.title = extractedTitle;
                         confidenceScore += 25;
                     }
                 } catch (error) {
@@ -477,10 +479,9 @@ ${truncatedHtml}
             if (parser.content) {
                 try {
                     this.logger.log(`[ParserService] Executando regex de conteúdo para parser ${parser.id}`);
-                    const contentRegex = new RegExp(parser.content, 'igs');
-                    const contentMatch = html.match(contentRegex);
-                    
-                    if (contentMatch && contentMatch[0]) {
+                    const contentMatch = await this.runRegexWithTimeout(html, parser.content);
+
+                    if (contentMatch) {
                         result.content = contentMatch[0].trim();
                         confidenceScore += 25;
                     }
@@ -493,11 +494,12 @@ ${truncatedHtml}
             if (parser.category) {
                 try {
                     this.logger.log(`[ParserService] Executando regex de categoria para parser ${parser.id}`);
-                    const categoryRegex = new RegExp(parser.category, 'i');
-                    const categoryMatch = html.match(categoryRegex);
+                    const categoryMatch = await this.runRegexWithTimeout(html, parser.category);
 
-                    if (categoryMatch && categoryMatch[1]) {
-                        result.category = categoryMatch[1].trim();
+                    if (categoryMatch) {
+                        // Extract first capture group if it exists, otherwise use full match
+                        const extractedCategory = categoryMatch[1] ? categoryMatch[1].trim() : categoryMatch[0].trim();
+                        result.category = extractedCategory;
                         confidenceScore += 20;
                     }
                 } catch (error) {
@@ -509,11 +511,12 @@ ${truncatedHtml}
             if (parser.featureImage) {
                 try {
                     this.logger.log(`[ParserService] Executando regex de imagem destacada para parser ${parser.id}`);
-                    const featureImageRegex = new RegExp(parser.featureImage, 'i');
-                    const featureImageMatch = html.match(featureImageRegex);
-                    
-                    if (featureImageMatch && featureImageMatch[1]) {
-                        result.featureImage = this.resolveUrl(featureImageMatch[1], url);
+                    const featureImageMatch = await this.runRegexWithTimeout(html, parser.featureImage);
+
+                    if (featureImageMatch) {
+                        // Extract first capture group if it exists, otherwise use full match
+                        const extractedImage = featureImageMatch[1] ? featureImageMatch[1] : featureImageMatch[0];
+                        result.featureImage = this.resolveUrl(extractedImage, url);
                         confidenceScore += 20;
                     }
                 } catch (error) {
@@ -525,11 +528,12 @@ ${truncatedHtml}
             if (parser.tags) {
                 try {
                     this.logger.log(`[ParserService] Executando regex de tags para parser ${parser.id}`);
-                    const tagsRegex = new RegExp(parser.tags, 'i');
-                    const tagsMatch = html.match(tagsRegex);
+                    const tagsMatch = await this.runRegexWithTimeout(html, parser.tags);
 
-                    if (tagsMatch && tagsMatch[1]) {
-                        result.tags = tagsMatch[1].trim();
+                    if (tagsMatch) {
+                        // Extract first capture group if it exists, otherwise use full match
+                        const extractedTags = tagsMatch[1] ? tagsMatch[1].trim() : tagsMatch[0].trim();
+                        result.tags = extractedTags;
                         confidenceScore += 10;
                     }
                 } catch (error) {
@@ -538,11 +542,11 @@ ${truncatedHtml}
             }
 
             // Data de publicação (padrão)
-            const pubDateRegex = /<meta\s+property=["']article:published_time["']\s+content=["']([^"']+)["']/i;
-            const pubDateMatch = html.match(pubDateRegex);
-            if (pubDateMatch && pubDateMatch[1]) {
+            const pubDateMatch = await this.runRegexWithTimeout(html, '<meta\\s+property=["\\\'"]article:published_time["\\\'"]\\s+content=["\\\'"]([^"\\\']+)["\\\'"]');
+            if (pubDateMatch) {
                 try {
-                    result.pubDate = new Date(pubDateMatch[1]);
+                    const dateString = pubDateMatch[1] ? pubDateMatch[1] : pubDateMatch[0];
+                    result.pubDate = new Date(dateString);
                     confidenceScore += 10;
                 } catch (e) {
                     result.pubDate = new Date();
@@ -589,32 +593,31 @@ ${truncatedHtml}
         }
     }
 
+    /**
+     * Refine a parser with AI
+     * @param url The URL to refine the parser for
+     * @param currentParser The current parser to refine
+     * @returns The refined parser
+     */
     async refineWithAI(url: string, currentParser: any) {
         try {
             const urlDecoded = decodeURIComponent(url);
             this.logger.log(`Refining parser for URL: ${urlDecoded}`);
             const html = await this.fetchHTML(urlDecoded);
 
-            if (!html) {
+            if (!html)
                 throw new Error("Failed to fetch HTML content from the URL");
-            }
 
-            // Build a dynamic prompt based on locked fields
             const { prompt, unlockedFields } = this.buildRefinePrompt(html, currentParser);
 
-            // If all fields are locked, no need to call AI
             if (unlockedFields.length === 0) {
                 this.logger.log("All fields are locked, no refinement needed.");
                 return currentParser;
             }
 
             const aiResult = await this.executeAIPrompt(prompt);
-
-            // Merge AI results with the locked fields
             const refinedParser = this.mergeAIResults(currentParser, aiResult, unlockedFields);
-
             return refinedParser;
-
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             this.logger.error(`Error refining parser with AI: ${errorMessage}`);
@@ -622,10 +625,16 @@ ${truncatedHtml}
         }
     }
 
+    /**
+     * Build a prompt for the AI to refine the parser
+     * @param html The HTML to analyze
+     * @param parser The current parser to refine
+     * @returns The prompt and the unlocked fields
+     */
     private buildRefinePrompt(html: string, parser: any): { prompt: string, unlockedFields: string[] } {
         const truncatedHtml = html.length > 30000 ? html.substring(0, 30000) + "..." : html;
         const unlockedFields = Object.keys(parser).filter(key => parser[key] && !parser[key].locked);
-        
+
         let prompt = `
 You are an expert in HTML parsing and creating precise regular expressions.
 Your task is to refine an existing set of regex patterns to better extract structured content from a web page.
@@ -667,20 +676,31 @@ ${truncatedHtml}
         return { prompt, unlockedFields };
     }
 
+    /**
+     * Execute a prompt with the AI
+     * @param prompt The prompt to execute
+     * @returns The AI response
+     */
     private async executeAIPrompt(prompt: string): Promise<any> {
         const textResponse = await this.aiContentService.generateContent(prompt);
 
         if (!textResponse) throw new Error("AI response is empty");
-        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+        const jsonMatch = await this.runRegexWithTimeout(textResponse, "\\{[\\s\\S]*\\}");
 
-        if (!jsonMatch) {
+        if (!jsonMatch)
             throw new Error("No JSON found in AI response");
-        }
 
         const jsonContent = jsonMatch[0];
         return JSON.parse(jsonContent);
     }
 
+    /**
+     * Merge AI results with the locked fields
+     * @param originalParser The original parser
+     * @param aiResult The AI response
+     * @param unlockedFields The unlocked fields
+     * @returns The refined parser
+     */
     private mergeAIResults(originalParser: any, aiResult: any, unlockedFields: string[]): any {
         const refinedParser = JSON.parse(JSON.stringify(originalParser)); // Deep copy
 
@@ -690,24 +710,28 @@ ${truncatedHtml}
                 refinedParser[key] = {
                     ...aiResult[key],
                     regex: fixedRegex,
-                    locked: false // Keep it unlocked
+                    locked: false
                 };
             }
         }
         return refinedParser;
     }
 
+    /**
+     * Test a custom parser
+     * @param url The URL to test the parser for
+     * @param parserData The parser data to test
+     * @returns The test result
+     */
     async testCustomParser(url: string, parserData: any) {
         try {
             const urlDecoded = decodeURIComponent(url);
             this.logger.log(`Testing custom parser for URL: ${urlDecoded}`);
             const html = await this.fetchHTML(urlDecoded);
 
-            if (!html || html.length === 0) {
+            if (!html || html.length === 0)
                 throw new Error("Failed to fetch HTML content from the URL");
-            }
 
-            // Use the existing worker-based processing logic, but with the provided parser data
             const result = await this.processParserWithTimeout(parserData, html, urlDecoded);
 
             return {
@@ -722,13 +746,16 @@ ${truncatedHtml}
         }
     }
 
+    /**
+     * Analyze all parsers
+     * @returns The analysis result
+     */
     async analyzeAllParsers() {
         this.logger.log('Starting analysis of all parsers');
         const FeedParserEntity = Repository.getEntity("FeedParserEntity");
         const problematicParsers = [];
 
         try {
-            // Fetching all parsers. A limit of 2000 should be safe.
             const allParsersResult = await Repository.findAll(FeedParserEntity, { limit: 2000 });
 
             if (!allParsersResult || !allParsersResult.data || allParsersResult.data.length === 0) {
@@ -749,7 +776,6 @@ ${truncatedHtml}
                     const regex = parser[field];
                     if (regex) {
                         try {
-                            // This will throw an error if the regex is invalid
                             new RegExp(regex, 'i');
                         } catch (error) {
                             issues.push({
@@ -782,6 +808,11 @@ ${truncatedHtml}
         }
     }
 
+    /**
+     * Validate a parser
+     * @param data The parser data to validate
+     * @returns The validated parser
+     */
     private _validateParser(data: any) {
         const regexFields = ['title', 'content', 'category', 'featureImage', 'tags'];
 
@@ -797,15 +828,143 @@ ${truncatedHtml}
         }
     }
 
+    /**
+     * Create a parser
+     * @param data The parser data to create
+     * @returns The created parser
+     */
     async createParser(data: any) {
         this._validateParser(data);
         const FeedParserEntity = Repository.getEntity("FeedParserEntity");
         return Repository.insert(FeedParserEntity, data);
     }
 
+    /**
+     * Update a parser
+     * @param id The ID of the parser to update
+     * @param data The parser data to update
+     * @returns The updated parser
+     */
     async updateParser(id: string, data: any) {
         this._validateParser(data);
         const FeedParserEntity = Repository.getEntity("FeedParserEntity");
         return Repository.update(FeedParserEntity, { id }, data);
+    }
+
+    /**
+     * Run a regex with a timeout
+     * @param html The HTML to run the regex on
+     * @param regexStr The regex to run
+     * @param timeout The timeout in milliseconds
+     * @returns The regex match
+     */
+    runRegexWithTimeout(html: string, regexStr: string, timeout = 2000): Promise<RegExpMatchArray | null> {
+        return new Promise((resolve) => {
+            if (html.length > 1000000) { // 1MB
+                this.logger.log(`HTML too large (${html.length} chars), skipping regex execution`);
+                resolve(null);
+                return;
+            }
+
+            if (regexStr.length > 1000) {
+                this.logger.log(`Regex too complex (${regexStr.length} chars), skipping execution`);
+                resolve(null);
+                return;
+            }
+
+            const workerCode = `
+                const { parentPort } = require('worker_threads');
+
+                parentPort.on('message', ({ html, regexStr, flags }) => {
+                    try {
+                        const regex = new RegExp(regexStr, flags);
+                        const match = html.match(regex);
+                        parentPort.postMessage({ success: true, result: match });
+                    } catch (error) {
+                        parentPort.postMessage({ success: false, error: error.message });
+                    }
+                });
+            `;
+
+            let worker;
+            let isResolved = false;
+
+            try {
+                worker = new Worker(workerCode, { eval: true });
+            } catch (error) {
+                this.logger.error(`Failed to create worker: ${error instanceof Error ? error.message : String(error)}`);
+                resolve(null);
+                return;
+            }
+
+            const timeoutId = setTimeout(() => {
+                if (!isResolved) {
+                    isResolved = true;
+                    try {
+                        worker?.terminate();
+                    } catch (e) {}
+
+                    this.logger.log(`Regex execution timed out after ${timeout}ms`);
+                    resolve(null);
+                }
+            }, timeout);
+
+            worker.on('message', (data) => {
+                if (!isResolved) {
+                    isResolved = true;
+                    clearTimeout(timeoutId);
+                    try {
+                        worker.terminate();
+                    } catch (e) {}
+
+                    if (data.success) {
+                        resolve(data.result);
+                    } else {
+                        this.logger.error(`Regex execution error: ${data.error}`);
+                        resolve(null);
+                    }
+                }
+            });
+
+            worker.on('error', (error) => {
+                if (!isResolved) {
+                    isResolved = true;
+                    clearTimeout(timeoutId);
+                    try {
+                        worker.terminate();
+                    } catch (e) {}
+
+                    this.logger.error(`Worker error: ${error.message}`);
+                    resolve(null);
+                }
+            });
+
+            worker.on('exit', (code) => {
+                if (!isResolved && code !== 0) {
+                    isResolved = true;
+                    clearTimeout(timeoutId);
+                    this.logger.error(`Worker exited with code: ${code}`);
+                    resolve(null);
+                }
+            });
+
+            try {
+                worker.postMessage({
+                    html,
+                    regexStr,
+                    flags: 'igs'
+                });
+            } catch (error) {
+                if (!isResolved) {
+                    isResolved = true;
+                    clearTimeout(timeoutId);
+                    try {
+                        worker.terminate();
+                    } catch (e) {}
+                    this.logger.error(`Failed to send message to worker: ${error instanceof Error ? error.message : String(error)}`);
+                    resolve(null);
+                }
+            }
+        });
     }
 }

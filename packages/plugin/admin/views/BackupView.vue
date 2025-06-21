@@ -22,6 +22,24 @@
                         Create Database Backup
                     </span>
                 </button>
+                <button
+                    v-if="activeTab === 'sqlite'"
+                    @click="createSQLiteBackup"
+                    class="px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors flex items-center"
+                    :disabled="isCreatingSQLiteBackup"
+                >
+                    <span v-if="isCreatingSQLiteBackup" class="flex items-center">
+                        <svg class="animate-spin h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                    </span>
+                    <span v-else class="flex items-center">
+                        <i class="fas fa-save h-3.5 w-3.5 mr-1"></i>
+                        Create SQLite Backup
+                    </span>
+                </button>
                 <button @click="refreshCurrentTab" class="px-2.5 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs font-medium rounded-md transition-colors flex items-center">
                     <i class="fas fa-sync-alt h-3.5 w-3.5 mr-1"></i>
                     Refresh
@@ -55,6 +73,18 @@
                 >
                     <i class="fas fa-images mr-2"></i>
                     Media Backups
+                </button>
+                <button
+                    @click="activeTab = 'sqlite'"
+                    :class="[
+                        'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors',
+                        activeTab === 'sqlite'
+                            ? 'border-blue-500 text-blue-500'
+                            : 'border-transparent text-neutral-400 hover:text-neutral-300 hover:border-neutral-300'
+                    ]"
+                >
+                    <i class="fas fa-file-database mr-2"></i>
+                    SQLite Backups
                 </button>
             </nav>
         </div>
@@ -135,6 +165,101 @@
                                         </button>
                                         <button
                                             @click="confirmDelete(backup)"
+                                            title="Delete"
+                                            class="text-neutral-400 hover:text-red-500 transition-colors"
+                                            :disabled="backup.isDeleting"
+                                        >
+                                            <i v-if="backup.isDeleting" class="fas fa-circle-notch fa-spin h-5 w-5 text-red-500"></i>
+                                            <i v-else class="fas fa-trash h-5 w-5"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SQLite Backups Tab -->
+        <div v-if="activeTab === 'sqlite'">
+            <!-- Loading state -->
+            <div v-if="sqliteLoading" class="bg-neutral-800 rounded-lg p-12 flex justify-center items-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                <span class="ml-3 text-neutral-400">Loading SQLite backups...</span>
+            </div>
+
+            <!-- Error state -->
+            <div v-else-if="sqliteError" class="bg-neutral-800 rounded-lg p-8 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-neutral-300 mb-2">Failed to load SQLite backups</p>
+                <p class="text-neutral-400 text-sm mb-4">{{ sqliteError }}</p>
+                <button @click="loadSQLiteBackups" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors">
+                    Try Again
+                </button>
+            </div>
+
+            <!-- Empty state -->
+            <div v-else-if="sqliteBackups.length === 0" class="bg-neutral-800 rounded-lg p-12 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-neutral-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                <p class="text-neutral-300 mb-2">No SQLite backups found</p>
+                <p class="text-neutral-400 text-sm mb-4">Create your first SQLite database backup to protect your data</p>
+                <button @click="createSQLiteBackup" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                    Create SQLite Backup
+                </button>
+            </div>
+
+            <!-- SQLite backups table -->
+            <div v-else class="bg-neutral-800 rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-neutral-700">
+                        <thead class="bg-neutral-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                    Filename
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                    Date Created
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                    Size
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-neutral-300 uppercase tracking-wider w-24">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-neutral-800 divide-y divide-neutral-700">
+                            <tr v-for="backup in sqliteBackups" :key="backup.filename" class="hover:bg-neutral-750">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-database text-green-500 mr-2"></i>
+                                        {{ backup.filename }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
+                                    {{ formatDate(backup.created) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
+                                    {{ backup.formattedSize || formatFileSize(backup.size) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex justify-end space-x-2">
+                                        <button
+                                            @click="downloadSQLiteBackup(backup)"
+                                            title="Download"
+                                            class="text-neutral-400 hover:text-blue-500 transition-colors"
+                                            :disabled="backup.isDownloading"
+                                        >
+                                            <i v-if="backup.isDownloading" class="fas fa-circle-notch fa-spin h-5 w-5 text-blue-500"></i>
+                                            <i v-else class="fas fa-download h-5 w-5"></i>
+                                        </button>
+                                        <button
+                                            @click="confirmDeleteSQLite(backup)"
                                             title="Delete"
                                             class="text-neutral-400 hover:text-red-500 transition-colors"
                                             :disabled="backup.isDeleting"
@@ -473,6 +598,12 @@ const rollbackLoading = ref(false);
 const rollbackResult = ref(null);
 const selectedMediaBackup = ref(null);
 
+// SQLite backups
+const sqliteBackups = ref([]);
+const sqliteLoading = ref(false);
+const sqliteError = ref(null);
+const isCreatingSQLiteBackup = ref(false);
+
 const notification = ref({
     show: false,
     type: 'success',
@@ -528,11 +659,38 @@ async function loadMediaBackups() {
     }
 }
 
+async function loadSQLiteBackups() {
+    try {
+        sqliteLoading.value = true;
+        sqliteError.value = null;
+
+        const response = await adminClient.backup.getSQLiteBackups();
+
+        if (response && response.data) {
+            sqliteBackups.value = response.data.map(backup => ({
+                ...backup,
+                isDownloading: false,
+                isDeleting: false
+            }));
+        } else {
+            sqliteBackups.value = [];
+        }
+    } catch (err) {
+        console.error('Failed to load SQLite backups:', err);
+        sqliteError.value = err.message || 'Failed to load SQLite backups';
+        showNotification('error', 'Failed to load SQLite backups');
+    } finally {
+        sqliteLoading.value = false;
+    }
+}
+
 function refreshCurrentTab() {
     if (activeTab.value === 'database') {
         loadBackups();
     } else if (activeTab.value === 'media') {
         loadMediaBackups();
+    } else if (activeTab.value === 'sqlite') {
+        loadSQLiteBackups();
     }
 }
 
@@ -540,6 +698,8 @@ function refreshCurrentTab() {
 watch(activeTab, (newTab) => {
     if (newTab === 'media' && mediaBackups.value.length === 0) {
         loadMediaBackups();
+    } else if (newTab === 'sqlite' && sqliteBackups.value.length === 0) {
+        loadSQLiteBackups();
     }
 });
 
@@ -564,6 +724,26 @@ async function createBackup() {
         showNotification('error', 'Failed to create backup');
     } finally {
         isCreatingBackup.value = false;
+    }
+}
+
+async function createSQLiteBackup() {
+    try {
+        isCreatingSQLiteBackup.value = true;
+
+        const response = await adminClient.backup.createSQLiteBackup();
+
+        if (response && response.success !== false) {
+            showNotification('success', response.message || 'SQLite backup created successfully');
+            loadSQLiteBackups();
+        } else {
+            throw new Error(response?.message || 'Failed to create SQLite backup');
+        }
+    } catch (err) {
+        console.error('Failed to create SQLite backup:', err);
+        showNotification('error', err.message || 'Failed to create SQLite backup');
+    } finally {
+        isCreatingSQLiteBackup.value = false;
     }
 }
 
@@ -646,17 +826,28 @@ async function deleteBackup() {
     try {
         isDeleting.value = true;
 
-        const backupIndex = backups.value.findIndex(b => b.filename === selectedBackup.value.filename);
-
-        if (backupIndex !== -1)
-            backups.value[backupIndex].isDeleting = true;
+        // Set deleting state in appropriate list
+        if (activeTab.value === 'database') {
+            const backupIndex = backups.value.findIndex(b => b.filename === selectedBackup.value.filename);
+            if (backupIndex !== -1)
+                backups.value[backupIndex].isDeleting = true;
+        } else if (activeTab.value === 'sqlite') {
+            const backupIndex = sqliteBackups.value.findIndex(b => b.filename === selectedBackup.value.filename);
+            if (backupIndex !== -1)
+                sqliteBackups.value[backupIndex].isDeleting = true;
+        }
 
         const response = await adminClient.backup.delete(selectedBackup.value.filename);
 
         if (response && response.status === 200) {
             showNotification('success', 'Backup deleted successfully');
 
-            backups.value = backups.value.filter(b => b.filename !== selectedBackup.value.filename);
+            // Remove from appropriate list based on current tab
+            if (activeTab.value === 'database') {
+                backups.value = backups.value.filter(b => b.filename !== selectedBackup.value.filename);
+            } else if (activeTab.value === 'sqlite') {
+                sqliteBackups.value = sqliteBackups.value.filter(b => b.filename !== selectedBackup.value.filename);
+            }
         } else {
             throw new Error('Failed to delete backup');
         }
@@ -664,10 +855,16 @@ async function deleteBackup() {
         console.error('Failed to delete backup:', err);
         showNotification('error', err.message || 'Failed to delete backup');
 
-        const backupIndex = backups.value.findIndex(b => b.filename === selectedBackup.value?.filename);
-
-        if (backupIndex !== -1)
-            backups.value[backupIndex].isDeleting = false;
+        // Reset deleting state in appropriate list
+        if (activeTab.value === 'database') {
+            const backupIndex = backups.value.findIndex(b => b.filename === selectedBackup.value?.filename);
+            if (backupIndex !== -1)
+                backups.value[backupIndex].isDeleting = false;
+        } else if (activeTab.value === 'sqlite') {
+            const backupIndex = sqliteBackups.value.findIndex(b => b.filename === selectedBackup.value?.filename);
+            if (backupIndex !== -1)
+                sqliteBackups.value[backupIndex].isDeleting = false;
+        }
     } finally {
         isDeleting.value = false;
         closeDeleteDialog();
@@ -747,6 +944,28 @@ function closeRollbackDialog() {
     rollbackResult.value = null;
     rollbackLoading.value = false;
     selectedMediaBackup.value = null;
+}
+
+function downloadSQLiteBackup(backup) {
+    const backupIndex = sqliteBackups.value.findIndex(b => b.filename === backup.filename);
+
+    if (backupIndex !== -1)
+        sqliteBackups.value[backupIndex].isDownloading = true;
+
+    const downloadUrl = `${window.location.origin}/api/blog/backup/download?filename=${encodeURIComponent(backup.filename)}`;
+    window.open(downloadUrl, '_blank');
+
+    setTimeout(() => {
+        const index = sqliteBackups.value.findIndex(b => b.filename === backup.filename);
+        if (index !== -1) {
+            sqliteBackups.value[index].isDownloading = false;
+        }
+    }, 1000);
+}
+
+function confirmDeleteSQLite(backup) {
+    selectedBackup.value = backup;
+    showDeleteDialog.value = true;
 }
 
 function formatFileSize(bytes) {
