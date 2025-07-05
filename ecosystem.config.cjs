@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: "Blog",
+            name: "ProPlay News",
             script: "pnpm start",
         }
     ]
