@@ -36,29 +36,36 @@ export class FeedService {
         let feed = [`<?xml version="1.0" encoding="UTF-8"?>`];
         feed.push(`<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">`);
         feed.push(`<channel>`);
-        feed.push(`<title>${title}</title>`);
-        feed.push(`<link>${url}</link>`);
-        feed.push(`<description>${description}</description>`);
+        feed.push(`<title>${this.escapeXml(title)}</title>`);
+        feed.push(`<link>${this.escapeXml(url)}</link>`);
+        feed.push(`<description>${this.escapeXml(description)}</description>`);
         feed.push(`<language>${language.replace('_', '-')}</language>`);
 
         if(copyright)
-            feed.push(`<copyright>© Copyright ${copyright}</copyright>`);
+            feed.push(`<copyright>© Copyright ${this.escapeXml(copyright)}</copyright>`);
 
-        feed.push(`<atom:link href="${url}/feed" rel="self" type="application/rss+xml"/>`)
+        feed.push(`<atom:link href="${this.escapeXml(url)}/feed" rel="self" type="application/rss+xml"/>`)
 
         for (const post of posts.posts) {
+            const postUrl = `${url}/post/${post.slug}`;
+            const cleanContent = this.stripHtml(post.content);
+            const imageTag = post.featureImage ? `<img src="${this.escapeXml(post.featureImage)}" alt="${this.escapeXml(post.title)}" /><br />` : '';
+            
             feed.push(`<item>`);
-            feed.push(`<title>${post.title}</title>`);
-            feed.push(`<link>${url}/post/${post.slug}</link>`);
-            feed.push(`<pubDate>${post.publishedAt.toGMTString()}</pubDate>`);
-            feed.push(`<guid isPermaLink="true">${url}/post/${post.slug}</guid>`);
-            feed.push(`<description>
-                <![CDATA[ <img src="${post.featureImage}" /><br /> ]]>
-                ${this.stripHtml(post.content)}</description>`);
-            feed.push(`<media:content url="${post.featureImage}" medium="image"/>`);
+            feed.push(`<title>${this.escapeXml(post.title)}</title>`);
+            feed.push(`<link>${this.escapeXml(postUrl)}</link>`);
+            feed.push(`<pubDate>${post.publishedAt.toUTCString()}</pubDate>`);
+            feed.push(`<guid isPermaLink="true">${this.escapeXml(postUrl)}</guid>`);
+            feed.push(`<description><![CDATA[${imageTag}${cleanContent}]]></description>`);
+            
+            if (post.featureImage) {
+                feed.push(`<media:content url="${this.escapeXml(post.featureImage)}" medium="image"/>`);
+            }
 
-            for (const category of post.categories) {
-                feed.push(`<category>${category.name}</category>`);
+            if (post.categories && post.categories.length > 0) {
+                for (const category of post.categories) {
+                    feed.push(`<category>${this.escapeXml(category.name)}</category>`);
+                }
             }
 
             feed.push(`</item>`);
@@ -71,36 +78,51 @@ export class FeedService {
     }
 
     /**
-     * Strip the HTML from the post content
-     * @param html - The HTML to strip
-     * @returns The stripped HTML
+     * Escape XML special characters
+     * @param text - The text to escape
+     * @returns The escaped text
      */
-    private stripHtml(html: string) {
+    private escapeXml(text: string): string {
+        if (!text) return '';
+        
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    /**
+     * Strip the HTML from the post content and prepare for CDATA
+     * @param html - The HTML to strip
+     * @returns The cleaned text
+     */
+    private stripHtml(html: string): string {
         if (!html) return '';
 
         try {
-            const textWithoutTags = html.replace(/<[^>]*>?/g, ' ');
+            // Remove HTML tags
+            let textWithoutTags = html.replace(/<[^>]*>?/g, ' ');
 
-            const decodedText = textWithoutTags
+            // Decode HTML entities
+            textWithoutTags = textWithoutTags
                 .replace(/&nbsp;/g, ' ')
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
                 .replace(/&quot;/g, '"')
                 .replace(/&#39;/g, "'")
-                .replace(/&apos;/g, "'");
+                .replace(/&apos;/g, "'")
+                .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+                .replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
 
-            const escapedText = decodedText
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&apos;');
-
-            const normalizedText = escapedText
+            // Normalize whitespace
+            const normalizedText = textWithoutTags
                 .replace(/\s+/g, ' ')
                 .trim();
 
+            // Truncate if too long
             const maxLength = 500;
             if (normalizedText.length > maxLength) {
                 return normalizedText.substring(0, maxLength) + '...';
