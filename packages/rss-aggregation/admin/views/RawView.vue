@@ -1530,13 +1530,24 @@ const generateAIContent = async (): Promise<void> => {
                     }
                 } else if (jobStatus.status === 'error') {
                     throw new Error(jobStatus.error || 'AI processing failed');
+                } else if (jobStatus.status === 'processing') {
+                    // Mostrar feedback contínuo para jobs em processamento
+                    showNotification('info', 'AI ainda processando conteúdo... Por favor, aguarde.', 2000);
+                    setTimeout(checkJobStatus, 3000);
                 } else {
                     setTimeout(checkJobStatus, 2000);
                 }
             } catch (err) {
                 aiLoading.value = false;
-                aiError.value = err instanceof Error ? err.message : 'Error checking job status';
-                showNotification('error', aiError.value);
+                const errorMessage = err instanceof Error ? err.message : 'Error checking job status';
+                aiError.value = errorMessage;
+                
+                // Verificar se é um erro de timeout
+                if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+                    showNotification('warning', 'Processamento de IA demorou mais que o esperado. Verifique novamente em alguns minutos - o post pode ter sido criado.', 6000);
+                } else {
+                    showNotification('error', errorMessage);
+                }
             }
         };
 
@@ -1545,8 +1556,15 @@ const generateAIContent = async (): Promise<void> => {
     } catch (err: unknown) {
         console.error('Failed to generate AI content:', err);
         aiLoading.value = false;
-        aiError.value = err instanceof Error ? err.message : 'Failed to generate AI content';
-        showNotification('error', 'Failed to generate AI content');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate AI content';
+        aiError.value = errorMessage;
+        
+        // Verificar se é um erro de timeout
+        if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+            showNotification('warning', 'Processamento de IA demorou mais que o esperado. O processamento pode estar acontecendo em background. Verifique novamente em alguns minutos.', 8000);
+        } else {
+            showNotification('error', 'Failed to generate AI content: ' + errorMessage);
+        }
     }
 };
 
@@ -1748,17 +1766,44 @@ const createPost = (item: FeedItem): void => {
     showNotification('info', 'Post creation not implemented yet');
 };
 
-const showNotification = (type: string, message: string): void => {
+const showNotification = (type: string, message: string, duration: number = 3000): void => {
     notification.value = {
         show: true,
         type,
         message,
-        duration: 3000
+        duration
     };
 
     setTimeout(() => {
         notification.value.show = false;
     }, notification.value.duration);
+};
+
+const checkForUnprocessedJobs = async (): Promise<void> => {
+    // Verificar se há jobs de IA que podem ter sido perdidos devido a timeout
+    try {
+        const response = await feedClient.raw.get({
+            limit: 10,
+            postRef: null, // Itens não processados
+            sortBy: 'createdAt',
+            sort: 'desc'
+        });
+
+        if (response && response.data && response.data.length > 0) {
+            // Verificar se há itens muito recentes que podem ter sido processados mas não linkados
+            const recentItems = response.data.filter((item: any) => {
+                const itemDate = new Date(item.createdAt);
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                return itemDate > fiveMinutesAgo;
+            });
+
+            if (recentItems.length > 0) {
+                console.log(`Encontrados ${recentItems.length} itens recentes não processados`);
+            }
+        }
+    } catch (err) {
+        console.error('Erro ao verificar jobs não processados:', err);
+    }
 };
 
 const toggleTagSelection = (tag: string): void => {

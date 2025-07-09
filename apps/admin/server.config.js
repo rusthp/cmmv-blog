@@ -23,8 +23,8 @@ export const serverConfig = {
     proxy: {
         changeOrigin: true,
         secure: false,
-        timeout: 30000,
-        proxyTimeout: 30000,
+        timeout: 120000, // 2 minutos para operações de IA
+        proxyTimeout: 120000, // 2 minutos para operações de IA
         headers: {
             'Content-Type': 'application/json',
             'User-Agent': 'CMMV-Admin-Server/1.0'

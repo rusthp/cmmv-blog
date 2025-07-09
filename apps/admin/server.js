@@ -98,7 +98,7 @@ const setupWhitelabelProxies = (app) => {
             pathRewrite: {
                 [`^${pattern}`]: '/api'
             },
-            timeout: serverConfig.proxy.timeout || 30000,
+            timeout: serverConfig.proxy.timeout || 120000,
             headers: {
                 ...serverConfig.proxy.headers
             }
@@ -171,7 +171,7 @@ const setupMainApiProxy = (app) => {
     const baseProxyOptions = {
         target: serverConfig.apiUrl,
         changeOrigin: serverConfig.proxy.changeOrigin,
-        timeout: serverConfig.proxy.timeout || 30000,
+        timeout: serverConfig.proxy.timeout || 120000,
         headers: {
             ...serverConfig.proxy.headers
         }
@@ -296,7 +296,7 @@ const initServer = async () => {
                 const fetchOptions = {
                     method: req.method,
                     headers: proxyHeaders,
-                    timeout: serverConfig.proxy.timeout || 30000
+                    timeout: serverConfig.proxy.timeout || 120000
                 };
 
                 if (req.method !== 'GET' && req.method !== 'HEAD') {
