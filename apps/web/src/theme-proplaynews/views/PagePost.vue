@@ -331,7 +331,7 @@
                                         <!-- Facebook -->
                                         <a class="bg-blue-600 hover:bg-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl)"
+                                            :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl.value)"
                                             onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;"
                                             title="Compartilhar no Facebook">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -344,7 +344,7 @@
                                         <!-- Twitter -->
                                         <a class="bg-sky-500 hover:bg-sky-600 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://twitter.com/share?text=' + encodeURIComponent(post.title) + '&url=' + encodeURIComponent(pageUrl)"
+                                            :href="'https://twitter.com/share?text=' + encodeURIComponent(post.title) + '&url=' + encodeURIComponent(pageUrl.value)"
                                             onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;"
                                             title="Compartilhar no Twitter">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -357,7 +357,7 @@
                                         <!-- LinkedIn -->
                                         <a class="bg-blue-700 hover:bg-blue-800 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(pageUrl) + '&title=' + encodeURIComponent(post.title)"
+                                            :href="'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(pageUrl.value) + '&title=' + encodeURIComponent(post.title)"
                                             onclick="window.open(this.href, 'linkedin-share', 'width=490,height=530');return false;"
                                             title="Compartilhar no LinkedIn">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -824,7 +824,13 @@ watchEffect(() => {
 })
 
 const pageUrl = computed(() => {
+    // Use clean URL without UTM parameters for meta tags
     return `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value?.slug || ''}`
+})
+
+const shareUrl = computed(() => {
+    // Separate URL with UTM parameters for sharing
+    return `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value?.slug}?utm_source=proplaynews&utm_medium=social&utm_campaign=share`
 })
 
 const keywords = computed(() => post.value?.keywords ||
@@ -839,9 +845,11 @@ const metadata = computed(() => keywords.value
     .split(', ')
     .map((k: string) => ({ property: 'article:tag', content: k })))
 
-const headData = computed(() => ({
-    title: post.value?.title,
-    meta: [
+const headData = computed(() => {
+    // Ensure we have valid data before creating meta tags
+    if (!post.value?.title) return { meta: [], link: [] };
+    
+    const metaTags = [
         { name: 'description', content: description.value },
         { name: 'keywords', content: keywords.value },
         { property: 'og:type', content: 'article' },
@@ -854,43 +862,33 @@ const headData = computed(() => ({
         { property: 'og:image:secure_url', content: post.value?.featureImage || settings.value?.['blog.image'] },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '675' },
-        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:site_name', content: settings.value?.['blog.title'] || 'ProPlay News' },
         { property: 'og:updated_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
         { property: 'article:published_time', content: post.value?.status === 'published' && post.value?.publishedAt ? new Date(post.value.publishedAt).toISOString() : post.value?.createdAt ? new Date(post.value.createdAt).toISOString() : new Date().toISOString() },
         { property: 'article:modified_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
+        // Twitter Card meta tags - Critical for Twitter/X
         { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:site', content: '@proplaynews' },
+        { name: 'twitter:creator', content: '@proplaynews' },
         { name: 'twitter:title', content: post.value?.title },
         { name: 'twitter:description', content: description.value },
         { name: 'twitter:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
+        { name: 'twitter:image:src', content: post.value?.featureImage || settings.value?.['blog.image'] },
         { name: 'twitter:url', content: pageUrl.value },
         ...metadata.value
-    ],
-    link: [
-        { rel: 'canonical', href: pageUrl.value },
-    ],
-    script: isSSR ? [
-        {
-            type: 'application/ld+json',
-            innerHTML: JSON.stringify(vue3.createLdJSON('post', post.value, settings.value))
-        }
+    ];
 
-    ] : [
-        {
-            type: 'text/javascript',
-            src: 'https://platform.twitter.com/widgets.js',
-            charset: 'UTF-8',
-            async: true,
-            id: 'twitter-widgets-script'
-        },
-        {
-            type: 'text/javascript',
-            src: 'https://embed.reddit.com/widgets.js',
-            charset: 'UTF-8',
-            async: true,
-            id: 'reddit-widget-script'
-        }
-    ]
-}))
+    // Filter out any meta tags with empty content
+    const validMetaTags = metaTags.filter(tag => tag.content && tag.content.trim() !== '');
+
+    return {
+        title: post.value?.title,
+        meta: validMetaTags,
+        link: [
+            { rel: 'canonical', href: pageUrl.value },
+        ],
+    };
+});
 
 useHead(headData)
 

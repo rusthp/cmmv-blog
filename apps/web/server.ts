@@ -314,6 +314,34 @@ async function bootstrap() {
 
                 template = await transformHtmlTemplate(head, template.replace(`<div id="app"></div>`, `<div id="app">${appHtml}</div>${dataScript}`));
 
+                // Debug: Log meta tags for Twitter debugging (only in development)
+                if (process.env.NODE_ENV === 'development') {
+                    const twitterMetaTags = template.match(/<meta[^>]*name="twitter:[^"]*"[^>]*>/g);
+                    const ogMetaTags = template.match(/<meta[^>]*property="og:[^"]*"[^>]*>/g);
+                    
+                    if (url.includes('/post/')) {
+                        console.log('🐦 Twitter Meta Tags found:', twitterMetaTags?.length || 0);
+                        console.log('📘 Open Graph Meta Tags found:', ogMetaTags?.length || 0);
+                        
+                        // Check for critical Twitter meta tags
+                        const hasTwitterCard = template.includes('twitter:card');
+                        const hasTwitterSite = template.includes('twitter:site');
+                        const hasTwitterImage = template.includes('twitter:image');
+                        const hasTwitterTitle = template.includes('twitter:title');
+                        
+                        console.log('🔍 Critical Twitter tags check:', {
+                            hasTwitterCard,
+                            hasTwitterSite, 
+                            hasTwitterImage,
+                            hasTwitterTitle
+                        });
+                        
+                        if (!hasTwitterCard || !hasTwitterSite || !hasTwitterImage || !hasTwitterTitle) {
+                            console.warn('⚠️  Missing critical Twitter meta tags!');
+                        }
+                    }
+                }
+
                 template = template.replace("<analytics />", settings["blog.analyticsCode"] || "").replace("<analytics>", settings["blog.analyticsCode"] || "");
                 template = template.replace("<custom-js />", settings["blog.customJs"] || "").replace("<custom-js>", settings["blog.customJs"] || "");
                 template = template.replace("<custom-css />", settings["blog.customCss"] || "").replace("<custom-css>", settings["blog.customCss"] || "");
