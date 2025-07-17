@@ -94,6 +94,46 @@ export class MediasService extends AbstractService {
     }
 
     /**
+     * Get image URL optimized for social media sharing (Twitter/X compatible)
+     * Uses WebP by default (supported by Twitter/X) with JPEG fallback option
+     * @param image - Image
+     * @param width - Width (default: 1200)
+     * @param height - Height (default: 675)
+     * @param quality - Quality (default: 85)
+     * @param alt - Alt text
+     * @param caption - Caption
+     * @param format - Format ('webp' or 'jpeg', default: 'webp')
+     * @returns Image URL in specified format
+     */
+    async getSocialMediaImageUrl(
+        image: string,
+        width: number = 1200,
+        height: number = 675,
+        quality: number = 85,
+        alt: string = "",
+        caption: string = "",
+        format: string = "webp" // WebP is now supported by Twitter/X
+    ): Promise<string | null> {
+        if (!image) return null;
+
+        // If it's already a URL, return as is
+        if (image.startsWith("http")) return image;
+
+        // Use WebP by default (Twitter/X compatible) or JPEG as fallback
+        const socialFormat = format === "jpeg" ? "jpeg" : "webp";
+        
+        return await this.getImageUrl(
+            image,
+            socialFormat,
+            width,
+            height,
+            quality,
+            alt,
+            caption
+        );
+    }
+
+    /**
      * Get image URL
      * @param image - Image
      * @param format - Format
