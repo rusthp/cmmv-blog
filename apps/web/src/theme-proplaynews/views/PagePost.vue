@@ -494,6 +494,7 @@ import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client'
 import { formatDate, stripHtml } from '../../composables/useUtils'
+import { useSocialMedia } from '../../composables/useSocialMedia'
 import CommentSection from '../../components/CommentSection.vue'
 import OptimizedImage from '../../components/OptimizedImage.vue'
 import { useSettingsStore } from '../../store/settings';
@@ -513,6 +514,7 @@ const categoriesStore = useCategoriesStore();
 const mostAccessedPostsStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog()
 const route = useRoute()
+const { generateSocialMetadata, validateImageUrl } = useSocialMedia()
 
 const settings = ref<any>(settingsStore.getSettings);
 const post = ref<any>(null)
@@ -823,16 +825,8 @@ watchEffect(() => {
     }
 })
 
-const pageUrl = computed(() => {
-    // Use clean URL without UTM parameters for meta tags
-    return `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value?.slug || ''}`
-})
-
-const shareUrl = computed(() => {
-    // Separate URL with UTM parameters for sharing
-    return `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value?.slug}?utm_source=proplaynews&utm_medium=social&utm_campaign=share`
-})
-
+// Estas computed properties não são mais necessárias pois estão no composable
+// Mas mantemos para compatibilidade com outras partes do código se existirem
 const keywords = computed(() => post.value?.keywords ||
     (post.value?.tags?.map((tag: any) => tag.name).join(', ') || ''))
 
@@ -841,53 +835,13 @@ const description = computed(() =>
         .substring(0, 150) + '...'
 )
 
-const metadata = computed(() => keywords.value
-    .split(', ')
-    .map((k: string) => ({ property: 'article:tag', content: k })))
-
 const headData = computed(() => {
-    // Ensure we have valid data before creating meta tags
-    if (!post.value?.title) return { meta: [], link: [] };
+    if (!post.value?.title || !post.value?.slug) return { meta: [], link: [] };
+
+    const baseUrl = `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value.slug}`;
     
-    const metaTags = [
-        { name: 'description', content: description.value },
-        { name: 'keywords', content: keywords.value },
-        { property: 'og:type', content: 'article' },
-        { property: 'og:title', content: post.value?.title },
-        { property: 'og:description', content: description.value },
-        { property: 'og:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
-        { property: 'og:url', content: pageUrl.value },
-        { property: 'og:image:type', content: 'image/webp' },
-        { property: 'og:image:alt', content: post.value?.title || 'Imagem' },
-        { property: 'og:image:secure_url', content: post.value?.featureImage || settings.value?.['blog.image'] },
-        { property: 'og:image:width', content: '1200' },
-        { property: 'og:image:height', content: '675' },
-        { property: 'og:site_name', content: settings.value?.['blog.title'] || 'ProPlay News' },
-        { property: 'og:updated_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
-        { property: 'article:published_time', content: post.value?.status === 'published' && post.value?.publishedAt ? new Date(post.value.publishedAt).toISOString() : post.value?.createdAt ? new Date(post.value.createdAt).toISOString() : new Date().toISOString() },
-        { property: 'article:modified_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
-        // Twitter Card meta tags - Critical for Twitter/X
-        { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:site', content: '@proplaynews' },
-        { name: 'twitter:creator', content: '@proplaynews' },
-        { name: 'twitter:title', content: post.value?.title },
-        { name: 'twitter:description', content: description.value },
-        { name: 'twitter:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
-        { name: 'twitter:image:src', content: post.value?.featureImage || settings.value?.['blog.image'] },
-        { name: 'twitter:url', content: pageUrl.value },
-        ...metadata.value
-    ];
-
-    // Filter out any meta tags with empty content
-    const validMetaTags = metaTags.filter(tag => tag.content && tag.content.trim() !== '');
-
-    return {
-        title: post.value?.title,
-        meta: validMetaTags,
-        link: [
-            { rel: 'canonical', href: pageUrl.value },
-        ],
-    };
+    // Usar o composable para gerar metadados otimizados
+    return generateSocialMetadata(post.value, settings.value, baseUrl);
 });
 
 useHead(headData)
