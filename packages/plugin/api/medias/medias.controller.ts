@@ -25,16 +25,6 @@ interface ProcessImageInterface {
     caption: string;
 }
 
-interface ProcessSocialMediaImageInterface {
-    image: string;
-    width?: number;
-    height?: number;
-    quality?: number;
-    alt: string;
-    caption: string;
-    format?: string; // Optional: 'webp' (default) or 'jpeg'
-}
-
 @Controller()
 export class MediasController {
     constructor(private readonly mediasService: MediasService){}
@@ -54,39 +44,11 @@ export class MediasController {
             res.code(404).end();
         }
         else{
-            // Detect image format from filename extension
-            const extension = hash.split('.').pop()?.toLowerCase() || 'webp';
-            let contentType = 'image/webp'; // default fallback
-            
-            switch(extension) {
-                case 'jpg':
-                case 'jpeg':
-                    contentType = 'image/jpeg';
-                    break;
-                case 'png':
-                    contentType = 'image/png';
-                    break;
-                case 'gif':
-                    contentType = 'image/gif';
-                    break;
-                case 'webp':
-                    contentType = 'image/webp';
-                    break;
-                case 'avif':
-                    contentType = 'image/avif';
-                    break;
-                case 'svg':
-                    contentType = 'image/svg+xml';
-                    break;
-                default:
-                    contentType = 'image/webp';
-            }
-
             res.code(200).set({
-                "Content-Type": contentType,
+                "Content-Type": "image/webp",
                 "Cache-Control": "public, max-age=31536000, immutable",
                 "Expires": new Date(Date.now() + 31536000).toUTCString()
-            }).contentType(contentType).send(image);
+            }).contentType("image/webp").send(image);
         }
     }
 
@@ -103,22 +65,6 @@ export class MediasController {
             body.quality,
             body.alt,
             body.caption
-        );
-    }
-
-    @Post("images/social-media", { exclude: true })
-    @Auth("media:process")
-    @ContentType("application/json")
-    @Raw()
-    async processSocialMediaImage(@Body() body: ProcessSocialMediaImageInterface) {
-        return this.mediasService.getSocialMediaImageUrl(
-            body.image,
-            body.width,
-            body.height,
-            body.quality,
-            body.alt,
-            body.caption,
-            body.format
         );
     }
 

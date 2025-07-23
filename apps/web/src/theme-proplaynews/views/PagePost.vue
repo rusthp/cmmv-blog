@@ -331,7 +331,7 @@
                                         <!-- Facebook -->
                                         <a class="bg-blue-600 hover:bg-blue-700 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl.value)"
+                                            :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl)"
                                             onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;"
                                             title="Compartilhar no Facebook">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -344,7 +344,7 @@
                                         <!-- Twitter -->
                                         <a class="bg-sky-500 hover:bg-sky-600 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://twitter.com/share?text=' + encodeURIComponent(post.title) + '&url=' + encodeURIComponent(pageUrl.value)"
+                                            :href="'https://twitter.com/share?text=' + encodeURIComponent(post.title) + '&url=' + encodeURIComponent(pageUrl)"
                                             onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;"
                                             title="Compartilhar no Twitter">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -357,7 +357,7 @@
                                         <!-- LinkedIn -->
                                         <a class="bg-blue-700 hover:bg-blue-800 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors"
                                             rel="nofollow noopener"
-                                            :href="'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(pageUrl.value) + '&title=' + encodeURIComponent(post.title)"
+                                            :href="'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(pageUrl) + '&title=' + encodeURIComponent(post.title)"
                                             onclick="window.open(this.href, 'linkedin-share', 'width=490,height=530');return false;"
                                             title="Compartilhar no LinkedIn">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -494,7 +494,6 @@ import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client'
 import { formatDate, stripHtml } from '../../composables/useUtils'
-import { useSocialMedia } from '../../composables/useSocialMedia'
 import CommentSection from '../../components/CommentSection.vue'
 import OptimizedImage from '../../components/OptimizedImage.vue'
 import { useSettingsStore } from '../../store/settings';
@@ -514,7 +513,6 @@ const categoriesStore = useCategoriesStore();
 const mostAccessedPostsStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog()
 const route = useRoute()
-const { generateSocialMetadata, validateImageUrl } = useSocialMedia()
 
 const settings = ref<any>(settingsStore.getSettings);
 const post = ref<any>(null)
@@ -807,9 +805,15 @@ const getAuthor = (post: any) => {
 };
 
 onServerPrefetch(async () => {
-    post.value = route.params.id
-            ? await blogAPI.posts.getById(route.params.id as string)
-            : await blogAPI.posts.getBySlug(route.params.slug as string);
+    const rawPost = route.params.id
+        ? await blogAPI.posts.getById(route.params.id as string)
+        : await blogAPI.posts.getBySlug(route.params.slug as string);
+
+    if (rawPost) {
+        post.value = { ...rawPost, content: rawPost.content || rawPost.html };
+    } else {
+        post.value = null;
+    }
 })
 
 watchEffect(() => {
@@ -825,8 +829,10 @@ watchEffect(() => {
     }
 })
 
-// Estas computed properties não são mais necessárias pois estão no composable
-// Mas mantemos para compatibilidade com outras partes do código se existirem
+const pageUrl = computed(() => {
+    return `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value?.slug || ''}`
+})
+
 const keywords = computed(() => post.value?.keywords ||
     (post.value?.tags?.map((tag: any) => tag.name).join(', ') || ''))
 
@@ -835,14 +841,61 @@ const description = computed(() =>
         .substring(0, 150) + '...'
 )
 
-const headData = computed(() => {
-    if (!post.value?.title || !post.value?.slug) return { meta: [], link: [] };
+const metadata = computed(() => keywords.value
+    .split(', ')
+    .map((k: string) => ({ property: 'article:tag', content: k })))
 
-    const baseUrl = `${import.meta.env.VITE_WEBSITE_URL}/post/${post.value.slug}`;
-    
-    // Usar o composable para gerar metadados otimizados
-    return generateSocialMetadata(post.value, settings.value, baseUrl);
-});
+const headData = computed(() => ({
+    title: post.value?.title,
+    meta: [
+        { name: 'description', content: description.value },
+        { name: 'keywords', content: keywords.value },
+        { property: 'og:type', content: 'article' },
+        { property: 'og:title', content: post.value?.title },
+        { property: 'og:description', content: description.value },
+        { property: 'og:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
+        { property: 'og:url', content: pageUrl.value },
+        { property: 'og:image:type', content: 'image/webp' },
+        { property: 'og:image:alt', content: post.value?.title || 'Imagem' },
+        { property: 'og:image:secure_url', content: post.value?.featureImage || settings.value?.['blog.image'] },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '675' },
+        { property: 'og:updated_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
+        { property: 'article:published_time', content: post.value?.status === 'published' && post.value?.publishedAt ? new Date(post.value.publishedAt).toISOString() : post.value?.createdAt ? new Date(post.value.createdAt).toISOString() : new Date().toISOString() },
+        { property: 'article:modified_time', content: post.value?.updatedAt ? new Date(post.value.updatedAt).toISOString() : new Date().toISOString() },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: post.value?.title },
+        { name: 'twitter:description', content: description.value },
+        { name: 'twitter:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
+        { name: 'twitter:url', content: pageUrl.value },
+        ...metadata.value
+    ],
+    link: [
+        { rel: 'canonical', href: pageUrl.value },
+    ],
+    script: isSSR ? [
+        {
+            type: 'application/ld+json',
+            innerHTML: JSON.stringify(vue3.createLdJSON('post', post.value, settings.value))
+        }
+
+    ] : [
+        {
+            type: 'text/javascript',
+            src: 'https://platform.twitter.com/widgets.js',
+            charset: 'UTF-8',
+            async: true,
+            id: 'twitter-widgets-script'
+        },
+        {
+            type: 'text/javascript',
+            src: 'https://embed.reddit.com/widgets.js',
+            charset: 'UTF-8',
+            async: true,
+            id: 'reddit-widget-script'
+        }
+    ]
+}))
 
 useHead(headData)
 
