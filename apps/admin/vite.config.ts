@@ -83,6 +83,19 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
                         if (whitelabelId)
                             proxyReq.setHeader('x-whitelabel-id', whitelabelId);
                     });
+                    // Handle proxy errors gracefully (API may not be ready yet)
+                    proxy.on('error', (err: any, req: any, res: any) => {
+                        // Only log if response hasn't been sent
+                        if (!res.headersSent) {
+                            // Silently handle connection refused errors during startup
+                            if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {
+                                // API is not ready yet, client will retry
+                                return;
+                            }
+                            // Log other errors
+                            console.warn('[Vite Proxy] Error:', err.message);
+                        }
+                    });
                 },
                 rewrite: (path: string) => path.replace(/^\/api/, '')
             },
@@ -101,12 +114,25 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
                         if (whitelabelId)
                             proxyReq.setHeader('x-whitelabel-id', whitelabelId);
                     });
+                    // Handle proxy errors gracefully
+                    proxy.on('error', (err: any, req: any, res: any) => {
+                        if (!res.headersSent && err.code !== 'ECONNREFUSED' && err.code !== 'ETIMEDOUT') {
+                            console.warn('[Vite Proxy] Error:', err.message);
+                        }
+                    });
                 },
             },
             '/images': {
                 target: apiUrl,
                 changeOrigin: true,
-                secure: false
+                secure: false,
+                configure: (proxy: any) => {
+                    proxy.on('error', (err: any, req: any, res: any) => {
+                        if (!res.headersSent && err.code !== 'ECONNREFUSED' && err.code !== 'ETIMEDOUT') {
+                            console.warn('[Vite Proxy] Error:', err.message);
+                        }
+                    });
+                }
             }
         };
 
@@ -114,6 +140,13 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
             target: apiUrl,
             changeOrigin: true,
             secure: false,
+            configure: (proxy: any) => {
+                proxy.on('error', (err: any, req: any, res: any) => {
+                    if (!res.headersSent && err.code !== 'ECONNREFUSED' && err.code !== 'ETIMEDOUT') {
+                        console.warn('[Vite Proxy] Error:', err.message);
+                    }
+                });
+            },
             rewrite: (path: string) => path.replace(/^\/api\/admin/, '')
         };
 
@@ -134,6 +167,11 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
                         const whitelabelId = req.headers['x-whitelabel-id'];
                         if (whitelabelId)
                             proxyReq.setHeader('x-whitelabel-id', whitelabelId);
+                    });
+                    proxy.on('error', (err: any, req: any, res: any) => {
+                        if (!res.headersSent && err.code !== 'ECONNREFUSED' && err.code !== 'ETIMEDOUT') {
+                            console.warn('[Vite Proxy] Error:', err.message);
+                        }
                     });
                 },
                 rewrite: (path: string) => {

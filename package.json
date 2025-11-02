@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.96",
+    "version": "0.1.98",
     "description": "Blog plugin for CMMV",
     "keywords": [
         "cmmv",
@@ -59,8 +59,9 @@
         "build:api": "cd apps/api && pnpm build",
         "build:admin": "cd apps/admin && pnpm build",
         "build:web": "cd apps/web && pnpm build",
+        "type-check": "tsc --noEmit",
         "lint": "turbo run lint",
-        "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+        "format": "prettier --write \"**/*.{ts,tsx,md}\" --ignore-path .prettierignore",
         "release": "pnpm build:release && pnpm publish --tag latest -r --no-git-checks",
         "info": "turbo run info",
         "start": "turbo run start --filter=./apps/*",
@@ -75,15 +76,27 @@
         "version:set": "node tools/version-bump.js --set",
         "version:setup": "node tools/setup-version-hook.js",
         "version:remove": "node tools/setup-version-hook.js remove",
-        "prepare": "husky"
+        "prepare": "husky",
+        "rulebook": "npx @hivellm/rulebook",
+        "rulebook:health": "npx @hivellm/rulebook health",
+        "rulebook:validate": "npx @hivellm/rulebook validate",
+        "rulebook:check-coverage": "npx @hivellm/rulebook check-coverage",
+        "rulebook:check-deps": "npx @hivellm/rulebook check-deps",
+        "test": "vitest --run",
+        "test:watch": "vitest",
+        "test:ui": "vitest --ui",
+        "test:coverage": "vitest --run --coverage"
     },
     "devDependencies": {
         "@changesets/cli": "^2.29.7",
         "@commitlint/cli": "^19.8.1",
         "@commitlint/config-conventional": "^19.8.1",
+        "@vitest/coverage-v8": "^4.0.6",
+        "@vitest/ui": "^4.0.6",
         "eslint": "^9.39.0",
         "husky": "^9.1.7",
         "prettier": "^3.6.2",
-        "turbo": "^2.6.0"
+        "turbo": "^2.6.0",
+        "vitest": "^4.0.6"
     }
 }

@@ -57,12 +57,15 @@ interface AtomFeed {
 
 @Service()
 export class ChannelsService {
-    private readonly logger = new Logger("ChannelsService");
+    private readonly logger: Logger;
 
     constructor(
         private readonly parserService: ParserService,
         private readonly webScraperService: WebScraperService
-    ){}
+    ){
+        // Initialize logger in constructor to ensure it's always available
+        this.logger = new Logger("ChannelsService");
+    }
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleCronChannels() {
@@ -86,13 +89,15 @@ export class ChannelsService {
 
         const sourceType = channel.sourceType || 'RSS';
         
-        this.logger.log(`Manual processing requested for channel "${channel.name}" with sourceType: "${sourceType}"`);
+        // Safe logger access
+        const log = this.logger?.log || console.log;
+        log(`Manual processing requested for channel "${channel.name}" with sourceType: "${sourceType}"`);
 
         if (sourceType === 'WEB_SCRAPING') {
-            this.logger.log(`Using WEB_SCRAPING mode for manual processing of channel "${channel.name}"`);
+            log(`Using WEB_SCRAPING mode for manual processing of channel "${channel.name}"`);
             await this.processWebScrapingChannel(channel);
         } else {
-            this.logger.log(`Using RSS mode for manual processing of channel "${channel.name}"`);
+            log(`Using RSS mode for manual processing of channel "${channel.name}"`);
             const feedData = await this.getFeed(channel.rss);
             await this.processFeedItem(feedData, channelId);
         }
@@ -218,13 +223,15 @@ export class ChannelsService {
 
             const sourceType = updatedChannel.sourceType || 'RSS';
             
-            this.logger.log(`Processing channel "${updatedChannel.name}" with sourceType: "${sourceType}" (channel.id: ${updatedChannel.id})`);
+            // Safe logger access
+            const log = this.logger?.log || console.log;
+            log(`Processing channel "${updatedChannel.name}" with sourceType: "${sourceType}" (channel.id: ${updatedChannel.id})`);
 
             if (sourceType === 'WEB_SCRAPING') {
-                this.logger.log(`Using WEB_SCRAPING mode for channel "${updatedChannel.name}"`);
+                log(`Using WEB_SCRAPING mode for channel "${updatedChannel.name}"`);
                 await this.processWebScrapingChannel(updatedChannel);
             } else {
-                this.logger.log(`Using RSS mode for channel "${updatedChannel.name}" (rss: ${updatedChannel.rss})`);
+                log(`Using RSS mode for channel "${updatedChannel.name}" (rss: ${updatedChannel.rss})`);
                 const feedData = await this.getFeed(updatedChannel.rss);
                 await this.processFeedItem(feedData, updatedChannel.id);
             }
@@ -236,14 +243,20 @@ export class ChannelsService {
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
+            // Use console.error as fallback if logger is not available
+            if (this.logger && typeof this.logger.log === 'function') {
+                this.logger.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
+            } else {
+                console.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
+            }
 
             try {
                 await Repository.update(FeedChannelsEntity, { id: channel.id }, {
                     lastUpdate: new Date()
                 });
             } catch (updateError) {
-                console.error(`Failed to update lastUpdate for ${channel.name} after error`);
+                const updateErrorMessage = updateError instanceof Error ? updateError.message : String(updateError);
+                console.error(`Failed to update lastUpdate for ${channel.name} after error: ${updateErrorMessage}`);
             }
 
             throw error;
@@ -255,6 +268,10 @@ export class ChannelsService {
      * @param channel The channel to process
      */
     private async processWebScrapingChannel(channel: any) {
+        // Safe logger access - declare once at the start
+        const log = this.logger?.log || console.log;
+        const logError = this.logger?.error || console.error;
+        
         try {
             if (!channel.listPageUrl) {
                 throw new Error("listPageUrl is required for WEB_SCRAPING source type");
@@ -268,14 +285,14 @@ export class ChannelsService {
                         ? JSON.parse(channel.scrapingConfig)
                         : channel.scrapingConfig;
                 } catch (parseError) {
-                    this.logger.error(`Failed to parse scrapingConfig for ${channel.name}, using defaults`);
+                    logError(`Failed to parse scrapingConfig for ${channel.name}, using defaults`);
                     scrapingConfig = this.getDefaultScrapingConfig();
                 }
             } else {
                 scrapingConfig = this.getDefaultScrapingConfig();
             }
 
-            this.logger.log(`Scraping ${channel.name} from ${channel.listPageUrl}`);
+            log(`Scraping ${channel.name} from ${channel.listPageUrl}`);
 
             // Scrape articles from listing page
             const articles = await this.webScraperService.scrapeNewsList(
@@ -284,7 +301,7 @@ export class ChannelsService {
             );
 
             if (!articles || articles.length === 0) {
-                this.logger.log(`No articles found for ${channel.name}`);
+                log(`No articles found for ${channel.name}`);
                 return;
             }
 
@@ -292,7 +309,7 @@ export class ChannelsService {
             const MAX_ITEMS = 20;
             const articlesToProcess = articles.slice(0, MAX_ITEMS);
 
-            this.logger.log(`Processing ${articlesToProcess.length} articles for ${channel.name}`);
+            log(`Processing ${articlesToProcess.length} articles for ${channel.name}`);
 
             let itemsAdded = 0;
             let processedCount = 0;
@@ -318,7 +335,7 @@ export class ChannelsService {
                     }
                 } catch (itemError) {
                     const errorMessage = itemError instanceof Error ? itemError.message : String(itemError);
-                    this.logger.log(`Error processing article ${processedCount}/${articlesToProcess.length}: ${errorMessage}`);
+                    log(`Error processing article ${processedCount}/${articlesToProcess.length}: ${errorMessage}`);
                     continue;
                 }
 
@@ -326,11 +343,11 @@ export class ChannelsService {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
-            this.logger.log(`Completed processing ${channel.name}: ${itemsAdded} new items added, ${processedCount - itemsAdded} already existed or failed`);
+            log(`Completed processing ${channel.name}: ${itemsAdded} new items added, ${processedCount - itemsAdded} already existed or failed`);
 
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            this.logger.error(`Error processing web scraping channel ${channel.name}: ${errorMessage}`);
+            logError(`Error processing web scraping channel ${channel.name}: ${errorMessage}`);
             throw error;
         }
     }
@@ -703,10 +720,31 @@ export class ChannelsService {
                 }
             }
 
+            // Final validation and cleanup of featureImage URL
+            // Remove any remaining HTML entities that might cause issues
+            if (featureImage) {
+                featureImage = featureImage
+                    .replace(/&amp;/g, '&')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'")
+                    .replace(/&#x27;/g, "'")
+                    .trim();
+                
+                // Validate URL format
+                try {
+                    new URL(featureImage);
+                } catch (urlError) {
+                    this.logger.log(`Invalid featureImage URL format, clearing: ${featureImage}`);
+                    featureImage = ''; // Clear invalid URL
+                }
+            }
+
             const newItem = {
                 title,
                 content: content,
-                featureImage,
+                featureImage: featureImage || '', // Ensure empty string if null/undefined
                 link,
                 pubDate,
                 category,
