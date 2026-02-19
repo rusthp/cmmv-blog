@@ -1,10 +1,6 @@
 {
     "name": "@cmmv/newsletter",
-<<<<<<< HEAD
-    "version": "0.1.95",
-=======
     "version": "0.1.98",
->>>>>>> 548298048e09744c9b91c1f6e6cd360e4e8e46e8
     "description": "Newsletter management package for CMMV",
     "scripts": {
         "build": "tsup index.ts admin/index.ts client/index.ts --format cjs,esm --dts"

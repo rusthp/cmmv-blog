@@ -57,19 +57,15 @@ interface AtomFeed {
 
 @Service()
 export class ChannelsService {
-<<<<<<< HEAD
-    constructor(private readonly parserService: ParserService) { }
-=======
     private readonly logger: Logger;
 
     constructor(
         private readonly parserService: ParserService,
         private readonly webScraperService: WebScraperService
-    ){
+    ) {
         // Initialize logger in constructor to ensure it's always available
         this.logger = new Logger("ChannelsService");
     }
->>>>>>> 548298048e09744c9b91c1f6e6cd360e4e8e46e8
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleCronChannels() {
@@ -92,7 +88,7 @@ export class ChannelsService {
             throw new Error(`Channel not found: ${channelId}`);
 
         const sourceType = channel.sourceType || 'RSS';
-        
+
         // Safe logger access
         const log = this.logger?.log || console.log;
         log(`Manual processing requested for channel "${channel.name}" with sourceType: "${sourceType}"`);
@@ -226,7 +222,7 @@ export class ChannelsService {
             }
 
             const sourceType = updatedChannel.sourceType || 'RSS';
-            
+
             // Safe logger access
             const log = this.logger?.log || console.log;
             log(`Processing channel "${updatedChannel.name}" with sourceType: "${sourceType}" (channel.id: ${updatedChannel.id})`);
@@ -275,14 +271,14 @@ export class ChannelsService {
         // Safe logger access - declare once at the start
         const log = this.logger?.log || console.log;
         const logError = this.logger?.error || console.error;
-        
+
         try {
             if (!channel.listPageUrl) {
                 throw new Error("listPageUrl is required for WEB_SCRAPING source type");
             }
 
             let scrapingConfig: ScrapingConfig;
-            
+
             if (channel.scrapingConfig) {
                 try {
                     scrapingConfig = typeof channel.scrapingConfig === 'string'
@@ -586,7 +582,7 @@ export class ChannelsService {
                 // Extract image from media:content (same as RSS)
                 // For web scraping, images are already in media:content from scraping
                 featureImage = this.extractImageFromRSSItem(item, 'RSS');
-                
+
                 // Decode HTML entities in image URL (common issue: &amp; instead of &)
                 if (featureImage) {
                     featureImage = featureImage
@@ -595,7 +591,7 @@ export class ChannelsService {
                         .replace(/&gt;/g, '>')
                         .replace(/&quot;/g, '"');
                 }
-                
+
                 this.logger.log(`WEB_SCRAPING: Extracted image for "${title}": ${featureImage || 'none'}`);
 
                 if (item.pubDate)
@@ -716,9 +712,6 @@ export class ChannelsService {
                             if ('featureImage' in data && data.featureImage) featureImage = data.featureImage;
                         }
                     }
-<<<<<<< HEAD
-                } catch (parseError) { }
-=======
                 } catch (parseError) {
                     // Parser failed or not configured, try direct extraction
                     this.logger.log(`Parser service failed for ${link}, trying direct content extraction...`);
@@ -751,7 +744,7 @@ export class ChannelsService {
                     .replace(/&#39;/g, "'")
                     .replace(/&#x27;/g, "'")
                     .trim();
-                
+
                 // Validate URL format
                 try {
                     new URL(featureImage);
@@ -759,7 +752,6 @@ export class ChannelsService {
                     this.logger.log(`Invalid featureImage URL format, clearing: ${featureImage}`);
                     featureImage = ''; // Clear invalid URL
                 }
->>>>>>> 548298048e09744c9b91c1f6e6cd360e4e8e46e8
             }
 
             const newItem = {
@@ -798,7 +790,7 @@ export class ChannelsService {
         // Priority 1: Media RSS content (supports arrays)
         if (item['media:content']) {
             const mediaContent = item['media:content'];
-            
+
             // Handle array of media content (choose best quality/largest)
             if (Array.isArray(mediaContent)) {
                 const imageMedia = mediaContent
@@ -811,12 +803,12 @@ export class ChannelsService {
                         const aWidth = parseInt(a.$?.width || a.width || '0');
                         const bWidth = parseInt(b.$?.width || b.width || '0');
                         if (bWidth !== aWidth) return bWidth - aWidth;
-                        
+
                         const aQuality = parseInt(a.$?.quality || a.quality || '0');
                         const bQuality = parseInt(b.$?.quality || b.quality || '0');
                         return bQuality - aQuality;
                     });
-                
+
                 if (imageMedia.length > 0) {
                     const bestImage = imageMedia[0];
                     const imageUrl = bestImage.$?.url || bestImage.url || '';
@@ -828,7 +820,7 @@ export class ChannelsService {
                         .replace(/&quot;/g, '"');
                 }
             }
-            
+
             // Handle single media content object
             if (mediaContent.$?.url) {
                 const type = mediaContent.$?.type || '';
@@ -852,7 +844,7 @@ export class ChannelsService {
                     .replace(/&quot;/g, '"');
             }
         }
-        
+
         // Priority 2: Enclosure (RSS 2.0) - only for images
         if (item.enclosure) {
             const enclosure = Array.isArray(item.enclosure) ? item.enclosure[0] : item.enclosure;
@@ -861,27 +853,27 @@ export class ChannelsService {
                 return enclosure.$?.url || enclosure.url || '';
             }
         }
-        
+
         // Priority 3: iTunes image (podcast feeds)
         if (item['itunes:image']) {
-            const itunesImage = Array.isArray(item['itunes:image']) 
-                ? item['itunes:image'][0] 
+            const itunesImage = Array.isArray(item['itunes:image'])
+                ? item['itunes:image'][0]
                 : item['itunes:image'];
             return itunesImage?.$?.href || itunesImage?.href || '';
         }
-        
+
         // Priority 4: Image tag in item
         if (item.image) {
             const image = Array.isArray(item.image) ? item.image[0] : item.image;
             return image?.url || image?.$?.url || '';
         }
-        
+
         // Priority 5: Thumbnail (some feeds use this)
         if (item.thumbnail) {
             const thumbnail = Array.isArray(item.thumbnail) ? item.thumbnail[0] : item.thumbnail;
             return thumbnail?.$?.url || thumbnail?.url || '';
         }
-        
+
         return '';
     }
 
@@ -1025,14 +1017,14 @@ export class ChannelsService {
             }
 
             const html = await response.text();
-            
+
             // Extract main article content
             // Dust2 uses specific structure for article content
             // Look for article content between specific markers or in specific containers
-            
+
             // Strategy 1: Look for main content area (common patterns)
             let content = '';
-            
+
             // Try to find article body - common patterns in Dust2
             const articlePatterns = [
                 /<article[^>]*>([\s\S]*?)<\/article>/i,
@@ -1064,10 +1056,10 @@ export class ChannelsService {
                 // Remove scripts and styles
                 content = content.replace(/<script[\s\S]*?<\/script>/gi, '');
                 content = content.replace(/<style[\s\S]*?<\/style>/gi, '');
-                
+
                 // Remove ads and unwanted elements
                 content = content.replace(/<div[^>]*class=["'][^"']*ad[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '');
-                
+
                 // Convert common HTML tags to readable format
                 content = content
                     .replace(/<p[^>]*>/gi, '\n\n')
