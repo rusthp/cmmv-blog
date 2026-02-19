@@ -51,7 +51,7 @@ interface AtomFeed {
 
 @Service()
 export class ChannelsService {
-    constructor(private readonly parserService: ParserService){}
+    constructor(private readonly parserService: ParserService) { }
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleCronChannels() {
@@ -99,7 +99,7 @@ export class ChannelsService {
                 select: ["id", "rss", "name", "intervalUpdate", "lastUpdate"]
             });
 
-            if(!channels || !channels.data || channels.data.length === 0) {
+            if (!channels || !channels.data || channels.data.length === 0) {
                 return {
                     success: true,
                     message: "No channels found to process."
@@ -123,7 +123,7 @@ export class ChannelsService {
                     if (Date.now() - startTime > GLOBAL_TIMEOUT - 10000)
                         break;
 
-                    if(channel.lastUpdate < new Date(Date.now() - channel.intervalUpdate) || force){
+                    if (channel.lastUpdate < new Date(Date.now() - channel.intervalUpdate) || force) {
                         try {
                             const channelTimeout = 120000;
 
@@ -145,7 +145,7 @@ export class ChannelsService {
                                 await Repository.update(FeedChannelsEntity, { id: channel.id }, {
                                     lastUpdate: new Date()
                                 });
-                            } catch (updateError) {}
+                            } catch (updateError) { }
                         }
 
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -213,7 +213,12 @@ export class ChannelsService {
      */
     async getFeed(rss: string): Promise<RssFeed> {
         try {
-            const response = await fetch(rss);
+            const response = await fetch(rss, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                    'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+                }
+            });
 
             if (!response.ok)
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -302,7 +307,7 @@ export class ChannelsService {
 
                     if (result && result.success)
                         itemsAdded++;
-                } catch (itemError) {}
+                } catch (itemError) { }
 
                 await new Promise(resolve => setTimeout(resolve, 1500));
             }
@@ -407,6 +412,14 @@ export class ChannelsService {
                     category = item.category.$.term || '';
             }
 
+            // Fallback: Try to extract image from content if not found in metadata
+            if (!featureImage && content) {
+                const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+                if (imgMatch && imgMatch[1]) {
+                    featureImage = imgMatch[1];
+                }
+            }
+
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -456,7 +469,7 @@ export class ChannelsService {
                             if ('featureImage' in data && data.featureImage) featureImage = data.featureImage;
                         }
                     }
-                } catch (parseError) {}
+                } catch (parseError) { }
             }
 
             const newItem = {

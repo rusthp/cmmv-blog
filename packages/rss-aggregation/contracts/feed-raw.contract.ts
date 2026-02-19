@@ -134,4 +134,39 @@ export class FeedRawContract extends AbstractContract {
         defaultValue: 0,
     })
     relevance!: number;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        index: true,
+        defaultValue: 'pending',
+    })
+    pipelineState!: string;
+
+    @ContractField({
+        protoType: 'int32',
+        nullable: true,
+        defaultValue: 0,
+    })
+    aiAttempts!: number;
+
+    @ContractField({
+        protoType: 'array',
+        nullable: true,
+        objectType: 'string',
+        protoRepeated: true,
+        array: true,
+        exclude: true,
+    })
+    suggestedTags?: string[];
+
+    @ContractField({
+        protoType: 'array',
+        nullable: true,
+        objectType: 'string',
+        protoRepeated: true,
+        array: true,
+        exclude: true,
+    })
+    suggestedCategories?: string[];
 }

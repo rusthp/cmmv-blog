@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.93",
+    "version": "0.1.94",
     "description": "Blog plugin for CMMV",
     "keywords": [
         "cmmv",
@@ -78,12 +78,12 @@
         "prepare": "husky"
     },
     "devDependencies": {
-        "@changesets/cli": "^2.29.4",
+        "@changesets/cli": "^2.29.7",
         "@commitlint/cli": "^19.8.1",
         "@commitlint/config-conventional": "^19.8.1",
-        "eslint": "^9.29.0",
+        "eslint": "^9.39.0",
         "husky": "^9.1.7",
-        "prettier": "^3.5.3",
-        "turbo": "^2.5.4"
+        "prettier": "^3.6.2",
+        "turbo": "^2.6.0"
     }
 }

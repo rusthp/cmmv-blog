@@ -43,4 +43,19 @@ Config.assign({
         path: "./cache",
         ttl: 600
     },
+
+    blog: {
+        autoPipelineEnabled: true,
+        autoPipelineRelevanceThreshold: 60,
+        autoPipelineMaxPostsPerCycle: 3,
+        autoPipelineBaseIntervalMinutes: 60,
+        autoPipelineMinIntervalMinutes: 20,
+        autoPipelineBacklogFactor: 5,
+        autoPipelineMaxConcurrentAI: 2,
+        autoPipelineMaxAttempts: 3,
+        autoPipelineDefaultAuthor: "",
+        autoPipelineDefaultCategories: [],
+        autoPipelinePromptId: "",
+        autoPipelineSiteName: "CMMV",
+    },
 });

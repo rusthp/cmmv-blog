@@ -18,6 +18,10 @@ import {
     RSSParserModule
 } from "./parser/parser.module";
 
+import {
+    AutoPipelineModule
+} from "./auto-pipeline/auto-pipeline.module";
+
 export const RSSAggregationModule = new Module('rss-aggregation', {
     contracts: [
         FeedChannelsContract,
@@ -27,6 +31,7 @@ export const RSSAggregationModule = new Module('rss-aggregation', {
     submodules: [
         RSSChannelsModule,
         RSSRawModule,
-        RSSParserModule
+        RSSParserModule,
+        AutoPipelineModule
     ]
 });
