@@ -467,11 +467,16 @@
     <!-- Toast notifications -->
     <div v-if="notification.show"
         class="fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg flex items-center z-[200]"
-        :class="notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+        :class="notification.type === 'success' ? 'bg-green-600 text-white' : notification.type === 'info' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'"
     >
         <span v-if="notification.type === 'success'" class="mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+        </span>
+        <span v-else-if="notification.type === 'info'" class="mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
             </svg>
         </span>
         <span v-else class="mr-2">
@@ -771,7 +776,89 @@ const handleFileUpload = async (event) => {
     event.target.value = '';
 };
 
-const openMediaForCrop = (media) => {
+const isRemoteImageUrl = (url) => {
+    if (!url) return false;
+    try {
+        const urlObj = new URL(url);
+        const currentHost = window.location.hostname;
+        return urlObj.hostname !== currentHost && (urlObj.protocol === 'http:' || urlObj.protocol === 'https:');
+    } catch {
+        return url && (url.startsWith('http://') || url.startsWith('https://'));
+    }
+};
+
+const openMediaForCrop = async (media) => {
+    // Check if it's a remote URL BEFORE trying to load
+    if (isRemoteImageUrl(media.url)) {
+        // Try to import the image automatically first
+        try {
+            showNotification('info', 'Importing remote image...');
+            const importResult = await adminClient.medias.importFromUrl({
+                url: media.url,
+                alt: media.alt || '',
+                caption: media.caption || ''
+            });
+            
+            // Check if result has success property (from our updated API)
+            if (importResult && importResult.success === true && importResult.url) {
+                // Successfully imported, now open the imported image for crop
+                showNotification('success', 'Image imported successfully');
+                
+                // Use the imported URL instead of the remote one
+                const importedMedia = {
+                    ...media,
+                    url: importResult.url
+                };
+                
+                // Now try to load the imported image
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    selectedMediaForCrop.value = img;
+                    mediaCropModalOpen.value = true;
+                    cropOptions.value.alt = importedMedia.alt || '';
+                    cropOptions.value.caption = importedMedia.caption || '';
+
+                    setTimeout(() => {
+                        initMediaCropCanvas();
+                    }, 100);
+                };
+                img.onerror = () => {
+                    showNotification('error', 'Failed to load imported image.');
+                };
+                img.src = importResult.url;
+            } else {
+                // Import failed - show specific error message
+                const errorMessage = importResult?.message || 
+                    (importResult?.result?.message) ||
+                    'Failed to import remote image. The image may not exist or the URL is broken.';
+                
+                // Check if it's a 404 or similar error
+                if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('Image not found')) {
+                    showNotification('error', `Image not found: The image URL is broken or has been removed. (${media.url.substring(0, 60)}...)`);
+                } else {
+                    showNotification('error', errorMessage);
+                }
+                
+                // Don't proceed with crop - image import failed
+                return;
+            }
+        } catch (error) {
+            console.error('Error importing remote image:', error);
+            const errorMsg = error?.message || error?.toString() || 'Unknown error';
+            
+            // Provide more specific error message
+            if (errorMsg.includes('404') || errorMsg.includes('Not Found')) {
+                showNotification('error', `Image not found (404): The image URL may be broken. Please check the URL or use a different image.`);
+            } else {
+                showNotification('error', `Failed to import remote image: ${errorMsg}. Please use "Import from URL" button in media management or try a different image URL.`);
+            }
+            return;
+        }
+        return;
+    }
+    
+    // Not a remote URL, proceed normally
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.onload = () => {
@@ -785,7 +872,7 @@ const openMediaForCrop = (media) => {
         }, 100);
     };
     img.onerror = () => {
-        showNotification('error', 'Failed to load image for editing. Check CORS policy if using a remote URL.');
+        showNotification('error', 'Failed to load image for editing.');
     };
     img.src = media.url;
 };

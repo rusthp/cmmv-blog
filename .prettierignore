@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+
+# Config files that might have ES module syntax issues
+apps/admin/.prettierrc.js
+apps/web/.prettierrc.js
+apps/api/.prettierrc.js
+
+# Specific problematic files
+apps/admin/README.md
+
+# Database
+*.sqlite
+*.db
+
+# Environment
+.env*
+

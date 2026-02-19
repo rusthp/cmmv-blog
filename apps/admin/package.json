@@ -1,6 +1,10 @@
 {
     "name": "cmmv-blog-admin",
+<<<<<<< HEAD
     "version": "0.0.95",
+=======
+    "version": "0.0.99",
+>>>>>>> 548298048e09744c9b91c1f6e6cd360e4e8e46e8
     "private": true,
     "description": "Blog admin package for CMMV",
     "type": "module",

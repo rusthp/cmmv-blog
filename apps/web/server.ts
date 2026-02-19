@@ -27,17 +27,78 @@ interface PageCacheEntry {
 }
 
 const pageCache = new Map<string, PageCacheEntry>();
-const PAGE_CACHE_DURATION = 30 * 60 * 1000;
 
+/**
+ * Cache duration configuration based on page type
+ * Optimized TTLs for different content types
+ */
+const PAGE_CACHE_DURATION = {
+    // Static pages (home, about, etc.) - rarely change
+    static: 60 * 60 * 1000, // 1 hour
+    
+    // Dynamic content pages (posts, categories) - change more frequently
+    dynamic: 10 * 60 * 1000, // 10 minutes
+    
+    // API responses - short cache for freshness
+    api: 5 * 60 * 1000, // 5 minutes
+    
+    // Default fallback
+    default: 30 * 60 * 1000, // 30 minutes
+};
+
+/**
+ * Determine cache duration based on URL pattern
+ * 
+ * @param url - Request URL
+ * @returns Cache duration in milliseconds
+ */
+const getCacheDuration = (url: string): number => {
+    // Static routes that rarely change
+    if (url === '/' || url.match(/^\/about|\/contact|\/privacy/)) {
+        return PAGE_CACHE_DURATION.static;
+    }
+    
+    // API routes - shorter cache
+    if (url.startsWith('/api/')) {
+        return PAGE_CACHE_DURATION.api;
+    }
+    
+    // Dynamic content (posts, categories, etc.)
+    return PAGE_CACHE_DURATION.dynamic;
+};
+
+/**
+ * Compress HTML content with optimized compression levels
+ * Balances compression ratio with CPU usage for better performance
+ * 
+ * @param html - HTML content to compress
+ * @param acceptEncoding - Accept-Encoding header value
+ * @returns Compressed data and encoding type
+ */
 const compressHtml = (html: string, acceptEncoding: string = ''): { data: Buffer | string, encoding: string | null } => {
     if (acceptEncoding.includes('br')) {
+        // Brotli: Quality 4 provides good compression ratio with faster compression
+        // Lower quality = faster compression, higher quality = better ratio but slower
         return {
-            data: zlib.brotliCompressSync(html),
+            data: zlib.brotliCompressSync(html, {
+                params: {
+                    [zlib.constants.BROTLI_PARAM_QUALITY]: 4, // Balance: 1-11 (4 = good balance)
+                    [zlib.constants.BROTLI_PARAM_SIZE_HINT]: html.length, // Helps optimize compression
+                    [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT, // Optimized for text
+                }
+            }),
             encoding: 'br'
         };
     } else if (acceptEncoding.includes('gzip')) {
+        // Gzip: Level 6 provides good balance (default is 6, but explicit is better)
+        // Levels 1-3: Fast but poor compression
+        // Levels 4-6: Good balance (recommended)
+        // Levels 7-9: Better compression but much slower
         return {
-            data: zlib.gzipSync(html),
+            data: zlib.gzipSync(html, {
+                level: 6, // Optimal balance
+                chunkSize: 16 * 1024, // 16KB chunks for efficient processing
+            }),
             encoding: 'gzip'
         };
     }
@@ -48,15 +109,46 @@ const compressHtml = (html: string, acceptEncoding: string = ''): { data: Buffer
     };
 };
 
-const compressFile = (buffer: Buffer, acceptEncoding: string = ''): { data: Buffer, encoding: string | null } => {
+/**
+ * Compress file buffer with optimized compression levels
+ * Different compression settings for different file types
+ * 
+ * @param buffer - File buffer to compress
+ * @param acceptEncoding - Accept-Encoding header value
+ * @param contentType - Content type hint for optimization
+ * @returns Compressed data and encoding type
+ */
+const compressFile = (buffer: Buffer, acceptEncoding: string = '', contentType: string = ''): { data: Buffer, encoding: string | null } => {
+    // Determine optimal compression based on content type
+    const isText = contentType.includes('text/') || 
+                   contentType.includes('application/javascript') ||
+                   contentType.includes('application/json') ||
+                   contentType.includes('application/xml') ||
+                   contentType.includes('image/svg+xml');
+    
+    // Text files benefit from higher compression, binary files use faster compression
+    const quality = isText ? 5 : 3;
+    const level = isText ? 6 : 4;
+
     if (acceptEncoding.includes('br')) {
         return {
-            data: zlib.brotliCompressSync(buffer),
+            data: zlib.brotliCompressSync(buffer, {
+                params: {
+                    [zlib.constants.BROTLI_PARAM_QUALITY]: quality,
+                    [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buffer.length,
+                    [zlib.constants.BROTLI_PARAM_MODE]: isText 
+                        ? zlib.constants.BROTLI_MODE_TEXT 
+                        : zlib.constants.BROTLI_MODE_GENERIC,
+                }
+            }),
             encoding: 'br'
         };
     } else if (acceptEncoding.includes('gzip')) {
         return {
-            data: zlib.gzipSync(buffer),
+            data: zlib.gzipSync(buffer, {
+                level: level,
+                chunkSize: 16 * 1024, // 16KB chunks
+            }),
             encoding: 'gzip'
         };
     }
@@ -114,7 +206,7 @@ const serveStaticFile = async (req: http.IncomingMessage, res: http.ServerRespon
         const isCompressible = compressibleTypes.some(type => contentType.includes(type));
 
         if (isCompressible) {
-            const compressed = compressFile(buffer, acceptEncoding as string);
+            const compressed = compressFile(buffer, acceptEncoding as string, contentType);
 
             if (compressed.encoding) {
                 res.setHeader('Content-Encoding', compressed.encoding);
@@ -326,9 +418,15 @@ async function bootstrap() {
                 for(const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
+                // Use optimized cache duration based on URL type
+                const cacheDuration = getCacheDuration(url);
+                const maxAge = Math.floor(cacheDuration / 1000); // Convert to seconds
+
                 const responseHeaders = {
                     'Content-Type': 'text/html',
-                    'Cache-Control': 'public, max-age=900'
+                    'Cache-Control': `public, max-age=${maxAge}`,
+                    // Add ETag for better cache validation
+                    'ETag': crypto.createHash('md5').update(template).digest('hex'),
                 };
 
                 Object.entries(responseHeaders).forEach(([key, value]) => {
@@ -351,9 +449,18 @@ async function bootstrap() {
 
     const port = env.VITE_SSR_PORT || 5001;
 
+    // Enable HTTP keep-alive for better connection reuse
+    server.keepAliveTimeout = 65000; // 65 seconds (slightly higher than default 60s)
+    server.headersTimeout = 66000; // 66 seconds (must be > keepAliveTimeout)
+
     // @ts-ignore
     serverInstance = server.listen(port, "0.0.0.0", () => {
         console.log(`🚀 SSR server running at http://localhost:${port}`);
+        console.log(`📊 Performance optimizations enabled:`);
+        console.log(`   - Compression: Brotli/Gzip with optimized levels (Quality 4/6)`);
+        console.log(`   - Caching: URL-pattern based TTLs (Static: 1h, Dynamic: 10m, API: 5m)`);
+        console.log(`   - Keep-Alive: ${server.keepAliveTimeout}ms`);
+        console.log(`   - Database: SQLite optimizations (WAL mode, 64MB cache)`);
     });
 }
 

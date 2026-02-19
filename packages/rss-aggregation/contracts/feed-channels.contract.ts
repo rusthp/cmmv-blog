@@ -68,4 +68,23 @@ export class FeedChannelsContract extends AbstractContract {
         defaultValue: false
     })
     requestLink!: boolean;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        defaultValue: 'RSS'
+    })
+    sourceType!: 'RSS' | 'WEB_SCRAPING';
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
+    listPageUrl!: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
+    scrapingConfig!: string;
 }

@@ -148,7 +148,12 @@ export function useApi() {
             } else {
                 router.push('/login')
             }
-        } catch (error) {
+        } catch (error: any) {
+            // Don't log connection errors during startup (API may not be ready yet)
+            if (error?.message?.includes('ECONNREFUSED') || error?.message?.includes('Failed to fetch')) {
+                // Silently handle - client will retry
+                return { status: 503, message: 'API is not ready yet. Please wait...' }
+            }
             console.error('API Request failed:', error);
             return { status: 500, message: error }
         }

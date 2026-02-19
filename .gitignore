@@ -397,19 +397,38 @@ Temporary Items
 =======
 # Local
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
 dist
 .webpack
 .serverless/**/*.zip
 .generated
 .turbo
-pnpm-lock.yaml
-.env.production
 
-/apps/api-invasao
-/apps/web-invasao
+# Secrets and credentials
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+config/secrets.*
+**/secrets.json
+**/credentials.json
+
+# Local database files
 database.sqlite
 ./database.sqlite
 database.sqlite.filepart
+*.db
+*.sqlite
+*.sqlite3
+
+# Project-specific
+/apps/api-invasao
+/apps/web-invasao
 http
 ads.txt
 data

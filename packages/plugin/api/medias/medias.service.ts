@@ -1245,19 +1245,209 @@ export class MediasService extends AbstractService {
      */
     async importFromUrl(url: string, alt: string, caption: string) {
         try {
-            const cleanUrl = url.split('?')[0].split('#')[0];
-            const buffer = await fetch(cleanUrl).then(res => res.arrayBuffer());
+            // Preserve query parameters (some CDNs like HLTV need them)
+            // Only remove fragment (#)
+            const cleanUrl = url.split('#')[0];
+            
+            // Extract filename early (needed for retry logic)
+            let filename = cleanUrl.split('/').pop() || 'image';
+            if (filename && filename.includes('?')) {
+                filename = filename.split('?')[0];
+            }
+            
+            // Parse URL to get origin and path
+            const urlObj = new URL(cleanUrl);
+            
+            // Detect CDN/host and choose optimal headers strategy
+            // Some CDNs (like HLTV) work better with minimal headers
+            const isHLTV = cleanUrl.includes('img-cdn.hltv.org') || cleanUrl.includes('hltv.org');
+            
+            // Fetch with proper headers for image requests
+            // Use minimal headers for HLTV CDN (proven to work), full headers for others
+            const response = await fetch(cleanUrl, {
+                headers: isHLTV ? {
+                    // Minimal headers work best for HLTV CDN
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'image/*',
+                } : {
+                    // Full browser headers for other CDNs
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9,pt-BR,pt;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Referer': `${urlObj.origin}/`,
+                    'Origin': urlObj.origin,
+                    'Sec-Fetch-Dest': 'image',
+                    'Sec-Fetch-Mode': 'no-cors',
+                    'Sec-Fetch-Site': 'cross-site',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                },
+                redirect: 'follow',
+            });
+
+            if (!response.ok) {
+                // For 403 errors, try multiple strategies as fallback
+                if (response.status === 403) {
+                    console.log(`Received 403 Forbidden for ${cleanUrl}, trying alternative strategies...`);
+                    
+                    // Strategy 1: Try with minimal headers
+                    let retryStrategies = [
+                        {
+                            name: 'minimal headers',
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                                'Accept': 'image/*',
+                            }
+                        },
+                        {
+                            name: 'no referer',
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                            }
+                        },
+                        {
+                            name: 'chrome headers',
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                                'Accept-Language': 'en-US,en;q=0.9',
+                                'Referer': 'https://www.hltv.org/',
+                                'Origin': 'https://www.hltv.org',
+                            }
+                        }
+                    ];
+                    
+                    for (const strategy of retryStrategies) {
+                        try {
+                            console.log(`Trying ${strategy.name} for ${cleanUrl}...`);
+                            const retryResponse = await fetch(cleanUrl, {
+                                headers: strategy.headers,
+                                redirect: 'follow',
+                            });
+                            
+                            if (retryResponse.ok) {
+                                console.log(`Success with ${strategy.name} for ${cleanUrl}`);
+                                
+                                // Use retry response
+                                const retryBuffer = await retryResponse.arrayBuffer();
+                                const retryImageBuffer = Buffer.from(retryBuffer);
+                                
+                                console.log(`Downloaded ${retryImageBuffer.length} bytes with ${strategy.name}`);
+                                
+                                if (retryImageBuffer && retryImageBuffer.length > 0) {
+                                    const retryContentType = retryResponse.headers.get('content-type') || '';
+                                    const retryExt = path.extname(filename).substring(1).toLowerCase() || 
+                                                   (retryContentType.includes('jpeg') ? 'jpg' :
+                                                    retryContentType.includes('png') ? 'png' :
+                                                    retryContentType.includes('webp') ? 'webp' : 'jpg');
+                                    
+                                    console.log(`Processing image with format detection: ext=${retryExt}, contentType=${retryContentType}`);
+                                    
+                                    // Process retry image
+                                    try {
+                                        const retryMetadata = await sharp(retryImageBuffer).metadata();
+                                        console.log(`Image metadata: format=${retryMetadata.format}, width=${retryMetadata.width}, height=${retryMetadata.height}`);
+                                        
+                                        if (retryMetadata.format && retryMetadata.width && retryMetadata.height) {
+                                            const defaultWidth = Config.get<number>("blog.featureImage.width", 1920);
+                                            const defaultHeight = Config.get<number>("blog.featureImage.height", 1080);
+                                            const defaultFormat = Config.get<string>("blog.featureImage.format", "webp");
+                                            const defaultQuality = Config.get<number>("blog.featureImage.quality", 80);
+                                            
+                                            console.log(`Calling getImageUrl for processing...`);
+                                            const base64 = retryImageBuffer.toString('base64');
+                                            const imageUrl = `data:image/${retryExt};base64,${base64}`;
+                                            const imageUrlResponse = await this.getImageUrl(imageUrl, defaultFormat, defaultWidth, defaultHeight, defaultQuality, alt, caption);
+                                            
+                                            if (imageUrlResponse) {
+                                                console.log(`Successfully processed image with ${strategy.name}, returning result`);
+                                                return {
+                                                    success: true,
+                                                    message: `Image imported successfully (using ${strategy.name} strategy)`,
+                                                    url: imageUrlResponse
+                                                };
+                                            } else {
+                                                console.error(`getImageUrl returned null/undefined for ${cleanUrl}`);
+                                            }
+                                        } else {
+                                            console.error(`Invalid metadata: format=${retryMetadata.format}, width=${retryMetadata.width}, height=${retryMetadata.height}`);
+                                        }
+                                    } catch (sharpError) {
+                                        const errorMsg = sharpError instanceof Error ? sharpError.message : String(sharpError);
+                                        console.error(`Sharp processing failed with ${strategy.name}: ${errorMsg}`);
+                                        // Continue to next strategy - this one failed processing
+                                    }
+                                } else {
+                                    console.error(`Empty buffer received with ${strategy.name}`);
+                                }
+                            } else {
+                                console.log(`${strategy.name} failed: HTTP ${retryResponse.status}`);
+                            }
+                        } catch (retryError) {
+                            const errorMsg = retryError instanceof Error ? retryError.message : String(retryError);
+                            console.error(`Error in ${strategy.name} strategy: ${errorMsg}`);
+                            // Continue to next strategy
+                            continue;
+                        }
+                    }
+                    
+                    // All strategies failed
+                    console.error(`All retry strategies failed for ${cleanUrl}. CDN is blocking all requests.`);
+                }
+                
+                // Return error object instead of throwing for 404/other HTTP errors
+                const statusMessage = response.status === 404 
+                    ? 'Image not found (404). The URL may be broken or the image was removed.' 
+                    : `Failed to fetch image: HTTP ${response.status} ${response.statusText}`;
+                
+                return {
+                    success: false,
+                    message: statusMessage,
+                    url: null
+                };
+            }
+
+            // Check Content-Type
+            const contentType = response.headers.get('content-type') || '';
+            const isImage = contentType.startsWith('image/');
+            
+            if (!isImage) {
+                // Try to detect from URL extension
+                const urlExt = path.extname(new URL(cleanUrl).pathname).substring(1).toLowerCase();
+                const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'];
+                if (!imageExts.includes(urlExt)) {
+                    throw new Error(`URL does not appear to be an image. Content-Type: ${contentType}`);
+                }
+            }
+
+            const buffer = await response.arrayBuffer();
             const imageBuffer = Buffer.from(buffer);
-            let filename = cleanUrl.split('/').pop();
 
-            if(filename && filename.includes("?"))
-                filename = filename.split("?")[0];
+            // Validate buffer is not empty
+            if (!imageBuffer || imageBuffer.length === 0) {
+                throw new Error('Received empty image buffer');
+            }
 
-            const ext = path.extname(filename || '').substring(1).toLowerCase();
+            // filename is already defined above (before retry logic)
+
+            const ext = path.extname(filename).substring(1).toLowerCase() || 
+                       (contentType.includes('jpeg') ? 'jpg' :
+                        contentType.includes('png') ? 'png' :
+                        contentType.includes('webp') ? 'webp' :
+                        contentType.includes('gif') ? 'gif' :
+                        contentType.includes('svg') ? 'svg' : 'jpg');
 
             try {
                 // @ts-ignore
                 const metadata = await sharp(imageBuffer).metadata();
+
+                // Validate image format
+                if (!metadata.format) {
+                    console.error(`Unsupported image format for URL: ${cleanUrl}. Buffer size: ${imageBuffer.length} bytes`);
+                    throw new Error(`Unsupported image format. Content-Type: ${contentType}, Buffer size: ${imageBuffer.length} bytes`);
+                }
 
                 if (!metadata.width || !metadata.height || metadata.width <= 0 || metadata.height <= 0) {
                     console.error(`Invalid image dimensions (${metadata.width}x${metadata.height}) for URL: ${cleanUrl}`);
@@ -1293,18 +1483,80 @@ export class MediasService extends AbstractService {
                     url: imageUrlResponse
                 };
             } catch (error) {
-                console.error(`Error processing image from URL ${cleanUrl}:`, error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error(`Error processing image from URL ${cleanUrl}:`, errorMessage);
+                
+                // Check for network/HTTP errors that weren't caught above
+                if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
+                    return {
+                        success: false,
+                        message: `Network error: Unable to reach the image URL. The server may be down or unreachable.`,
+                        url: null
+                    };
+                }
+                
+                // Provide more specific error messages
+                if (errorMessage.includes('unsupported image format') || errorMessage.includes('Input buffer')) {
+                    // Try to detect if it's actually HTML or text instead of image
+                    // Note: imageBuffer and contentType are in outer scope
+                    if (typeof imageBuffer !== 'undefined' && imageBuffer && imageBuffer.length > 0) {
+                        const isText = (
+                            imageBuffer.toString('utf8', 0, Math.min(100, imageBuffer.length)).trim().startsWith('<') ||
+                            imageBuffer.toString('utf8', 0, Math.min(100, imageBuffer.length)).includes('<!DOCTYPE')
+                        );
+                        
+                        if (isText) {
+                            return {
+                                success: false,
+                                message: `URL returned HTML/text instead of image. Server may be blocking image requests or URL is incorrect.`,
+                                url: null
+                            };
+                        }
+                        
+                        return {
+                            success: false,
+                            message: `Unsupported image format. Received ${imageBuffer.length} bytes. Content-Type: ${typeof contentType !== 'undefined' ? contentType : 'unknown'}`,
+                            url: null
+                        };
+                    }
+                    
+                    return {
+                        success: false,
+                        message: `Unsupported image format: ${errorMessage}`,
+                        url: null
+                    };
+                }
+                
                 return {
                     success: false,
-                    message: "Invalid image or unsupported format",
+                    message: `Image processing error: ${errorMessage}`,
                     url: null
                 };
             }
         } catch (error) {
-            console.error(`Error fetching URL ${url}:`, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`Error fetching URL ${url}:`, errorMessage);
+            
+            // Provide more specific error messages
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ECONNREFUSED')) {
+                return {
+                    success: false,
+                    message: `Network error: Could not connect to image server.`,
+                    url: null
+                };
+            }
+            
+            if (errorMessage.includes('HTTP')) {
+                return {
+                    success: false,
+                    message: errorMessage,
+                    url: null
+                };
+            }
+            
             return {
                 success: false,
-                message: "Failed to fetch image from URL",
+                message: `Failed to fetch image: ${errorMessage}`,
                 url: null
             };
         }

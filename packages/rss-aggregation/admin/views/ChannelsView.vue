@@ -165,6 +165,9 @@
                                 </span>
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
+                                Source Type
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-300 uppercase tracking-wider">
                                 Update Interval
                             </th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-neutral-300 uppercase tracking-wider">
@@ -185,6 +188,16 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                 {{ formatDate(channel.lastUpdate) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span :class="[
+                                    'px-2 py-1 rounded-full text-xs font-medium',
+                                    (channel.sourceType || 'RSS') === 'WEB_SCRAPING' 
+                                        ? 'bg-purple-600 text-white' 
+                                        : 'bg-blue-600 text-white'
+                                ]">
+                                    {{ (channel.sourceType || 'RSS') === 'WEB_SCRAPING' ? 'Web Scraping' : 'RSS' }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">
                                 {{ formatInterval(channel.intervalUpdate) }}
@@ -293,6 +306,34 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="channelSourceType" class="block text-sm font-medium text-neutral-300 mb-2">Source Type</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center">
+                                    <input
+                                        type="radio"
+                                        v-model="channelForm.sourceType"
+                                        value="RSS"
+                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 bg-neutral-700 border-neutral-600"
+                                    />
+                                    <span class="ml-2 text-sm text-neutral-300">RSS Feed</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input
+                                        type="radio"
+                                        v-model="channelForm.sourceType"
+                                        value="WEB_SCRAPING"
+                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 bg-neutral-700 border-neutral-600"
+                                    />
+                                    <span class="ml-2 text-sm text-neutral-300">Web Scraping</span>
+                                </label>
+                            </div>
+                            <p class="mt-1 text-sm text-neutral-500">
+                                <span v-if="channelForm.sourceType === 'RSS'">Collect news from RSS/Atom feed</span>
+                                <span v-else>Scrape news directly from website listing page</span>
+                            </p>
+                        </div>
+
+                        <div v-if="channelForm.sourceType === 'RSS'" class="mb-4">
                             <label for="channelRss" class="block text-sm font-medium text-neutral-300 mb-1">RSS Feed URL</label>
                             <input
                                 id="channelRss"
@@ -300,9 +341,36 @@
                                 type="url"
                                 class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 placeholder="https://example.com/feed.xml"
-                                required
+                                :required="channelForm.sourceType === 'RSS'"
                             />
                             <p v-if="formErrors.rss" class="mt-1 text-sm text-red-500">{{ formErrors.rss }}</p>
+                        </div>
+
+                        <div v-if="channelForm.sourceType === 'WEB_SCRAPING'" class="mb-4">
+                            <label for="channelListPageUrl" class="block text-sm font-medium text-neutral-300 mb-1">List Page URL</label>
+                            <input
+                                id="channelListPageUrl"
+                                v-model="channelForm.listPageUrl"
+                                type="url"
+                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder="https://example.com/noticias"
+                                :required="channelForm.sourceType === 'WEB_SCRAPING'"
+                            />
+                            <p class="mt-1 text-sm text-neutral-500">URL of the page containing the list of news articles</p>
+                            <p v-if="formErrors.listPageUrl" class="mt-1 text-sm text-red-500">{{ formErrors.listPageUrl }}</p>
+                        </div>
+
+                        <div v-if="channelForm.sourceType === 'WEB_SCRAPING'" class="mb-4">
+                            <label for="channelScrapingConfig" class="block text-sm font-medium text-neutral-300 mb-1">Scraping Configuration (JSON)</label>
+                            <textarea
+                                id="channelScrapingConfig"
+                                v-model="channelForm.scrapingConfig"
+                                rows="6"
+                                class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono text-sm"
+                                placeholder='{"articleSelector": ".news-item", "titleSelector": "h3 a", "linkSelector": "h3 a", "imageSelector": "img", "dateSelector": ".date"}'
+                            ></textarea>
+                            <p class="mt-1 text-sm text-neutral-500">Optional: JSON configuration for extraction patterns. Leave empty to use defaults.</p>
+                            <p v-if="formErrors.scrapingConfig" class="mt-1 text-sm text-red-500">{{ formErrors.scrapingConfig }}</p>
                         </div>
 
                         <div class="mb-4">
@@ -488,6 +556,9 @@ const channelForm = ref({
     name: '',
     url: '',
     rss: '',
+    sourceType: 'RSS',
+    listPageUrl: '',
+    scrapingConfig: '',
     intervalHours: 24,
     active: true,
     requestLink: false
@@ -617,6 +688,9 @@ const openAddDialog = () => {
         name: '',
         url: '',
         rss: '',
+        sourceType: 'RSS',
+        listPageUrl: '',
+        scrapingConfig: '',
         intervalHours: 24,
         active: true,
         requestLink: false
@@ -632,10 +706,23 @@ const openEditDialog = (channel) => {
     // Convert milliseconds to hours for the form
     const intervalHours = channel.intervalUpdate ? Math.floor(channel.intervalUpdate / (1000 * 60 * 60)) : 24
 
+    // Parse scrapingConfig if it's a string
+    let scrapingConfig = '';
+    if (channel.scrapingConfig) {
+        if (typeof channel.scrapingConfig === 'string') {
+            scrapingConfig = channel.scrapingConfig;
+        } else {
+            scrapingConfig = JSON.stringify(channel.scrapingConfig, null, 2);
+        }
+    }
+
     channelForm.value = {
         name: channel.name,
         url: channel.url,
-        rss: channel.rss,
+        rss: channel.rss || '',
+        sourceType: channel.sourceType || 'RSS',
+        listPageUrl: channel.listPageUrl || '',
+        scrapingConfig: scrapingConfig,
         intervalHours: intervalHours,
         active: channel.active === undefined ? true : channel.active,
         requestLink: channel.requestLink === undefined ? false : channel.requestLink
@@ -646,7 +733,7 @@ const openEditDialog = (channel) => {
 
 const closeDialog = () => {
     showDialog.value = false
-    channelForm.value = { name: '', url: '', rss: '', intervalHours: 24, active: true, requestLink: false }
+    channelForm.value = { name: '', url: '', rss: '', sourceType: 'RSS', listPageUrl: '', scrapingConfig: '', intervalHours: 24, active: true, requestLink: false }
     formErrors.value = {}
     channelToEdit.value = null
 }
@@ -670,10 +757,30 @@ const saveChannel = async () => {
             return
         }
 
-        if (!channelForm.value.rss.trim()) {
-            formErrors.value.rss = 'RSS feed URL is required'
-            formLoading.value = false
-            return
+        // Validate based on source type
+        if (channelForm.value.sourceType === 'RSS') {
+            if (!channelForm.value.rss.trim()) {
+                formErrors.value.rss = 'RSS feed URL is required'
+                formLoading.value = false
+                return
+            }
+        } else if (channelForm.value.sourceType === 'WEB_SCRAPING') {
+            if (!channelForm.value.listPageUrl.trim()) {
+                formErrors.value.listPageUrl = 'List page URL is required for web scraping'
+                formLoading.value = false
+                return
+            }
+
+            // Validate JSON if provided
+            if (channelForm.value.scrapingConfig.trim()) {
+                try {
+                    JSON.parse(channelForm.value.scrapingConfig)
+                } catch (e) {
+                    formErrors.value.scrapingConfig = 'Invalid JSON format'
+                    formLoading.value = false
+                    return
+                }
+            }
         }
 
         if (!channelForm.value.intervalHours || channelForm.value.intervalHours < 1 || channelForm.value.intervalHours > 168) {
@@ -685,10 +792,27 @@ const saveChannel = async () => {
         // Convert hours to milliseconds
         const intervalUpdate = channelForm.value.intervalHours * 60 * 60 * 1000
 
+        // Prepare scraping config (validate JSON and store as string)
+        let scrapingConfig = null;
+        if (channelForm.value.sourceType === 'WEB_SCRAPING' && channelForm.value.scrapingConfig.trim()) {
+            try {
+                const parsed = JSON.parse(channelForm.value.scrapingConfig.trim());
+                scrapingConfig = JSON.stringify(parsed);
+            } catch (e) {
+                // Already validated above, but just in case
+                formErrors.value.scrapingConfig = 'Invalid JSON format'
+                formLoading.value = false
+                return
+            }
+        }
+
         const channelData = {
             name: channelForm.value.name.trim(),
             url: channelForm.value.url.trim(),
-            rss: channelForm.value.rss.trim(),
+            rss: channelForm.value.rss.trim() || null,
+            sourceType: channelForm.value.sourceType,
+            listPageUrl: channelForm.value.sourceType === 'WEB_SCRAPING' ? channelForm.value.listPageUrl.trim() : null,
+            scrapingConfig: scrapingConfig,
             intervalUpdate: intervalUpdate,
             active: channelForm.value.active,
             requestLink: channelForm.value.requestLink
