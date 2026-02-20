@@ -74,6 +74,14 @@ export class AutoPipelineService {
         return Config.get<number>("blog.autoPipelineBacklogFactor", 5);
     }
 
+    private getScheduleStartHour(): number {
+        return Config.get<number>("blog.autoPipelineScheduleStartHour", 7);
+    }
+
+    private getScheduleEndHour(): number {
+        return Config.get<number>("blog.autoPipelineScheduleEndHour", 1);
+    }
+
     private getDefaultAuthor(): string {
         return Config.get<string>("blog.autoPipelineDefaultAuthor", "");
     }
@@ -791,6 +799,25 @@ export class AutoPipelineService {
             );
         } else {
             nextTime = Date.now() + safetyWindow;
+        }
+
+        // ─── Blackout Period Check ────────────────────────────
+        const date = new Date(nextTime);
+        const hour = date.getHours();
+        const startHour = this.getScheduleStartHour();
+        const endHour = this.getScheduleEndHour();
+
+        // Check if falls within blackout window (e.g., 01:00 to 07:00)
+        // Assuming endHour < startHour (midnight crossing handled simply for now)
+        if (hour >= endHour && hour < startHour) {
+            date.setHours(startHour, 0, 0, 0);
+
+            // If the shift pushed us to the past (unlikely given nextTime calculation), 
+            // logic holds because we just set the time to future 07:00 of the same day.
+            // If nextTime was 02:00 (today), it becomes 07:00 (today).
+
+            nextTime = date.getTime();
+            AutoPipelineService.logger.log(`[pipeline] scheduling: hit blackout period (${endHour}h-${startHour}h), moved to ${date.toISOString()}`);
         }
 
         return nextTime;
