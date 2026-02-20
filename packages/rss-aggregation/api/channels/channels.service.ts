@@ -89,8 +89,8 @@ export class ChannelsService {
 
         const sourceType = channel.sourceType || 'RSS';
 
-        // Safe logger access
-        const log = this.logger?.log || console.log;
+        // Safe logger access (bind to preserve `this` context for formatMessage)
+        const log = this.logger ? this.logger.log.bind(this.logger) : console.log;
         log(`Manual processing requested for channel "${channel.name}" with sourceType: "${sourceType}"`);
 
         if (sourceType === 'WEB_SCRAPING') {
@@ -223,8 +223,8 @@ export class ChannelsService {
 
             const sourceType = updatedChannel.sourceType || 'RSS';
 
-            // Safe logger access
-            const log = this.logger?.log || console.log;
+            // Safe logger access (bind to preserve `this` context for formatMessage)
+            const log = this.logger ? this.logger.log.bind(this.logger) : console.log;
             log(`Processing channel "${updatedChannel.name}" with sourceType: "${sourceType}" (channel.id: ${updatedChannel.id})`);
 
             if (sourceType === 'WEB_SCRAPING') {
@@ -268,9 +268,9 @@ export class ChannelsService {
      * @param channel The channel to process
      */
     private async processWebScrapingChannel(channel: any) {
-        // Safe logger access - declare once at the start
-        const log = this.logger?.log || console.log;
-        const logError = this.logger?.error || console.error;
+        // Safe logger access (bind to preserve `this` context for formatMessage)
+        const log = this.logger ? this.logger.log.bind(this.logger) : console.log;
+        const logError = this.logger ? this.logger.error.bind(this.logger) : console.error;
 
         try {
             if (!channel.listPageUrl) {
