@@ -18,7 +18,7 @@ export class ParserService {
 
     constructor(
         private readonly aiContentService: AIContentService
-    ) {}
+    ) { }
 
     /**
      * Parse a URL and extract important content information using Gemini AI
@@ -63,9 +63,15 @@ export class ParserService {
 
             const response = await fetch(url, {
                 headers: {
-                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'no-cache',
+                    'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                    'Sec-Ch-Ua-Mobile': '?0',
+                    'Sec-Ch-Ua-Platform': '"Windows"',
+                    'Upgrade-Insecure-Requests': '1',
                 },
                 signal: controller.signal
             });
@@ -352,7 +358,7 @@ ${truncatedHtml}
 
                 parsers = findResult?.data || [];
 
-                if (parsers.length === 0){
+                if (parsers.length === 0) {
                     this.logger.log(`No parsers found for URL ${urlDecoded}. Skipping detailed parsing.`);
                     return {
                         success: true,
@@ -403,7 +409,7 @@ ${truncatedHtml}
             const validResults = results.filter(result => result !== null) as any[];
 
             for (const result of validResults) {
-                if(result.title)
+                if (result.title)
                     bestResult.title = result.title;
 
                 if (result.content)
@@ -902,7 +908,7 @@ ${truncatedHtml}
                     isResolved = true;
                     try {
                         worker?.terminate();
-                    } catch (e) {}
+                    } catch (e) { }
 
                     this.logger.log(`Regex execution timed out after ${timeout}ms`);
                     resolve(null);
@@ -915,7 +921,7 @@ ${truncatedHtml}
                     clearTimeout(timeoutId);
                     try {
                         worker.terminate();
-                    } catch (e) {}
+                    } catch (e) { }
 
                     if (data.success) {
                         resolve(data.result);
@@ -932,7 +938,7 @@ ${truncatedHtml}
                     clearTimeout(timeoutId);
                     try {
                         worker.terminate();
-                    } catch (e) {}
+                    } catch (e) { }
 
                     this.logger.error(`Worker error: ${error.message}`);
                     resolve(null);
@@ -960,7 +966,7 @@ ${truncatedHtml}
                     clearTimeout(timeoutId);
                     try {
                         worker.terminate();
-                    } catch (e) {}
+                    } catch (e) { }
                     this.logger.error(`Failed to send message to worker: ${error instanceof Error ? error.message : String(error)}`);
                     resolve(null);
                 }

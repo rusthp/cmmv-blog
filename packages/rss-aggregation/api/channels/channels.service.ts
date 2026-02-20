@@ -419,8 +419,10 @@ export class ChannelsService {
         try {
             const response = await fetch(rss, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-                    'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Cache-Control': 'no-cache',
                 }
             });
 
@@ -714,7 +716,12 @@ export class ChannelsService {
                     }
                 } catch (parseError) {
                     // Parser failed or not configured, try direct extraction
-                    this.logger.log(`Parser service failed for ${link}, trying direct content extraction...`);
+                    const parseErrorMsg = parseError instanceof Error ? parseError.message : String(parseError);
+                    if (parseErrorMsg.includes('403')) {
+                        this.logger.log(`[WARN-403] Parser blocked for ${link}, using RSS content as fallback`);
+                    } else {
+                        this.logger.log(`Parser service failed for ${link}, trying direct content extraction...`);
+                    }
                 }
 
                 // If parser didn't provide content, try direct extraction (fallback)
@@ -891,8 +898,10 @@ export class ChannelsService {
 
             const response = await fetch(link, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': 'text/html,application/xhtml+xml',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Cache-Control': 'no-cache',
                 },
                 signal: controller.signal
             });
@@ -1003,9 +1012,10 @@ export class ChannelsService {
 
             const response = await fetch(link, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Cache-Control': 'no-cache',
                 },
                 signal: controller.signal
             });
