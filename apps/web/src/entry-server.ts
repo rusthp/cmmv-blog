@@ -24,7 +24,7 @@ let featuredCouponsData: any;
 let top25CouponsData: any;
 let specialDatesData: any;
 
-export async function setup(){
+export async function setup() {
     const urlQueries = new URLSearchParams({
         limit: "32",
         status: "published",
@@ -63,7 +63,7 @@ export async function setup(){
 
 export async function render(url: string) {
     try {
-        if(!settingsData || !categoriesData)
+        if (!settingsData || !categoriesData)
             await setup();
 
         globalThis.__SSR_DATA__ = {};
@@ -134,6 +134,7 @@ export async function render(url: string) {
         }
     } catch (e: any) {
         console.error('Render error:', e);
+        throw e;
     }
 }
 

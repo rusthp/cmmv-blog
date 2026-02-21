@@ -35,13 +35,13 @@ const pageCache = new Map<string, PageCacheEntry>();
 const PAGE_CACHE_DURATION = {
     // Static pages (home, about, etc.) - rarely change
     static: 60 * 60 * 1000, // 1 hour
-    
+
     // Dynamic content pages (posts, categories) - change more frequently
     dynamic: 10 * 60 * 1000, // 10 minutes
-    
+
     // API responses - short cache for freshness
     api: 5 * 60 * 1000, // 5 minutes
-    
+
     // Default fallback
     default: 30 * 60 * 1000, // 30 minutes
 };
@@ -57,12 +57,12 @@ const getCacheDuration = (url: string): number => {
     if (url === '/' || url.match(/^\/about|\/contact|\/privacy/)) {
         return PAGE_CACHE_DURATION.static;
     }
-    
+
     // API routes - shorter cache
     if (url.startsWith('/api/')) {
         return PAGE_CACHE_DURATION.api;
     }
-    
+
     // Dynamic content (posts, categories, etc.)
     return PAGE_CACHE_DURATION.dynamic;
 };
@@ -120,12 +120,12 @@ const compressHtml = (html: string, acceptEncoding: string = ''): { data: Buffer
  */
 const compressFile = (buffer: Buffer, acceptEncoding: string = '', contentType: string = ''): { data: Buffer, encoding: string | null } => {
     // Determine optimal compression based on content type
-    const isText = contentType.includes('text/') || 
-                   contentType.includes('application/javascript') ||
-                   contentType.includes('application/json') ||
-                   contentType.includes('application/xml') ||
-                   contentType.includes('image/svg+xml');
-    
+    const isText = contentType.includes('text/') ||
+        contentType.includes('application/javascript') ||
+        contentType.includes('application/json') ||
+        contentType.includes('application/xml') ||
+        contentType.includes('image/svg+xml');
+
     // Text files benefit from higher compression, binary files use faster compression
     const quality = isText ? 5 : 3;
     const level = isText ? 6 : 4;
@@ -136,8 +136,8 @@ const compressFile = (buffer: Buffer, acceptEncoding: string = '', contentType: 
                 params: {
                     [zlib.constants.BROTLI_PARAM_QUALITY]: quality,
                     [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buffer.length,
-                    [zlib.constants.BROTLI_PARAM_MODE]: isText 
-                        ? zlib.constants.BROTLI_MODE_TEXT 
+                    [zlib.constants.BROTLI_PARAM_MODE]: isText
+                        ? zlib.constants.BROTLI_MODE_TEXT
                         : zlib.constants.BROTLI_MODE_GENERIC,
                 }
             }),
@@ -371,7 +371,7 @@ async function bootstrap() {
             template = fs.readFileSync(path.resolve('dist/index.html'), 'utf-8');
             const mod = await (new Function('return import("./entry-server.js")')());
             render = mod.render;
-        } else if(vite) {
+        } else if (vite) {
             template = fs.readFileSync(path.resolve('index.html'), 'utf-8');
             const { render: devRender } = await vite.ssrLoadModule('/src/entry-server.ts');
             render = devRender;
@@ -386,10 +386,29 @@ async function bootstrap() {
 
                 template = await vite.transformIndexHtml(url, template);
 
+                let renderResult: any;
+
+                try {
+                    renderResult = await render(url);
+                } catch (renderError) {
+                    console.error('SSR render failed:', renderError);
+                    res.statusCode = 503;
+                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                    res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Temporariamente Indisponível</title><meta http-equiv="refresh" content="30"></head><body style="font-family:sans-serif;text-align:center;padding:60px"><h1>⚠️ Serviço Temporariamente Indisponível</h1><p>Estamos com uma instabilidade momentânea. A página será recarregada automaticamente em 30 segundos.</p></body></html>');
+                    return;
+                }
+
+                if (!renderResult) {
+                    res.statusCode = 503;
+                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                    res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Temporariamente Indisponível</title><meta http-equiv="refresh" content="30"></head><body style="font-family:sans-serif;text-align:center;padding:60px"><h1>⚠️ Serviço Temporariamente Indisponível</h1><p>Estamos com uma instabilidade momentânea. A página será recarregada automaticamente em 30 segundos.</p></body></html>');
+                    return;
+                }
+
                 const {
                     html: appHtml, head, metadata, redirect,
                     piniaState, settings, posts, prefetchCache
-                } = await render(url);
+                } = renderResult;
 
                 const piniaScript = `\n<script>window.__PINIA__ = ${JSON.stringify(piniaState).replace(/</g, '\\u003c')}</script>`;
 
@@ -415,7 +434,7 @@ async function bootstrap() {
                     template = template.replace(/<script[^>]*type="[^"]*"[^>]*src="\/@vite\/client"[^>]*><\/script>/g, '');
                 }
 
-                for(const key in metadata)
+                for (const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
                 // Use optimized cache duration based on URL type
