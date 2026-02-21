@@ -230,13 +230,17 @@ let serverInstance: http.Server | null = null;
 async function bootstrap() {
     const isDev = process.env.NODE_ENV !== 'production';
 
-    const vite = await createServer({
-        server: {
-            middlewareMode: true,
-            hmr: isDev ? true : false
-        },
-        appType: 'custom'
-    });
+    let vite: any = null;
+
+    if (isDev) {
+        vite = await createServer({
+            server: {
+                middlewareMode: true,
+                hmr: true
+            },
+            appType: 'custom'
+        });
+    }
 
     const themesDir = path.resolve(process.cwd(), 'src');
     const themeFolders = fs.readdirSync(themesDir)
@@ -377,14 +381,16 @@ async function bootstrap() {
             render = devRender;
         }
 
-        vite?.middlewares(req, res, async () => {
+        const serveSSR = async () => {
             try {
                 if (/\.\w+$/.test(url)) {
                     res.statusCode = 404;
                     return res.end(`Not found: ${url}`);
                 }
 
-                template = await vite.transformIndexHtml(url, template);
+                if (vite) {
+                    template = await vite.transformIndexHtml(url, template);
+                }
 
                 let renderResult: any;
 
@@ -459,11 +465,19 @@ async function bootstrap() {
 
                 res.end(compressed.data);
             } catch (e) {
-                vite.ssrFixStacktrace(e as Error);
+                if (vite) {
+                    vite.ssrFixStacktrace(e as Error);
+                }
                 res.statusCode = 500;
                 res.end((e as Error).message);
             }
-        });
+        };
+
+        if (vite) {
+            vite.middlewares(req, res, serveSSR);
+        } else {
+            serveSSR();
+        }
     });
 
     const port = env.VITE_SSR_PORT || 5001;

@@ -417,17 +417,33 @@ export class ChannelsService {
      */
     async getFeed(rss: string): Promise<RssFeed> {
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
             const response = await fetch(rss, {
+                signal: controller.signal,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                    'Accept': 'application/rss+xml, application/xml, application/atom+xml, text/xml, text/html, */*;q=0.9',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                     'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'cross-site',
+                    'Upgrade-Insecure-Requests': '1'
                 }
             });
 
-            if (!response.ok)
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                if (response.status === 403 || response.status === 524 || response.status === 503) {
+                    this.logger?.log(`[WARN] Feed block detected (${response.status}) from ${rss}. Anti-bot protection active. Skipping feed gracefully.`);
+                    return {}; // Return empty to allow pipeline to continue
+                }
                 throw new Error(`HTTP error! Status: ${response.status}`);
+            }
 
             const xml = await response.text();
 
@@ -450,7 +466,11 @@ export class ChannelsService {
             });
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`Error fetching or parsing feed from ${rss}: ${errorMessage}`);
+            if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+                this.logger?.log(`[WARN] Feed timeout fetching from ${rss}. Skipping feed gracefully.`);
+                return {};
+            }
+            this.logger?.error(`Error fetching or parsing feed from ${rss}: ${errorMessage}`);
             throw error;
         }
     }

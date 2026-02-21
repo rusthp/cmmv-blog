@@ -92,7 +92,9 @@ interface YouTubeVideoResponse {
 
 @Service("yt-channels")
 export class YTChannelsServiceAdmin {
-    private readonly YOUTUBE_API_BASE_URL: string = 'https://www.googleapis.com/youtube/v3';
+    private get YOUTUBE_API_BASE_URL(): string {
+        return 'https://www.googleapis.com/youtube/v3';
+    }
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleCronChannelsYoutube() {
@@ -203,7 +205,7 @@ export class YTChannelsServiceAdmin {
                 select: ["id", "name", "channelId", "intervalUpdate", "lastUpdate", "autoPublish"]
             });
 
-            if(!channels || !channels.data || channels.data.length === 0) {
+            if (!channels || !channels.data || channels.data.length === 0) {
                 return {
                     success: true,
                     message: "No channels found to process."
@@ -256,7 +258,7 @@ export class YTChannelsServiceAdmin {
                                 await Repository.update(YTChannelsEntity, { id: channel.id }, {
                                     lastUpdate: new Date()
                                 });
-                            } catch (updateError) {}
+                            } catch (updateError) { }
                         }
 
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -307,7 +309,7 @@ export class YTChannelsServiceAdmin {
                     const durationSeconds = this.parseDuration(video.contentDetails.duration);
                     const thumbnailUrl = this.getBestThumbnail(video.snippet.thumbnails);
 
-                    if(durationSeconds < 120)
+                    if (durationSeconds < 120)
                         continue;
 
                     await Repository.insert(YTVideosEntity, {
@@ -613,7 +615,7 @@ export class YTChannelsServiceAdmin {
      * @param channelId The YouTube channel ID
      * @returns Channel information
      */
-    private async fetchChannelInfo(channelId: string): Promise<{title: string}> {
+    private async fetchChannelInfo(channelId: string): Promise<{ title: string }> {
         const youtubeApiKey = Config.get("blog.youtubeApiKey");
 
         if (!youtubeApiKey)

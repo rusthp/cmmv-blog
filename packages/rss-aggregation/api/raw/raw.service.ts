@@ -34,7 +34,7 @@ export class RawService {
     constructor(
         private readonly aiContentService: AIContentService,
         private readonly parserService: ParserService
-    ) {}
+    ) { }
 
     /**
      * Get raw feed items
@@ -323,7 +323,7 @@ export class RawService {
      */
     async getAIRaw(id: string, customContent?: string, promptId?: string) {
         try {
-            const promptService:any = Application.resolveProvider(PromptsServiceTools);
+            const promptService: any = Application.resolveProvider(PromptsServiceTools);
             const language = Config.get("blog.language");
             const FeedRawEntity = Repository.getEntity("FeedRawEntity");
             const raw = await Repository.findOne(FeedRawEntity, {
@@ -493,13 +493,13 @@ export class RawService {
         let updatedRaw = null;
         let updateData: any = {};
 
-        if(data.postRef)
+        if (data.postRef)
             updateData.postRef = data.postRef;
 
-        if(data.rejected)
+        if (data.rejected)
             updateData.rejected = data.rejected;
 
-        if(data.featureImage)
+        if (data.featureImage)
             updateData.featureImage = data.featureImage;
 
         if (!raw)
@@ -790,7 +790,7 @@ export class RawService {
                 this.logger.log("No unclassified raw items found for AI classification");
                 return;
             }
-            else{
+            else {
                 this.logger.log(`Found ${rawItemsResponse.data.length} unclassified raw items for AI classification`);
             }
 
@@ -881,7 +881,9 @@ export class RawService {
 
                     // Update the raw feed item
                     const updateData: any = {
-                        relevance: relevance
+                        relevance: relevance,
+                        pipelineState: rejected ? 'rejected' : 'classified',
+                        updatedAt: new Date()
                     };
 
                     if (rejected) {
@@ -892,7 +894,7 @@ export class RawService {
                     }
 
                     await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id }), updateData);
-                    this.logger.log(`Updated raw item ${result.id} with relevance ${result.relevance} and rejected=${result.rejected}`);
+                    this.logger.log(`Updated raw item ${result.id} with relevance ${result.relevance}, pipelineState ${updateData.pipelineState} and rejected=${result.rejected}`);
                 } catch (updateError) {
                     this.logger.error(`Error updating raw item ${result.id}: ${updateError}`);
                     errorCount++;
