@@ -93,7 +93,7 @@ interface YouTubeVideoResponse {
 @Service("yt-channels")
 export class YTChannelsServiceAdmin {
     private get YOUTUBE_API_BASE_URL(): string {
-        return 'https://www.googleapis.com/youtube/v3';
+        return Config.get<string>('YOUTUBE_API_BASE_URL') || 'https://www.googleapis.com/youtube/v3';
     }
 
     @Cron(CronExpression.EVERY_HOUR)

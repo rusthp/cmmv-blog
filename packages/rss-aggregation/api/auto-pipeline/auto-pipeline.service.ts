@@ -981,12 +981,35 @@ export class AutoPipelineService {
         if (!url || url.trim() === '') return '';
 
         try {
+            // Whitelist for aggressive CDNs that block bots and return 403 or hang connection
+            try {
+                const parsedUrl = new URL(url);
+                const TRUSTED_IMAGE_DOMAINS = [
+                    'hltv.org',
+                    'img-cdn.hltv.org',
+                    'thespike.gg',
+                    'www.thespike.gg'
+                ];
+
+                if (TRUSTED_IMAGE_DOMAINS.includes(parsedUrl.hostname)) {
+                    AutoPipelineService.logger.log(`[pipeline][INFO] skipping validation for trusted domain: ${parsedUrl.hostname}`);
+                    return url;
+                }
+            } catch (urlError) {
+                // Ignore parse errors and let the fetch handle invalid URLs
+            }
+
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000);
 
             const headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Referer': 'https://www.google.com/',
+                'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Windows"'
             };
 
             let response = await fetch(url, {
@@ -996,14 +1019,21 @@ export class AutoPipelineService {
                 signal: controller.signal,
             });
 
-            // Some servers block HEAD, retry with GET
+            // Some servers block HEAD, retry with GET but abort immediately after headers
             if (!response.ok && (response.status === 405 || response.status === 403 || response.status === 404)) {
+                const getController = new AbortController();
+                const getTimeout = setTimeout(() => getController.abort(), 5000);
+
                 response = await fetch(url, {
                     method: 'GET',
                     headers,
                     redirect: 'follow',
-                    signal: controller.signal,
+                    signal: getController.signal,
                 });
+
+                // We only need headers, so if it responded successfully, abort the body download
+                getController.abort();
+                clearTimeout(getTimeout);
             }
 
             clearTimeout(timeout);

@@ -440,7 +440,7 @@ export class ChannelsService {
             if (!response.ok) {
                 if (response.status === 403 || response.status === 524 || response.status === 503) {
                     this.logger?.log(`[WARN] Feed block detected (${response.status}) from ${rss}. Anti-bot protection active. Skipping feed gracefully.`);
-                    return {}; // Return empty to allow pipeline to continue
+                    return { rss: { channel: { item: [] } } } as any; // Return empty to allow pipeline to continue
                 }
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -468,7 +468,7 @@ export class ChannelsService {
             const errorMessage = error instanceof Error ? error.message : String(error);
             if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
                 this.logger?.log(`[WARN] Feed timeout fetching from ${rss}. Skipping feed gracefully.`);
-                return {};
+                return { rss: { channel: { item: [] } } } as any;
             }
             this.logger?.error(`Error fetching or parsing feed from ${rss}: ${errorMessage}`);
             throw error;
@@ -586,8 +586,9 @@ export class ChannelsService {
                 // Enhanced image extraction with priority order
                 featureImage = this.extractImageFromRSSItem(item, 'RSS');
 
-                if (item.pubDate)
+                if (item.pubDate) {
                     pubDate = new Date(item.pubDate);
+                }
 
                 if (Array.isArray(item.category))
                     category = item.category.join(', ');
@@ -670,11 +671,11 @@ export class ChannelsService {
                 }
             }
 
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const dateLimit = new Date();
+            dateLimit.setDate(dateLimit.getDate() - 3);
 
-            if (pubDate < sevenDaysAgo)
-                return { success: false, message: "Item is older than 7 days" };
+            if (pubDate < dateLimit)
+                return { success: true, message: "Item skipped due to being older than 3 days" };
 
             if (!link)
                 return { success: false, message: "Empty link" };
