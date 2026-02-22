@@ -674,6 +674,8 @@ export class ChannelsService {
             const dateLimit = new Date();
             dateLimit.setDate(dateLimit.getDate() - 3);
 
+            const originalPubDate = new Date(pubDate);
+
             if (pubDate < dateLimit)
                 return { success: true, message: "Item skipped due to being older than 3 days" };
 
@@ -733,6 +735,15 @@ export class ChannelsService {
                             if ('title' in data && data.title) title = data.title;
                             if ('content' in data && data.content) content = data.content;
                             if ('featureImage' in data && data.featureImage) featureImage = data.featureImage;
+
+                            // Discover true publication date to combat RSS bumps
+                            if ('pubDate' in data && data.pubDate) {
+                                const trueDate = new Date(data.pubDate);
+                                if (!isNaN(trueDate.getTime())) {
+                                    pubDate = trueDate;
+                                    this.logger.log(`Parser found true publish date for ${link}: ${pubDate.toISOString()}`);
+                                }
+                            }
                         }
                     }
                 } catch (parseError) {
@@ -759,6 +770,12 @@ export class ChannelsService {
                         this.logger.log(`Direct content extraction failed for ${link}: ${errorMessage}`);
                     }
                 }
+            }
+
+            // Re-evaluate date limit after ParserService extracted the true historical date
+            if (pubDate < dateLimit) {
+                this.logger.log(`[HistoricalNewsFilter] Item skipped: Historical article bumped in feed ${link} (True date: ${pubDate.toISOString()})`);
+                return { success: true, message: "Item skipped due to being older than 3 days (after parser inspection)" };
             }
 
             // Final validation and cleanup of featureImage URL
@@ -788,6 +805,8 @@ export class ChannelsService {
                 featureImage: featureImage || '', // Ensure empty string if null/undefined
                 link,
                 pubDate,
+                originalPubDate,
+                truePubDate: pubDate.getTime() !== originalPubDate.getTime() ? pubDate : null,
                 category,
                 channel: channelId,
                 feedType,

@@ -3,7 +3,8 @@ import { Module } from '@cmmv/core';
 import {
     FeedChannelsContract,
     FeedRawContract,
-    FeedParserContract
+    FeedParserContract,
+    ImageCacheContract
 } from '../contracts';
 
 import {
@@ -30,7 +31,8 @@ export const RSSAggregationModule = new Module('rss-aggregation', {
     contracts: [
         FeedChannelsContract,
         FeedRawContract,
-        FeedParserContract
+        FeedParserContract,
+        ImageCacheContract
     ],
     submodules: [
         RSSChannelsModule,

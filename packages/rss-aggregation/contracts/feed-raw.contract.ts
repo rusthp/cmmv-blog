@@ -77,6 +77,18 @@ export class FeedRawContract extends AbstractContract {
     pubDate!: Date;
 
     @ContractField({
+        protoType: 'datetime',
+        nullable: true,
+    })
+    originalPubDate?: Date;
+
+    @ContractField({
+        protoType: 'datetime',
+        nullable: true,
+    })
+    truePubDate?: Date;
+
+    @ContractField({
         protoType: 'string',
         nullable: true,
         index: true

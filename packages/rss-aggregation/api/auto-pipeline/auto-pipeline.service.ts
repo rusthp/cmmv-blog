@@ -10,10 +10,20 @@ import {
     MoreThanOrEqual, LessThanOrEqual
 } from "@cmmv/repository";
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import * as dns from 'dns';
+import { promisify } from 'util';
+
+const dnsLookup = promisify(dns.lookup);
+
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
 //@ts-ignore
 import { PromptsServiceTools } from "@cmmv/blog/prompts/prompts.service";
+
+let mediasServiceInstance: any = null;
 
 // Pipeline states for FeedRaw items
 const PIPELINE_STATE = {
@@ -38,7 +48,17 @@ export class AutoPipelineService {
 
     constructor(
         private readonly aiContentService: AIContentService
-    ) { }
+    ) {
+        try {
+            // Get MediasService from Application singleton by name since importing @cmmv/blog triggers a CJS/ESM race
+            // condition and leaks Vue frontend packages.
+            if (Application.instance && Application.instance.providersMap.has("MediasService")) {
+                mediasServiceInstance = Application.instance.providersMap.get("MediasService");
+            }
+        } catch (e: any) {
+            AutoPipelineService.logger.log(`[pipeline][WARN] Failed to preload MediasService: ${e.message}`);
+        }
+    }
 
     // ─── Kill Switch ──────────────────────────────────────────
     private isEnabled(): boolean {
@@ -661,7 +681,12 @@ export class AutoPipelineService {
                     const slug = this.generateSlug(raw.title);
 
                     // Validate feature image
-                    const validatedImage = await this.validateImage(raw.featureImage || '');
+                    let validatedImage = '';
+                    try {
+                        validatedImage = await this.validateAndResolveImage(raw.featureImage || '', raw.title || '');
+                    } catch (e: any) {
+                        AutoPipelineService.logger.log(`[pipeline][WARN] Failed to validate feature image for post ${raw.id}: ${e.message}`);
+                    }
 
                     // Sanitize tags (dedup, min 3 chars, max 8, exclude category names)
                     const allCategoryNames = await this.getCategoryNames(categories, CategoriesEntity);
@@ -851,7 +876,13 @@ export class AutoPipelineService {
 
         // Validate each source
         for (const src of sources) {
-            const isValid = await this.validateImage(src);
+            let isValid = false;
+            try {
+                const resolved = await this.validateAndResolveImage(src, 'Content Image');
+                isValid = !!resolved;
+            } catch (e) {
+                isValid = false;
+            }
             if (!isValid) {
                 // Remove the image tag if validation fails
                 // Escaping special characters in src for regex
@@ -976,89 +1007,249 @@ export class AutoPipelineService {
         }
     }
 
-    // ─── Image Validation ─────────────────────────────────────
-    private async validateImage(url: string): Promise<string> {
-        if (!url || url.trim() === '') return '';
+    // ─── Image Validation & Fallback ──────────────────────────
+    private isPrivateIP(ip: string): boolean {
+        const parts = ip.split('.').map(Number);
+        if (parts.length !== 4) return false;
+
+        return (
+            ip === '127.0.0.1' || // localhost
+            parts[0] === 10 || // 10.x.x.x
+            (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || // 172.16.x.x - 172.31.x.x
+            (parts[0] === 192 && parts[1] === 168) || // 192.168.x.x
+            (parts[0] === 169 && parts[1] === 254) // 169.254.x.x
+        );
+    }
+
+    private hashBuffer(buffer: Buffer): string {
+        return crypto.createHash('sha256').update(buffer).digest('hex');
+    }
+
+    private getExtensionFromContentType(contentType: string): string {
+        if (contentType.includes('jpeg') || contentType.includes('jpg')) return 'jpg';
+        if (contentType.includes('png')) return 'png';
+        if (contentType.includes('webp')) return 'webp';
+        if (contentType.includes('gif')) return 'gif';
+        if (contentType.includes('svg')) return 'svg';
+        if (contentType.includes('avif')) return 'avif';
+        return 'jpg';
+    }
+
+    private async createAndSavePlaceholder(title: string): Promise<string> {
+        try {
+            const bgColor = '#1e1e2f';
+            const textColor = '#ffffff';
+
+            // Simple text wrapping
+            const words = (title || 'No Title').split(' ');
+            let lines: string[] = [];
+            let currentLine = '';
+
+            for (const word of words) {
+                if ((currentLine + word).length > 40) {
+                    lines.push(currentLine);
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+            lines = lines.slice(0, 3); // limit to 3 lines
+
+            let textElements = '';
+            const startY = 200 - ((lines.length - 1) * 20);
+
+            lines.forEach((line, index) => {
+                textElements += `<text x="50%" y="${startY + (index * 40)}" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" fill="${textColor}" font-weight="bold">${line.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>`;
+            });
+
+            const svg = `<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="${bgColor}"/>
+                <g opacity="0.1">
+                    <circle cx="10%" cy="20%" r="50" fill="#ffffff"/>
+                    <circle cx="90%" cy="80%" r="100" fill="#ffffff"/>
+                </g>
+                ${textElements}
+            </svg>`;
+
+            const buffer = Buffer.from(svg, 'utf-8');
+            const base64Data = `data:image/svg+xml;base64,${buffer.toString('base64')}`;
+
+            if (mediasServiceInstance) {
+                const generatedUrl = await mediasServiceInstance.getImageUrl(
+                    base64Data, "webp", undefined, undefined, 80, title, title
+                );
+                return generatedUrl || ''; // Absolute URL from MediasService
+            }
+
+            return '';
+        } catch (err: any) {
+            AutoPipelineService.logger.log(`[pipeline][CRITICAL] Failed to generate fallback placeholder ${err.message}`, 'error');
+            return '';
+        }
+    }
+
+    private async validateAndResolveImage(url: string, title: string): Promise<string> {
+        if (!url || url.trim() === '') {
+            return this.createAndSavePlaceholder(title);
+        }
+
+        const ImageCacheEntity = Repository.getEntity("ImageCacheEntity");
+
+        // Fast Cache Lookup by URL
+        if (ImageCacheEntity) {
+            const cachedByUrl = await Repository.findOne(ImageCacheEntity, { originalUrl: url });
+            if (cachedByUrl) {
+                await Repository.update(ImageCacheEntity, { id: cachedByUrl.id }, { lastUsedAt: new Date() });
+
+                if (cachedByUrl.localPath.startsWith('http') || cachedByUrl.localPath.startsWith('/images/')) {
+                    let apiUrl = Config.get<string>("blog.url", process.env.API_URL || "http://localhost:5000");
+                    if (apiUrl.endsWith("/")) apiUrl = apiUrl.slice(0, -1);
+                    return cachedByUrl.localPath.startsWith('http') ? cachedByUrl.localPath : `${apiUrl}${cachedByUrl.localPath}`;
+                }
+            }
+        }
 
         try {
-            // Whitelist for aggressive CDNs that block bots and return 403 or hang connection
-            try {
-                const parsedUrl = new URL(url);
-                const TRUSTED_IMAGE_DOMAINS = [
-                    'hltv.org',
-                    'img-cdn.hltv.org',
-                    'thespike.gg',
-                    'www.thespike.gg'
-                ];
+            const parsedUrl = new URL(url);
 
-                if (TRUSTED_IMAGE_DOMAINS.includes(parsedUrl.hostname)) {
-                    AutoPipelineService.logger.log(`[pipeline][INFO] skipping validation for trusted domain: ${parsedUrl.hostname}`);
-                    return url;
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                throw new Error(`Invalid protocol: ${parsedUrl.protocol}`);
+            }
+
+            if (parsedUrl.hostname === 'localhost') {
+                throw new Error(`SSRF Blocked: Resolves to localhost`);
+            }
+
+            const TRUSTED_IMAGE_DOMAINS = ['hltv.org', 'img-cdn.hltv.org', 'thespike.gg', 'www.thespike.gg'];
+
+            if (!TRUSTED_IMAGE_DOMAINS.includes(parsedUrl.hostname)) {
+                try {
+                    const { address } = await dnsLookup(parsedUrl.hostname);
+                    if (this.isPrivateIP(address)) {
+                        throw new Error(`SSRF Blocked: Resolves to private IP (${address})`);
+                    }
+                } catch (dnsErr: any) {
+                    throw new Error(`DNS resolution failed for ${parsedUrl.hostname}`);
                 }
-            } catch (urlError) {
-                // Ignore parse errors and let the fetch handle invalid URLs
+            } else {
+                // strict validation skipped for trusted domains
             }
 
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
+            const timeout = setTimeout(() => controller.abort(), 8000);
 
             const headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
                 'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Referer': 'https://www.google.com/',
-                'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"Windows"'
+                'Referer': 'https://www.google.com/'
             };
 
-            let response = await fetch(url, {
-                method: 'HEAD',
+            const response = await fetch(url, {
+                method: 'GET',
                 headers,
                 redirect: 'follow',
                 signal: controller.signal,
             });
 
-            // Some servers block HEAD, retry with GET but abort immediately after headers
-            if (!response.ok && (response.status === 405 || response.status === 403 || response.status === 404)) {
-                const getController = new AbortController();
-                const getTimeout = setTimeout(() => getController.abort(), 5000);
-
-                response = await fetch(url, {
-                    method: 'GET',
-                    headers,
-                    redirect: 'follow',
-                    signal: getController.signal,
-                });
-
-                // We only need headers, so if it responded successfully, abort the body download
-                getController.abort();
-                clearTimeout(getTimeout);
-            }
-
             clearTimeout(timeout);
 
             if (!response.ok) {
-                AutoPipelineService.logger.log(`[pipeline][WARN] image validation failed (${response.status}): ${url}`);
-                return '';
+                throw new Error(`HTTP Error ${response.status}`);
             }
 
             const contentType = response.headers.get('content-type') || '';
             if (!contentType.startsWith('image/')) {
-                AutoPipelineService.logger.log(`[pipeline][WARN] image invalid content-type (${contentType}): ${url}`);
-                return '';
+                throw new Error(`Invalid content-type: ${contentType}`);
             }
 
-            const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
-            if (contentLength > 0 && contentLength < 1000) {
-                AutoPipelineService.logger.log(`[pipeline][WARN] image too small (${contentLength}b): ${url}`);
-                return '';
+            const contentLengthHeader = response.headers.get('content-length');
+            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+            if (contentLengthHeader) {
+                const size = parseInt(contentLengthHeader, 10);
+                if (size > MAX_SIZE) throw new Error(`Image too large: ${size} bytes`);
             }
 
-            return url;
-        } catch (error) {
-            AutoPipelineService.logger.log(`[pipeline][WARN] image validation error: ${url} — ${error instanceof Error ? error.message : String(error)}`);
-            return '';
+            const chunks: Uint8Array[] = [];
+            let totalBytes = 0;
+
+            if (response.body) {
+                const reader = response.body.getReader();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    if (value) {
+                        chunks.push(value);
+                        totalBytes += value.length;
+
+                        if (totalBytes > MAX_SIZE) {
+                            reader.cancel("Max size exceeded");
+                            throw new Error(`Image exceeded max size limits during streaming (> 5MB).`);
+                        }
+                    }
+                }
+            } else {
+                const buffer = await response.arrayBuffer();
+                const uint8 = new Uint8Array(buffer);
+                if (uint8.length > MAX_SIZE) throw new Error("Image exceeded max size limits");
+                chunks.push(uint8);
+                totalBytes = uint8.length;
+            }
+
+            if (totalBytes < 1000) throw new Error("Image too small");
+
+            const fullBuffer = Buffer.concat(chunks);
+            const hash = this.hashBuffer(fullBuffer);
+
+            let finalUrl = '';
+
+            if (mediasServiceInstance) {
+                const base64Data = `data:${contentType};base64,${fullBuffer.toString('base64')}`;
+                finalUrl = await mediasServiceInstance.getImageUrl(
+                    base64Data, 'webp', undefined, undefined, 80, title, title
+                );
+            }
+
+            if (!finalUrl) {
+                return this.createAndSavePlaceholder(title);
+            }
+
+            if (ImageCacheEntity) {
+                let existingHash = await Repository.findOne(ImageCacheEntity, { hash });
+                if (!existingHash) {
+                    await Repository.insert(ImageCacheEntity, {
+                        originalUrl: url,
+                        localPath: finalUrl,
+                        sourceDomain: parsedUrl.hostname,
+                        mimeType: contentType,
+                        fileSize: totalBytes,
+                        hash,
+                        lastUsedAt: new Date(),
+                    });
+                } else {
+                    await Repository.update(ImageCacheEntity, { id: existingHash.id }, { lastUsedAt: new Date(), localPath: finalUrl });
+                }
+            }
+
+            return finalUrl;
+        } catch (error: any) {
+            AutoPipelineService.logger.log(`[pipeline][ERROR] Failed to fetch external image ${url}: ${error.message}`);
+
+            if (ImageCacheEntity) {
+                const fallbackCache = await Repository.findOne(ImageCacheEntity, { originalUrl: url });
+                if (fallbackCache) {
+                    await Repository.update(ImageCacheEntity, { id: fallbackCache.id }, { lastUsedAt: new Date() });
+                    if (fallbackCache.localPath.startsWith('http') || fallbackCache.localPath.startsWith('/images/')) {
+                        let apiUrl = Config.get<string>("blog.url", process.env.API_URL || "http://localhost:5000");
+                        if (apiUrl.endsWith("/")) apiUrl = apiUrl.slice(0, -1);
+                        return fallbackCache.localPath.startsWith('http') ? fallbackCache.localPath : `${apiUrl}${fallbackCache.localPath}`;
+                    }
+                }
+            }
+
+            return this.createAndSavePlaceholder(title);
         }
     }
 

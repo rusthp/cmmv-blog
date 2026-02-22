@@ -4,3 +4,4 @@ database.sqlite.filepart
 medias/*
 cache/*
 cache
+public/

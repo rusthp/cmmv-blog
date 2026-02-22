@@ -16,7 +16,7 @@ import {
 
 @Service("blog_analytics")
 export class AnalyticsService {
-    constructor(private readonly mediasService: MediasService){
+    constructor(private readonly mediasService: MediasService) {
         setInterval(() => {
             this.generateReport();
         }, 1000 * 60 * 30);
@@ -108,7 +108,7 @@ export class AnalyticsService {
      * Registry a new access to the path
      * @param access
      */
-    async registryAccess(access: IAnalyticsAccess){
+    async registryAccess(access: IAnalyticsAccess) {
         const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
         const PostsEntity = Repository.getEntity("PostsEntity");
 
@@ -120,14 +120,14 @@ export class AnalyticsService {
         analyticsAccess.referer = access.referer;
         analyticsAccess.startTime = new Date().getTime();
 
-        if(access.path.includes("post")){
+        if (access.path.includes("post")) {
             const post = await Repository.findOne(PostsEntity, {
                 slug: access.path.replace("/post/", "")
             }, {
                 select: ["id", "views"]
             });
 
-            if(post)
+            if (post)
                 analyticsAccess.postId = post.id;
 
             await Repository.updateOne(PostsEntity, Repository.queryBuilder({
@@ -146,7 +146,7 @@ export class AnalyticsService {
      * @param path url path
      * @param ip ip address
      */
-    async registryUnload(path: string, ip: string){
+    async registryUnload(path: string, ip: string) {
         const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
 
         const analyticsAccess = await Repository.findOne(AnalyticsAccessEntity, {
@@ -155,7 +155,7 @@ export class AnalyticsService {
             select: ["id"]
         });
 
-        if(!analyticsAccess)
+        if (!analyticsAccess)
             return;
 
         analyticsAccess.endTime = new Date().getTime();
@@ -284,7 +284,7 @@ export class AnalyticsService {
     /**
      * Get the summary of the analytics
      */
-    async getSummary(){
+    async getSummary() {
         const AnalyticsSummaryEntity = Repository.getEntity("AnalyticsSummaryEntity");
         const summary = await Repository.findAll(AnalyticsSummaryEntity, {
             limit: 30,
@@ -294,7 +294,7 @@ export class AnalyticsService {
             select: ["date", "totalAccess", "uniqueAccess", "bounceRate", "avgTimeOnPage"]
         });
 
-        if(!summary)
+        if (!summary)
             return {
                 data: [],
                 total: 0
@@ -309,7 +309,7 @@ export class AnalyticsService {
     /**
      * Get the posts most accessed in the last week
      */
-    async getPostsMostAccessedWeek(){
+    async getPostsMostAccessedWeek() {
         const PostsEntity = Repository.getEntity("PostsEntity");
         const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -323,15 +323,22 @@ export class AnalyticsService {
             select: ["id", "title", "slug", "views", "createdAt", "comments", "featureImage", "publishedAt"]
         });
 
-        if(!posts)
+        if (!posts)
             return [];
 
-        for(const post of posts.data){
-            post.featureImage = await this.mediasService.getImageUrl(
-                post.featureImage,
-                "webp",
-                1200,
-            );
+        for (const post of posts.data) {
+            if (post.featureImage) {
+                try {
+                    post.featureImage = await this.mediasService.getImageUrl(
+                        post.featureImage,
+                        "webp",
+                        1200,
+                    );
+                } catch (e: any) {
+                    console.error(`Error formatting image for post ${post.id}: ${e.message}`);
+                    post.featureImage = null;
+                }
+            }
         }
 
         return posts.data.map((post: any) => ({
@@ -349,7 +356,7 @@ export class AnalyticsService {
     /**
      * Get the dashboard data
      */
-    async getDashboardData(){
+    async getDashboardData() {
         const PostsEntity = Repository.getEntity("PostsEntity");
         const CommentsEntity = Repository.getEntity("CommentsEntity");
         const MemberEntity = Repository.getEntity("MemberEntity");
@@ -364,8 +371,8 @@ export class AnalyticsService {
             select: ["date", "totalAccess", "uniqueAccess", "bounceRate", "avgTimeOnPage"]
         });
 
-        if(summary){
-            for(const record of summary.data){
+        if (summary) {
+            for (const record of summary.data) {
                 totalAccess += record.totalAccess;
                 uniqueAccess += record.uniqueAccess;
             }
