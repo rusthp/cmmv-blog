@@ -680,6 +680,27 @@ export class AutoPipelineService {
                     // Generate slug
                     const slug = this.generateSlug(raw.title);
 
+                    // Prevent Duplicates: check if a post with this slug or title already exists
+                    const existingPost = await Repository.findOne(PostsEntity, {
+                        $or: [
+                            { slug: slug },
+                            { title: raw.title }
+                        ]
+                    });
+
+                    if (existingPost) {
+                        AutoPipelineService.logger.log(`[pipeline][WARN] Post already exists for "${raw.title}" (slug: ${slug}). Skipping posting.`);
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: raw.id }),
+                            {
+                                pipelineState: PIPELINE_STATE.DONE,
+                                postRef: existingPost.id
+                            }
+                        );
+                        continue;
+                    }
+
                     // Validate feature image
                     let validatedImage = '';
                     try {
@@ -1249,7 +1270,12 @@ export class AutoPipelineService {
                 }
             }
 
-            return this.createAndSavePlaceholder(title);
+            try {
+                return await this.createAndSavePlaceholder(title);
+            } catch (err) {
+                AutoPipelineService.logger.error(`[pipeline][ERROR] Failed to save placeholder for ${url}`);
+                return '';
+            }
         }
     }
 
