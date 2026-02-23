@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/affiliate",
-    "version": "0.1.108",
+    "version": "0.1.109",
     "description": "Affiliate package for CMMV",
     "scripts": {
         "build": "tsup"
