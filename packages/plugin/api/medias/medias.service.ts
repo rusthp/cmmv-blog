@@ -116,7 +116,7 @@ export class MediasService extends AbstractService {
         if (!image)
             throw new Error("No image provided");
 
-        if(image.startsWith("http"))
+        if (image.startsWith("http"))
             return image;
 
         // Usar o diretório correto da aplicação
@@ -124,7 +124,7 @@ export class MediasService extends AbstractService {
         const blogStorageService = Application.resolveProvider(BlogStorageService);
 
         try {
-            if(!fs.existsSync(mediasPath)) {
+            if (!fs.existsSync(mediasPath)) {
                 fs.mkdirSync(mediasPath, { recursive: true });
             }
         } catch (error: any) {
@@ -137,7 +137,7 @@ export class MediasService extends AbstractService {
 
         let apiUrl = Config.get<string>("blog.url", process.env.API_URL);
 
-        if(apiUrl.endsWith("/"))
+        if (apiUrl.endsWith("/"))
             apiUrl = apiUrl.slice(0, -1);
 
         const paramString = `${image}_${format}_${width}_${height}_${quality}`;
@@ -145,7 +145,7 @@ export class MediasService extends AbstractService {
         const imageFullpath = path.join(mediasPath, `${imageHash}.${format}`);
         const imageUrl = `${apiUrl}/images/${imageHash}.${format}`;
 
-        if(fs.existsSync(imageFullpath)) {
+        if (fs.existsSync(imageFullpath)) {
             const MediasEntity = Repository.getEntity("MediasEntity");
             const media = await Repository.findOne(MediasEntity, { sha1: imageHash });
             if (media) {
@@ -161,7 +161,7 @@ export class MediasService extends AbstractService {
         }
 
         try {
-            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+            const base64Data = image.replace(/^data:image\/[^;]+;base64,/, '');
             const buffer = Buffer.from(base64Data, 'base64');
             // @ts-ignore
             let imageProcessor = sharp(buffer);
@@ -191,7 +191,7 @@ export class MediasService extends AbstractService {
             finalImageBuffer = await imageProcessor.toBuffer();
             // @ts-ignore
             const finalMetadata = await sharp(finalImageBuffer).metadata();
-            
+
             const uploadedFile = await blogStorageService.uploadFile({
                 buffer: Buffer.from(finalImageBuffer),
                 originalname: `${imageHash}.${format}`,
@@ -352,13 +352,13 @@ export class MediasService extends AbstractService {
      * @param queries - Queries
      * @returns Medias
      */
-    async getMedias(queries: any){
+    async getMedias(queries: any) {
         const MediasEntity = Repository.getEntity("MediasEntity");
         delete queries.type;
 
-        if(queries.type === "image")
+        if (queries.type === "image")
             queries.format = In(["webp", "jpeg", "jpg", "png", "avif", "gif", "svg", "svg+xml"]);
-        else if(queries.type === "video")
+        else if (queries.type === "video")
             queries.format = In(["mp4", "webm", "ogg", "mov", "avi", "wmv", "flv", "mkv", "m4v", "3gp", "3g2", "m3u8", "m3u"]);
 
         delete queries.t;
@@ -367,7 +367,7 @@ export class MediasService extends AbstractService {
         const apiUrl = Config.get<string>("blog.url", process.env.API_URL);
         const mediasPath = path.resolve(process.cwd(), "medias", "images");
 
-        for(const media of medias?.data){
+        for (const media of medias?.data) {
             if (media.sha1 && media.format && !media.filepath.startsWith("https://")) {
                 media.format = media.format.toLowerCase(); //bugfix
                 const hashFilePath = path.join(mediasPath, `${media.sha1}.${media.format}`);
@@ -378,7 +378,7 @@ export class MediasService extends AbstractService {
                 }
             }
 
-            if(media.filepath && media.filepath.startsWith("https://")){
+            if (media.filepath && media.filepath.startsWith("https://")) {
                 media.url = media.filepath;
                 continue;
             }
@@ -411,7 +411,7 @@ export class MediasService extends AbstractService {
         const MediasEntity = Repository.getEntity("MediasEntity");
         const media = await Repository.findOne(MediasEntity, { id });
 
-        if(!media)
+        if (!media)
             throw new Error("Media not found");
 
         await Repository.update(MediasEntity, { id }, {
@@ -431,27 +431,27 @@ export class MediasService extends AbstractService {
         const MediasEntity = Repository.getEntity("MediasEntity");
         const media = await Repository.findOne(MediasEntity, { id });
 
-        if(!media)
+        if (!media)
             throw new Error("Media not found");
 
         // Remove from external storage if it's a remote URL
-        if(media.filepath && media.filepath.startsWith('http')) {
+        if (media.filepath && media.filepath.startsWith('http')) {
             const blogStorageService = Application.resolveProvider(BlogStorageService);
             await blogStorageService.deleteFile(media.filepath);
         }
 
         // Remove thumbnail from external storage if it's a remote URL
-        if(media.thumbnail && media.thumbnail.startsWith('http')) {
+        if (media.thumbnail && media.thumbnail.startsWith('http')) {
             const blogStorageService = Application.resolveProvider(BlogStorageService);
             await blogStorageService.deleteFile(media.thumbnail);
         }
 
         // Remove local files
-        if(media.filepath && fs.existsSync(media.filepath))
+        if (media.filepath && fs.existsSync(media.filepath))
             await fs.unlinkSync(media.filepath);
 
         // Remove local thumbnail
-        if(media.thumbnail && !media.thumbnail.startsWith('http')) {
+        if (media.thumbnail && !media.thumbnail.startsWith('http')) {
             const thumbnailPath = media.thumbnail.replace(/.*\/images\//, path.resolve(process.cwd(), "medias", "images") + "/");
             if (fs.existsSync(thumbnailPath)) {
                 await fs.unlinkSync(thumbnailPath);
@@ -531,7 +531,7 @@ export class MediasService extends AbstractService {
                 MediasService.reprocessProgress.processed = i + 1;
 
                 if (i % 100 === 0 || i === allMedias.length - 1)
-                    MediasService.reprocessProgress.message = `Checking media records: ${i+1} of ${allMedias.length}`;
+                    MediasService.reprocessProgress.message = `Checking media records: ${i + 1} of ${allMedias.length}`;
 
                 if (media.filepath && fs.existsSync(media.filepath)) {
                     validRecords.push(media);
@@ -604,7 +604,7 @@ export class MediasService extends AbstractService {
                     }
 
                     if (fileExists) {
-                        validRecords.push({...media, filepath: foundPath});
+                        validRecords.push({ ...media, filepath: foundPath });
                         continue;
                     }
                 }
@@ -1248,20 +1248,20 @@ export class MediasService extends AbstractService {
             // Preserve query parameters (some CDNs like HLTV need them)
             // Only remove fragment (#)
             const cleanUrl = url.split('#')[0];
-            
+
             // Extract filename early (needed for retry logic)
             let filename = cleanUrl.split('/').pop() || 'image';
             if (filename && filename.includes('?')) {
                 filename = filename.split('?')[0];
             }
-            
+
             // Parse URL to get origin and path
             const urlObj = new URL(cleanUrl);
-            
+
             // Detect CDN/host and choose optimal headers strategy
             // Some CDNs (like HLTV) work better with minimal headers
             const isHLTV = cleanUrl.includes('img-cdn.hltv.org') || cleanUrl.includes('hltv.org');
-            
+
             // Fetch with proper headers for image requests
             // Use minimal headers for HLTV CDN (proven to work), full headers for others
             const response = await fetch(cleanUrl, {
@@ -1290,7 +1290,7 @@ export class MediasService extends AbstractService {
                 // For 403 errors, try multiple strategies as fallback
                 if (response.status === 403) {
                     console.log(`Received 403 Forbidden for ${cleanUrl}, trying alternative strategies...`);
-                    
+
                     // Strategy 1: Try with minimal headers
                     let retryStrategies = [
                         {
@@ -1318,7 +1318,7 @@ export class MediasService extends AbstractService {
                             }
                         }
                     ];
-                    
+
                     for (const strategy of retryStrategies) {
                         try {
                             console.log(`Trying ${strategy.name} for ${cleanUrl}...`);
@@ -1326,41 +1326,41 @@ export class MediasService extends AbstractService {
                                 headers: strategy.headers,
                                 redirect: 'follow',
                             });
-                            
+
                             if (retryResponse.ok) {
                                 console.log(`Success with ${strategy.name} for ${cleanUrl}`);
-                                
+
                                 // Use retry response
                                 const retryBuffer = await retryResponse.arrayBuffer();
                                 const retryImageBuffer = Buffer.from(retryBuffer);
-                                
+
                                 console.log(`Downloaded ${retryImageBuffer.length} bytes with ${strategy.name}`);
-                                
+
                                 if (retryImageBuffer && retryImageBuffer.length > 0) {
                                     const retryContentType = retryResponse.headers.get('content-type') || '';
-                                    const retryExt = path.extname(filename).substring(1).toLowerCase() || 
-                                                   (retryContentType.includes('jpeg') ? 'jpg' :
-                                                    retryContentType.includes('png') ? 'png' :
-                                                    retryContentType.includes('webp') ? 'webp' : 'jpg');
-                                    
+                                    const retryExt = path.extname(filename).substring(1).toLowerCase() ||
+                                        (retryContentType.includes('jpeg') ? 'jpg' :
+                                            retryContentType.includes('png') ? 'png' :
+                                                retryContentType.includes('webp') ? 'webp' : 'jpg');
+
                                     console.log(`Processing image with format detection: ext=${retryExt}, contentType=${retryContentType}`);
-                                    
+
                                     // Process retry image
                                     try {
                                         const retryMetadata = await sharp(retryImageBuffer).metadata();
                                         console.log(`Image metadata: format=${retryMetadata.format}, width=${retryMetadata.width}, height=${retryMetadata.height}`);
-                                        
+
                                         if (retryMetadata.format && retryMetadata.width && retryMetadata.height) {
                                             const defaultWidth = Config.get<number>("blog.featureImage.width", 1920);
                                             const defaultHeight = Config.get<number>("blog.featureImage.height", 1080);
                                             const defaultFormat = Config.get<string>("blog.featureImage.format", "webp");
                                             const defaultQuality = Config.get<number>("blog.featureImage.quality", 80);
-                                            
+
                                             console.log(`Calling getImageUrl for processing...`);
                                             const base64 = retryImageBuffer.toString('base64');
                                             const imageUrl = `data:image/${retryExt};base64,${base64}`;
                                             const imageUrlResponse = await this.getImageUrl(imageUrl, defaultFormat, defaultWidth, defaultHeight, defaultQuality, alt, caption);
-                                            
+
                                             if (imageUrlResponse) {
                                                 console.log(`Successfully processed image with ${strategy.name}, returning result`);
                                                 return {
@@ -1392,16 +1392,16 @@ export class MediasService extends AbstractService {
                             continue;
                         }
                     }
-                    
+
                     // All strategies failed
                     console.error(`All retry strategies failed for ${cleanUrl}. CDN is blocking all requests.`);
                 }
-                
+
                 // Return error object instead of throwing for 404/other HTTP errors
-                const statusMessage = response.status === 404 
-                    ? 'Image not found (404). The URL may be broken or the image was removed.' 
+                const statusMessage = response.status === 404
+                    ? 'Image not found (404). The URL may be broken or the image was removed.'
                     : `Failed to fetch image: HTTP ${response.status} ${response.statusText}`;
-                
+
                 return {
                     success: false,
                     message: statusMessage,
@@ -1412,7 +1412,7 @@ export class MediasService extends AbstractService {
             // Check Content-Type
             const contentType = response.headers.get('content-type') || '';
             const isImage = contentType.startsWith('image/');
-            
+
             if (!isImage) {
                 // Try to detect from URL extension
                 const urlExt = path.extname(new URL(cleanUrl).pathname).substring(1).toLowerCase();
@@ -1432,12 +1432,12 @@ export class MediasService extends AbstractService {
 
             // filename is already defined above (before retry logic)
 
-            const ext = path.extname(filename).substring(1).toLowerCase() || 
-                       (contentType.includes('jpeg') ? 'jpg' :
-                        contentType.includes('png') ? 'png' :
+            const ext = path.extname(filename).substring(1).toLowerCase() ||
+                (contentType.includes('jpeg') ? 'jpg' :
+                    contentType.includes('png') ? 'png' :
                         contentType.includes('webp') ? 'webp' :
-                        contentType.includes('gif') ? 'gif' :
-                        contentType.includes('svg') ? 'svg' : 'jpg');
+                            contentType.includes('gif') ? 'gif' :
+                                contentType.includes('svg') ? 'svg' : 'jpg');
 
             try {
                 // @ts-ignore
@@ -1485,7 +1485,7 @@ export class MediasService extends AbstractService {
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 console.error(`Error processing image from URL ${cleanUrl}:`, errorMessage);
-                
+
                 // Check for network/HTTP errors that weren't caught above
                 if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
                     return {
@@ -1494,7 +1494,7 @@ export class MediasService extends AbstractService {
                         url: null
                     };
                 }
-                
+
                 // Provide more specific error messages
                 if (errorMessage.includes('unsupported image format') || errorMessage.includes('Input buffer')) {
                     // Try to detect if it's actually HTML or text instead of image
@@ -1504,7 +1504,7 @@ export class MediasService extends AbstractService {
                             imageBuffer.toString('utf8', 0, Math.min(100, imageBuffer.length)).trim().startsWith('<') ||
                             imageBuffer.toString('utf8', 0, Math.min(100, imageBuffer.length)).includes('<!DOCTYPE')
                         );
-                        
+
                         if (isText) {
                             return {
                                 success: false,
@@ -1512,21 +1512,21 @@ export class MediasService extends AbstractService {
                                 url: null
                             };
                         }
-                        
+
                         return {
                             success: false,
                             message: `Unsupported image format. Received ${imageBuffer.length} bytes. Content-Type: ${typeof contentType !== 'undefined' ? contentType : 'unknown'}`,
                             url: null
                         };
                     }
-                    
+
                     return {
                         success: false,
                         message: `Unsupported image format: ${errorMessage}`,
                         url: null
                     };
                 }
-                
+
                 return {
                     success: false,
                     message: `Image processing error: ${errorMessage}`,
@@ -1536,7 +1536,7 @@ export class MediasService extends AbstractService {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error(`Error fetching URL ${url}:`, errorMessage);
-            
+
             // Provide more specific error messages
             if (errorMessage.includes('Failed to fetch') || errorMessage.includes('ECONNREFUSED')) {
                 return {
@@ -1545,7 +1545,7 @@ export class MediasService extends AbstractService {
                     url: null
                 };
             }
-            
+
             if (errorMessage.includes('HTTP')) {
                 return {
                     success: false,
@@ -1553,7 +1553,7 @@ export class MediasService extends AbstractService {
                     url: null
                 };
             }
-            
+
             return {
                 success: false,
                 message: `Failed to fetch image: ${errorMessage}`,
@@ -1607,8 +1607,8 @@ export class MediasService extends AbstractService {
             const CampaignsEntity = Repository.getEntity("AffiliateCampaignsEntity");
 
             const deleted: string[] = [];
-            const skipped: Array<{id: string, reason: string, posts?: string[], campaigns?: string[]}> = [];
-            const errors: Array<{id: string, error: string}> = [];
+            const skipped: Array<{ id: string, reason: string, posts?: string[], campaigns?: string[] }> = [];
+            const errors: Array<{ id: string, error: string }> = [];
 
             for (const id of ids) {
                 try {
@@ -1932,7 +1932,7 @@ export class MediasService extends AbstractService {
 
         // Check seoLongText field
         if (campaign.seoLongText) {
-             for (const variation of mediaVariations) {
+            for (const variation of mediaVariations) {
                 if (campaign.seoLongText.includes(variation)) {
                     return true;
                 }
@@ -2074,7 +2074,7 @@ export class MediasService extends AbstractService {
                         if (uploadedThumbnail && uploadedThumbnail.url) {
                             thumbnailUrl = uploadedThumbnail.url;
                         }
-                    } catch (uploadError: any) {}
+                    } catch (uploadError: any) { }
 
                     if (!thumbnailUrl) {
                         const thumbnailPath = path.join(mediasPath, `${media.sha1}_thumb.webp`);
