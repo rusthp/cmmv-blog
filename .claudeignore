@@ -1,0 +1,55 @@
+# Build outputs
+**/dist/
+**/dist-server/
+**/.output/
+**/.nuxt/
+
+# Dependencies
+**/node_modules/
+
+# Locks e caches
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+**/.turbo/
+**/.vite/
+**/.vite-temp/
+
+# Banco de dados
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# Logs
+*.log
+**/logs/
+
+# Uploads e mídia gerada
+**/public/uploads/
+**/public/images/generated/
+**/storage/
+
+# Coverage e testes gerados
+**/coverage/
+**/.nyc_output/
+
+# TypeScript gerado
+**/*.d.ts
+**/*.js.map
+**/*.d.ts.map
+
+# Configs de IDE
+.vscode/
+.idea/
+
+# Rulebook (gerado)
+rulebook/tasks/
+rulebook/templates/
+AGENTS.md
+AGENTS.md.backup-*
+
+# Temporários
+**/*.tmp
+**/*.temp
+**/tmp/

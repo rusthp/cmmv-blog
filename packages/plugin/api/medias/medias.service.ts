@@ -116,8 +116,43 @@ export class MediasService extends AbstractService {
         if (!image)
             throw new Error("No image provided");
 
-        if (image.startsWith("http"))
-            return image;
+        if (image.startsWith("http")) {
+            // Own-served image (our API URL or /images/ path) — return as-is
+            let ownApiUrl = Config.get<string>("blog.url", process.env.API_URL || "");
+            if (ownApiUrl.endsWith("/")) ownApiUrl = ownApiUrl.slice(0, -1);
+
+            if ((ownApiUrl && image.startsWith(ownApiUrl)) || image.includes("/images/"))
+                return image;
+
+            // External URL — download and store locally for long-term resilience
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 10000);
+
+                const response = await fetch(image, {
+                    signal: controller.signal,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; cmmv-blog/1.0)',
+                        'Accept': 'image/*,*/*;q=0.8',
+                    },
+                });
+
+                clearTimeout(timer);
+
+                if (!response.ok) return image;
+
+                const contentType = (response.headers.get('content-type') || '').split(';')[0].trim();
+                if (!contentType.startsWith('image/')) return image;
+
+                const buffer = Buffer.from(await response.arrayBuffer());
+                if (buffer.length < 1000 || buffer.length > 5 * 1024 * 1024) return image;
+
+                const base64Image = `data:${contentType};base64,${buffer.toString('base64')}`;
+                return await this.getImageUrl(base64Image, format, width, height, quality, alt, caption) ?? image;
+            } catch {
+                return image;
+            }
+        }
 
         // Usar o diretório correto da aplicação
         const mediasPath = path.resolve(process.cwd(), "medias", "images");

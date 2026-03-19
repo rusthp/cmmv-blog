@@ -112,7 +112,7 @@
                             <button
                                 v-for="(_, index) in coverPosts.carousel"
                                 :key="index"
-                                @click="currentCarouselIndex = index"
+                                @click="currentCarouselIndex = Number(index)"
                                 class="w-3 h-3 rounded-full bg-white/50 focus:outline-none"
                                 :class="{ 'bg-white': currentCarouselIndex === index }"
                             ></button>
@@ -703,10 +703,9 @@ const loadPosts = async () => {
         loading.value = true;
         error.value = null;
 
-        const response: any = await blogAPI.posts.getAll({
-            offset: currentPage.value * pagination.value.limit,
-            limit: pagination.value.limit
-        });
+        const response: any = await blogAPI.posts.getAll(
+            currentPage.value * pagination.value.limit
+        );
 
         if (response) {
             posts.value = response.posts;
@@ -747,10 +746,7 @@ const loadMorePosts = async () => {
         // Usar o offset correto baseado no número atual de posts
         const currentOffset = posts.value.length;
         
-        const response: any = await blogAPI.posts.getAll({
-            offset: currentOffset,
-            limit: pagination.value.limit
-        });
+        const response: any = await blogAPI.posts.getAll(currentOffset);
 
         if (response && response.posts && response.posts.length > 0) {
             // Filtrar posts duplicados baseado no ID

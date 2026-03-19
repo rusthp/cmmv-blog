@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/newsletter",
-    "version": "0.1.110",
+    "version": "0.1.123",
     "description": "Newsletter management package for CMMV",
     "scripts": {
         "build": "tsup index.ts admin/index.ts client/index.ts --format cjs,esm --dts"
@@ -10,6 +10,6 @@
         "typescript": "^5.8.2"
     },
     "dependencies": {
-        "@cmmv/core": "latest"
+        "@cmmv/core": "0.17.0"
     }
 }

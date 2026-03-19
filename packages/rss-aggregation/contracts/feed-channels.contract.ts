@@ -87,4 +87,24 @@ export class FeedChannelsContract extends AbstractContract {
         nullable: true
     })
     scrapingConfig!: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true
+    })
+    cdnReferer!: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        defaultValue: 'default'
+    })
+    parsingStrategy!: string;
+
+    @ContractField({
+        protoType: 'boolean',
+        nullable: true,
+        defaultValue: false
+    })
+    requiresHeadless!: boolean;
 }

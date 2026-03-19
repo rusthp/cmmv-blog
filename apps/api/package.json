@@ -1,6 +1,6 @@
 {
     "name": "cmmv-blog-api",
-    "version": "0.0.111",
+    "version": "0.0.124",
     "private": true,
     "description": "Blog API sample",
     "dev": {
@@ -49,6 +49,7 @@
         "@cmmv/blog": "workspace:plugin",
         "@cmmv/cache": "^0.17.0",
         "@cmmv/cli": "^0.11.0",
+        "@cmmv/core": "^0.17.0",
         "@cmmv/http": "^0.17.0",
         "@cmmv/repository": "^0.17.0",
         "@cmmv/rss-aggregation": "workspace:rss-aggregation",

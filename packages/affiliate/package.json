@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/affiliate",
-    "version": "0.1.110",
+    "version": "0.1.123",
     "description": "Affiliate package for CMMV",
     "scripts": {
         "build": "tsup"
@@ -12,8 +12,8 @@
     "dependencies": {
         "@cmmv/blog": "workspace:plugin",
         "@cmmv/ai-content": "workspace:ai-content",
-        "@cmmv/auth": "latest",
-        "@cmmv/core": "latest",
-        "@cmmv/http": "latest"
+        "@cmmv/auth": "0.17.0",
+        "@cmmv/core": "0.17.0",
+        "@cmmv/http": "0.17.0"
     }
 }

@@ -1,1 +1,4 @@
-npx --no-install commitlint --edit $1
+if [ ! -f "node_modules/.bin/commitlint" ]; then
+  pnpm install
+fi
+pnpm exec commitlint --edit $1

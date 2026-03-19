@@ -997,7 +997,13 @@ export class ChannelsService {
                     .replace(/&#39;/g, "'");
             };
 
-            // Try Open Graph image first (most common)
+            // Try JSON-LD structured data first (works on SPAs that pre-render LD+JSON)
+            const jsonLdImage = this.extractImageFromJsonLd(html);
+            if (jsonLdImage) {
+                return this.resolveUrl(decodeHtmlEntities(jsonLdImage), link);
+            }
+
+            // Try Open Graph image (most common)
             let image = this.extractMetaImage(html, 'property="og:image"');
             if (image) {
                 image = decodeHtmlEntities(image);
@@ -1033,8 +1039,45 @@ export class ChannelsService {
     }
 
     /**
+     * Extract image from JSON-LD structured data (works on SPAs like THESPIKE)
+     * Looks for <script type="application/ld+json"> containing Article/NewsArticle schemas
+     */
+    private extractImageFromJsonLd(html: string): string {
+        const jsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+        let match;
+
+        while ((match = jsonLdRegex.exec(html)) !== null) {
+            try {
+                const data = JSON.parse(match[1].trim());
+                const items = Array.isArray(data) ? data : [data];
+
+                for (const item of items) {
+                    if (!item['@type']) continue;
+
+                    const type = Array.isArray(item['@type']) ? item['@type'][0] : item['@type'];
+                    if (!['Article', 'NewsArticle', 'BlogPosting', 'WebPage'].includes(type))
+                        continue;
+
+                    const img = item.image || item.thumbnailUrl;
+                    if (!img) continue;
+
+                    if (typeof img === 'string') return img;
+                    if (Array.isArray(img) && img.length > 0) {
+                        return typeof img[0] === 'string' ? img[0] : img[0]?.url || '';
+                    }
+                    if (typeof img === 'object' && img.url) return img.url;
+                }
+            } catch {
+                // Invalid JSON — skip this block
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Extract image URL from meta tag
-     * 
+     *
      * @param html - HTML content
      * @param pattern - Meta tag pattern (e.g., 'property="og:image"')
      * @returns Image URL or empty string

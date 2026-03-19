@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -d Ubuntu -- bash -lc \"echo $PATH && which node 2>/dev/null || echo ''node not found'' && ls ~/.nvm/versions/node/ 2>/dev/null || ls ~/.volta/bin/ 2>/dev/null || ls /usr/local/bin/node 2>/dev/null || echo ''no node manager found''\")",
+      "Bash(wsl -- bash -c \"ls /usr/local/bin/node 2>/dev/null; ls /usr/bin/node 2>/dev/null; ls ~/.nvm 2>/dev/null; ls /root/.nvm 2>/dev/null; command -v node\")",
+      "Bash(wsl -- bash -c \"source ~/.bashrc 2>/dev/null; source ~/.profile 2>/dev/null; command -v node && command -v pnpm\")",
+      "Bash(wsl -- find /home -name node -type f)",
+      "Bash(wsl -- find /root -name node -type f)",
+      "Bash(wsl -- find /usr -name node -type f)",
+      "Bash(wsl -- bash -c \"ls /home/\")",
+      "Bash(wsl -- bash -c \"ls /home/rusthp/.nvm/versions/node/ 2>/dev/null && echo found_nvm || ls /home/rusthp/.local/share/fnm/ 2>/dev/null && echo found_fnm || echo ''no manager''\")"
+    ]
+  }
+}
