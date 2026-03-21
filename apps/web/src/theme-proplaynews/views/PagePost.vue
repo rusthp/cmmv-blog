@@ -424,7 +424,7 @@
                                         v-if="popularPost.image || popularPost.featureImage"
                                         :src="popularPost.image || popularPost.featureImage"
                                         :alt="popularPost.title"
-                                        class="w-full h-auto object-contain imgix-lazy" style="max-height: 64px; min-height: 64px;"
+                                        objectFit="cover"
                                         width="80"
                                         height="64"
                                         icon-size="sm"

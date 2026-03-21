@@ -1,11 +1,16 @@
 import {
     Controller, Get, Param,
-    Query, Post, Body, Put
+    Query, Post, Body, Put,
+    Delete, Queries, Req
 } from "@cmmv/http";
 
 import {
     Auth
 } from "@cmmv/auth";
+
+import {
+    Repository
+} from "@cmmv/repository";
 
 import {
     ParserService
@@ -14,6 +19,22 @@ import {
 @Controller("feed/parser")
 export class ParserController {
     constructor(private readonly parserService: ParserService){}
+
+    @Get()
+    @Auth("feedparser:get")
+    async getAll(@Queries() queries: any, @Req() req: any) {
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        const result = await Repository.findAll(FeedParserEntity, queries);
+        return result;
+    }
+
+    @Get(":id")
+    @Auth("feedparser:get")
+    async getById(@Param("id") id: string) {
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        const result = await Repository.findBy(FeedParserEntity, { id });
+        return { data: result };
+    }
 
     @Get("parseURL")
     @Auth("feedparser:get")
@@ -49,6 +70,14 @@ export class ParserController {
     @Auth("feedparser:update")
     async updateParser(@Param("id") id: string, @Body() body: any) {
         return await this.parserService.updateParser(id, body);
+    }
+
+    @Delete(":id")
+    @Auth("feedparser:delete")
+    async deleteParser(@Param("id") id: string) {
+        const FeedParserEntity = Repository.getEntity("FeedParserEntity");
+        const result = await Repository.delete(FeedParserEntity, id);
+        return result;
     }
 
     @Post("refine")

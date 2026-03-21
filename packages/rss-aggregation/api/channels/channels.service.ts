@@ -2,7 +2,8 @@ import * as xml2js from 'xml2js';
 
 import {
     Service, Cron,
-    CronExpression, Logger
+    CronExpression, Logger,
+    Config
 } from "@cmmv/core";
 
 import {
@@ -671,8 +672,9 @@ export class ChannelsService {
                 }
             }
 
+            const maxAgeDays = Config.get<number>("blog.rssMaxAgeDays", 7);
             const dateLimit = new Date();
-            dateLimit.setDate(dateLimit.getDate() - 3);
+            dateLimit.setDate(dateLimit.getDate() - maxAgeDays);
 
             const originalPubDate = new Date(pubDate);
 
@@ -786,7 +788,7 @@ export class ChannelsService {
             // Re-evaluate date limit after ParserService extracted the true historical date
             if (pubDate < dateLimit) {
                 this.logger.log(`[HistoricalNewsFilter] Item skipped: Historical article bumped in feed ${link} (True date: ${pubDate.toISOString()})`);
-                return { success: true, message: "Item skipped due to being older than 3 days (after parser inspection)" };
+                return { success: true, message: `Item skipped due to being older than ${maxAgeDays} days (after parser inspection)` };
             }
 
             // Final validation and cleanup of featureImage URL

@@ -93,22 +93,83 @@ export class PostingWorker {
                     // Generate slug (after dedup check to avoid unnecessary work)
                     const slug = this.generateSlug(raw.title);
 
-                    // Validate feature image (always ensure a valid image or placeholder)
+                    // Validate feature image with multi-fallback strategy
                     let validatedImage = '';
-                    try {
-                        validatedImage = await this.imagePipeline.validateAndResolveImage(
-                            raw.featureImage || '', raw.title || ''
-                        );
-                    } catch (e: any) {
-                        PostingWorker.logger.log(
-                            `[pipeline][WARN] Failed to validate feature image for post ${raw.id}: ${e.message}`
-                        );
+
+                    // Step 1: Try the featureImage from RSS/parser
+                    if (raw.featureImage) {
+                        try {
+                            validatedImage = await this.imagePipeline.validateAndResolveImage(
+                                raw.featureImage, raw.title || ''
+                            );
+                        } catch (e: any) {
+                            PostingWorker.logger.log(
+                                `[pipeline][WARN] RSS featureImage failed for ${raw.id}: ${e.message}`
+                            );
+                        }
                     }
 
-                    // Fallback: if image is still empty, force a placeholder
+                    // Step 2: If no image yet, scrape og:image from the article page
+                    if (!validatedImage && raw.link) {
+                        try {
+                            const scraped = await this.scrapeImageFromArticle(raw.link);
+                            if (scraped) {
+                                PostingWorker.logger.log(
+                                    `[pipeline] Scraped image from article page for ${raw.id}: ${scraped}`
+                                );
+                                validatedImage = await this.imagePipeline.validateAndResolveImage(
+                                    scraped, raw.title || ''
+                                );
+                            }
+                        } catch (e: any) {
+                            PostingWorker.logger.log(
+                                `[pipeline][WARN] Article scrape failed for ${raw.id}: ${e.message}`
+                            );
+                        }
+                    }
+
+                    // Step 3: Try extracting the first large image from the generated content
+                    if (!validatedImage && raw.content) {
+                        const contentImg = this.extractFirstContentImage(raw.content);
+                        if (contentImg) {
+                            try {
+                                PostingWorker.logger.log(
+                                    `[pipeline] Trying content image for ${raw.id}: ${contentImg}`
+                                );
+                                validatedImage = await this.imagePipeline.validateAndResolveImage(
+                                    contentImg, raw.title || ''
+                                );
+                            } catch (e: any) {
+                                PostingWorker.logger.log(
+                                    `[pipeline][WARN] Content image failed for ${raw.id}: ${e.message}`
+                                );
+                            }
+                        }
+                    }
+
+                    // Step 4: Take a screenshot of the article page
+                    if (!validatedImage && raw.link) {
+                        try {
+                            PostingWorker.logger.log(
+                                `[pipeline] Taking screenshot of ${raw.link} for ${raw.id}`
+                            );
+                            validatedImage = await this.imagePipeline.captureScreenshot(
+                                raw.link, raw.title || ''
+                            );
+                        } catch (e: any) {
+                            PostingWorker.logger.log(
+                                `[pipeline][WARN] Screenshot failed for ${raw.id}: ${e.message}`
+                            );
+                        }
+                    }
+
+                    // Step 5: Last resort — placeholder
                     if (!validatedImage) {
                         try {
                             validatedImage = await this.imagePipeline.createAndSavePlaceholder(raw.title || 'Post');
+                            PostingWorker.logger.log(
+                                `[pipeline] Using placeholder for ${raw.id} (all image sources failed)`
+                            );
                         } catch {
                             PostingWorker.logger.log(
                                 `[pipeline][WARN] Placeholder generation also failed for post ${raw.id}`
@@ -469,6 +530,120 @@ export class PostingWorker {
         }
 
         return null;
+    }
+
+    // ─── Image Scraping Fallbacks ──────────────────────────────
+
+    /**
+     * Scrapes og:image, twitter:image, JSON-LD image, or first large <img>
+     * from the article page when RSS didn't provide a feature image.
+     */
+    private async scrapeImageFromArticle(url: string): Promise<string> {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                },
+                signal: controller.signal,
+                redirect: 'follow',
+            });
+
+            clearTimeout(timeoutId);
+            if (!response.ok) return '';
+
+            const reader = response.body?.getReader();
+            if (!reader) return '';
+
+            let html = '';
+            let bytesRead = 0;
+            const maxBytes = 100000; // 100KB — enough for meta + early content
+
+            while (bytesRead < maxBytes) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                html += new TextDecoder().decode(value);
+                bytesRead += value.length;
+            }
+
+            try { reader.cancel(); } catch {}
+
+            const decode = (s: string) => s
+                .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+
+            // 1) og:image
+            const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                         || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+            if (ogMatch?.[1]) return this.resolveUrl(decode(ogMatch[1]), url);
+
+            // 2) twitter:image
+            const twMatch = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+                         || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+            if (twMatch?.[1]) return this.resolveUrl(decode(twMatch[1]), url);
+
+            // 3) JSON-LD image
+            const ldMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (ldMatch?.[1]) {
+                try {
+                    const ld = JSON.parse(ldMatch[1]);
+                    const ldImage = ld.image?.url || ld.image?.[0]?.url || ld.image?.[0] || ld.image || ld.thumbnailUrl;
+                    if (ldImage && typeof ldImage === 'string') return this.resolveUrl(decode(ldImage), url);
+                } catch {}
+            }
+
+            // 4) First large <img> in the page body
+            const imgMatches = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)];
+            for (const m of imgMatches) {
+                const src = decode(m[1]);
+                // Skip tiny icons, tracking pixels, avatars, logos
+                if (/logo|icon|avatar|badge|emoji|pixel|tracker|ads|banner.*ad/i.test(src)) continue;
+                if (/\.(svg|gif)$/i.test(src)) continue;
+                // Check if width/height attributes suggest a real image (> 200px)
+                const widthMatch = m[0].match(/width=["']?(\d+)/i);
+                const heightMatch = m[0].match(/height=["']?(\d+)/i);
+                if (widthMatch && parseInt(widthMatch[1]) < 100) continue;
+                if (heightMatch && parseInt(heightMatch[1]) < 100) continue;
+                return this.resolveUrl(src, url);
+            }
+        } catch {}
+
+        return '';
+    }
+
+    /**
+     * Extracts the first significant image URL from HTML content.
+     */
+    private extractFirstContentImage(content: string): string {
+        if (!content) return '';
+
+        const imgMatches = [...content.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)];
+        for (const m of imgMatches) {
+            const src = m[1];
+            if (/logo|icon|avatar|badge|emoji|pixel|tracker/i.test(src)) continue;
+            if (/\.(svg|gif)$/i.test(src)) continue;
+            if (src.startsWith('data:')) continue;
+            return src;
+        }
+
+        return '';
+    }
+
+    /**
+     * Resolves a potentially relative URL against a base URL.
+     */
+    private resolveUrl(imageUrl: string, baseUrl: string): string {
+        if (!imageUrl) return '';
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+        try {
+            return new URL(imageUrl, baseUrl).toString();
+        } catch {
+            return imageUrl;
+        }
     }
 
     // ─── Helpers ──────────────────────────────────────────────

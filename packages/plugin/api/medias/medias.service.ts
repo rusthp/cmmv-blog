@@ -427,7 +427,8 @@ export class MediasService extends AbstractService {
                     media.url = null;
             }
 
-            media.url = media.url.toLowerCase();
+            if (media.url)
+                media.url = media.url.toLowerCase();
         }
 
         return medias;

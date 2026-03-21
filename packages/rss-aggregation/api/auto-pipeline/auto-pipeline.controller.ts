@@ -50,76 +50,236 @@ export class AutoPipelineController {
     @Get("reprocess-images", { exclude: true })
     async reprocessImages() {
         const logger = new Logger("ImageReprocess");
-        logger.log("Starting image reprocessing for posts without feature images...");
+        logger.log("Starting image reprocessing for posts with placeholder or missing images...");
 
         const PostsEntity = Repository.getEntity("PostsEntity");
+        const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+        const MediasEntity = Repository.getEntity("MediasEntity");
         const MediasService = Application.resolveProvider(
             (await import("@cmmv/blog")).MediasService
         );
 
         const imagePipeline = new ImagePipelineWorker(MediasService);
 
-        // Find posts with empty or missing featureImage
+        // Get all recent posts
         const allPosts = await Repository.findAll(PostsEntity, {
-            limit: 100,
+            limit: 200,
             sortBy: 'createdAt',
             sort: 'DESC',
         });
 
+        // Build a set of placeholder image hashes to detect them
+        const placeholderHashes = new Set<string>();
+        try {
+            const smallMedias = await Repository.findAll(MediasEntity, {
+                limit: 500,
+                sortBy: 'createdAt',
+                sort: 'DESC',
+            });
+            for (const media of smallMedias?.data || []) {
+                // Placeholders are SVG-converted-to-webp with very small file sizes (< 15KB)
+                // and dimensions matching the placeholder config
+                if (media.size && media.size < 15000 && media.width === media.height * 2) {
+                    placeholderHashes.add(media.sha1);
+                }
+            }
+        } catch {}
+
         let fixed = 0;
         let failed = 0;
+        let skipped = 0;
 
         for (const post of allPosts?.data || []) {
-            if (post.featureImage && post.featureImage.trim() !== '') continue;
+            const img = post.featureImage || '';
+            const isEmpty = !img.trim();
+            const isPlaceholder = !isEmpty && this.looksLikePlaceholder(img, placeholderHashes);
+
+            if (!isEmpty && !isPlaceholder) {
+                skipped++;
+                continue;
+            }
 
             try {
-                // Try to find image from linked feed raw
-                const FeedRawEntity = Repository.getEntity("FeedRawEntity");
                 const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
-
-                let imageUrl = feedRaw?.featureImage || '';
-
-                // Try to extract from the original link if available
-                if (!imageUrl && feedRaw?.link) {
-                    const channelsService: any = Application.resolveProvider(ChannelsService);
-                    try {
-                        imageUrl = await channelsService.extractImageFromPageMeta(feedRaw.link);
-                    } catch { /* silent */ }
-                }
-
                 let resolvedImage = '';
-                if (imageUrl) {
-                    resolvedImage = await imagePipeline.validateAndResolveImage(imageUrl, post.title || '');
+
+                // Strategy 1: Try original featureImage from feed
+                if (feedRaw?.featureImage) {
+                    try {
+                        resolvedImage = await imagePipeline.validateAndResolveImage(
+                            feedRaw.featureImage, post.title || ''
+                        );
+                    } catch {}
                 }
 
-                // Fallback to placeholder
-                if (!resolvedImage) {
-                    resolvedImage = await imagePipeline.createAndSavePlaceholder(post.title || 'Post');
+                // Strategy 2: Scrape og:image from the article page
+                if (!resolvedImage && feedRaw?.link) {
+                    try {
+                        const scraped = await this.scrapeImageFromPage(feedRaw.link);
+                        if (scraped) {
+                            resolvedImage = await imagePipeline.validateAndResolveImage(
+                                scraped, post.title || ''
+                            );
+                        }
+                    } catch {}
                 }
 
-                if (resolvedImage) {
+                // Strategy 3: First image from post content
+                if (!resolvedImage && post.content) {
+                    const contentImg = this.extractFirstImage(post.content);
+                    if (contentImg) {
+                        try {
+                            resolvedImage = await imagePipeline.validateAndResolveImage(
+                                contentImg, post.title || ''
+                            );
+                        } catch {}
+                    }
+                }
+
+                // Strategy 4: Screenshot of the article page
+                if (!resolvedImage && feedRaw?.link) {
+                    try {
+                        resolvedImage = await imagePipeline.captureScreenshot(
+                            feedRaw.link, post.title || ''
+                        );
+                    } catch {}
+                }
+
+                if (resolvedImage && resolvedImage !== img) {
                     await Repository.updateOne(
                         PostsEntity,
                         Repository.queryBuilder({ id: post.id }),
                         { featureImage: resolvedImage }
                     );
                     fixed++;
-                    logger.log(`Fixed image for post: "${post.title}"`);
+                    logger.log(`Fixed image for "${post.title}" → ${resolvedImage.substring(0, 80)}...`);
                 } else {
                     failed++;
+                    logger.log(`No real image found for "${post.title}"`);
                 }
             } catch (err: any) {
                 failed++;
-                logger.log(`Failed to reprocess image for "${post.title}": ${err.message}`);
+                logger.log(`Error reprocessing "${post.title}": ${err.message}`);
             }
         }
 
         return {
             result: true,
-            message: `Image reprocessing complete: ${fixed} fixed, ${failed} failed`,
+            message: `Reprocessing complete: ${fixed} fixed, ${failed} no image found, ${skipped} already OK`,
             fixed,
             failed,
+            skipped,
         };
+    }
+
+    /**
+     * Detect if a featureImage URL looks like a placeholder
+     */
+    private looksLikePlaceholder(url: string, placeholderHashes: Set<string>): boolean {
+        // Check if the image hash matches a known placeholder
+        const hashMatch = url.match(/\/images\/([a-f0-9]+)\./i);
+        if (hashMatch && placeholderHashes.has(hashMatch[1])) return true;
+
+        // Heuristic: placeholder SVGs converted to webp are typically < 10KB
+        // and have very uniform colors (gradient backgrounds)
+        // We can't check file size from URL alone, so rely on hash detection
+        return false;
+    }
+
+    /**
+     * Scrape og:image / twitter:image / JSON-LD from an article page
+     */
+    private async scrapeImageFromPage(url: string): Promise<string> {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                },
+                signal: controller.signal,
+                redirect: 'follow',
+            });
+
+            clearTimeout(timeoutId);
+            if (!response.ok) return '';
+
+            const reader = response.body?.getReader();
+            if (!reader) return '';
+
+            let html = '';
+            let bytesRead = 0;
+            while (bytesRead < 100000) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                html += new TextDecoder().decode(value);
+                bytesRead += value.length;
+            }
+            try { reader.cancel(); } catch {}
+
+            const decode = (s: string) => s
+                .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+
+            // og:image
+            const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+            if (og?.[1]) {
+                const resolved = decode(og[1]);
+                return resolved.startsWith('http') ? resolved : new URL(resolved, url).toString();
+            }
+
+            // twitter:image
+            const tw = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+                    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+            if (tw?.[1]) {
+                const resolved = decode(tw[1]);
+                return resolved.startsWith('http') ? resolved : new URL(resolved, url).toString();
+            }
+
+            // JSON-LD
+            const ld = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (ld?.[1]) {
+                try {
+                    const data = JSON.parse(ld[1]);
+                    const img = data.image?.url || data.image?.[0]?.url || data.image?.[0] || data.image || data.thumbnailUrl;
+                    if (img && typeof img === 'string') {
+                        return img.startsWith('http') ? img : new URL(img, url).toString();
+                    }
+                } catch {}
+            }
+
+            // First large <img>
+            const imgs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)];
+            for (const m of imgs) {
+                const src = decode(m[1]);
+                if (/logo|icon|avatar|badge|emoji|pixel|tracker|ads/i.test(src)) continue;
+                if (/\.(svg|gif)$/i.test(src)) continue;
+                const w = m[0].match(/width=["']?(\d+)/i);
+                if (w && parseInt(w[1]) < 100) continue;
+                return src.startsWith('http') ? src : new URL(src, url).toString();
+            }
+        } catch {}
+        return '';
+    }
+
+    /**
+     * Extract first significant image from HTML content
+     */
+    private extractFirstImage(content: string): string {
+        if (!content) return '';
+        const imgs = [...content.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi)];
+        for (const m of imgs) {
+            const src = m[1];
+            if (/logo|icon|avatar|badge|emoji|pixel|tracker/i.test(src)) continue;
+            if (/\.(svg|gif)$/i.test(src)) continue;
+            if (src.startsWith('data:')) continue;
+            return src;
+        }
+        return '';
     }
 
     @Get("test-full-pipeline", { exclude: true })

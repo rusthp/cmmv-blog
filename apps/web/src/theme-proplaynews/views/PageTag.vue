@@ -29,7 +29,7 @@
                         <a :href="`/post/${post.slug}`" class="block mb-4" aria-label="Ler mais sobre este post">
                                                           <div v-if="post.featureImage" class="relative bg-gray-100 overflow-hidden rounded-lg" style="min-height: 200px;">
                                 <OptimizedImage :src="post.featureImage" :alt="post.featureImageAlt || post.title"
-                                    class="w-full h-auto object-contain imgix-lazy" :hover="true" icon-size="lg" style="max-height: 250px; min-height: 200px;" />
+                                    objectFit="cover" :hover="true" icon-size="lg" style="max-height: 250px; min-height: 200px;" />
                             </div>
                         </a>
 

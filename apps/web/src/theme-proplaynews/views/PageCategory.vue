@@ -31,7 +31,7 @@
                                 <img
                                     :src="post.featureImage"
                                     :alt="post.featureImageAlt || post.title"
-                                    class="w-full h-auto object-contain transition-transform duration-300 hover:scale-105"
+                                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                                     loading="lazy"
                                     style="max-height: 250px; min-height: 200px;"
                                 />

@@ -1605,7 +1605,19 @@ const isRemoteImage = (url) => {
     try {
         const urlObj = new URL(url);
         const currentHost = window.location.hostname;
-        return urlObj.hostname !== currentHost && (urlObj.protocol === 'http:' || urlObj.protocol === 'https:');
+
+        // Same hostname
+        if (urlObj.hostname === currentHost) return false;
+
+        // Check if they share the same base domain (e.g., admin.site.com vs site.com)
+        const getBaseDomain = (host) => {
+            const parts = host.split('.');
+            return parts.length >= 2 ? parts.slice(-2).join('.') : host;
+        };
+
+        if (getBaseDomain(urlObj.hostname) === getBaseDomain(currentHost)) return false;
+
+        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
     } catch {
         return false;
     }

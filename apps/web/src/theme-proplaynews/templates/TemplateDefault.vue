@@ -369,7 +369,7 @@
                                         >
                                             <div class="flex flex-col sm:flex-row">
                                                 <div v-if="post.featureImage" class="w-full sm:w-32 h-40 sm:h-24 flex-shrink-0">
-                                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-auto object-contain" loading="lazy" style="max-height: 200px;" />
+                                                    <img :src="post.featureImage" :alt="post.title" class="w-full h-full object-cover" loading="lazy" />
                                                 </div>
                                                 <div class="p-4 flex-grow">
                                                     <h4 class="font-bold text-gray-900 mb-1">{{ post.title }}</h4>

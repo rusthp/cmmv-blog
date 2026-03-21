@@ -6,7 +6,7 @@
             ref="imageElement"
             :src="imageSrc"
             :srcset="useOriginalImage ? undefined : computedSrcset"
-            :sizes="useOriginalImage ? undefined : sizes"
+            :sizes="useOriginalImage || !computedSrcset ? undefined : sizes"
             :alt="alt || 'Image'"
             :class="imageClasses"
             :width="width"
@@ -128,9 +128,9 @@ const generateCloudflareImageUrl = (originalUrl: string, width: number, fit: str
     }
 };
 
-const generateSrcset = (src: string, sizes: number[]): string => {
+const generateSrcset = (src: string, sizes: number[]): string | undefined => {
 
-    if (!src || !settings.value['blog.cloudflareImageSrcset']) return '';
+    if (!src || !settings.value['blog.cloudflareImageSrcset']) return undefined;
 
     const fit = props.objectFit === 'contain' ? 'contain' : 'cover';
 
@@ -144,8 +144,10 @@ const computedSrcset = computed(() => {
     if (props.srcset)
         return props.srcset;
 
-    if (props.autoSrcset && props.src)
-        return generateSrcset(props.src, props.srcsetSizes);
+    if (props.autoSrcset && props.src) {
+        const result = generateSrcset(props.src, props.srcsetSizes);
+        return result || undefined;
+    }
 
     return undefined;
 });

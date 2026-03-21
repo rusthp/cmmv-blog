@@ -32,7 +32,7 @@ export class ImagePipelineWorker {
         channelReferer?: string,
     ): Promise<string> {
         if (!url || url.trim() === '') {
-            return this.createAndSavePlaceholder(title);
+            return '';
         }
 
         const normalizedUrl = this.normalizeImageUrl(url);
@@ -250,7 +250,8 @@ export class ImagePipelineWorker {
     }
 
     /**
-     * Validates all <img> tags in HTML content, removing broken ones.
+     * Validates all <img> tags in HTML content, rewriting valid ones
+     * to use local URLs and removing broken ones.
      */
     async validateContentImages(content: string): Promise<string> {
         if (!content) return "";
@@ -265,17 +266,25 @@ export class ImagePipelineWorker {
         }
 
         for (const src of sources) {
-            let isValid = false;
+            const escapedSrc = src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const tagRegex = new RegExp(`(<img[^>]+)src="${escapedSrc}"`, 'g');
+
             try {
                 const resolved = await this.validateAndResolveImage(src, 'Content Image');
-                isValid = !!resolved;
+
+                if (resolved) {
+                    // Rewrite image src to use resolved (local) URL
+                    validatedContent = validatedContent.replace(tagRegex, `$1src="${resolved}"`);
+                    ImagePipelineWorker.logger.log(`[pipeline] validateContentImages: Rewrote image ${src} → ${resolved}`);
+                } else {
+                    // Remove broken image entirely
+                    const fullTagRegex = new RegExp(`<img[^>]+src="${escapedSrc}"[^>]*>`, 'g');
+                    validatedContent = validatedContent.replace(fullTagRegex, '');
+                    ImagePipelineWorker.logger.log(`[pipeline] validateContentImages: Removed broken image ${src}`, 'warn');
+                }
             } catch {
-                isValid = false;
-            }
-            if (!isValid) {
-                const escapedSrc = src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const tagRegex = new RegExp(`<img[^>]+src="${escapedSrc}"[^>]*>`, 'g');
-                validatedContent = validatedContent.replace(tagRegex, '');
+                const fullTagRegex = new RegExp(`<img[^>]+src="${escapedSrc}"[^>]*>`, 'g');
+                validatedContent = validatedContent.replace(fullTagRegex, '');
                 ImagePipelineWorker.logger.log(`[pipeline] validateContentImages: Removed broken image ${src}`, 'warn');
             }
         }
@@ -361,18 +370,335 @@ export class ImagePipelineWorker {
     }
 
     /**
+     * Uses Puppeteer to render the article page (with JS), then:
+     *   1. Searches the rendered DOM for the main article image
+     *   2. Extracts the real src (after lazy-load/JS execution)
+     *   3. Downloads and processes through the normal pipeline
+     *   4. Only takes a cropped screenshot as last resort
+     */
+    async captureScreenshot(pageUrl: string, title: string): Promise<string> {
+        let puppeteer: any;
+        let usesStealth = false;
+
+        // Priority: puppeteer-extra + stealth > puppeteer > puppeteer-core
+        try {
+            const puppeteerExtra = require('puppeteer-extra');
+            const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+            puppeteerExtra.use(StealthPlugin());
+            puppeteer = puppeteerExtra;
+            usesStealth = true;
+        } catch {
+            try {
+                puppeteer = require('puppeteer');
+            } catch {
+                try {
+                    puppeteer = require('puppeteer-core');
+                } catch {
+                    ImagePipelineWorker.logger.log('[pipeline] Puppeteer not available, skipping');
+                    return '';
+                }
+            }
+        }
+
+        const width = Config.get<number>("blog.featureImage.width", 960);
+        const height = Config.get<number>("blog.featureImage.height", 504);
+        const executablePath = this.findChromePath();
+
+        // Rotate user-agents to reduce fingerprinting
+        const USER_AGENTS = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
+        ];
+        const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
+        const launchOptions: any = {
+            headless: 'new',
+            args: [
+                '--no-sandbox', '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', '--disable-gpu',
+                '--disable-extensions',
+                '--disable-blink-features=AutomationControlled',
+                '--lang=pt-BR,pt,en-US,en',
+                `--window-size=${width},${height + 300}`,
+            ],
+            defaultViewport: { width, height: height + 300 },
+            timeout: 15000,
+        };
+
+        if (executablePath) launchOptions.executablePath = executablePath;
+
+        let browser: any;
+        try {
+            browser = await puppeteer.launch(launchOptions);
+        } catch (err: any) {
+            ImagePipelineWorker.logger.log(`[pipeline] Browser launch failed: ${err.message}`);
+            return '';
+        }
+
+        try {
+            const page = await browser.newPage();
+
+            await page.setUserAgent(randomUA);
+
+            // Extra anti-detection (when stealth plugin is not available)
+            if (!usesStealth) {
+                await page.evaluateOnNewDocument(() => {
+                    // Hide webdriver flag
+                    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+                    // Fake plugins
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5],
+                    });
+                    // Fake languages
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['pt-BR', 'pt', 'en-US', 'en'],
+                    });
+                    // Pass Chrome detection
+                    (window as any).chrome = { runtime: {} };
+                }).catch(() => {});
+            }
+
+            // Set realistic headers
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1',
+            });
+
+            // Block heavy resources but KEEP images (we need them)
+            await page.setRequestInterception(true);
+            page.on('request', (req: any) => {
+                const type = req.resourceType();
+                if (['font', 'media', 'websocket'].includes(type)) {
+                    req.abort();
+                } else {
+                    req.continue();
+                }
+            });
+
+            await page.goto(pageUrl, {
+                waitUntil: 'networkidle2',
+                timeout: 15000,
+            });
+
+            // Wait for lazy-loaded images to appear
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Scroll down slightly to trigger lazy-load
+            await page.evaluate(() => window.scrollBy(0, 300)).catch(() => {});
+            await new Promise(r => setTimeout(r, 1000));
+
+            // ─── Strategy A: Extract the actual article image URL from the rendered DOM ───
+            const extractedImageUrl: string = await page.evaluate(() => {
+                const MIN_WIDTH = 200;
+                const MIN_HEIGHT = 150;
+
+                // Helper: check if an image is large enough and visible
+                const isValidImage = (img: HTMLImageElement): boolean => {
+                    if (!img.src || img.src.startsWith('data:')) return false;
+                    if (img.naturalWidth < MIN_WIDTH || img.naturalHeight < MIN_HEIGHT) return false;
+                    const rect = img.getBoundingClientRect();
+                    if (rect.width < MIN_WIDTH || rect.height < MIN_HEIGHT) return false;
+                    // Skip icons, logos, avatars
+                    const src = img.src.toLowerCase();
+                    const alt = (img.alt || '').toLowerCase();
+                    const cls = (img.className || '').toLowerCase();
+                    if (/logo|icon|avatar|badge|emoji|pixel|tracker|ads|sprite/i.test(src + alt + cls)) return false;
+                    return true;
+                };
+
+                // 1) og:image from rendered page (JS may have set it)
+                const ogMeta = document.querySelector('meta[property="og:image"]') as HTMLMetaElement;
+                if (ogMeta?.content && ogMeta.content.startsWith('http')) return ogMeta.content;
+
+                // 2) twitter:image
+                const twMeta = document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement;
+                if (twMeta?.content && twMeta.content.startsWith('http')) return twMeta.content;
+
+                // 3) Look for hero/feature image by common selectors
+                const heroSelectors = [
+                    'article img',
+                    '[class*="article"] img',
+                    '[class*="post"] img',
+                    '[class*="story"] img',
+                    '[class*="content"] img',
+                    '[class*="hero"] img',
+                    '[class*="feature"] img',
+                    '[class*="thumbnail"] img',
+                    '[class*="cover"] img',
+                    '.entry-content img',
+                    '.post-content img',
+                    '.article-body img',
+                    'main img',
+                    '#content img',
+                ];
+
+                for (const selector of heroSelectors) {
+                    const imgs = document.querySelectorAll(selector) as NodeListOf<HTMLImageElement>;
+                    for (const img of imgs) {
+                        if (isValidImage(img)) return img.currentSrc || img.src;
+                    }
+                }
+
+                // 4) Find the largest visible image on the page
+                const allImgs = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
+                let bestImg: HTMLImageElement | null = null;
+                let bestArea = 0;
+
+                for (const img of allImgs) {
+                    if (!isValidImage(img)) continue;
+                    const area = img.naturalWidth * img.naturalHeight;
+                    if (area > bestArea) {
+                        bestArea = area;
+                        bestImg = img;
+                    }
+                }
+
+                if (bestImg) return bestImg.currentSrc || bestImg.src;
+
+                // 5) Check background images on hero elements
+                const bgSelectors = [
+                    '[class*="hero"]', '[class*="banner"]', '[class*="cover"]',
+                    '[class*="feature"]', '[class*="header-image"]',
+                ];
+                for (const sel of bgSelectors) {
+                    const el = document.querySelector(sel) as HTMLElement;
+                    if (el) {
+                        const bg = getComputedStyle(el).backgroundImage;
+                        const urlMatch = bg?.match(/url\(["']?([^"')]+)["']?\)/);
+                        if (urlMatch?.[1] && urlMatch[1].startsWith('http')) return urlMatch[1];
+                    }
+                }
+
+                return '';
+            }).catch(() => '');
+
+            // If we found an image URL, download it through the normal pipeline
+            if (extractedImageUrl) {
+                ImagePipelineWorker.logger.log(
+                    `[pipeline] Browser extracted image from ${pageUrl}: ${extractedImageUrl.substring(0, 100)}`
+                );
+
+                await browser.close();
+                browser = null;
+
+                // Process through normal image pipeline (download, convert, cache)
+                const result = await this.validateAndResolveImage(extractedImageUrl, title);
+                if (result) return result;
+            }
+
+            // ─── Strategy B: No image found in DOM → screenshot the article area ───
+            if (browser) {
+                ImagePipelineWorker.logger.log(
+                    `[pipeline] No image found in DOM for ${pageUrl}, taking article screenshot`
+                );
+
+                // Remove distractions
+                await page.evaluate(() => {
+                    const removeSelectors = [
+                        '[class*="cookie"]', '[class*="consent"]', '[class*="popup"]',
+                        '[class*="modal"]', '[class*="overlay"]', '[id*="cookie"]',
+                        '[class*="gdpr"]', 'nav', 'header', 'footer',
+                        '[class*="sidebar"]', '[class*="widget"]', '[class*="ad-"]',
+                        '[class*="advertisement"]', '[class*="social"]',
+                    ];
+                    removeSelectors.forEach(sel => {
+                        document.querySelectorAll(sel).forEach(el => {
+                            (el as HTMLElement).style.display = 'none';
+                        });
+                    });
+
+                    // Try to find the article element and scroll to it
+                    const article = document.querySelector('article')
+                        || document.querySelector('[class*="article"]')
+                        || document.querySelector('[class*="post-content"]')
+                        || document.querySelector('main');
+                    if (article) article.scrollIntoView({ block: 'start' });
+                }).catch(() => {});
+
+                await new Promise(r => setTimeout(r, 500));
+
+                const screenshotBuffer = await page.screenshot({
+                    type: 'jpeg',
+                    quality: 85,
+                    clip: { x: 0, y: 0, width, height },
+                });
+
+                await browser.close();
+                browser = null;
+
+                if (screenshotBuffer && screenshotBuffer.length > 5000 && this.mediasServiceInstance) {
+                    const base64Data = `data:image/jpeg;base64,${Buffer.from(screenshotBuffer).toString('base64')}`;
+                    const finalUrl = await this.mediasServiceInstance.getImageUrl(
+                        base64Data, 'webp', width, height, 80, title, title
+                    );
+                    if (finalUrl) {
+                        ImagePipelineWorker.logger.log(
+                            `[pipeline] Article screenshot saved for "${title}"`
+                        );
+                        return finalUrl;
+                    }
+                }
+            }
+        } catch (err: any) {
+            ImagePipelineWorker.logger.log(`[pipeline] captureScreenshot error: ${err.message}`);
+        } finally {
+            if (browser) { try { await browser.close(); } catch {} }
+        }
+
+        return '';
+    }
+
+    /**
+     * Try to find Chrome/Chromium executable path on the system.
+     */
+    private findChromePath(): string | null {
+        const fs = require('fs');
+        const candidates = [
+            // Linux
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/snap/bin/chromium',
+            // macOS
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            // Windows
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        ];
+
+        for (const path of candidates) {
+            try {
+                if (fs.existsSync(path)) return path;
+            } catch {}
+        }
+
+        return null;
+    }
+
+    /**
      * Creates a branded SVG placeholder and saves it via MediasService.
      */
     async createAndSavePlaceholder(title: string): Promise<string> {
         try {
             const siteName = Config.get<string>("blog.autoPipelineSiteName", "ProPlay News");
+            const placeholderWidth = Config.get<number>("blog.featureImage.width", 960);
+            const placeholderHeight = Config.get<number>("blog.featureImage.height", 504);
 
             const words = (title || 'No Title').split(' ');
             let lines: string[] = [];
             let currentLine = '';
+            const maxCharsPerLine = Math.floor(placeholderWidth / 22);
 
             for (const word of words) {
-                if ((currentLine + word).length > 35) {
+                if ((currentLine + word).length > maxCharsPerLine) {
                     lines.push(currentLine);
                     currentLine = word + ' ';
                 } else {
@@ -383,7 +709,8 @@ export class ImagePipelineWorker {
             lines = lines.slice(0, 3);
 
             let textElements = '';
-            const startY = 180 - (lines.length - 1) * 18;
+            const centerY = placeholderHeight / 2;
+            const startY = centerY - (lines.length - 1) * 18;
 
             lines.forEach((line, index) => {
                 textElements += `<text x="50%" y="${startY + index * 38}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="26" fill="#ffffff" font-weight="700" letter-spacing="0.5">${line
@@ -393,7 +720,10 @@ export class ImagePipelineWorker {
                     .replace(/>/g, '&gt;')}</text>`;
             });
 
-            const svg = `<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+            const brandY = placeholderHeight - 60;
+            const lineY = brandY - 30;
+
+            const svg = `<svg width="${placeholderWidth}" height="${placeholderHeight}" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" style="stop-color:#7c3aed"/>
@@ -412,9 +742,9 @@ export class ImagePipelineWorker {
                     <circle cx="85%" cy="75%" r="120" fill="#7c3aed"/>
                     <circle cx="70%" cy="15%" r="40" fill="#ffcc00"/>
                 </g>
-                <rect x="50%" y="310" width="120" height="3" rx="1.5" fill="url(#accent)" transform="translate(-60,0)"/>
+                <rect x="50%" y="${lineY}" width="120" height="3" rx="1.5" fill="url(#accent)" transform="translate(-60,0)"/>
                 ${textElements}
-                <text x="50%" y="340" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="14" fill="#ffcc00" font-weight="600" letter-spacing="2" text-transform="uppercase">${siteName
+                <text x="50%" y="${brandY}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="14" fill="#ffcc00" font-weight="600" letter-spacing="2" text-transform="uppercase">${siteName
                     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
             </svg>`;
 
@@ -423,7 +753,7 @@ export class ImagePipelineWorker {
 
             if (this.mediasServiceInstance) {
                 const generatedUrl = await this.mediasServiceInstance.getImageUrl(
-                    base64Data, "webp", undefined, undefined, 80, title, title
+                    base64Data, "webp", placeholderWidth, placeholderHeight, 80, title, title
                 );
                 return generatedUrl || '';
             }

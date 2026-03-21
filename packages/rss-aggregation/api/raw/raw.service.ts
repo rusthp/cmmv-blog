@@ -45,7 +45,8 @@ export class RawService {
         const FeedRawEntity = Repository.getEntity("FeedRawEntity");
 
         queries.rejected = false;
-        queries.pubDate = MoreThanOrEqual(new Date(Date.now() - 1000 * 60 * 60 * 24 * 2));
+        const maxAgeDays = Config.get<number>("blog.rssMaxAgeDays", 7);
+        queries.pubDate = MoreThanOrEqual(new Date(Date.now() - 1000 * 60 * 60 * 24 * maxAgeDays));
         queries.postRef = IsNull();
         delete queries.sortBy;
         delete queries.sort;

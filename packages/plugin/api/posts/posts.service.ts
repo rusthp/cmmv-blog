@@ -727,6 +727,11 @@ export class PostsPublicService {
                 );
             }
 
+            // Rewrite broken localhost image URLs in post content
+            if (post.content) {
+                post.content = this.rewriteContentImageUrls(post.content);
+            }
+
             const meta: any = await Repository.findOne(MetaEntity, Repository.queryBuilder({
                 post: post.id
             }), {
@@ -1657,6 +1662,22 @@ export class PostsPublicService {
             console.error(`Error publishing post with ID ${id}: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
         }
+    }
+
+    /**
+     * Rewrite image URLs in post content that have stale localhost domains
+     */
+    private rewriteContentImageUrls(content: string): string {
+        const blogUrl = Config.get<string>("blog.url");
+        if (!blogUrl || blogUrl.includes('localhost')) return content;
+
+        const cleanBlogUrl = blogUrl.replace(/\/$/, '');
+
+        // Rewrite localhost image URLs to use the correct blog domain
+        return content.replace(
+            /(<img[^>]+src=["'])https?:\/\/localhost[^"']*?(\/images\/[^"']+)(["'][^>]*>)/g,
+            `$1${cleanBlogUrl}$2$3`
+        );
     }
 
     /**
