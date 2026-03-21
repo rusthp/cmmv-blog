@@ -110,9 +110,9 @@
                                         <div class="flex items-center mb-4">
                                             <!-- Author Avatar -->
                                             <div
-                                                class="w-12 h-12 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow">
+                                                class="w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow">
                                                                                 <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name"
-                                    class="w-full h-full object-cover imgix-lazy" width="44" height="44" icon-size="sm" />
+                                    class="w-full h-full object-cover imgix-lazy" width="64" height="64" icon-size="sm" />
                                                 <div v-else
                                                     class="w-full h-full flex items-center justify-center bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold text-lg">
                                                     {{ authorInitials }}
@@ -240,14 +240,14 @@
                                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                                 >
                                                     <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                        <div class="bg-gray-100 overflow-hidden relative" style="min-height: 200px; max-height: 200px;">
+                                                        <div class="bg-gray-100 overflow-hidden relative h-48">
                                                                                                         <OptimizedImage
                                                 v-if="relatedPost.featureImage"
                                                 :src="relatedPost.featureImage"
                                                 :alt="relatedPost.title"
-                                                class="w-full h-auto object-contain transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
                                                 :hover="true"
-                                                icon-size="md" style="max-height: 200px; min-height: 160px;"
+                                                icon-size="md"
                                             />
                                                             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

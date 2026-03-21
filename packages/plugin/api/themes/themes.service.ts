@@ -59,7 +59,13 @@ export class ThemesPublicService {
             const themeList: any[] = await themes.json();
             let themesData: any[] = [];
 
+            const baseUrl = frontendUrl.replace(/\/$/, '');
+
             themeList?.map(theme => {
+                const previewUrl = theme.preview?.startsWith('/')
+                    ? `${baseUrl}${theme.preview}`
+                    : theme.preview;
+
                 themesData.push({
                     namespace: theme.namespace,
                     name: theme.name,
@@ -67,7 +73,8 @@ export class ThemesPublicService {
                     description: theme.description,
                     author: theme.author,
                     version: theme.version,
-                    preview: theme.preview,
+                    preview: previewUrl,
+                    previewImage: previewUrl,
                 });
 
                 return theme;

@@ -2,7 +2,8 @@ import {
     Controller, Get
 } from "@cmmv/http";
 
-import { Application, Logger } from "@cmmv/core";
+import { Application, Config, Logger } from "@cmmv/core";
+import { Repository } from "@cmmv/repository";
 
 import {
     AutoPipelineService
@@ -11,6 +12,8 @@ import {
 import {
     ChannelsService
 } from "../channels/channels.service";
+
+import { ImagePipelineWorker } from "./image-pipeline";
 
 @Controller("pipeline")
 export class AutoPipelineController {
@@ -44,6 +47,81 @@ export class AutoPipelineController {
         await svc.postWorker();
         return { result: true, message: "Full pipeline executed" };
     }
+    @Get("reprocess-images", { exclude: true })
+    async reprocessImages() {
+        const logger = new Logger("ImageReprocess");
+        logger.log("Starting image reprocessing for posts without feature images...");
+
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const MediasService = Application.resolveProvider(
+            (await import("@cmmv/blog")).MediasService
+        );
+
+        const imagePipeline = new ImagePipelineWorker(MediasService);
+
+        // Find posts with empty or missing featureImage
+        const allPosts = await Repository.findAll(PostsEntity, {
+            limit: 100,
+            sortBy: 'createdAt',
+            sort: 'DESC',
+        });
+
+        let fixed = 0;
+        let failed = 0;
+
+        for (const post of allPosts?.data || []) {
+            if (post.featureImage && post.featureImage.trim() !== '') continue;
+
+            try {
+                // Try to find image from linked feed raw
+                const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+                const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
+
+                let imageUrl = feedRaw?.featureImage || '';
+
+                // Try to extract from the original link if available
+                if (!imageUrl && feedRaw?.link) {
+                    const channelsService: any = Application.resolveProvider(ChannelsService);
+                    try {
+                        imageUrl = await channelsService.extractImageFromPageMeta(feedRaw.link);
+                    } catch { /* silent */ }
+                }
+
+                let resolvedImage = '';
+                if (imageUrl) {
+                    resolvedImage = await imagePipeline.validateAndResolveImage(imageUrl, post.title || '');
+                }
+
+                // Fallback to placeholder
+                if (!resolvedImage) {
+                    resolvedImage = await imagePipeline.createAndSavePlaceholder(post.title || 'Post');
+                }
+
+                if (resolvedImage) {
+                    await Repository.updateOne(
+                        PostsEntity,
+                        Repository.queryBuilder({ id: post.id }),
+                        { featureImage: resolvedImage }
+                    );
+                    fixed++;
+                    logger.log(`Fixed image for post: "${post.title}"`);
+                } else {
+                    failed++;
+                }
+            } catch (err: any) {
+                failed++;
+                logger.log(`Failed to reprocess image for "${post.title}": ${err.message}`);
+            }
+        }
+
+        return {
+            result: true,
+            message: `Image reprocessing complete: ${fixed} fixed, ${failed} failed`,
+            fixed,
+            failed,
+        };
+    }
+
     @Get("test-full-pipeline", { exclude: true })
     async runTestPipeline() {
         const logger = new Logger("PipelineTest");

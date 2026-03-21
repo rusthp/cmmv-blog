@@ -1,4 +1,1 @@
-if [ ! -f "node_modules/.bin/commitlint" ]; then
-  pnpm install
-fi
-pnpm exec commitlint --edit $1
+node ./node_modules/@commitlint/cli/cli.js --edit $1

@@ -252,13 +252,16 @@ async function bootstrap() {
         if (fs.existsSync(themeJsonPath)) {
             try {
                 const themeData = JSON.parse(fs.readFileSync(themeJsonPath, 'utf-8'));
+                const namespace = folder.replace('theme-', '');
+
                 themes[`./${folder}/theme.json`] = {
-                    namespace: folder.replace('theme-', ''),
+                    namespace,
                     name: themeData.name,
                     description: themeData.description,
                     author: themeData.author,
                     version: themeData.version,
-                    preview: `${env.VITE_WEBSITE_URL}${themeData.preview}`
+                    preview: `/theme-preview/${namespace}`,
+                    previewImage: `/theme-preview/${namespace}`
                 };
             } catch (error) {
                 console.error(`Error loading theme from ${themeJsonPath}:`, error);
@@ -286,6 +289,34 @@ async function bootstrap() {
                 res.end(JSON.stringify([]));
                 return;
             }
+        }
+
+        if (url.startsWith('/theme-preview/') && req.method === 'GET') {
+            const themeName = url.replace('/theme-preview/', '').replace(/[^a-zA-Z0-9-]/g, '');
+            const folder = `theme-${themeName}`;
+            const candidates = [
+                path.join(themesDir, folder, 'preview.png'),
+                path.join(themesDir, folder, 'assets', 'preview.png'),
+            ];
+
+            let served = false;
+            for (const candidate of candidates) {
+                if (fs.existsSync(candidate)) {
+                    const buffer = fs.readFileSync(candidate);
+                    res.setHeader('Content-Type', 'image/png');
+                    res.setHeader('Cache-Control', 'public, max-age=86400');
+                    res.statusCode = 200;
+                    res.end(buffer);
+                    served = true;
+                    break;
+                }
+            }
+
+            if (!served) {
+                res.statusCode = 404;
+                res.end('Not found');
+            }
+            return;
         }
 
         if (url === '/set-thema' && req.method === 'POST') {
@@ -353,6 +384,46 @@ async function bootstrap() {
                 }
             });
 
+            return;
+        }
+
+        if (url.startsWith('/images/') && /\.\w+$/.test(url)) {
+            const apiUrl = env.VITE_API_URL || 'http://localhost:5000';
+            const proxyUrl = `${apiUrl}${url}`;
+
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 10000);
+                const apiResponse = await fetch(proxyUrl, { signal: controller.signal });
+                clearTimeout(timer);
+
+                if (apiResponse.ok) {
+                    const contentType = apiResponse.headers.get('content-type') || 'image/webp';
+                    res.setHeader('Content-Type', contentType);
+                    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+                    res.statusCode = 200;
+
+                    const nodeStream = apiResponse.body;
+                    if (nodeStream) {
+                        const reader = (nodeStream as any).getReader();
+                        const pump = async () => {
+                            const { done, value } = await reader.read();
+                            if (done) { res.end(); return; }
+                            res.write(value);
+                            await pump();
+                        };
+                        await pump();
+                    } else {
+                        res.end(Buffer.from(await apiResponse.arrayBuffer()));
+                    }
+                } else {
+                    res.statusCode = 404;
+                    res.end('');
+                }
+            } catch {
+                res.statusCode = 502;
+                res.end('');
+            }
             return;
         }
 

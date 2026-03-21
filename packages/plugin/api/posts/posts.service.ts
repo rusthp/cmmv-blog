@@ -1694,8 +1694,18 @@ export class PostsPublicService {
     ): Promise<string | null | undefined> {
         if (!imageData) return imageData;
 
-        // Se a imagem já for uma URL, não reprocessa
-        if (imageData.startsWith('http')) return imageData;
+        // Se a imagem já for uma URL, verificar se precisa corrigir o domínio
+        if (imageData.startsWith('http')) {
+            // Corrigir URLs com localhost apontando para imagens locais
+            if (imageData.includes('/images/') && imageData.includes('localhost')) {
+                const blogUrl = Config.get<string>("blog.url");
+                if (blogUrl && !blogUrl.includes('localhost')) {
+                    const imagePath = imageData.replace(/^https?:\/\/[^/]+/, '');
+                    return `${blogUrl.replace(/\/$/, '')}${imagePath}`;
+                }
+            }
+            return imageData;
+        }
 
         return await this.mediasService.getImageUrl(
             imageData,

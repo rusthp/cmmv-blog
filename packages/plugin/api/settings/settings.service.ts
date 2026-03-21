@@ -3,7 +3,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 
 import {
-    Service, Config
+    Service, Config, Hook, HooksType
 } from "@cmmv/core";
 
 import {
@@ -85,6 +85,37 @@ const SENSITIVE_KEYS = [
 
 @Service("blog_settings")
 export class SettingsService {
+    @Hook(HooksType.onInitialize)
+    async loadSettingsIntoConfig() {
+        try {
+            const SettingsRepository = Repository.getEntity("SettingsEntity");
+            const settings = await Repository.findAll(SettingsRepository, {
+                limit: 1000
+            }, [], {
+                select: ["key", "value", "type"]
+            });
+
+            if (settings?.data) {
+                for (const setting of settings.data) {
+                    let value: any = setting.value;
+
+                    switch (setting.type) {
+                        case "boolean":
+                            value = setting.value === "true" || setting.value === "1";
+                            break;
+                        case "number":
+                            value = parseInt(setting.value);
+                            break;
+                    }
+
+                    Config.set(setting.key, value);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load settings into Config:", error);
+        }
+    }
+
     /**
      * Get the setup data
      * @param setupData - The setup data

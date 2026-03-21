@@ -75,27 +75,25 @@ export class PostingWorker {
                         raw.title
                     );
 
-                    // Generate slug
-                    const slug = this.generateSlug(raw.title);
+                    // Duplicate check (normalized title match)
+                    const duplicatePost = await this.findDuplicatePost(PostsEntity, raw.title);
 
-                    // Duplicate check
-                    const existingPost = await Repository.findOne(PostsEntity, {
-                        $or: [{ slug }, { title: raw.title }]
-                    });
-
-                    if (existingPost) {
+                    if (duplicatePost) {
                         PostingWorker.logger.log(
-                            `[pipeline][WARN] Post already exists for "${raw.title}" (slug: ${slug}). Skipping posting.`
+                            `[pipeline][WARN] Duplicate detected for "${raw.title}" (matched: "${duplicatePost.title}"). Skipping.`
                         );
                         await Repository.updateOne(
                             FeedRawEntity,
                             Repository.queryBuilder({ id: raw.id }),
-                            { pipelineState: PIPELINE_STATE.DONE, postRef: existingPost.id }
+                            { pipelineState: PIPELINE_STATE.DONE, postRef: duplicatePost.id }
                         );
                         continue;
                     }
 
-                    // Validate feature image
+                    // Generate slug (after dedup check to avoid unnecessary work)
+                    const slug = this.generateSlug(raw.title);
+
+                    // Validate feature image (always ensure a valid image or placeholder)
                     let validatedImage = '';
                     try {
                         validatedImage = await this.imagePipeline.validateAndResolveImage(
@@ -105,6 +103,17 @@ export class PostingWorker {
                         PostingWorker.logger.log(
                             `[pipeline][WARN] Failed to validate feature image for post ${raw.id}: ${e.message}`
                         );
+                    }
+
+                    // Fallback: if image is still empty, force a placeholder
+                    if (!validatedImage) {
+                        try {
+                            validatedImage = await this.imagePipeline.createAndSavePlaceholder(raw.title || 'Post');
+                        } catch {
+                            PostingWorker.logger.log(
+                                `[pipeline][WARN] Placeholder generation also failed for post ${raw.id}`
+                            );
+                        }
                     }
 
                     // Sanitize tags
@@ -413,6 +422,53 @@ export class PostingWorker {
 
         const suffix = Date.now().toString(36).slice(-4);
         return `${slug}-${suffix}`;
+    }
+
+    // ─── Duplicate Detection ───────────────────────────────────
+
+    /**
+     * Normalizes a title for fuzzy comparison:
+     * lowercase, strip accents, collapse whitespace, remove punctuation.
+     */
+    private normalizeTitle(title: string): string {
+        return title
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // strip accents
+            .replace(/[^a-z0-9\s]/g, '')     // remove punctuation
+            .replace(/\s+/g, ' ')            // collapse whitespace
+            .trim();
+    }
+
+    /**
+     * Finds a duplicate post by normalized title similarity.
+     * Checks recent posts (last 200) for exact normalized match.
+     */
+    private async findDuplicatePost(PostsEntity: any, title: string): Promise<any | null> {
+        if (!title) return null;
+
+        const normalizedInput = this.normalizeTitle(title);
+
+        // First: exact title match (fast DB query)
+        const exactMatch = await Repository.findOne(PostsEntity, { title });
+        if (exactMatch) return exactMatch;
+
+        // Second: check recent posts for normalized title match
+        const recentPosts = await Repository.findAll(PostsEntity, {
+            limit: 200,
+            sortBy: 'createdAt',
+            sort: 'DESC',
+        });
+
+        if (recentPosts?.data) {
+            for (const post of recentPosts.data) {
+                if (this.normalizeTitle(post.title || '') === normalizedInput) {
+                    return post;
+                }
+            }
+        }
+
+        return null;
     }
 
     // ─── Helpers ──────────────────────────────────────────────

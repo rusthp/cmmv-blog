@@ -28,14 +28,16 @@ let mediasServiceInstance: any = null;
 export class AutoPipelineService {
     private static readonly logger = new Logger("AutoPipelineService");
 
-    private readonly classificationWorker: ClassificationWorker;
-    private readonly generationWorker: GenerationWorker;
-    private readonly postingWorker: PostingWorker;
-    private readonly imagePipeline: ImagePipelineWorker;
+    private static classificationWorkerInstance: ClassificationWorker;
+    private static generationWorkerInstance: GenerationWorker;
+    private static postingWorkerInstance: PostingWorker;
+    private static imagePipelineInstance: ImagePipelineWorker;
 
     constructor(
         _aiContentService: AIContentService
     ) {
+        if (AutoPipelineService.postingWorkerInstance) return;
+
         try {
             if (Application.instance && Application.instance.providersMap.has("MediasService")) {
                 mediasServiceInstance = Application.instance.providersMap.get("MediasService");
@@ -44,14 +46,14 @@ export class AutoPipelineService {
             AutoPipelineService.logger.log(`[pipeline][WARN] Failed to preload MediasService: ${e.message}`);
         }
 
-        this.imagePipeline = new ImagePipelineWorker(mediasServiceInstance);
-        this.classificationWorker = new ClassificationWorker();
-        this.generationWorker = new GenerationWorker();
-        this.postingWorker = new PostingWorker(this.imagePipeline);
+        AutoPipelineService.imagePipelineInstance = new ImagePipelineWorker(mediasServiceInstance);
+        AutoPipelineService.classificationWorkerInstance = new ClassificationWorker();
+        AutoPipelineService.generationWorkerInstance = new GenerationWorker();
+        AutoPipelineService.postingWorkerInstance = new PostingWorker(AutoPipelineService.imagePipelineInstance);
     }
 
     // ─── Kill Switch ──────────────────────────────────────────
-    private isEnabled(): boolean {
+    private static isEnabled(): boolean {
         return Config.get<boolean>("blog.autoPipelineEnabled", false);
     }
 
@@ -62,8 +64,8 @@ export class AutoPipelineService {
     @Cron(CronExpression.EVERY_2_HOURS)
     async classifyWorkerCron() {
         try {
-            if (!this.isEnabled()) return;
-            await this.classificationWorker.run();
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.classificationWorkerInstance.run();
         } catch (err) {
             console.error('[pipeline] classifyWorkerCron error:', err);
         }
@@ -72,8 +74,8 @@ export class AutoPipelineService {
     @Cron(CronExpression.EVERY_30_MINUTES)
     async generateWorkerCron() {
         try {
-            if (!this.isEnabled()) return;
-            await this.generationWorker.run();
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.generationWorkerInstance.run();
         } catch (err) {
             console.error('[pipeline] generateWorkerCron error:', err);
         }
@@ -82,8 +84,8 @@ export class AutoPipelineService {
     @Cron(CronExpression.EVERY_10_MINUTES)
     async postWorkerCron() {
         try {
-            if (!this.isEnabled()) return;
-            await this.postingWorker.run();
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.postingWorkerInstance.run();
         } catch (err) {
             console.error('[pipeline] postWorkerCron error:', err);
         }
@@ -94,15 +96,15 @@ export class AutoPipelineService {
     // ═══════════════════════════════════════════════════════════
 
     async classifyWorker(): Promise<void> {
-        return this.classificationWorker.run();
+        return AutoPipelineService.classificationWorkerInstance.run();
     }
 
     async generateWorker(): Promise<void> {
-        return this.generationWorker.run();
+        return AutoPipelineService.generationWorkerInstance.run();
     }
 
     async postWorker(): Promise<void> {
-        return this.postingWorker.run();
+        return AutoPipelineService.postingWorkerInstance.run();
     }
 
     /**
@@ -110,6 +112,6 @@ export class AutoPipelineService {
      * (e.g., manual re-processing, API endpoints).
      */
     async validateAndResolveImage(url: string, title: string, channelReferer?: string): Promise<string> {
-        return this.imagePipeline.validateAndResolveImage(url, title, channelReferer);
+        return AutoPipelineService.imagePipelineInstance.validateAndResolveImage(url, title, channelReferer);
     }
 }

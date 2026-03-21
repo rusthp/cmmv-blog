@@ -365,15 +365,14 @@ export class ImagePipelineWorker {
      */
     async createAndSavePlaceholder(title: string): Promise<string> {
         try {
-            const bgColor = '#1e1e2f';
-            const textColor = '#ffffff';
+            const siteName = Config.get<string>("blog.autoPipelineSiteName", "ProPlay News");
 
             const words = (title || 'No Title').split(' ');
             let lines: string[] = [];
             let currentLine = '';
 
             for (const word of words) {
-                if ((currentLine + word).length > 40) {
+                if ((currentLine + word).length > 35) {
                     lines.push(currentLine);
                     currentLine = word + ' ';
                 } else {
@@ -384,10 +383,10 @@ export class ImagePipelineWorker {
             lines = lines.slice(0, 3);
 
             let textElements = '';
-            const startY = 200 - (lines.length - 1) * 20;
+            const startY = 180 - (lines.length - 1) * 18;
 
             lines.forEach((line, index) => {
-                textElements += `<text x="50%" y="${startY + index * 40}" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" fill="${textColor}" font-weight="bold">${line
+                textElements += `<text x="50%" y="${startY + index * 38}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="26" fill="#ffffff" font-weight="700" letter-spacing="0.5">${line
                     .trim()
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
@@ -395,12 +394,28 @@ export class ImagePipelineWorker {
             });
 
             const svg = `<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100%" height="100%" fill="${bgColor}"/>
-                <g opacity="0.1">
-                    <circle cx="10%" cy="20%" r="50" fill="#ffffff"/>
-                    <circle cx="90%" cy="80%" r="100" fill="#ffffff"/>
+                <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#7c3aed"/>
+                        <stop offset="30%" style="stop-color:#1a1a2e"/>
+                        <stop offset="70%" style="stop-color:#1a1a2e"/>
+                        <stop offset="100%" style="stop-color:#7c3aed"/>
+                    </linearGradient>
+                    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#ffcc00"/>
+                        <stop offset="100%" style="stop-color:#ffa500"/>
+                    </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#bg)"/>
+                <g opacity="0.08">
+                    <circle cx="15%" cy="25%" r="80" fill="#7c3aed"/>
+                    <circle cx="85%" cy="75%" r="120" fill="#7c3aed"/>
+                    <circle cx="70%" cy="15%" r="40" fill="#ffcc00"/>
                 </g>
+                <rect x="50%" y="310" width="120" height="3" rx="1.5" fill="url(#accent)" transform="translate(-60,0)"/>
                 ${textElements}
+                <text x="50%" y="340" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="14" fill="#ffcc00" font-weight="600" letter-spacing="2" text-transform="uppercase">${siteName
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
             </svg>`;
 
             const buffer = Buffer.from(svg, 'utf-8');

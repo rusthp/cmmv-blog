@@ -689,15 +689,10 @@ export class ChannelsService {
             if (existingItem)
                 return { success: false, message: "Item already exists" };
 
-            // Also check if this already exists as a published post
+            // Also check if this already exists as a published post (normalized title match)
             const PostsEntity = Repository.getEntity("PostsEntity");
             if (PostsEntity) {
-                const existingPost = await Repository.findOne(PostsEntity, {
-                    $or: [
-                        { title: title },
-                        { slug: this.generateSlug(title) }
-                    ]
-                });
+                const existingPost = await Repository.findOne(PostsEntity, { title: title });
 
                 if (existingPost) {
                     this.logger.log(`Item "${title}" already exists as a published post. Skipping.`);
@@ -1236,17 +1231,4 @@ export class ChannelsService {
         }
     }
 
-    // ─── Slug Generation ──────────────────────────────────────
-    private generateSlug(title: string): string {
-        if (!title) return `post-${Date.now()}`;
-
-        return title
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // Remove accents
-            .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
-            .trim()
-            .replace(/\s+/g, '-') // Replace spaces with hyphens
-            .replace(/-+/g, '-'); // Remove consecutive hyphens
-    }
 }
