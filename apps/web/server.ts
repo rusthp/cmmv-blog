@@ -433,6 +433,12 @@ async function bootstrap() {
             if (served) return;
         }
 
+        if (url.startsWith('/src/theme-') && /\.\w+$/.test(url)) {
+            const srcPath = path.resolve(process.cwd(), '.' + url);
+            const served = await serveStaticFile(req, res, srcPath);
+            if (served) return;
+        }
+
         if (url !== '/' && !url.includes('?') && /\.\w+$/.test(url)) {
             const staticPath = path.resolve('dist', '.' + url);
             const served = await serveStaticFile(req, res, staticPath);
