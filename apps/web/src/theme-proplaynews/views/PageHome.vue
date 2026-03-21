@@ -264,12 +264,12 @@
                                     </a>
                                     <div class="p-3">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
-                                                {{ post.title.length > 65 ? post.title.substring(0, 65) + '...' : post.title }}
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2 overflow-hidden">
+                                                {{ post.title.length > 55 ? post.title.substring(0, 55) + '...' : post.title }}
                                             </h3>
                                         </a>
-                                        <p class="text-gray-600 text-sm mb-2 line-clamp-2">
-                                            {{ post.excerpt || (stripHtml(post.content).length > 70 ? stripHtml(post.content).substring(0, 70) + '...' : stripHtml(post.content)) }}
+                                        <p class="text-gray-600 text-sm mb-2 line-clamp-2 overflow-hidden">
+                                            {{ post.excerpt || (stripHtml(post.content).length > 60 ? stripHtml(post.content).substring(0, 60) + '...' : stripHtml(post.content)) }}
                                         </p>
                                         <div class="flex justify-between items-center text-xs text-gray-500">
                                             <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
@@ -322,12 +322,12 @@
                                         </a>
                                         <div class="p-3">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                                                        <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
-                                            {{ post.title.length > 65 ? post.title.substring(0, 65) + '...' : post.title }}
-                                        </h3>
+                                                <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2 overflow-hidden">
+                                                    {{ post.title.length > 55 ? post.title.substring(0, 55) + '...' : post.title }}
+                                                </h3>
                                             </a>
-                                            <p class="text-gray-600 text-sm mb-2 line-clamp-2">
-                                                {{ post.excerpt || (stripHtml(post.content).length > 42 ? stripHtml(post.content).substring(0, 42) + '...' : stripHtml(post.content)) }}
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-2 overflow-hidden">
+                                                {{ post.excerpt || (stripHtml(post.content).length > 50 ? stripHtml(post.content).substring(0, 50) + '...' : stripHtml(post.content)) }}
                                             </p>
                                             <div class="flex justify-between items-center text-xs text-gray-500">
                                                 <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>

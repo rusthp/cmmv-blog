@@ -692,10 +692,14 @@ export class ImagePipelineWorker {
             const placeholderWidth = Config.get<number>("blog.featureImage.width", 960);
             const placeholderHeight = Config.get<number>("blog.featureImage.height", 504);
 
-            const words = (title || 'No Title').split(' ');
+            // Truncate title to avoid overflow in the SVG
+            let displayTitle = (title || 'No Title');
+            if (displayTitle.length > 80) displayTitle = displayTitle.substring(0, 77) + '...';
+
+            const words = displayTitle.split(' ');
             let lines: string[] = [];
             let currentLine = '';
-            const maxCharsPerLine = Math.floor(placeholderWidth / 22);
+            const maxCharsPerLine = Math.floor(placeholderWidth / 28);
 
             for (const word of words) {
                 if ((currentLine + word).length > maxCharsPerLine) {
@@ -706,14 +710,15 @@ export class ImagePipelineWorker {
                 }
             }
             if (currentLine) lines.push(currentLine);
-            lines = lines.slice(0, 3);
+            lines = lines.slice(0, 2);
 
             let textElements = '';
             const centerY = placeholderHeight / 2;
-            const startY = centerY - (lines.length - 1) * 18;
+            const lineHeight = 32;
+            const startY = centerY - ((lines.length - 1) * lineHeight) / 2;
 
             lines.forEach((line, index) => {
-                textElements += `<text x="50%" y="${startY + index * 38}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="26" fill="#ffffff" font-weight="700" letter-spacing="0.5">${line
+                textElements += `<text x="50%" y="${startY + index * lineHeight}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="22" fill="#ffffff" font-weight="600" letter-spacing="0.3">${line
                     .trim()
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
