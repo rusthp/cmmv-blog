@@ -286,7 +286,13 @@ export class AnalyticsService {
      */
     async getSummary() {
         const AnalyticsSummaryEntity = Repository.getEntity("AnalyticsSummaryEntity");
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const cutoffDate = `${thirtyDaysAgo.getFullYear()}-${(thirtyDaysAgo.getMonth() + 1).toString().padStart(2, '0')}-${thirtyDaysAgo.getDate().toString().padStart(2, '0')}`;
+
         const summary = await Repository.findAll(AnalyticsSummaryEntity, {
+            date: MoreThanOrEqual(cutoffDate),
             limit: 30,
             sortBy: "date",
             sort: "desc"
