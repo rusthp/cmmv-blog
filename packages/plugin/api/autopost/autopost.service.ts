@@ -229,8 +229,11 @@ export class AutopostService {
             link: postUrl
         };
 
+        if (includeImage && payload.featureImage)
+            requestData.picture = payload.featureImage;
+
         try {
-            const apiUrl = `https://graph.facebook.com/v18.0/${pageId}/feed`;
+            const apiUrl = `https://graph.facebook.com/v21.0/${pageId}/feed`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -256,6 +259,81 @@ export class AutopostService {
     }
 
     /**
+     * Builds an OAuth 1.0a Authorization header for Twitter requests.
+     */
+    private buildTwitterOAuthHeader(
+        method: string,
+        url: string,
+        oauth: { consumer_key: string; consumer_secret: string; token: string; token_secret: string },
+        extraParams: Record<string, string> = {}
+    ): string {
+        const crypto = require('crypto');
+        const nonce = crypto.randomBytes(16).toString('hex');
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+
+        const oauthParams: Record<string, string> = {
+            oauth_consumer_key: oauth.consumer_key,
+            oauth_nonce: nonce,
+            oauth_signature_method: 'HMAC-SHA1',
+            oauth_timestamp: timestamp,
+            oauth_token: oauth.token,
+            oauth_version: '1.0',
+            ...extraParams,
+        };
+
+        const parameterString = Object.entries(oauthParams)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join('&');
+
+        const signatureBase = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(parameterString)}`;
+        const signingKey = `${encodeURIComponent(oauth.consumer_secret)}&${encodeURIComponent(oauth.token_secret)}`;
+        const signature = crypto.createHmac('sha1', signingKey).update(signatureBase).digest('base64');
+
+        return 'OAuth ' + [
+            ...Object.entries(oauthParams),
+            ['oauth_signature', signature],
+        ]
+            .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
+            .join(', ');
+    }
+
+    /**
+     * Uploads an image to Twitter v1.1 media/upload and returns the media_id.
+     * Falls back to null on any error so the tweet still sends without image.
+     */
+    private async uploadImageToTwitter(
+        imageUrl: string,
+        oauth: { consumer_key: string; consumer_secret: string; token: string; token_secret: string }
+    ): Promise<string | null> {
+        try {
+            const imgResponse = await fetch(imageUrl, { signal: AbortSignal.timeout(10000) });
+            if (!imgResponse.ok) return null;
+
+            const buffer = Buffer.from(await imgResponse.arrayBuffer());
+            if (buffer.length > 5 * 1024 * 1024) return null; // Twitter 5 MB limit
+
+            const uploadUrl = 'https://upload.twitter.com/1.1/media/upload.json';
+            const authHeader = this.buildTwitterOAuthHeader('POST', uploadUrl, oauth);
+
+            const form = new FormData();
+            form.append('media_data', buffer.toString('base64'));
+
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: { 'Authorization': authHeader },
+                body: form,
+            });
+
+            if (!uploadResponse.ok) return null;
+            const uploadData: any = await uploadResponse.json();
+            return uploadData.media_id_string ?? null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
      * Post to Twitter
      * @param payload - The payload containing post details
      */
@@ -273,63 +351,39 @@ export class AutopostService {
         const message = this.formatPostMessage(payload, postFormat);
 
         let postUrl = payload.url;
-
         if (postUrl.includes('utm_source={network}'))
             postUrl = postUrl.replace('utm_source={network}', 'utm_source=twitter');
 
+        const oauth = {
+            consumer_key: apiKey,
+            consumer_secret: apiSecret,
+            token: accessToken,
+            token_secret: accessTokenSecret,
+        };
+
         try {
-            const crypto = require('crypto');
-            const oauth = {
-                consumer_key: apiKey,
-                consumer_secret: apiSecret,
-                token: accessToken,
-                token_secret: accessTokenSecret
-            };
-
-            const nowTimestamp = Math.floor(Date.now() / 1000);
-            const oauthNonce = crypto.randomBytes(16).toString('hex');
-
-            const parameterString = [
-                'oauth_consumer_key=' + encodeURIComponent(oauth.consumer_key),
-                'oauth_nonce=' + encodeURIComponent(oauthNonce),
-                'oauth_signature_method=HMAC-SHA1',
-                'oauth_timestamp=' + nowTimestamp,
-                'oauth_token=' + encodeURIComponent(oauth.token),
-                'oauth_version=1.0'
-            ].sort().join('&');
-
-            const method = 'POST';
-            const baseUrl = 'https://api.twitter.com/2/tweets';
-            const signatureBase = method + '&' + encodeURIComponent(baseUrl) + '&' + encodeURIComponent(parameterString);
-            const signingKey = encodeURIComponent(oauth.consumer_secret) + '&' + encodeURIComponent(oauth.token_secret);
-            const signature = crypto.createHmac('sha1', signingKey).update(signatureBase).digest('base64');
-
-            const authHeader = 'OAuth ' + [
-                'oauth_consumer_key="' + encodeURIComponent(oauth.consumer_key) + '"',
-                'oauth_nonce="' + encodeURIComponent(oauthNonce) + '"',
-                'oauth_signature="' + encodeURIComponent(signature) + '"',
-                'oauth_signature_method="HMAC-SHA1"',
-                'oauth_timestamp="' + nowTimestamp + '"',
-                'oauth_token="' + encodeURIComponent(oauth.token) + '"',
-                'oauth_version="1.0"'
-            ].join(', ');
-
             let tweetText = message;
-
             if (tweetText.length > 280)
                 tweetText = tweetText.substring(0, 277) + '...';
 
-            const tweetData = {
-                text: tweetText
-            };
+            const tweetData: any = { text: tweetText };
 
-            const response = await fetch('https://api.twitter.com/2/tweets', {
+            if (includeImage && payload.featureImage) {
+                const mediaId = await this.uploadImageToTwitter(payload.featureImage, oauth);
+                if (mediaId) tweetData.media = { media_ids: [mediaId] };
+                else AutopostService.logger.debug('Twitter image upload failed, posting without image');
+            }
+
+            const tweetUrl = 'https://api.twitter.com/2/tweets';
+            const authHeader = this.buildTwitterOAuthHeader('POST', tweetUrl, oauth);
+
+            const response = await fetch(tweetUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': authHeader,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(tweetData)
+                body: JSON.stringify(tweetData),
             });
 
             if (!response.ok) {
@@ -339,14 +393,13 @@ export class AutopostService {
 
             const data = await response.json();
             AutopostService.logger.debug(`Twitter API response: ${JSON.stringify(data)}`);
-            return;
         } catch (error: any) {
             throw new Error(`Failed to post to Twitter: ${error.message || 'Unknown error'}`);
         }
     }
 
     /**
-     * Post to LinkedIn
+     * Post to LinkedIn using the current Posts API (/rest/posts).
      * @param payload - The payload containing post details
      * @returns
      */
@@ -361,17 +414,15 @@ export class AutopostService {
         const message = this.formatPostMessage(payload, postFormat);
 
         let postUrl = payload.url;
-
         if (postUrl.includes('utm_source={network}'))
             postUrl = postUrl.replace('utm_source={network}', 'utm_source=linkedin');
 
         try {
-            const profileResponse = await fetch('https://api.linkedin.com/v2/me', {
-                method: 'GET',
+            // Resolve author URN via /v2/userinfo (works with both person and organization tokens)
+            const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                }
+                },
             });
 
             if (!profileResponse.ok) {
@@ -380,53 +431,44 @@ export class AutopostService {
             }
 
             const profileData = await profileResponse.json();
-            const personUrn = profileData.id ? `urn:li:person:${profileData.id}` : null;
+            const authorUrn = profileData.sub ? `urn:li:person:${profileData.sub}` : null;
 
-            if (!personUrn) {
-                throw new Error('Could not retrieve LinkedIn profile URN');
-            }
+            if (!authorUrn)
+                throw new Error('Could not retrieve LinkedIn author URN');
 
-            const shareData = {
-                author: personUrn,
-                lifecycleState: 'PUBLISHED',
-                specificContent: {
-                    'com.linkedin.ugc.ShareContent': {
-                        shareCommentary: {
-                            text: message
-                        },
-                        shareMediaCategory: 'ARTICLE',
-                        media: [{
-                            status: 'READY',
-                            description: {
-                                text: payload.excerpt || payload.title
-                            },
-                            originalUrl: postUrl,
-                            title: {
-                                text: payload.title
-                            }
-                        }]
-                    }
+            // Build post body using the new /rest/posts API (LinkedIn-Version: 202404)
+            const postData: any = {
+                author: authorUrn,
+                commentary: message,
+                visibility: 'PUBLIC',
+                distribution: {
+                    feedDistribution: 'MAIN_FEED',
+                    targetEntities: [],
+                    thirdPartyDistributionChannels: [],
                 },
-                visibility: {
-                    'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
-                }
+                content: {
+                    article: {
+                        source: postUrl,
+                        title: payload.title,
+                        description: payload.excerpt || payload.title,
+                    },
+                },
+                lifecycleState: 'PUBLISHED',
+                isReshareDisabledByAuthor: false,
             };
 
-            if (includeImage && payload.featureImage) {
-                const mediaWithThumbnail = shareData.specificContent['com.linkedin.ugc.ShareContent'].media[0] as any;
-                mediaWithThumbnail.thumbnails = [{
-                    url: payload.featureImage
-                }];
-            }
+            if (includeImage && payload.featureImage)
+                postData.content.article.thumbnail = payload.featureImage;
 
-            const shareResponse = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+            const shareResponse = await fetch('https://api.linkedin.com/rest/posts', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
-                    'X-Restli-Protocol-Version': '2.0.0'
+                    'LinkedIn-Version': '202404',
+                    'X-Restli-Protocol-Version': '2.0.0',
                 },
-                body: JSON.stringify(shareData)
+                body: JSON.stringify(postData),
             });
 
             if (!shareResponse.ok) {
@@ -434,9 +476,7 @@ export class AutopostService {
                 throw new Error(`LinkedIn API error posting: ${errorData?.message || shareResponse.statusText}`);
             }
 
-            const data = await shareResponse.json();
-            AutopostService.logger.debug(`LinkedIn API response: ${JSON.stringify(data)}`);
-            return;
+            AutopostService.logger.debug(`LinkedIn post created (status: ${shareResponse.status})`);
         } catch (error: any) {
             throw new Error(`Failed to post to LinkedIn: ${error.message || 'Unknown error'}`);
         }
