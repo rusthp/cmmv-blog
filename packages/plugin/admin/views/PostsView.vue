@@ -73,6 +73,15 @@
                     </svg>
                     Refresh
                 </button>
+                <button v-if="selectedPosts.length > 0" @click="bulkDeleteSelected"
+                    :disabled="bulkDeleteLoading"
+                    class="px-2.5 py-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span v-if="bulkDeleteLoading">Deleting...</span>
+                    <span v-else>Delete Selected ({{ selectedPosts.length }})</span>
+                </button>
             </div>
         </div>
 
@@ -123,8 +132,12 @@
 
             <!-- Mobile Card View -->
             <div class="block md:hidden space-y-4 mb-6">
-                <div v-for="post in paginatedPosts" :key="post.id" class="bg-neutral-800 rounded-lg overflow-hidden">
-                    <div class="p-4 border-b border-neutral-700 flex items-center">
+                <div v-for="post in paginatedPosts" :key="post.id"
+                    class="rounded-lg overflow-hidden"
+                    :class="selectedPosts.includes(post.id) ? 'bg-red-950/30 border border-red-800/40' : 'bg-neutral-800'">
+                    <div class="p-4 border-b border-neutral-700 flex items-center gap-3">
+                        <input type="checkbox" v-model="selectedPosts" :value="post.id"
+                            class="h-4 w-4 rounded border-neutral-600 bg-neutral-700 text-red-600 focus:ring-red-500 cursor-pointer flex-shrink-0" />
                         <div class="flex-1 min-w-0">
                             <div class="font-medium text-white truncate">{{ post.title }}</div>
                             <div class="flex items-center space-x-2 mt-1">
@@ -234,6 +247,10 @@
                     <table class="w-full text-left">
                         <thead class="bg-neutral-700 text-neutral-300 text-sm">
                             <tr>
+                                <th class="p-4 w-10">
+                                    <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+                                        class="h-4 w-4 rounded border-neutral-600 bg-neutral-700 text-red-600 focus:ring-red-500 cursor-pointer" />
+                                </th>
                                 <th class="p-4 w-16">Image</th>
                                 <th class="p-4 min-w-[250px]">Title</th>
                                 <th class="p-4 w-44 lg:w-48">Categories</th>
@@ -242,7 +259,13 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-neutral-700">
-                            <tr v-for="post in paginatedPosts" :key="post.id" class="hover:bg-neutral-750">
+                            <tr v-for="post in paginatedPosts" :key="post.id"
+                                class="hover:bg-neutral-750"
+                                :class="selectedPosts.includes(post.id) ? 'bg-red-950/20' : ''">
+                                <td class="p-4">
+                                    <input type="checkbox" v-model="selectedPosts" :value="post.id"
+                                        class="h-4 w-4 rounded border-neutral-600 bg-neutral-700 text-red-600 focus:ring-red-500 cursor-pointer" />
+                                </td>
                                 <td class="p-2">
                                     <div class="h-14 w-24 rounded-md bg-neutral-700 overflow-hidden flex items-center justify-center">
                                         <img v-if="post.featureImage" :src="post.featureImage" alt="Feature image"
@@ -922,6 +945,7 @@ const filters = ref({
 })
 
 const handlePageChange = (newPage) => {
+    selectedPosts.value = []
     currentPage.value = newPage;
     updateUrlParams();
     loadPosts();
@@ -1106,6 +1130,40 @@ async function deletePost(id) {
     }
 }
 
+const bulkDeleteLoading = ref(false)
+
+async function bulkDeleteSelected() {
+    const count = selectedPosts.value.length
+    if (count === 0) return
+
+    if (!confirm(`Delete ${count} post${count > 1 ? 's' : ''}? This cannot be undone.`)) return
+
+    bulkDeleteLoading.value = true
+    let deleted = 0
+    let failed = 0
+
+    for (const id of [...selectedPosts.value]) {
+        try {
+            await adminClient.posts.delete(id)
+            deleted++
+        } catch (err) {
+            console.error('Failed to delete post', id, err)
+            failed++
+        }
+    }
+
+    bulkDeleteLoading.value = false
+    selectedPosts.value = []
+
+    if (failed === 0) {
+        showNotification('success', `${deleted} post${deleted > 1 ? 's' : ''} deleted successfully`)
+    } else {
+        showNotification('warning', `${deleted} deleted, ${failed} failed`)
+    }
+
+    await loadPosts()
+}
+
 function formatDate(timestamp) {
     if (!timestamp) return 'N/A'
     const date = new Date(timestamp)
@@ -1148,6 +1206,7 @@ function setStatusFilter(status) {
         searchQuery.value = ''
     }
 
+    selectedPosts.value = []
     filters.value.status = status
 }
 
