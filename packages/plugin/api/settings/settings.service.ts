@@ -81,6 +81,13 @@ const SENSITIVE_KEYS = [
     // Firebase settings
     "blog.firebaseClientEmail",
     "blog.firebasePrivateKey",
+    // Auto-pipeline scheduling
+    "blog.autoPipelineBaseIntervalMinutes",
+    "blog.autoPipelineMinIntervalMinutes",
+    "blog.autoPipelineBacklogFactor",
+    "blog.autoPipelineScheduleStartHour",
+    "blog.autoPipelineScheduleEndHour",
+    "blog.autoPipelineMaxPostsPerCycle",
 ];
 
 @Service("blog_settings")

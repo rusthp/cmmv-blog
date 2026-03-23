@@ -1605,6 +1605,58 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Pipeline Scheduling -->
+                            <div class="space-y-4">
+                                <h3 class="text-lg font-medium text-white border-b border-neutral-700 pb-2">
+                                    Pipeline Scheduling
+                                </h3>
+                                <p class="text-sm text-neutral-400">
+                                    Controls how the auto-pipeline spaces out published posts throughout the day.
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Base Interval (minutes)</label>
+                                        <input type="number" min="10" max="480" v-model.number="settings.autoPipelineBaseIntervalMinutes"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Default gap between posts when queue is empty (default: 60)</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Min Interval (minutes)</label>
+                                        <input type="number" min="5" max="120" v-model.number="settings.autoPipelineMinIntervalMinutes"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Minimum gap even when queue is large (default: 20)</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Max Posts per Cycle</label>
+                                        <input type="number" min="1" max="20" v-model.number="settings.autoPipelineMaxPostsPerCycle"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Posts created per pipeline run (default: 3)</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Backlog Factor</label>
+                                        <input type="number" min="0" max="20" v-model.number="settings.autoPipelineBacklogFactor"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Reduces interval by N min per queued post (default: 5)</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Active Hours — Start (0–23)</label>
+                                        <input type="number" min="0" max="23" v-model.number="settings.autoPipelineScheduleStartHour"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Posts resume after this hour (default: 7 = 07:00)</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Silent Hours — End (0–23)</label>
+                                        <input type="number" min="0" max="23" v-model.number="settings.autoPipelineScheduleEndHour"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">No posts scheduled after this hour (default: 1 = 01:00)</p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 p-3 bg-neutral-700/50 rounded-md text-xs text-neutral-400">
+                                    <strong class="text-neutral-300">Formula:</strong>
+                                    interval = max(Base − queue_size × Backlog Factor, Min Interval)<br>
+                                    <span class="text-neutral-500">Example with defaults: 3 posts queued → 60 − (3×5) = 45 min between posts</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -4371,6 +4423,12 @@ const settings = ref({
     autoPostFacebook: false,
     autoPostTwitter: false,
     autoPostLinkedIn: false,
+    autoPipelineBaseIntervalMinutes: 60,
+    autoPipelineMinIntervalMinutes: 20,
+    autoPipelineBacklogFactor: 5,
+    autoPipelineScheduleStartHour: 7,
+    autoPipelineScheduleEndHour: 1,
+    autoPipelineMaxPostsPerCycle: 3,
     autoPostDefaultFormat: "New post: {title} - {excerpt} {url}",
     autoPostSharePosts: true,
     autoPostSharePages: true,
