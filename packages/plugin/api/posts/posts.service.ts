@@ -1639,7 +1639,7 @@ export class PostsPublicService {
                 publishedAt: new Date()
             };
 
-            await Repository.updateOne(PostsEntity, { id }, updateData);
+            await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id }), updateData);
 
             if (post.pushNotification === true) {
                 await this.eventsService.emit("posts.published", post);
