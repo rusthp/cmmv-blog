@@ -718,16 +718,12 @@ export class RawService {
             const FeedRawEntity = Repository.getEntity("FeedRawEntity");
             const FeedChannelsEntity = Repository.getEntity("FeedChannelsEntity");
 
-            const raw = await Repository.findOne(FeedRawEntity, {
-                id: id
-            });
+            const raw = await Repository.findOne(FeedRawEntity, { id });
 
             if (!raw)
                 throw new Error(`Raw feed item with ID ${id} not found`);
 
-            const channel = await Repository.findOne(FeedChannelsEntity, {
-                id: raw.channel
-            });
+            const channel = await Repository.findOne(FeedChannelsEntity, { id: raw.channel });
 
             if (!channel)
                 throw new Error(`Channel with ID ${raw.channel} not found`);
@@ -735,36 +731,162 @@ export class RawService {
             if (!raw.link)
                 throw new Error(`Raw feed item with ID ${id} has no link`);
 
+            const updateData: any = { updatedAt: new Date() };
+
+            // Step 1: Try parser service
             try {
                 const parseResult = await this.parserService.parseContent(null, raw.link);
 
-                if (!parseResult || !parseResult.success || !parseResult.data) {
-                    throw new Error(`Failed to parse content from ${raw.link}`);
+                if (parseResult?.success && parseResult.data) {
+                    const data = parseResult.data;
+                    if (data.title) updateData.title = data.title;
+                    if (data.content) updateData.content = data.content;
+                    if (data.featureImage) updateData.featureImage = data.featureImage;
                 }
-
-                const data = parseResult.data;
-
-                const updateData: any = {
-                    updatedAt: new Date()
-                };
-
-                if (data.title) updateData.title = data.title;
-                if (data.content) updateData.content = data.content;
-                if (data.featureImage) updateData.featureImage = data.featureImage;
-
-                await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: id }), updateData);
-
-                return {
-                    success: true,
-                    message: "Raw feed item reprocessed successfully"
-                };
-            } catch (parseError) {
-                this.logger.error(`Error parsing content from ${raw.link}: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
-                throw new Error(`Failed to parse content: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            } catch {
+                this.logger.log(`Parser failed for ${raw.link}, trying direct image scrape...`);
             }
+
+            // Step 2: If still no image, scrape og:image directly from article page
+            if (!updateData.featureImage && !raw.featureImage) {
+                const scraped = await this.scrapeOgImageFromPage(raw.link);
+                if (scraped) {
+                    updateData.featureImage = scraped;
+                    this.logger.log(`Scraped og:image for raw ${id}: ${scraped}`);
+                }
+            }
+
+            await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id }), updateData);
+
+            return {
+                success: true,
+                message: updateData.featureImage
+                    ? "Raw feed item reprocessed and image updated"
+                    : "Raw feed item reprocessed (no image found)"
+            };
         } catch (error: unknown) {
             this.logger.error(`Error reprocessing raw feed item: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
+        }
+    }
+
+    /**
+     * Bulk update featureImage for all FeedRaw items that have no image.
+     * Scrapes og:image / twitter:image / JSON-LD from each article page.
+     */
+    async bulkUpdateRawImages(): Promise<{ success: boolean; updated: number; failed: number; skipped: number }> {
+        const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+        let updated = 0, failed = 0, skipped = 0;
+
+        try {
+            const items = await Repository.findAll(FeedRawEntity, {
+                limit: 200,
+                sortBy: 'createdAt',
+                sort: 'DESC',
+            });
+
+            for (const item of items?.data || []) {
+                if (item.featureImage?.trim()) {
+                    skipped++;
+                    continue;
+                }
+
+                if (!item.link) {
+                    failed++;
+                    continue;
+                }
+
+                try {
+                    const image = await this.scrapeOgImageFromPage(item.link);
+
+                    if (image) {
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: item.id }),
+                            { featureImage: image, updatedAt: new Date() }
+                        );
+                        updated++;
+                        this.logger.log(`[bulk-images] Updated image for "${item.title}"`);
+                    } else {
+                        failed++;
+                    }
+                } catch {
+                    failed++;
+                }
+
+                // Throttle to avoid hammering servers
+                await new Promise(r => setTimeout(r, 300));
+            }
+        } catch (err: any) {
+            this.logger.error(`bulkUpdateRawImages error: ${err.message}`);
+        }
+
+        return { success: true, updated, failed, skipped };
+    }
+
+    /**
+     * Lightweight og:image / twitter:image scraper — reads only the first 100KB.
+     */
+    private async scrapeOgImageFromPage(url: string): Promise<string> {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,*/*;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.7',
+                },
+                signal: controller.signal,
+                redirect: 'follow',
+            });
+
+            clearTimeout(timeout);
+            if (!response.ok) return '';
+
+            const reader = response.body?.getReader();
+            if (!reader) return '';
+
+            let html = '';
+            let bytes = 0;
+            const maxBytes = 100_000;
+
+            while (bytes < maxBytes) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                html += new TextDecoder().decode(value);
+                bytes += value.length;
+            }
+
+            try { reader.cancel(); } catch {}
+
+            const decode = (s: string) => s
+                .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+            // og:image
+            const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+            if (og?.[1]) return decode(og[1]);
+
+            // twitter:image
+            const tw = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+                      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+            if (tw?.[1]) return decode(tw[1]);
+
+            // JSON-LD
+            const ld = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (ld?.[1]) {
+                try {
+                    const json = JSON.parse(ld[1]);
+                    const img = json.image?.url || json.image?.[0]?.url || json.image?.[0] || json.image || json.thumbnailUrl;
+                    if (img && typeof img === 'string') return decode(img);
+                } catch {}
+            }
+
+            return '';
+        } catch {
+            return '';
         }
     }
 

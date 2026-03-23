@@ -32,6 +32,7 @@ export const useFeedClient = () => {
         cleanAllRaws: () => api.authRequest(`feed/raw/cleanAllRaws`, "GET"),
         cleanChannelRaws: (channelId: string) => api.authRequest(`feed/raw/cleanChannelRaws/${channelId}`, "GET"),
         classifyRawsWithAI: () => api.authRequest(`feed/raw/classifyRawsWithAI`, "POST"),
+        bulkUpdateImages: () => api.authRequest(`feed/raw/bulk-update-images`, "POST"),
         deleteRaw: (id: string) => api.authRequest(`feed/raw/${id}`, "DELETE")
     };
 

@@ -90,6 +90,11 @@ export class RawController {
         return await this.rawService.classifyRawsWithAI();
     }
 
+    @Post("bulk-update-images", { exclude: true })
+    @Auth("feedraw:update")
+    async bulkUpdateImages() {
+        return await this.rawService.bulkUpdateRawImages();
+    }
 
 }
 
