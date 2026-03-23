@@ -96,11 +96,16 @@ export class PostingWorker {
                     // Validate feature image with multi-fallback strategy
                     let validatedImage = '';
 
+                    // Channel referer helps CDNs like HLTV accept the download
+                    const channelReferer = raw?.channel?.url
+                        ? (() => { try { const u = new URL(raw.channel.url); return `${u.protocol}//${u.hostname}/`; } catch { return undefined; } })()
+                        : undefined;
+
                     // Step 1: Try the featureImage from RSS/parser
                     if (raw.featureImage) {
                         try {
                             validatedImage = await this.imagePipeline.validateAndResolveImage(
-                                raw.featureImage, raw.title || ''
+                                raw.featureImage, raw.title || '', channelReferer
                             );
                         } catch (e: any) {
                             PostingWorker.logger.log(
@@ -118,7 +123,7 @@ export class PostingWorker {
                                     `[pipeline] Scraped image from article page for ${raw.id}: ${scraped}`
                                 );
                                 validatedImage = await this.imagePipeline.validateAndResolveImage(
-                                    scraped, raw.title || ''
+                                    scraped, raw.title || '', channelReferer
                                 );
                             }
                         } catch (e: any) {

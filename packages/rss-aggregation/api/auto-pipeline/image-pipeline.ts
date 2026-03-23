@@ -107,6 +107,9 @@ export class ImagePipelineWorker {
                     'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                     'Referer': attemptReferer,
+                    'Sec-Fetch-Site': 'cross-site',
+                    'Sec-Fetch-Mode': 'no-cors',
+                    'Sec-Fetch-Dest': 'image',
                 };
 
                 try {
@@ -579,16 +582,70 @@ export class ImagePipelineWorker {
                 return '';
             }).catch(() => '');
 
-            // If we found an image URL, download it through the normal pipeline
+            // If we found an image URL, try to download it INSIDE the browser first
+            // (bypasses CDN hotlink protection like HLTV that blocks server-side fetches)
             if (extractedImageUrl) {
                 ImagePipelineWorker.logger.log(
                     `[pipeline] Browser extracted image from ${pageUrl}: ${extractedImageUrl.substring(0, 100)}`
                 );
 
+                // Step 1: Download via browser context (has cookies, proper headers)
+                try {
+                    const imageData: { data: string; type: string } | null = await page.evaluate(async (imgUrl: string) => {
+                        try {
+                            const resp = await fetch(imgUrl, { credentials: 'omit' });
+                            if (!resp.ok) return null;
+                            const ct = resp.headers.get('content-type') || '';
+                            if (!ct.startsWith('image/')) return null;
+                            const buffer = await resp.arrayBuffer();
+                            if (buffer.byteLength < 1000 || buffer.byteLength > 5 * 1024 * 1024) return null;
+                            const bytes = new Uint8Array(buffer);
+                            let binary = '';
+                            const chunkSize = 8192;
+                            for (let i = 0; i < bytes.length; i += chunkSize) {
+                                binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+                            }
+                            return { data: btoa(binary), type: ct };
+                        } catch { return null; }
+                    }, extractedImageUrl);
+
+                    if (imageData?.data) {
+                        ImagePipelineWorker.logger.log(`[pipeline] Browser-fetched image for ${pageUrl} (${imageData.type})`);
+                        await browser.close();
+                        browser = null;
+
+                        const base64Data = `data:${imageData.type};base64,${imageData.data}`;
+                        const finalUrl = this.mediasServiceInstance
+                            ? await this.mediasServiceInstance.getImageUrl(base64Data, 'webp', undefined, undefined, 80, title, title)
+                            : '';
+
+                        if (finalUrl) {
+                            const hash = this.hashBuffer(Buffer.from(imageData.data, 'base64'));
+                            const ImageCacheEntity = Repository.getEntity("ImageCacheEntity");
+                            if (ImageCacheEntity) {
+                                const exists = await Repository.findOne(ImageCacheEntity, { hash });
+                                if (!exists) {
+                                    await Repository.insert(ImageCacheEntity, {
+                                        originalUrl: extractedImageUrl,
+                                        localPath: finalUrl,
+                                        sourceDomain: new URL(extractedImageUrl).hostname,
+                                        mimeType: imageData.type,
+                                        fileSize: imageData.data.length * 0.75,
+                                        hash,
+                                        lastUsedAt: new Date(),
+                                    });
+                                }
+                            }
+                            return finalUrl;
+                        }
+                    }
+                } catch (browserFetchErr: any) {
+                    ImagePipelineWorker.logger.log(`[pipeline][WARN] Browser fetch failed for ${extractedImageUrl}: ${browserFetchErr.message}`);
+                }
+
+                // Step 2: Fall back to server-side download
                 await browser.close();
                 browser = null;
-
-                // Process through normal image pipeline (download, convert, cache)
                 const result = await this.validateAndResolveImage(extractedImageUrl, title);
                 if (result) return result;
             }
