@@ -373,6 +373,77 @@ export class ChannelsService {
      * Get default scraping configuration
      * Can be overridden per channel
      */
+    /**
+     * Normalizes a title to a set of meaningful words for similarity comparison.
+     * Strips accents, punctuation, stop words, and short tokens.
+     */
+    private titleToWordSet(title: string): Set<string> {
+        const STOP_WORDS = new Set([
+            'a', 'o', 'e', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas',
+            'um', 'uma', 'para', 'por', 'com', 'que', 'se', 'ao', 'aos', 'às',
+            'the', 'a', 'an', 'and', 'or', 'for', 'to', 'of', 'in', 'on', 'at',
+            'is', 'are', 'was', 'be', 'by', 'as', 'it', 'its', 'with', 'from',
+        ]);
+
+        return new Set(
+            title
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+        );
+    }
+
+    /**
+     * Jaccard similarity between two word sets: |A ∩ B| / |A ∪ B|
+     */
+    private jaccardSimilarity(a: Set<string>, b: Set<string>): number {
+        if (a.size === 0 && b.size === 0) return 1;
+        const intersection = new Set([...a].filter(w => b.has(w)));
+        const union = new Set([...a, ...b]);
+        return intersection.size / union.size;
+    }
+
+    /**
+     * Checks if a semantically similar title already exists in the feed queue
+     * within the last 48 hours. Threshold: 55% Jaccard word overlap.
+     * Prevents the same news event from different sources flooding the pipeline.
+     */
+    private async isSimilarTitleInRecentFeed(FeedRawEntity: any, title: string, pubDate: Date): Promise<boolean> {
+        try {
+            const windowStart = new Date(pubDate.getTime() - 48 * 60 * 60 * 1000);
+            const SIMILARITY_THRESHOLD = 0.55;
+
+            const recentItems = await Repository.findAll(FeedRawEntity, {
+                limit: 300,
+                sortBy: 'createdAt',
+                sort: 'DESC',
+            });
+
+            if (!recentItems?.data?.length) return false;
+
+            const inputWords = this.titleToWordSet(title);
+            if (inputWords.size < 3) return false; // Too short to compare reliably
+
+            for (const item of recentItems.data) {
+                if (!item.title) continue;
+                if (item.createdAt && new Date(item.createdAt) < windowStart) continue;
+
+                const existingWords = this.titleToWordSet(item.title);
+                if (existingWords.size < 3) continue;
+
+                const score = this.jaccardSimilarity(inputWords, existingWords);
+                if (score >= SIMILARITY_THRESHOLD) return true;
+            }
+
+            return false;
+        } catch {
+            return false; // Never block on error
+        }
+    }
+
     private getDefaultScrapingConfig(): ScrapingConfig {
         return {
             // Default selectors - will use fallback method if these don't work
@@ -715,6 +786,16 @@ export class ChannelsService {
                 if (existingPost) {
                     this.logger.log(`Item "${title}" already exists as a published post. Skipping.`);
                     return { success: false, message: "Item already published" };
+                }
+            }
+
+            // Semantic dedup: detect same-story articles from different sources
+            // (same event, different title wording) using Jaccard word similarity
+            if (title) {
+                const similarExists = await this.isSimilarTitleInRecentFeed(FeedRawEntity, title, pubDate);
+                if (similarExists) {
+                    this.logger.log(`[DEDUP] Similar story already in feed queue: "${title}" — skipping duplicate.`);
+                    return { success: false, message: "Similar story already queued" };
                 }
             }
 
