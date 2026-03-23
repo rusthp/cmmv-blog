@@ -252,7 +252,7 @@ export class ChannelsService {
             const errorMessage = error instanceof Error ? error.message : String(error);
             // Use console.error as fallback if logger is not available
             if (this.logger && typeof this.logger.log === 'function') {
-                this.logger.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
+                this.logger?.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
             } else {
                 console.error(`Error in processSingleChannel for ${channel.name}: ${errorMessage}`);
             }
@@ -484,7 +484,7 @@ export class ChannelsService {
                 'media:content': article.image ? { $: { url: article.image } } : undefined
             };
 
-            this.logger.log(`Processing scraped article: "${article.title}" with image: ${article.image || 'none'}`);
+            this.logger?.log(`Processing scraped article: "${article.title}" with image: ${article.image || 'none'}`);
 
             // Process the item (reuse existing logic)
             // This will use parser if requestLink === true to get full content
@@ -493,7 +493,7 @@ export class ChannelsService {
             return { success: true, added: true };
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            this.logger.log(`Error processing scraped article ${article.title}: ${errorMessage}`);
+            this.logger?.log(`Error processing scraped article ${article.title}: ${errorMessage}`);
             return { success: false };
         }
     }
@@ -703,7 +703,7 @@ export class ChannelsService {
                         .replace(/&quot;/g, '"');
                 }
 
-                this.logger.log(`WEB_SCRAPING: Extracted image for "${title}": ${featureImage || 'none'}`);
+                this.logger?.log(`WEB_SCRAPING: Extracted image for "${title}": ${featureImage || 'none'}`);
 
                 if (item.pubDate)
                     pubDate = new Date(item.pubDate);
@@ -784,7 +784,7 @@ export class ChannelsService {
                 const existingPost = await Repository.findOne(PostsEntity, { title: title });
 
                 if (existingPost) {
-                    this.logger.log(`Item "${title}" already exists as a published post. Skipping.`);
+                    this.logger?.log(`Item "${title}" already exists as a published post. Skipping.`);
                     return { success: false, message: "Item already published" };
                 }
             }
@@ -794,7 +794,7 @@ export class ChannelsService {
             if (title) {
                 const similarExists = await this.isSimilarTitleInRecentFeed(FeedRawEntity, title, pubDate);
                 if (similarExists) {
-                    this.logger.log(`[DEDUP] Similar story already in feed queue: "${title}" — skipping duplicate.`);
+                    this.logger?.log(`[DEDUP] Similar story already in feed queue: "${title}" — skipping duplicate.`);
                     return { success: false, message: "Similar story already queued" };
                 }
             }
@@ -802,14 +802,14 @@ export class ChannelsService {
             // If no image from RSS, try to extract from page meta tags (lightweight)
             if (!featureImage) {
                 try {
-                    this.logger.log(`No image in RSS for ${link}, attempting meta tag extraction...`);
+                    this.logger?.log(`No image in RSS for ${link}, attempting meta tag extraction...`);
                     featureImage = await this.extractImageFromPageMeta(link);
                     if (featureImage) {
-                        this.logger.log(`Successfully extracted image from meta tags: ${featureImage}`);
+                        this.logger?.log(`Successfully extracted image from meta tags: ${featureImage}`);
                     }
                 } catch (error) {
                     // Silent fail - will try full parsing if enabled
-                    this.logger.log(`Meta tag extraction failed for ${link}, will try full parsing if enabled`);
+                    this.logger?.log(`Meta tag extraction failed for ${link}, will try full parsing if enabled`);
                 }
             }
 
@@ -851,7 +851,7 @@ export class ChannelsService {
                                 const trueDate = new Date(data.pubDate);
                                 if (!isNaN(trueDate.getTime())) {
                                     pubDate = trueDate;
-                                    this.logger.log(`Parser found true publish date for ${link}: ${pubDate.toISOString()}`);
+                                    this.logger?.log(`Parser found true publish date for ${link}: ${pubDate.toISOString()}`);
                                 }
                             }
                         }
@@ -860,9 +860,9 @@ export class ChannelsService {
                     // Parser failed or not configured, try direct extraction
                     const parseErrorMsg = parseError instanceof Error ? parseError.message : String(parseError);
                     if (parseErrorMsg.includes('403')) {
-                        this.logger.log(`[WARN-403] Parser blocked for ${link}, using RSS content as fallback`);
+                        this.logger?.log(`[WARN-403] Parser blocked for ${link}, using RSS content as fallback`);
                     } else {
-                        this.logger.log(`Parser service failed for ${link}, trying direct content extraction...`);
+                        this.logger?.log(`Parser service failed for ${link}, trying direct content extraction...`);
                     }
                 }
 
@@ -873,18 +873,18 @@ export class ChannelsService {
                         const directContent = await this.extractContentFromDust2Page(link);
                         if (directContent && directContent.length > 50) {
                             content = directContent;
-                            this.logger.log(`Successfully extracted content directly from ${link} (${content.length} chars)`);
+                            this.logger?.log(`Successfully extracted content directly from ${link} (${content.length} chars)`);
                         }
                     } catch (extractError) {
                         const errorMessage = extractError instanceof Error ? extractError.message : String(extractError);
-                        this.logger.log(`Direct content extraction failed for ${link}: ${errorMessage}`);
+                        this.logger?.log(`Direct content extraction failed for ${link}: ${errorMessage}`);
                     }
                 }
             }
 
             // Re-evaluate date limit after ParserService extracted the true historical date
             if (pubDate < dateLimit) {
-                this.logger.log(`[HistoricalNewsFilter] Item skipped: Historical article bumped in feed ${link} (True date: ${pubDate.toISOString()})`);
+                this.logger?.log(`[HistoricalNewsFilter] Item skipped: Historical article bumped in feed ${link} (True date: ${pubDate.toISOString()})`);
                 return { success: true, message: `Item skipped due to being older than ${maxAgeDays} days (after parser inspection)` };
             }
 
@@ -904,7 +904,7 @@ export class ChannelsService {
                 try {
                     new URL(featureImage);
                 } catch (urlError) {
-                    this.logger.log(`Invalid featureImage URL format, clearing: ${featureImage}`);
+                    this.logger?.log(`Invalid featureImage URL format, clearing: ${featureImage}`);
                     featureImage = ''; // Clear invalid URL
                 }
             }
@@ -1294,7 +1294,7 @@ export class ChannelsService {
             return '';
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            this.logger.error(`Error extracting content from Dust2 page ${link}: ${errorMessage}`);
+            this.logger?.error(`Error extracting content from Dust2 page ${link}: ${errorMessage}`);
             return '';
         }
     }
