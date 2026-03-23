@@ -289,6 +289,7 @@ export class PostingWorker {
 
         const lastScheduled = await Repository.findAll(PostsEntity, {
             status: 'cron',
+            deleted: false,
             limit: 1,
             sortBy: 'autoPublishAt',
             sort: 'DESC'
