@@ -692,6 +692,9 @@ export class ImagePipelineWorker {
             const placeholderWidth = Config.get<number>("blog.featureImage.width", 960);
             const placeholderHeight = Config.get<number>("blog.featureImage.height", 504);
 
+            const esc = (s: string) => s
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
             // Truncate title to avoid overflow in the SVG
             let displayTitle = (title || 'No Title');
             if (displayTitle.length > 80) displayTitle = displayTitle.substring(0, 77) + '...';

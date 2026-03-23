@@ -27,14 +27,20 @@ export class WebScraperService {
      * Scrape news articles from a listing page
      * @param url - The URL of the listing page
      * @param config - Scraping configuration with selectors
+     * @param requiresHeadless - Use Puppeteer for JS-rendered sites
      * @returns Array of scraped articles
      */
-    async scrapeNewsList(url: string, config: ScrapingConfig): Promise<ScrapedArticle[]> {
+    async scrapeNewsList(url: string, config: ScrapingConfig, requiresHeadless: boolean = false): Promise<ScrapedArticle[]> {
         try {
-            this.logger.log(`Scraping news list from: ${url}`);
+            this.logger.log(`Scraping news list from: ${url} (headless: ${requiresHeadless})`);
 
-            // Fetch HTML with timeout
-            const html = await this.fetchHTML(url);
+            let html: string;
+
+            if (requiresHeadless) {
+                html = await this.fetchHTMLWithPuppeteer(url);
+            } else {
+                html = await this.fetchHTML(url);
+            }
 
             if (!html) {
                 throw new Error("Failed to fetch HTML content");
@@ -53,6 +59,111 @@ export class WebScraperService {
             this.logger.error(`Error scraping ${url}: ${errorMessage}`);
             throw error;
         }
+    }
+
+    /**
+     * Fetch HTML using Puppeteer (headless browser) for JS-rendered sites
+     * Reuses stealth setup from ImagePipelineWorker
+     */
+    private async fetchHTMLWithPuppeteer(url: string): Promise<string> {
+        let puppeteer: any;
+
+        try {
+            const puppeteerExtra = require('puppeteer-extra');
+            const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+            puppeteerExtra.use(StealthPlugin());
+            puppeteer = puppeteerExtra;
+        } catch {
+            try {
+                puppeteer = require('puppeteer');
+            } catch {
+                try {
+                    puppeteer = require('puppeteer-core');
+                } catch {
+                    this.logger.error('Puppeteer not available, falling back to fetch');
+                    return this.fetchHTML(url);
+                }
+            }
+        }
+
+        const executablePath = this.findChromePath();
+        const USER_AGENTS = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        ];
+        const randomUA = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
+        const launchOptions: any = {
+            headless: 'new',
+            args: [
+                '--no-sandbox', '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', '--disable-gpu',
+                '--disable-extensions',
+                '--disable-blink-features=AutomationControlled',
+                '--lang=pt-BR,pt,en-US,en',
+                '--window-size=1920,1080',
+            ],
+            defaultViewport: { width: 1920, height: 1080 },
+            timeout: 30000,
+        };
+
+        if (executablePath) launchOptions.executablePath = executablePath;
+
+        let browser: any;
+        try {
+            browser = await puppeteer.launch(launchOptions);
+            const page = await browser.newPage();
+            await page.setUserAgent(randomUA);
+
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            });
+
+            this.logger.log(`[puppeteer] Navigating to ${url}`);
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 25000 });
+
+            // Wait a bit for lazy-loaded content
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Scroll down to trigger lazy loading
+            await page.evaluate(() => {
+                window.scrollTo(0, document.body.scrollHeight / 3);
+            }).catch(() => {});
+            await new Promise(r => setTimeout(r, 1000));
+
+            const html = await page.content();
+            await browser.close();
+
+            this.logger.log(`[puppeteer] Got ${html.length} chars from ${url}`);
+
+            const maxSize = 500 * 1024;
+            return html.length > maxSize ? html.substring(0, maxSize) : html;
+        } catch (err: any) {
+            this.logger.error(`[puppeteer] Error: ${err.message}`);
+            if (browser) try { await browser.close(); } catch {}
+            // Fallback to regular fetch
+            return this.fetchHTML(url);
+        }
+    }
+
+    /**
+     * Find Chrome/Chromium executable path
+     */
+    private findChromePath(): string | null {
+        const fs = require('fs');
+        const candidates = [
+            '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium', '/usr/bin/chromium-browser', '/snap/bin/chromium',
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        ];
+        for (const path of candidates) {
+            try { if (fs.existsSync(path)) return path; } catch {}
+        }
+        return null;
     }
 
     /**

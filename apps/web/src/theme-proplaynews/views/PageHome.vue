@@ -244,7 +244,7 @@
                                     class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                 >
                                     <a :href="`/post/${post.slug}`" class="block">
-                                        <div class="h-64 overflow-hidden relative">
+                                        <div class="h-48 overflow-hidden relative">
                                             <OptimizedImage
                                                 :src="post.featureImage"
                                                 :alt="post.title"
@@ -262,14 +262,14 @@
                                             </div>
                                         </div>
                                     </a>
-                                    <div class="p-3">
+                                    <div class="p-4">
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2 overflow-hidden">
-                                                {{ post.title.length > 55 ? post.title.substring(0, 55) + '...' : post.title }}
+                                            <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
+                                                {{ post.title }}
                                             </h3>
                                         </a>
-                                        <p class="text-gray-600 text-sm mb-2 line-clamp-2 overflow-hidden">
-                                            {{ post.excerpt || (stripHtml(post.content).length > 60 ? stripHtml(post.content).substring(0, 60) + '...' : stripHtml(post.content)) }}
+                                        <p class="text-gray-600 text-sm mb-2 line-clamp-3">
+                                            {{ post.excerpt || stripHtml(post.content) }}
                                         </p>
                                         <div class="flex justify-between items-center text-xs text-gray-500">
                                             <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
@@ -303,7 +303,7 @@
                                         class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
                                     >
                                         <a :href="`/post/${post.slug}`" class="block">
-                                            <div class="h-64 overflow-hidden relative">
+                                            <div class="h-48 overflow-hidden relative">
                                                 <OptimizedImage
                                                     :src="post.featureImage"
                                                     :alt="post.title"
@@ -320,14 +320,14 @@
                                                 </div>
                                             </div>
                                         </a>
-                                        <div class="p-3">
+                                        <div class="p-4">
                                             <a :href="`/post/${post.slug}`" class="block">
-                                                <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2 overflow-hidden">
-                                                    {{ post.title.length > 55 ? post.title.substring(0, 55) + '...' : post.title }}
+                                                <h3 class="text-lg font-bold text-gray-800 mb-1 hover:text-purple-600 transition-colors line-clamp-2">
+                                                    {{ post.title }}
                                                 </h3>
                                             </a>
-                                            <p class="text-gray-600 text-sm mb-2 line-clamp-2 overflow-hidden">
-                                                {{ post.excerpt || (stripHtml(post.content).length > 50 ? stripHtml(post.content).substring(0, 50) + '...' : stripHtml(post.content)) }}
+                                            <p class="text-gray-600 text-sm mb-2 line-clamp-3">
+                                                {{ post.excerpt || stripHtml(post.content) }}
                                             </p>
                                             <div class="flex justify-between items-center text-xs text-gray-500">
                                                 <span v-if="getAuthor(post)">Por {{ getAuthor(post).name }}</span>
@@ -350,10 +350,10 @@
                             </div>
 
                             <!-- Botão Ver Mais -->
-                            <div v-if="hasMorePosts && !loadingMore" class="mt-8 flex justify-center">
-                                <button 
+                            <div v-if="hasMorePosts && !loadingMore" class="mt-8 flex justify-center relative z-10">
+                                <button
                                     @click="loadMorePosts"
-                                    class="bg-[#ffcc00] hover:bg-[#ffa500] text-[#333333] font-medium px-8 py-3 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1"
+                                    class="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-lg px-10 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-yellow-500 cursor-pointer"
                                 >
                                     Ver Mais Posts
                                 </button>
@@ -708,15 +708,12 @@ const loadPosts = async () => {
         );
 
         if (response) {
-            posts.value = response.posts;
+            posts.value = Array.isArray(response) ? response : (response.posts || []);
+            const totalCount = Array.isArray(response) ? 0 : (response.count || 0);
 
-            pagination.value = {
-                total: response.meta?.pagination?.total || 0,
-                limit: response.meta?.pagination?.limit || 12,
-                offset: response.meta?.pagination?.offset || 0
-            };
-
-            hasMorePosts.value = posts.value.length < response.count;
+            hasMorePosts.value = totalCount > 0
+                ? posts.value.length < totalCount
+                : posts.value.length >= 20;
 
             if (!categories.value.length) {
                 try {
@@ -742,28 +739,23 @@ const loadMorePosts = async () => {
 
     try {
         loadingMore.value = true;
-        
-        // Usar o offset correto baseado no número atual de posts
         const currentOffset = posts.value.length;
-        
         const response: any = await blogAPI.posts.getAll(currentOffset);
 
-        if (response && response.posts && response.posts.length > 0) {
-            // Filtrar posts duplicados baseado no ID
-            const newPosts = response.posts.filter((newPost: any) => 
+        // Handle both formats: {posts: [], count: N} or direct array
+        const newPostsRaw = Array.isArray(response) ? response : (response?.posts || []);
+        const totalCount = Array.isArray(response) ? 0 : (response?.count || 0);
+
+        if (newPostsRaw.length > 0) {
+            const newPosts = newPostsRaw.filter((newPost: any) =>
                 !posts.value.some((existingPost: any) => existingPost.id === newPost.id)
             );
-            
+
             if (newPosts.length > 0) {
                 posts.value = [...posts.value, ...newPosts];
-                
-                pagination.value = {
-                    total: response.meta?.pagination?.total || 0,
-                    limit: response.meta?.pagination?.limit || 12,
-                    offset: currentOffset + newPosts.length
-                };
-
-                hasMorePosts.value = posts.value.length < response.count;
+                hasMorePosts.value = totalCount > 0
+                    ? posts.value.length < totalCount
+                    : newPosts.length >= 20;
             } else {
                 hasMorePosts.value = false;
             }

@@ -1,6 +1,6 @@
 {
     "name": "@repo/typescript-config",
-    "version": "0.0.132",
+    "version": "0.0.133",
     "private": true,
     "license": "MIT",
     "publishConfig": {

@@ -210,6 +210,10 @@ export const useApi = () => {
 
     const putAuth = async <T>(path: string, payload: any, key?: string) => {
         try {
+            const sessionData = sessionStorage.getItem('member');
+            const localData = localStorage.getItem('member');
+            const token = sessionData ? JSON.parse(sessionData).token : localData ? JSON.parse(localData).token : null;
+
             const apiUrl = isSSR ? baseUrl : baseUrlFrontend;
             const response = await fetch(`${apiUrl}/${path}`, {
                 method: "PUT",
@@ -219,8 +223,11 @@ export const useApi = () => {
                 },
                 body: JSON.stringify(payload)
             });
+
+            const result = await response.json();
+            return result.result || result;
         } catch (error) {
-            console.error(`Error posting to ${path}:`, error);
+            console.error(`Error putting to ${path}:`, error);
         }
 
         return null;
@@ -300,7 +307,8 @@ export const useBlog = () => {
                 offset: offset.toString()
             }).toString();
 
-            const { data } = await api.get<any[]>(`blog/posts/public?${urlQueries}`, "posts");
+            const cacheKey = offset > 0 ? `posts:${offset}` : "posts";
+            const { data } = await api.get<any[]>(`blog/posts/public?${urlQueries}`, cacheKey);
             return data.value || [];
         },
         search: async (query: string) => {

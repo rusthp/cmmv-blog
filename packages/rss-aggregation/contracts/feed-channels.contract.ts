@@ -74,7 +74,7 @@ export class FeedChannelsContract extends AbstractContract {
         nullable: true,
         defaultValue: 'RSS'
     })
-    sourceType!: 'RSS' | 'WEB_SCRAPING';
+    sourceType!: 'RSS' | 'WEB_SCRAPING' | 'STEAM_API';
 
     @ContractField({
         protoType: 'string',

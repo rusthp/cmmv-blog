@@ -59,6 +59,13 @@ export class ImageCacheContract extends AbstractContract {
     hash!: string;
 
     @ContractField({
+        protoType: 'string',
+        nullable: true,
+        index: true,
+    })
+    keywords?: string;
+
+    @ContractField({
         protoType: 'datetime',
         nullable: true,
         index: true,

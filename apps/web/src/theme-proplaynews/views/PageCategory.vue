@@ -35,12 +35,6 @@
                                     loading="lazy"
                                     style="max-height: 250px; min-height: 200px;"
                                 />
-                                <!-- Category Badge -->
-                                <div class="absolute top-3 left-3">
-                                    <span class="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">
-                                        {{ (post.categories && post.categories.length > 0) ? post.categories[0].name : category.name }}
-                                    </span>
-                                </div>
                             </div>
                         </a>
 
@@ -64,8 +58,7 @@
                             <!-- Post Meta -->
                             <div class="flex items-center justify-between text-xs text-purple-500 mb-4">
                                 <div class="flex items-center">
-                                    <span>Por</span>
-                                    <span class="ml-1 font-medium">{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
+                                    <span class="font-medium">{{ formatDate(post.publishedAt || post.updatedAt) }}</span>
                                 </div>
                             </div>
 
@@ -78,6 +71,21 @@
                                         <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                                     </svg>
                                 </a>
+                            </div>
+
+                            <!-- Tags -->
+                            <div v-if="post.tags && post.tags.length > 0" class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-1.5">
+                                <a v-for="tag in post.tags.slice(0, 4)" :key="tag.id || tag.slug"
+                                    :href="`/tag/${tag.slug}`"
+                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full hover:bg-purple-200 transition-colors">
+                                    #{{ tag.name }}
+                                </a>
+                            </div>
+                            <div v-else-if="post.categories && post.categories.length > 0" class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-1.5">
+                                <span v-for="cat in post.categories" :key="cat.id || cat.slug"
+                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                    {{ cat.name }}
+                                </span>
                             </div>
                         </div>
                     </article>

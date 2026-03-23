@@ -97,6 +97,9 @@ export class ChannelsService {
         if (sourceType === 'WEB_SCRAPING') {
             log(`Using WEB_SCRAPING mode for manual processing of channel "${channel.name}"`);
             await this.processWebScrapingChannel(channel);
+        } else if (sourceType === 'STEAM_API') {
+            log(`Using STEAM_API mode for channel "${channel.name}"`);
+            await this.processSteamAPIChannel(channel);
         } else {
             log(`Using RSS mode for manual processing of channel "${channel.name}"`);
             const feedData = await this.getFeed(channel.rss);
@@ -127,7 +130,7 @@ export class ChannelsService {
                 active: true,
                 limit: 1000
             }, [], {
-                select: ["id", "rss", "name", "intervalUpdate", "lastUpdate"]
+                select: ["id", "rss", "name", "intervalUpdate", "lastUpdate", "sourceType"]
             });
 
             if (!channels || !channels.data || channels.data.length === 0) {
@@ -231,6 +234,9 @@ export class ChannelsService {
             if (sourceType === 'WEB_SCRAPING') {
                 log(`Using WEB_SCRAPING mode for channel "${updatedChannel.name}"`);
                 await this.processWebScrapingChannel(updatedChannel);
+            } else if (sourceType === 'STEAM_API') {
+                log(`Using STEAM_API mode for channel "${updatedChannel.name}"`);
+                await this.processSteamAPIChannel(updatedChannel);
             } else {
                 log(`Using RSS mode for channel "${updatedChannel.name}" (rss: ${updatedChannel.rss})`);
                 const feedData = await this.getFeed(updatedChannel.rss);
@@ -298,7 +304,8 @@ export class ChannelsService {
             // Scrape articles from listing page
             const articles = await this.webScraperService.scrapeNewsList(
                 channel.listPageUrl,
-                scrapingConfig
+                scrapingConfig,
+                channel.requiresHeadless || false
             );
 
             if (!articles || articles.length === 0) {
@@ -351,6 +358,15 @@ export class ChannelsService {
             logError(`Error processing web scraping channel ${channel.name}: ${errorMessage}`);
             throw error;
         }
+    }
+
+    /**
+     * Process a channel using the Steam API
+     * @param channel The channel to process
+     */
+    private async processSteamAPIChannel(channel: any) {
+        const log = this.logger ? this.logger.log.bind(this.logger) : console.log;
+        log(`STEAM_API source type is not yet implemented for channel "${channel.name}". Skipping.`);
     }
 
     /**
