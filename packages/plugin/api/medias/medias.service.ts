@@ -188,7 +188,7 @@ export class MediasService extends AbstractService {
             }
         }
 
-        const isValidImage = /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,/.test(image);
+        const isValidImage = /^data:image\/(jpeg|jpg|png|gif|webp|avif|svg\+xml|bmp|tiff?);base64,/.test(image);
 
         if (!isValidImage) {
             console.error('Invalid image format provided');
