@@ -113,6 +113,10 @@ export class ImagePipelineWorker {
                 };
 
                 try {
+                    ImagePipelineWorker.logger.log(
+                        `[pipeline][IMG] attempt=${attempt+1} url=${normalizedUrl.substring(0, 80)} referer=${attemptReferer}`
+                    );
+
                     const response: Response = await fetch(normalizedUrl, {
                         method: 'GET',
                         headers: attemptHeaders,
@@ -123,6 +127,7 @@ export class ImagePipelineWorker {
                     clearTimeout(timeout);
 
                     if (!response.ok) {
+                        ImagePipelineWorker.logger.log(`[pipeline][IMG] HTTP ${response.status} for ${normalizedUrl.substring(0, 80)}`);
                         const strategy = this.classifyImageError(response.status);
                         if (strategy === 'discard') throw new Error(`HTTP ${response.status} (discard)`);
                         lastError = new Error(`HTTP ${response.status}`);

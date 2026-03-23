@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/rss-aggregation",
-    "version": "0.1.144",
+    "version": "0.1.145",
     "description": "RSS Aggregation package for CMMV",
     "scripts": {
         "build": "tsup"
@@ -14,6 +14,9 @@
         "@cmmv/ai-content": "workspace:ai-content",
         "@cmmv/auth": "0.17.0",
         "@cmmv/core": "0.17.0",
-        "@cmmv/http": "0.17.0"
+        "@cmmv/http": "0.17.0",
+        "puppeteer-core": "^22.0.0",
+        "puppeteer-extra": "^3.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2"
     }
 }
