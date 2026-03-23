@@ -73,6 +73,19 @@ export class AutopostService {
             const siteUrl = Config.get<string>("blog.url", "");
             const postUrl = `${siteUrl}/post/${post.slug}`;
 
+            let featureImageUrl: string | undefined = post.featureImage;
+
+            if (featureImageUrl && !featureImageUrl.startsWith('http')) {
+                const base = siteUrl.replace(/\/$/, '');
+                featureImageUrl = `${base}${featureImageUrl.startsWith('/') ? '' : '/'}${featureImageUrl}`;
+            }
+
+            if (featureImageUrl?.includes('localhost')) {
+                const base = siteUrl.replace(/\/$/, '');
+                const path = featureImageUrl.replace(/^https?:\/\/[^/]+/, '');
+                featureImageUrl = `${base}${path}`;
+            }
+
             const payload: SocialPostPayload = {
                 title: post.title || "",
                 excerpt: post.excerpt || "",
@@ -81,7 +94,7 @@ export class AutopostService {
                 tags: post.tags || [],
                 categories: post.categories || [],
                 author: post.author?.name || "Anonymous",
-                featureImage: post.featureImage,
+                featureImage: featureImageUrl,
                 postId: post.id
             };
 
