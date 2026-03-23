@@ -563,6 +563,16 @@ async function bootstrap() {
     server.keepAliveTimeout = 65000; // 65 seconds (slightly higher than default 60s)
     server.headersTimeout = 66000; // 66 seconds (must be > keepAliveTimeout)
 
+    server.on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+            console.warn(`[SSR] Port ${port} already in use — another instance is running. Exiting gracefully.`);
+            process.exit(0);
+        } else {
+            console.error('[SSR] Server error:', err);
+            process.exit(1);
+        }
+    });
+
     // @ts-ignore
     serverInstance = server.listen(port, "0.0.0.0", () => {
         console.log(`🚀 SSR server running at http://localhost:${port}`);
