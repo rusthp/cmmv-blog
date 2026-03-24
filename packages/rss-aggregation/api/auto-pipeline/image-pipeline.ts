@@ -205,7 +205,7 @@ export class ImagePipelineWorker {
             }
 
             if (!finalUrl) {
-                return this.createAndSavePlaceholder(title);
+                return '';
             }
 
             if (ImageCacheEntity) {
@@ -248,12 +248,7 @@ export class ImagePipelineWorker {
                 }
             }
 
-            try {
-                return await this.createAndSavePlaceholder(title);
-            } catch {
-                ImagePipelineWorker.logger.error(`[pipeline][ERROR] Failed to save placeholder for ${url}`);
-                return '';
-            }
+            return '';
         }
     }
 
