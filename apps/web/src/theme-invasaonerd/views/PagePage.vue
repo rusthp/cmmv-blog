@@ -30,7 +30,7 @@
                     <h1 class="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">{{ page.title }}</h1>
 
                     <div class="post-meta" v-if="page.status !== 'published'">
-                        <span class="bg-[#ffcc00] text-[#333333] px-2 py-1 rounded-full text-xs font-semibold">{{ page.status.toUpperCase() }}</span>
+                        <span class="bg-[#ffcc00] text-[#333333] px-2 py-1 rounded-full text-xs font-semibold">{{ page.status?.toUpperCase() }}</span>
                     </div>
                 </header>
 

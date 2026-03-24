@@ -41,7 +41,7 @@
 
                 <div class="post-meta">
                     <div class="post-status" v-if="page.status !== 'published'">
-                        <span class="status-badge">{{ page.status.toUpperCase() }}</span>
+                        <span class="status-badge">{{ page.status?.toUpperCase() }}</span>
                     </div>
                 </div>
             </header>

@@ -10,6 +10,8 @@ import {
     MoreThanOrEqual
 } from "@cmmv/repository";
 
+import { HttpException, HttpStatus } from "@cmmv/http";
+
 import {
     IPostMetadata,
     IDraftPost
@@ -643,7 +645,7 @@ export class PostsPublicService {
         }));
 
         if(!post)
-            throw new Error("Post not found");
+            throw new HttpException("Post not found", HttpStatus.NOT_FOUND);
 
         return this.getPostById(post.id);
     }
@@ -683,7 +685,7 @@ export class PostsPublicService {
         }));
 
         if(!page)
-            throw new Error("Page not found");
+            throw new HttpException("Page not found", HttpStatus.NOT_FOUND);
 
         return this.getPageById(page.id);
     }
