@@ -222,6 +222,10 @@ export const useAdminClient = () => {
         createSQLiteBackup: () => api.authRequest('blog/backup/sqlite/create', 'POST'),
     };
 
+    const autopost = {
+        testTwitter: () => api.authRootRequest('autopost/test-twitter', 'GET'),
+    };
+
     return {
         settings,
         profile,
@@ -243,6 +247,7 @@ export const useAdminClient = () => {
         users,
         backup,
         prompts,
-        shorturl
+        shorturl,
+        autopost,
     };
 };

@@ -274,6 +274,50 @@ export class AutopostService {
     /**
      * Builds an OAuth 1.0a Authorization header for Twitter requests.
      */
+    /**
+     * Tests the Twitter/X API credentials by calling GET /2/users/me.
+     * Returns success + username or an error message.
+     */
+    async testTwitterConnection(): Promise<{ success: boolean; message: string; username?: string }> {
+        const apiKey = Config.get<string>("blog.twitterApiKey");
+        const apiSecret = Config.get<string>("blog.twitterApiSecret");
+        const accessToken = Config.get<string>("blog.twitterAccessToken");
+        const accessTokenSecret = Config.get<string>("blog.twitterAccessTokenSecret");
+
+        if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
+            return {
+                success: false,
+                message: `Credenciais incompletas. Campos vazios: ${[
+                    !apiKey && 'API Key',
+                    !apiSecret && 'API Secret',
+                    !accessToken && 'Access Token',
+                    !accessTokenSecret && 'Access Token Secret',
+                ].filter(Boolean).join(', ')}`,
+            };
+        }
+
+        const oauth = { consumer_key: apiKey, consumer_secret: apiSecret, token: accessToken, token_secret: accessTokenSecret };
+        const url = 'https://api.twitter.com/2/users/me';
+
+        try {
+            const authHeader = this.buildTwitterOAuthHeader('GET', url, oauth);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': authHeader },
+            });
+
+            const data = await response.json() as any;
+
+            if (response.ok && data?.data?.username) {
+                return { success: true, message: `Conectado como @${data.data.username}`, username: data.data.username };
+            }
+
+            return { success: false, message: `Twitter API error ${response.status}: ${data?.detail || data?.title || response.statusText}` };
+        } catch (err: any) {
+            return { success: false, message: `Erro de conexão: ${err.message}` };
+        }
+    }
+
     private buildTwitterOAuthHeader(
         method: string,
         url: string,

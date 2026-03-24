@@ -1399,6 +1399,21 @@
                                         />
                                     </div>
 
+                                    <div class="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            @click="testTwitterConnection"
+                                            :disabled="twitterTestInProgress"
+                                            class="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm rounded-md flex items-center gap-2"
+                                        >
+                                            <svg v-if="twitterTestInProgress" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                            <span>{{ twitterTestInProgress ? 'Testando...' : 'Testar Conexão X' }}</span>
+                                        </button>
+                                        <span v-if="twitterTestResult" :class="twitterTestResult.success ? 'text-green-400' : 'text-red-400'" class="text-sm">
+                                            {{ twitterTestResult.message }}
+                                        </span>
+                                    </div>
+
                                     <div class="space-y-2">
                                         <a
                                             href="https://developer.twitter.com/en/portal/dashboard"
@@ -5126,6 +5141,23 @@ const handleLinkedInCallback = async (event) => {
 const cachePurgeInProgress = ref(false);
 const cfCachePurgeInProgress = ref(false);
 const allCachePurgeInProgress = ref(false);
+
+const twitterTestInProgress = ref(false);
+const twitterTestResult = ref<{ success: boolean; message: string } | null>(null);
+
+const testTwitterConnection = async () => {
+    if (twitterTestInProgress.value) return;
+    twitterTestInProgress.value = true;
+    twitterTestResult.value = null;
+    try {
+        const response = await adminClient.autopost.testTwitter();
+        twitterTestResult.value = response?.result ?? response;
+    } catch (err: any) {
+        twitterTestResult.value = { success: false, message: err.message || 'Erro desconhecido' };
+    } finally {
+        twitterTestInProgress.value = false;
+    }
+};
 
 const purgeCloudflareCacheTest = async () => {
     if (cachePurgeInProgress.value) return;
