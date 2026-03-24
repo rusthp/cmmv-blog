@@ -71,7 +71,7 @@ export class AutoPipelineService {
         }
     }
 
-    @Cron(CronExpression.EVERY_30_MINUTES)
+    @Cron("10,40 * * * *")
     async generateWorkerCron() {
         try {
             if (!AutoPipelineService.isEnabled()) return;
