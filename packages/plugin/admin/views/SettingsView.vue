@@ -5143,7 +5143,7 @@ const cfCachePurgeInProgress = ref(false);
 const allCachePurgeInProgress = ref(false);
 
 const twitterTestInProgress = ref(false);
-const twitterTestResult = ref<{ success: boolean; message: string } | null>(null);
+const twitterTestResult = ref(null);
 
 const testTwitterConnection = async () => {
     if (twitterTestInProgress.value) return;
