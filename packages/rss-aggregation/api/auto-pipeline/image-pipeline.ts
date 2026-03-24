@@ -345,8 +345,7 @@ export class ImagePipelineWorker {
      * Resolves the Referer header for a given image domain.
      */
     getRefererForDomain(hostname: string, channelReferer?: string): string {
-        if (channelReferer) return channelReferer;
-
+        // REFERER_MAP takes priority — these CDNs require their own domain as referer
         const REFERER_MAP: Record<string, string> = {
             'img-cdn.hltv.org': 'https://www.hltv.org/',
             'hltv.org': 'https://www.hltv.org/',
@@ -354,7 +353,9 @@ export class ImagePipelineWorker {
             'www.thespike.gg': 'https://www.thespike.gg/',
             'thespike.gg': 'https://www.thespike.gg/',
         };
-        return REFERER_MAP[hostname] ?? `https://${hostname.replace(/^(img-cdn|cdn|static|media|assets)\./, '')}/`;
+        if (REFERER_MAP[hostname]) return REFERER_MAP[hostname];
+        if (channelReferer) return channelReferer;
+        return `https://${hostname.replace(/^(img-cdn|cdn|static|media|assets)\./, '')}/`;
     }
 
     /**
