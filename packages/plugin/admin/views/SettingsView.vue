@@ -5152,8 +5152,8 @@ const testTwitterConnection = async () => {
     try {
         const response = await adminClient.autopost.testTwitter();
         twitterTestResult.value = response?.result ?? response;
-    } catch (err: any) {
-        twitterTestResult.value = { success: false, message: err.message || 'Erro desconhecido' };
+    } catch (err) {
+        twitterTestResult.value = { success: false, message: (err && err.message) || 'Erro desconhecido' };
     } finally {
         twitterTestInProgress.value = false;
     }
