@@ -358,6 +358,11 @@ export class AutopostService {
         const postFormat = Config.get<string>("blog.twitterPostFormat");
         const includeImage = Config.get<boolean>("blog.twitterIncludeImage", false);
 
+        AutopostService.logger.log(
+            `[twitter] credentials check: apiKey=${apiKey ? apiKey.substring(0,6)+'…' : 'MISSING'} ` +
+            `accessToken=${accessToken ? accessToken.substring(0,8)+'…' : 'MISSING'}`
+        );
+
         if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret)
             throw new Error("Twitter configuration is incomplete. API keys and access tokens are required.");
 
