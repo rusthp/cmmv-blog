@@ -330,9 +330,10 @@ export class ImagePipelineWorker {
     normalizeImageUrl(rawUrl: string): string {
         try {
             const parsed = new URL(rawUrl);
+            // Only strip pure analytics/tracking params — never CDN auth params (s, sig, token, ixlib)
             const TRACKING_PARAMS = [
-                'ixlib', 'ixid', 'utm_source', 'utm_medium', 'utm_campaign',
-                's', 'sig', 'token', '_ga', 'fbclid',
+                'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+                '_ga', 'fbclid', 'gclid', 'mc_cid', 'mc_eid',
             ];
             for (const p of TRACKING_PARAMS) parsed.searchParams.delete(p);
             return parsed.toString();
