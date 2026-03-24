@@ -519,8 +519,8 @@ export class ChannelsService {
 
             if (!response.ok) {
                 if (response.status === 403 || response.status === 524 || response.status === 503) {
-                    ChannelsService.logger.log(`[WARN] Feed block detected (${response.status}) from ${rss}. Anti-bot protection active. Skipping feed gracefully.`);
-                    return { rss: { channel: { item: [] } } } as any; // Return empty to allow pipeline to continue
+                    ChannelsService.logger.log(`[WARN] Feed block detected (${response.status}) from ${rss}. Trying browser fallback...`);
+                    return await this.getFeedWithBrowser(rss);
                 }
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -552,6 +552,99 @@ export class ChannelsService {
             }
             ChannelsService.logger.error(`Error fetching or parsing feed from ${rss}: ${errorMessage}`);
             throw error;
+        }
+    }
+
+    /**
+     * Fetches an RSS feed using a headless browser with stealth plugin,
+     * bypassing Cloudflare / anti-bot protection (e.g. HLTV).
+     */
+    private async getFeedWithBrowser(rss: string): Promise<RssFeed> {
+        let puppeteer: any;
+
+        try {
+            const puppeteerExtra = require('puppeteer-extra');
+            const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+            puppeteerExtra.use(StealthPlugin());
+            puppeteer = puppeteerExtra;
+        } catch {
+            try { puppeteer = require('puppeteer'); } catch {
+                try { puppeteer = require('puppeteer-core'); } catch {
+                    ChannelsService.logger.log(`[WARN] Puppeteer not available, skipping browser fallback for ${rss}`);
+                    return { rss: { channel: { item: [] } } } as any;
+                }
+            }
+        }
+
+        let browser: any;
+        try {
+            browser = await puppeteer.launch({
+                headless: 'new',
+                args: [
+                    '--no-sandbox', '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage', '--disable-gpu',
+                    '--disable-blink-features=AutomationControlled',
+                ],
+                timeout: 20000,
+            });
+
+            const page = await browser.newPage();
+            await page.setUserAgent(
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+            );
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept': 'application/rss+xml,application/xml,text/xml,*/*',
+            });
+
+            await page.goto(rss, { waitUntil: 'networkidle2', timeout: 20000 });
+
+            // Wait a bit for any Cloudflare challenge to resolve
+            await new Promise(r => setTimeout(r, 3000));
+
+            const xml = await page.evaluate(() => document.documentElement.outerHTML);
+            await browser.close();
+            browser = null;
+
+            // Strip any HTML wrapper (Cloudflare challenge pages / browser XML viewer)
+            const xmlStart = xml.indexOf('<?xml');
+            const rssStart = xml.indexOf('<rss');
+            const feedStart = xml.indexOf('<feed');
+            const contentStart = xmlStart !== -1 ? xmlStart
+                : rssStart !== -1 ? rssStart
+                : feedStart !== -1 ? feedStart
+                : -1;
+
+            if (contentStart === -1) {
+                ChannelsService.logger.log(`[WARN] Browser fallback: no XML found in response from ${rss}`);
+                return { rss: { channel: { item: [] } } } as any;
+            }
+
+            const cleanXml = xml.substring(contentStart).replace(/<\/html>[\s\S]*$/, '').trim();
+
+            const parser = new xml2js.Parser({
+                explicitArray: false, normalize: true,
+                normalizeTags: false, mergeAttrs: false, attrkey: '$',
+            });
+
+            return new Promise<RssFeed>((resolve) => {
+                parser.parseString(cleanXml, (err: any, result: any) => {
+                    if (err) {
+                        ChannelsService.logger.log(`[WARN] Browser fallback: XML parse error from ${rss}: ${err.message}`);
+                        resolve({ rss: { channel: { item: [] } } } as any);
+                    } else {
+                        ChannelsService.logger.log(`[OK] Browser fallback succeeded for ${rss}`);
+                        resolve(result as RssFeed);
+                    }
+                });
+            });
+        } catch (err: any) {
+            ChannelsService.logger.log(`[WARN] Browser fallback failed for ${rss}: ${err.message}`);
+            return { rss: { channel: { item: [] } } } as any;
+        } finally {
+            if (browser) {
+                try { await browser.close(); } catch {}
+            }
         }
     }
 
