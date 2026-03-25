@@ -1643,7 +1643,8 @@ export class PostsPublicService {
 
             await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id }), updateData);
 
-            await this.eventsService.emit("posts.published", post);
+            const eventsService = this.eventsService ?? Application.resolveProvider(EventsService);
+            await eventsService?.emit("posts.published", post);
 
             const siteUrl = Config.get("blog.url") || "";
 
