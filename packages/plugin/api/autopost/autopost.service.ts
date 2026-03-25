@@ -1,6 +1,6 @@
 import {
     Service, OnEvent,
-    Config,
+    Config, Application,
     Logger
 } from "@cmmv/core";
 
@@ -51,10 +51,12 @@ export class AutopostService {
                 const sharePostsEnabled = Config.get<boolean>("blog.autoPostSharePosts", true);
                 const sharePagesEnabled = Config.get<boolean>("blog.autoPostSharePages", false);
 
-                if ((isPost && sharePostsEnabled) || (isPage && sharePagesEnabled))
-                    await this.sendToSocialNetworks(post);
-                else
+                if ((isPost && sharePostsEnabled) || (isPage && sharePagesEnabled)) {
+                    const instance = (this ?? Application.resolveProvider(AutopostService)) as AutopostService;
+                    await instance.sendToSocialNetworks(post);
+                } else {
                     AutopostService.logger.debug(`Skipping auto-post for ${post.id} - content type '${post.type}' is not enabled for sharing`);
+                }
             } else {
                 AutopostService.logger.debug('Auto-posting for new content is disabled');
             }
