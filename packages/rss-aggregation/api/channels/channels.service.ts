@@ -576,17 +576,37 @@ export class ChannelsService {
             }
         }
 
+        // Find Chrome executable (needed for puppeteer-core / puppeteer-extra)
+        const findChromePath = (): string | null => {
+            const fs = require('fs');
+            const candidates = [
+                '/usr/bin/google-chrome',
+                '/usr/bin/google-chrome-stable',
+                '/usr/bin/chromium',
+                '/usr/bin/chromium-browser',
+                '/snap/bin/chromium',
+            ];
+            for (const p of candidates) {
+                try { if (fs.existsSync(p)) return p; } catch {}
+            }
+            return null;
+        };
+
+        const chromePath = findChromePath();
+        const launchOptions: any = {
+            headless: 'new',
+            args: [
+                '--no-sandbox', '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', '--disable-gpu',
+                '--disable-blink-features=AutomationControlled',
+            ],
+            timeout: 20000,
+        };
+        if (chromePath) launchOptions.executablePath = chromePath;
+
         let browser: any;
         try {
-            browser = await puppeteer.launch({
-                headless: 'new',
-                args: [
-                    '--no-sandbox', '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage', '--disable-gpu',
-                    '--disable-blink-features=AutomationControlled',
-                ],
-                timeout: 20000,
-            });
+            browser = await puppeteer.launch(launchOptions);
 
             const page = await browser.newPage();
             await page.setUserAgent(
