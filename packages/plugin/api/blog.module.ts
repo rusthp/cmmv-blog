@@ -26,6 +26,7 @@ import { PromptsModule } from './prompts/prompts.module';
 import { StorageModule } from './storage/storage.module';
 import { HealthModule } from './health/health.module';
 import { ShortUrlModule } from './shorturl/shorturl.module';
+import { ContactModule } from './contact/contact.module';
 
 export const BlogModule = new Module('blog', {
     submodules: [
@@ -54,6 +55,7 @@ export const BlogModule = new Module('blog', {
         PromptsModule,
         StorageModule,
         HealthModule,
-        ShortUrlModule
+        ShortUrlModule,
+        ContactModule
     ]
 });

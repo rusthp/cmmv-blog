@@ -28,5 +28,8 @@ export * from './member.contract';
 // AI
 export * from './prompts.contract';
 
+// Contact
+export * from './contact.contract';
+
 // ShortUrl
 export * from './shorturl.contract';

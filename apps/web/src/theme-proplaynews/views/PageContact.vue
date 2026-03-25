@@ -235,57 +235,35 @@ useHead(headData);
 // Form submission
 const submitForm = async () => {
     if (isSubmitting.value) return;
-    
+
     isSubmitting.value = true;
     showMessage.value = false;
-    
+
     try {
-        // Create mailto link with form data
-        const subject = encodeURIComponent(`[ProPlayNews] ${form.value.subject} - ${form.value.name}`);
-        const body = encodeURIComponent(`
-Nome: ${form.value.name}
-E-mail: ${form.value.email}
-Assunto: ${form.value.subject}
+        const response = await fetch('/api/blog/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(form.value)
+        });
 
-Mensagem:
-${form.value.message}
+        const data = await response.json();
 
----
-Mensagem enviada através do formulário de contato do ProPlayNews
-        `);
-        
-        const mailtoLink = `mailto:proplaynews@gmail.com?subject=${subject}&body=${body}`;
-        
-        // Open email client
-        window.location.href = mailtoLink;
-        
-        // Show success message
+        if (!response.ok || !data.result)
+            throw new Error(data.message || 'Erro ao enviar mensagem');
+
         messageType.value = 'success';
-        message.value = 'Seu cliente de e-mail foi aberto! Complete o envio da mensagem.';
+        message.value = 'Mensagem enviada com sucesso! Responderemos em breve.';
         showMessage.value = true;
-        
-        // Reset form
-        form.value = {
-            name: '',
-            email: '',
-            subject: '',
-            message: ''
-        };
-        
-        // Hide message after 5 seconds
-        setTimeout(() => {
-            showMessage.value = false;
-        }, 5000);
-        
-    } catch (error) {
-        console.error('Error:', error);
+
+        form.value = { name: '', email: '', subject: '', message: '' };
+
+        setTimeout(() => { showMessage.value = false; }, 6000);
+
+    } catch (error: any) {
         messageType.value = 'error';
-        message.value = 'Ocorreu um erro. Tente enviar diretamente para proplaynews@gmail.com';
+        message.value = error.message || 'Ocorreu um erro. Tente novamente mais tarde.';
         showMessage.value = true;
-        
-        setTimeout(() => {
-            showMessage.value = false;
-        }, 5000);
+        setTimeout(() => { showMessage.value = false; }, 6000);
     } finally {
         isSubmitting.value = false;
     }

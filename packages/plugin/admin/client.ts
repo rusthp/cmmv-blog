@@ -226,6 +226,15 @@ export const useAdminClient = () => {
         testTwitter: () => api.authRootRequest('autopost/test-twitter', 'GET'),
     };
 
+    const contact = {
+        get: (filters: Record<string, any>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRootRequest(`contacts?${query}`, 'GET');
+        },
+        updateStatus: (id: string, status: string) => api.authRootRequest(`contacts/${id}`, 'PUT', { status }),
+        delete: (id: string) => api.authRootRequest(`contacts/${id}`, 'DELETE'),
+    };
+
     return {
         settings,
         profile,
@@ -249,5 +258,6 @@ export const useAdminClient = () => {
         prompts,
         shorturl,
         autopost,
+        contact,
     };
 };
