@@ -37,6 +37,19 @@
                                 </div>
                                 <template v-else>
                                     <a
+                                        href="#"
+                                        @click.prevent="clearWhitelabel"
+                                        class="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700 hover:text-white flex items-center"
+                                        :class="{'bg-neutral-700': !isWhitelabelActive}"
+                                    >
+                                        <div class="h-4 w-4 mr-2 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                            </svg>
+                                        </div>
+                                        <div>Main</div>
+                                    </a>
+                                    <a
                                         v-for="whitelabel in whitelabels"
                                         :key="whitelabel.id"
                                         href="#"
@@ -183,6 +196,7 @@ const loadingWhitelabels = ref(true)
 const currentWhitelabel = ref(null)
 const whitelabelDropdownOpen = ref(false)
 const whitelabelDropdownRef = ref(null)
+const isWhitelabelActive = ref(!!localStorage.getItem('currentWhitelabelId'))
 
 const userDisplayName = computed(() => {
     if (!user.value) return 'Loading...'
@@ -281,7 +295,16 @@ const toggleWhitelabelDropdown = () => {
 
 const switchWhitelabel = (whitelabel) => {
     currentWhitelabel.value = whitelabel
+    isWhitelabelActive.value = true
     localStorage.setItem('currentWhitelabelId', whitelabel.id)
+    whitelabelDropdownOpen.value = false
+    window.location = window.location.origin
+}
+
+const clearWhitelabel = () => {
+    currentWhitelabel.value = null
+    isWhitelabelActive.value = false
+    localStorage.removeItem('currentWhitelabelId')
     whitelabelDropdownOpen.value = false
     window.location = window.location.origin
 }

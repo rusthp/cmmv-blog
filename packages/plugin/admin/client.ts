@@ -109,9 +109,9 @@ export const useAdminClient = () => {
     };
 
     const analytics = {
-        getSummary: () => api.authRequest('analytics/summary', 'GET').then((res: any) => res.data),
-        getPostsMostAccessed: () => api.authRequest('analytics/posts-most-accessed', 'GET'),
-        getDashboard: () => api.authRequest('analytics/dashboard', 'GET'),
+        getSummary: () => api.authRootRequest('analytics/summary', 'GET').then((res: any) => res.data),
+        getPostsMostAccessed: () => api.authRootRequest('analytics/posts-most-accessed', 'GET'),
+        getDashboard: () => api.authRootRequest('analytics/dashboard', 'GET'),
     };
 
     const comments = {
@@ -123,7 +123,7 @@ export const useAdminClient = () => {
             const query = new URLSearchParams(filters).toString();
             return api.authRequest(`comments-with-details?${query}`, 'GET');
         },
-        getPending: () => api.authRequest('comments/pending', 'GET'),
+        getPending: () => api.authRootRequest('comments/pending', 'GET'),
         getById: (id: string) => api.authRequest(`comments/${id}`, 'GET'),
         save: (data: any) => api.authRequest('comments', 'POST', data),
         update: (id: string, data: any) => api.authRequest(`comments/${id}`, 'PUT', data),
