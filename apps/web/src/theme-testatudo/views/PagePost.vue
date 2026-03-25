@@ -957,6 +957,8 @@ const headData = computed(() => ({
         { name: 'twitter:description', content: description.value },
         { name: 'twitter:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
         { name: 'twitter:url', content: pageUrl.value },
+        { name: 'twitter:site', content: settings.value?.['blog.twitter'] ? `@${settings.value['blog.twitter']}` : undefined },
+        { name: 'twitter:creator', content: author.value?.twitter ? `@${author.value.twitter}` : undefined },
         ...metadata.value
     ],
     link: [
@@ -967,6 +969,17 @@ const headData = computed(() => ({
         {
             type: 'application/ld+json',
             innerHTML: JSON.stringify(vue3.createLdJSON('post', post.value, settings.value))
+        },
+        {
+            type: 'application/ld+json',
+            innerHTML: JSON.stringify(vue3.createLdJSON('breadcrumb', [
+                { name: 'Home', url: settings.value?.['blog.url'] || '/' },
+                ...((post.value?.categories && post.value.categories.length > 0) ? [{
+                    name: post.value.categories[0].name,
+                    url: `/category/${post.value.categories[0].slug}`
+                }] : []),
+                { name: post.value?.title, url: pageUrl.value }
+            ], settings.value))
         }
 
     ] : [

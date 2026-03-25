@@ -492,6 +492,7 @@ const categoriesStore = useCategoriesStore();
 const postsStore = usePostsStore();
 const mostAccessedStore = useMostAccessedPostsStore();
 const blogAPI = vue3.useBlog();
+const isSSR = import.meta.env.SSR;
 
 const rawSettings = computed(() => settingsStore.getSettings);
 const settings = computed<Record<string, any>>(() => {
@@ -665,7 +666,13 @@ const headData = ref({
     link: [
         { rel: 'canonical', href: settings.value.url },
         { rel: 'alternate', href: `${settings.value.url}/feed`, type: 'application/rss+xml', title: settings.value.title }
-    ]
+    ],
+    script: isSSR ? [
+        {
+            type: 'application/ld+json',
+            innerHTML: JSON.stringify(vue3.createLdJSON('website', null, settings.value))
+        }
+    ] : []
 });
 
 useHead(headData);

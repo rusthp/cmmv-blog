@@ -533,7 +533,7 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                         "url": data.featureImage || settings['blog.image'],
                         "width": "1200",
                         "height": "630",
-                        "inLanguage": "pt-BR"
+                        "inLanguage": settings['blog.language'] || 'pt-BR'
                     },
                     {
                         "@type": "WebPage",
@@ -594,7 +594,7 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                         "image": {
                             "@id": data.featureImage || settings['blog.image']
                         },
-                        "inLanguage": "pt-BR",
+                        "inLanguage": settings['blog.language'] || 'pt-BR',
                         "mainEntityOfPage": {
                             "@id": `${getEnv('VITE_WEBSITE_URL')}/post/${data.slug}/#webpage`
                         }
@@ -602,5 +602,52 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                 ]
             }
             break;
+        case "website":
+            return {
+                "@context": "https://schema.org",
+                "@graph": [
+                    {
+                        "@type": "Organization",
+                        "@id": `${getEnv('VITE_WEBSITE_URL')}/#organization`,
+                        "name": settings['blog.title'],
+                        "url": getEnv('VITE_WEBSITE_URL'),
+                        "logo": {
+                            "@type": "ImageObject",
+                            "@id": `${getEnv('VITE_WEBSITE_URL')}/#logo`,
+                            "url": settings['blog.logo'],
+                            "caption": settings['blog.title'],
+                            "inLanguage": settings['blog.language'] || 'pt-BR'
+                        }
+                    },
+                    {
+                        "@type": "WebSite",
+                        "@id": `${getEnv('VITE_WEBSITE_URL')}/#website`,
+                        "url": getEnv('VITE_WEBSITE_URL'),
+                        "name": settings['blog.title'],
+                        "publisher": {
+                            "@id": `${getEnv('VITE_WEBSITE_URL')}/#organization`
+                        },
+                        "inLanguage": settings['blog.language'] || 'pt-BR'
+                    }
+                ]
+            };
+        case "breadcrumb":
+            const baseUrl = getEnv('VITE_WEBSITE_URL') || settings?.['blog.url'] || '';
+            const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+            return {
+                "@context": "https://schema.org",
+                "@type": "BreadcrumbList",
+                "itemListElement": data.map((item: any, index: number) => {
+                    let absoluteUrl = item.url;
+                    if (absoluteUrl?.startsWith('/'))
+                        absoluteUrl = `${baseUrlClean}${absoluteUrl}`;
+                    return {
+                        "@type": "ListItem",
+                        "position": index + 1,
+                        "name": item.name,
+                        "item": absoluteUrl
+                    };
+                })
+            };
     }
 }
