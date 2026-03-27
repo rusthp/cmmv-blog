@@ -7,7 +7,7 @@
                     <!-- Logo -->
                     <div class="flex-shrink-0">
                         <a href="/" class="text-2xl font-bold text-white">
-                            <img src="/src/theme-proplaynews/assets/android-icon-192x192.png" width="70" height="70" alt="Logo" title="Logo">
+                            <img src="/src/theme-proplaynews/assets/android-icon-96x96.png" width="70" height="70" alt="Logo" title="Logo" fetchpriority="high">
                         </a>
                     </div>
 
@@ -405,6 +405,7 @@ import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 import CookieConsent from '../../components/CookieConsent.vue';
+import '../style.css';
 
 const blogAPI = vue3.useBlog();
 const categoriesStore = useCategoriesStore();
@@ -429,25 +430,17 @@ useHead({
 
     link: [
         {
-            rel: 'stylesheet',
-            href: '/src/theme-proplaynews/style.css'
-        },
-        {
             rel: 'icon',
             type: 'image/ico',
             href: '/src/theme-proplaynews/favicon.ico'
         },
         { rel: 'preconnect', href: 'https://www.googletagmanager.com/' },
-        { rel: 'preconnect', href: 'https://www.google-analytics.com/' },
-        { rel: 'preconnect', href: 'https://www.googletag.com/' },
-        { rel: 'preconnect', href: 'https://connect.facebook.net/' },
         { rel: 'preconnect', href: 'https://securepubads.g.doubleclick.net/' },
-        { rel: 'preconnect', href: 'https://tpc.googlesyndication.com/' },
-        { rel: 'preconnect', href: 'https://www.googletag.com/' },
         { rel: 'preconnect', href: 'https://static.proplaynews.com.br/' },
-        { rel: 'dns-prefetch', href: 'https://www.googletagmanager.com/' },
-        { rel: 'dns-prefetch', href: 'https://securepubads.g.doubleclick.net' },
-        { rel: 'dns-prefetch', href: 'https://static.proplaynews.com.br/' },
+        { rel: 'dns-prefetch', href: 'https://www.google-analytics.com/' },
+        { rel: 'dns-prefetch', href: 'https://connect.facebook.net/' },
+        { rel: 'dns-prefetch', href: 'https://tpc.googlesyndication.com/' },
+        { rel: 'dns-prefetch', href: 'https://www.googletag.com/' },
         { rel: 'alternate', href: `${settings.value['blog.url']}/feed`, type: 'application/rss+xml', title: settings.value['blog.title'] }
     ],
 

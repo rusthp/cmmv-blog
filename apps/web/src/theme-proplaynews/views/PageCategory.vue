@@ -24,16 +24,17 @@
 
                 <!-- Posts Grid -->
                 <div v-else-if="posts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <article v-for="post in posts" :key="post.id" class="bg-gradient-to-br from-white to-purple-50 rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:shadow-purple-200 transition-all duration-300 hover:transform hover:scale-105 border border-purple-100">
+                    <article v-for="post in posts" :key="post.id" class="category-card transition-all duration-300">
                         <!-- Feature Image -->
                         <a :href="`/post/${post.slug}`" class="block relative" aria-label="Ler mais sobre este post">
-                            <div v-if="post.featureImage" class="relative bg-gray-100 rounded-t-lg overflow-hidden" style="min-height: 200px;">
-                                <img
+                            <div v-if="post.featureImage" class="image-wrapper" style="min-height: 200px; max-height: 250px;">
+                                <OptimizedImage
                                     :src="post.featureImage"
                                     :alt="post.featureImageAlt || post.title"
-                                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                                    loading="lazy"
-                                    style="max-height: 250px; min-height: 200px;"
+                                    objectFit="cover"
+                                    :hover="true"
+                                    icon-size="lg"
+                                    style="min-height: 200px; max-height: 250px;"
                                 />
                             </div>
                         </a>
@@ -64,8 +65,7 @@
 
                             <!-- Read More Button -->
                             <div class="mt-auto">
-                                <a :href="`/post/${post.slug}`"
-                                class="inline-flex items-center bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-md hover:shadow-lg">
+                                <a :href="`/post/${post.slug}`" class="read-more-btn inline-flex items-center text-sm font-medium transition-all duration-300">
                                     Continuar lendo
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -121,7 +121,7 @@ import { useRoute } from 'vue-router';
 import { useHead } from '@unhead/vue'
 import { vue3 } from '@cmmv/blog/client';
 import { useSettingsStore } from '../../store/settings';
-
+import OptimizedImage from '../../components/OptimizedImage.vue';
 
 import {
     formatDate, stripHtml
@@ -233,3 +233,46 @@ onUnmounted(() => {
     }
 });
 </script>
+
+<style scoped>
+.category-card {
+    background: rgba(135, 206, 235, 0.15) !important;
+    border-radius: 12px !important;
+    border: 2px solid rgba(135, 206, 235, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(135, 206, 235, 0.2) !important;
+    overflow: hidden;
+}
+
+.category-card:hover {
+    background: rgba(135, 206, 235, 0.25) !important;
+    border-color: rgba(135, 206, 235, 0.6) !important;
+    box-shadow: 0 6px 20px rgba(135, 206, 235, 0.3) !important;
+    transform: translateY(-3px);
+}
+
+.image-wrapper {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    overflow: hidden;
+    position: relative;
+}
+
+.read-more-btn {
+    background: linear-gradient(to right, #7c3aed, #6d28d9) !important;
+    color: #ffffff !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4) !important;
+    text-shadow: none !important;
+}
+
+.read-more-btn:hover {
+    background: linear-gradient(to right, #6d28d9, #5b21b6) !important;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.5) !important;
+    color: #ffffff !important;
+}
+</style>
