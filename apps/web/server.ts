@@ -387,6 +387,40 @@ async function bootstrap() {
             return;
         }
 
+        const SEO_PROXY_ROUTES = [
+            '/sitemap.xml', '/sitemap', '/feed',
+            '/post-sitemap.xml', '/page-sitemap.xml',
+            '/category-sitemap.xml', '/tag-sitemap.xml',
+            '/robots.txt',
+        ];
+        const isSeoProxy = SEO_PROXY_ROUTES.some(r => url === r || url.startsWith(r + '?')) ||
+            /^\/(post|page)-sitemap-\d+\.xml$/.test(url);
+
+        if (isSeoProxy) {
+            const apiUrl = env.VITE_API_URL || 'http://localhost:5000';
+            const proxyUrl = `${apiUrl}${url}`;
+
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 10000);
+                const apiResponse = await fetch(proxyUrl, {
+                    signal: controller.signal,
+                    headers: { 'Accept': '*/*' }
+                });
+                clearTimeout(timer);
+
+                const contentType = apiResponse.headers.get('content-type') || 'text/plain';
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Cache-Control', apiResponse.headers.get('cache-control') || 'public, max-age=3600');
+                res.statusCode = apiResponse.status;
+                res.end(await apiResponse.text());
+            } catch {
+                res.statusCode = 502;
+                res.end('');
+            }
+            return;
+        }
+
         if (url.startsWith('/images/') && /\.\w+$/.test(url)) {
             const apiUrl = env.VITE_API_URL || 'http://localhost:5000';
             const proxyUrl = `${apiUrl}${url}`;

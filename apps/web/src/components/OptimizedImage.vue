@@ -2,7 +2,7 @@
     <div class="relative w-full h-full" v-cloak>
         <!-- Optimized Image -->
         <img
-            v-if="src"
+            v-if="src && !hasError"
             ref="imageElement"
             :src="imageSrc"
             :srcset="useOriginalImage ? undefined : computedSrcset"
@@ -15,6 +15,8 @@
             :fetchpriority="priority"
             :title="title"
             :aria-label="ariaLabel"
+            @load="onImageLoad"
+            @error="onImageError"
         />
 
         <!-- Fallback/Placeholder -->
@@ -77,6 +79,7 @@ interface OptimizedImageProps {
 const imageElement = ref<HTMLImageElement | null>(null);
 const isLoaded = ref(false);
 const useOriginalImage = ref(false);
+const hasError = ref(false);
 
 const props = withDefaults(defineProps<OptimizedImageProps>(), {
     loading: 'lazy',
@@ -198,6 +201,7 @@ const onImageError = (event: Event) => {
         return;
     }
 
+    hasError.value = true;
     emit('error', event);
 };
 
@@ -218,11 +222,13 @@ const imageSrc = computed(() => {
 watch(() => props.src, () => {
     useOriginalImage.value = false;
     isLoaded.value = false;
+    hasError.value = false;
 });
 
 onUnmounted(() => {
     isLoaded.value = false;
     useOriginalImage.value = false;
+    hasError.value = false;
 });
 </script>
 

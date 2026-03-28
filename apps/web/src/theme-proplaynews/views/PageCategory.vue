@@ -77,13 +77,13 @@
                             <div v-if="post.tags && post.tags.length > 0" class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-1.5">
                                 <a v-for="tag in post.tags.slice(0, 4)" :key="tag.id || tag.slug"
                                     :href="`/tag/${tag.slug}`"
-                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full hover:bg-purple-200 transition-colors">
+                                    class="tag-pill">
                                     #{{ tag.name }}
                                 </a>
                             </div>
                             <div v-else-if="post.categories && post.categories.length > 0" class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-1.5">
                                 <span v-for="cat in post.categories" :key="cat.id || cat.slug"
-                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                    class="tag-pill">
                                     {{ cat.name }}
                                 </span>
                             </div>
@@ -274,5 +274,22 @@ onUnmounted(() => {
     background: linear-gradient(to right, #6d28d9, #5b21b6) !important;
     box-shadow: 0 4px 12px rgba(109, 40, 217, 0.5) !important;
     color: #ffffff !important;
+}
+
+.tag-pill {
+    background: rgba(124, 58, 237, 0.15) !important;
+    color: #a78bfa !important;
+    border: 1px solid rgba(124, 58, 237, 0.3) !important;
+    font-size: 0.7rem !important;
+    padding: 0.15rem 0.6rem !important;
+    border-radius: 9999px !important;
+    display: inline-block !important;
+    transition: background 0.2s, border-color 0.2s !important;
+}
+
+.tag-pill:hover {
+    background: rgba(124, 58, 237, 0.3) !important;
+    border-color: rgba(124, 58, 237, 0.5) !important;
+    color: #c4b5fd !important;
 }
 </style>

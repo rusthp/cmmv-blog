@@ -188,6 +188,8 @@ export class SitemapService {
                         `\t<url>`,
                             `\t\t<loc>${apiUrl}/post/${post.slug}</loc>`,
                             `\t\t<lastmod>${post.publishedAt.toISOString()}</lastmod>`,
+                            `\t\t<changefreq>weekly</changefreq>`,
+                            `\t\t<priority>0.8</priority>`,
                             `\t\t<image:image>`,
                                 `\t\t\t<image:loc>${featureImage}</image:loc>`,
                             `\t\t</image:image>`,
@@ -226,6 +228,8 @@ export class SitemapService {
                     sitemapIndex.push(`<url>`,
                         `<loc>${apiUrl}/category/${category.slug}</loc>`,
                         `<lastmod>${category.updatedAt.toISOString()}</lastmod>`,
+                        `<changefreq>daily</changefreq>`,
+                        `<priority>0.6</priority>`,
                     `</url>`);
                 }catch(e){}
             }
@@ -262,6 +266,8 @@ export class SitemapService {
                     sitemapIndex.push(`<url>`,
                         `<loc>${apiUrl}/tag/${tag.slug}</loc>`,
                         `<lastmod>${tag.updatedAt.toISOString()}</lastmod>`,
+                        `<changefreq>weekly</changefreq>`,
+                        `<priority>0.5</priority>`,
                     `</url>`);
                 }catch(e){}
             }

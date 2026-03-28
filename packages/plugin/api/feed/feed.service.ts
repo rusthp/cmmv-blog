@@ -57,6 +57,10 @@ export class FeedService {
                 ${this.stripHtml(post.content)}</description>`);
             feed.push(`<media:content url="${post.featureImage}" medium="image"/>`);
 
+            const authorName = post.author || (Array.isArray(post.authors) && post.authors[0]) || null;
+            if (authorName)
+                feed.push(`<author>${authorName}</author>`);
+
             for (const category of post.categories) {
                 feed.push(`<category>${category.name}</category>`);
             }

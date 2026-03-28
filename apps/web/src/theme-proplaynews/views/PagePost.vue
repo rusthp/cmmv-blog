@@ -29,7 +29,31 @@
                             <!-- Main Post Content (2 columns width) -->
                             <div class="lg:col-span-3 bg-white rounded-lg p-4 relative">
                                 <div class="w-full mx-auto overflow-hidden">
-                                    <h1 class="post-title text-neutral-900 text-3xl md:text-4xl font-bold break-words mb-6">{{ post.title }}</h1>
+                                    <!-- Breadcrumbs -->
+                                <nav aria-label="breadcrumb" class="mb-4">
+                                    <ol class="flex flex-wrap items-center gap-1 text-sm text-neutral-500">
+                                        <li>
+                                            <a href="/" class="hover:text-purple-600 transition-colors">Home</a>
+                                        </li>
+                                        <li class="flex items-center gap-1">
+                                            <span aria-hidden="true">›</span>
+                                            <template v-if="post.categories && post.categories.length > 0">
+                                                <a :href="`/category/${post.categories[0].slug}`" class="hover:text-purple-600 transition-colors">
+                                                    {{ post.categories[0].name }}
+                                                </a>
+                                            </template>
+                                            <template v-else>
+                                                <span>Posts</span>
+                                            </template>
+                                        </li>
+                                        <li class="flex items-center gap-1">
+                                            <span aria-hidden="true">›</span>
+                                            <span class="text-neutral-700 font-medium truncate max-w-[200px] md:max-w-xs">{{ post.title }}</span>
+                                        </li>
+                                    </ol>
+                                </nav>
+
+                                <h1 class="post-title text-neutral-900 text-3xl md:text-4xl font-bold break-words mb-6">{{ post.title }}</h1>
 
                                     <div v-if="post.featureImage" class="post-featured-image relative bg-gray-100 rounded-2xl overflow-hidden mb-6" style="min-height: 380px;">
                                         <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
