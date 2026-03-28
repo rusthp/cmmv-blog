@@ -554,15 +554,14 @@ async function bootstrap() {
                 for (const key in metadata)
                     template = template.replace(`{${key}}`, metadata[key]);
 
-                // Use optimized cache duration based on URL type
-                const cacheDuration = getCacheDuration(url);
-                const maxAge = Math.floor(cacheDuration / 1000); // Convert to seconds
+                const etag = crypto.createHash('md5').update(template).digest('hex');
 
+                // HTML pages use no-cache + ETag so CDN/browser always revalidates
+                // This prevents serving stale HTML after deploys
                 const responseHeaders = {
                     'Content-Type': 'text/html',
-                    'Cache-Control': `public, max-age=${maxAge}`,
-                    // Add ETag for better cache validation
-                    'ETag': crypto.createHash('md5').update(template).digest('hex'),
+                    'Cache-Control': 'no-cache',
+                    'ETag': etag,
                 };
 
                 Object.entries(responseHeaders).forEach(([key, value]) => {
