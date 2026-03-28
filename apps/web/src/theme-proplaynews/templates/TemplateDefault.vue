@@ -405,7 +405,6 @@ import { useHead } from '@unhead/vue'
 import { useSettingsStore } from '../../store/settings';
 import { useCategoriesStore } from '../../store/categories';
 import CookieConsent from '../../components/CookieConsent.vue';
-import '../style.css';
 
 const blogAPI = vue3.useBlog();
 const categoriesStore = useCategoriesStore();
@@ -429,6 +428,11 @@ useHead({
     meta: computed(() => settingsStore.allMetaTags),
 
     link: [
+        {
+            rel: 'stylesheet',
+            href: '/src/theme-proplaynews/style.css',
+            media: 'all'
+        },
         {
             rel: 'icon',
             type: 'image/ico',
