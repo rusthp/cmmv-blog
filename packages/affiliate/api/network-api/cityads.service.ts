@@ -56,7 +56,7 @@ export class CityadsService extends NetworkApiAbstract {
                 title: coupon.name,
                 description: coupon.description,
                 code: coupon.promo_code.trim(),
-                active: (coupon.status !== "Active"),
+                active: (coupon.status === "Active"),
                 expiration: new Date(coupon.active_to),
                 link: resolvedLink,
                 advertiser: coupon.offer_id,

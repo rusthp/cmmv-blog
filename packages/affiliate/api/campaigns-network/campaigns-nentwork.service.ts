@@ -118,40 +118,44 @@ export class CampaignsNetworksToolsService {
                 if(!affiliateNetwork)
                     continue;
 
-                const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
+                try {
+                    const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
-                if(apiLinks.campaigns){
-                    const metadata = JSON.parse(affiliateAccount.metadata);
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
+                    if(apiLinks.campaigns){
+                        const metadata = JSON.parse(affiliateAccount.metadata);
+                        const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
 
-                    if(affiliateNetwork.apiType !== "Fetch"){
-                        const supportedApis = await this.getApisSupported();
-                        const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
-                            await supportedApis[affiliateNetwork.apiType].service() : null;
+                        if(affiliateNetwork.apiType !== "Fetch"){
+                            const supportedApis = await this.getApisSupported();
+                            const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
+                                await supportedApis[affiliateNetwork.apiType].service() : null;
 
-                        if(service){
-                            const campaigns = await service.getCampaigns(formattedUrl, metadata);
+                            if(service){
+                                const campaigns = await service.getCampaigns(formattedUrl, metadata);
 
-                            campaigns.forEach(async (campaign: any) => {
-                                const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
-                                    network: affiliateNetwork.id,
-                                    campaignId: campaign.id
-                                });
-
-                                if(!affiliateCampaignsNetwork){
-                                    await Repository.insert(AffiliateCampaignsNetworksEntity, {
+                                for(const campaign of campaigns){
+                                    const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
                                         network: affiliateNetwork.id,
-                                        campaignId: campaign.id,
-                                        name: campaign.name,
-                                        active: campaign.active,
-                                        currencyCode: campaign.currencyCode,
-                                        sector: campaign.sector,
-                                        domain: (typeof campaign.domain === "string") ? campaign.domain?.replace("*.", "") : null
+                                        campaignId: campaign.id
                                     });
+
+                                    if(!affiliateCampaignsNetwork){
+                                        await Repository.insert(AffiliateCampaignsNetworksEntity, {
+                                            network: affiliateNetwork.id,
+                                            campaignId: campaign.id,
+                                            name: campaign.name,
+                                            active: campaign.active,
+                                            currencyCode: campaign.currencyCode,
+                                            sector: campaign.sector,
+                                            domain: (typeof campaign.domain === "string") ? campaign.domain?.replace("*.", "") : null
+                                        });
+                                    }
                                 }
-                            });
+                            }
                         }
                     }
+                } catch(e) {
+                    console.error(`[getNetworkCampaigns] Error processing account ${affiliateAccount.id}:`, e);
                 }
             }
         }
@@ -185,40 +189,44 @@ export class CampaignsNetworksToolsService {
                 if(affiliateAccount.networkId !== networkId)
                     continue;
 
-                const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
+                try {
+                    const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
-                if(apiLinks.campaigns){
-                    const metadata = JSON.parse(affiliateAccount.metadata);
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
+                    if(apiLinks.campaigns){
+                        const metadata = JSON.parse(affiliateAccount.metadata);
+                        const formattedUrl = await this.formatUrlWithMetadata(apiLinks.campaigns, metadata);
 
-                    if(affiliateNetwork.apiType !== "Fetch"){
-                        const supportedApis = await this.getApisSupported();
-                        const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
-                            await supportedApis[affiliateNetwork.apiType].service() : null;
+                        if(affiliateNetwork.apiType !== "Fetch"){
+                            const supportedApis = await this.getApisSupported();
+                            const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
+                                await supportedApis[affiliateNetwork.apiType].service() : null;
 
-                        if(service){
-                            const campaigns = await service.getCampaigns(formattedUrl, metadata);
+                            if(service){
+                                const campaigns = await service.getCampaigns(formattedUrl, metadata);
 
-                            campaigns.forEach(async (campaign: any) => {
-                                const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
-                                    network: affiliateNetwork.id,
-                                    campaignId: campaign.id
-                                });
-
-                                if(!affiliateCampaignsNetwork){
-                                    await Repository.insert(AffiliateCampaignsNetworksEntity, {
+                                for(const campaign of campaigns){
+                                    const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCampaignsNetworksEntity, {
                                         network: affiliateNetwork.id,
-                                        campaignId: campaign.id,
-                                        name: campaign.name,
-                                        active: campaign.active,
-                                        currencyCode: campaign.currencyCode,
-                                        sector: campaign.sector,
-                                        domain: (typeof campaign.domain === "string") ? campaign.domain?.replace("*.", "") : null
+                                        campaignId: campaign.id
                                     });
+
+                                    if(!affiliateCampaignsNetwork){
+                                        await Repository.insert(AffiliateCampaignsNetworksEntity, {
+                                            network: affiliateNetwork.id,
+                                            campaignId: campaign.id,
+                                            name: campaign.name,
+                                            active: campaign.active,
+                                            currencyCode: campaign.currencyCode,
+                                            sector: campaign.sector,
+                                            domain: (typeof campaign.domain === "string") ? campaign.domain?.replace("*.", "") : null
+                                        });
+                                    }
                                 }
-                            });
+                            }
                         }
                     }
+                } catch(e) {
+                    console.error(`[getNetworkCampaignsByNetwork] Error processing account ${affiliateAccount.id}:`, e);
                 }
             }
         }
@@ -282,55 +290,61 @@ export class CampaignsNetworksToolsService {
                 if(!affiliateNetwork)
                     continue;
 
-                const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
+                try {
+                    const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
-                if(apiLinks.coupons){
-                    const metadata = JSON.parse(affiliateAccount.metadata);
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
+                    if(apiLinks.coupons){
+                        const metadata = JSON.parse(affiliateAccount.metadata);
+                        const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
 
-                    if(affiliateNetwork.apiType !== "Fetch"){
-                        const supportedApis = await this.getApisSupported();
-                        const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
-                            await supportedApis[affiliateNetwork.apiType].service() : null;
+                        if(affiliateNetwork.apiType !== "Fetch"){
+                            const supportedApis = await this.getApisSupported();
+                            const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
+                                await supportedApis[affiliateNetwork.apiType].service() : null;
 
-                        if(service){
-                            const coupons = await service.getCoupons(formattedUrl, metadata);
+                            if(service){
+                                const coupons = await service.getCoupons(formattedUrl, metadata);
 
-                            coupons.forEach(async (coupon: any) => {
-                                const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
-                                    network: affiliateNetwork.id,
-                                    advertiser: coupon.advertiser,
-                                    promotionId: coupon.promotionId
-                                });
-
-                                const affiliateCampaign = affiliateCampaignsNetworks.data
-                                    .find((campaign: any) => (campaign.campaignId === coupon.advertiser || campaign.campaignId === coupon.advertiser.toString()) && campaign.network === affiliateNetwork.id);
-
-                                if(!affiliateCampaignsNetwork && affiliateCampaign){
-                                    const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
-                                    const shortUrl = await this.shortUrlService.createShortUrl(coupon.deeplink);
-
-                                    if(coupon.code.trim() !== ""){
-                                        await Repository.insert(AffiliateCouponsEntity, {
+                                for(const coupon of coupons){
+                                    try {
+                                        const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
                                             network: affiliateNetwork.id,
                                             advertiser: coupon.advertiser,
-                                            promotionId: coupon.promotionId,
-                                            title: coupon.title,
-                                            description: coupon.description,
-                                            code: coupon.code,
-                                            active: coupon.active,
-                                            expiration: coupon.expiration,
-                                            link: coupon.link,
-                                            campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
-                                            campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
-                                            deeplink: coupon.deeplink,
-                                            shortUrl: shortUrl
+                                            promotionId: coupon.promotionId
                                         });
+
+                                        const affiliateCampaign = affiliateCampaignsNetworks.data
+                                            .find((campaign: any) => (campaign.campaignId === coupon.advertiser || campaign.campaignId === coupon.advertiser.toString()) && campaign.network === affiliateNetwork.id);
+
+                                        if(!affiliateCampaignsNetwork && affiliateCampaign && coupon.code?.trim()){
+                                            const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
+                                            const shortUrl = coupon.deeplink ? await this.shortUrlService.createShortUrl(coupon.deeplink) : null;
+
+                                            await Repository.insert(AffiliateCouponsEntity, {
+                                                network: affiliateNetwork.id,
+                                                advertiser: coupon.advertiser,
+                                                promotionId: coupon.promotionId,
+                                                title: coupon.title,
+                                                description: coupon.description,
+                                                code: coupon.code,
+                                                active: coupon.active,
+                                                expiration: coupon.expiration,
+                                                link: coupon.link,
+                                                campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
+                                                campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
+                                                deeplink: coupon.deeplink,
+                                                shortUrl: shortUrl
+                                            });
+                                        }
+                                    } catch(e) {
+                                        console.error(`[getCoupons] Error processing coupon ${coupon.promotionId}:`, e);
                                     }
                                 }
-                            });
+                            }
                         }
                     }
+                } catch(e) {
+                    console.error(`[getCoupons] Error processing account ${affiliateAccount.id}:`, e);
                 }
             }
         }
@@ -375,53 +389,61 @@ export class CampaignsNetworksToolsService {
                 if(affiliateAccount.networkId !== networkId)
                     continue;
 
-                const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
+                try {
+                    const apiLinks = JSON.parse(affiliateNetwork.apiLinks);
 
-                if(apiLinks.coupons){
-                    const metadata = JSON.parse(affiliateAccount.metadata);
-                    const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
+                    if(apiLinks.coupons){
+                        const metadata = JSON.parse(affiliateAccount.metadata);
+                        const formattedUrl = await this.formatUrlWithMetadata(apiLinks.coupons, metadata);
 
-                    if(affiliateNetwork.apiType !== "Fetch"){
-                        const supportedApis = await this.getApisSupported();
-                        const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
-                            await supportedApis[affiliateNetwork.apiType].service() : null;
+                        if(affiliateNetwork.apiType !== "Fetch"){
+                            const supportedApis = await this.getApisSupported();
+                            const service: any = (affiliateNetwork.apiType in supportedApis) ? //@ts-ignore
+                                await supportedApis[affiliateNetwork.apiType].service() : null;
 
-                        if(service){
-                            const coupons = await service.getCoupons(formattedUrl, metadata);
+                            if(service){
+                                const coupons = await service.getCoupons(formattedUrl, metadata);
 
-                            coupons.forEach(async (coupon: any) => {
-                                const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
-                                    network: affiliateNetwork.id,
-                                    advertiser: coupon.advertiser,
-                                    promotionId: coupon.promotionId
-                                });
+                                for(const coupon of coupons){
+                                    try {
+                                        const affiliateCampaignsNetwork = await Repository.findOne(AffiliateCouponsEntity, {
+                                            network: affiliateNetwork.id,
+                                            advertiser: coupon.advertiser,
+                                            promotionId: coupon.promotionId
+                                        });
 
-                                const affiliateCampaign = affiliateCampaignsNetworks.data
-                                    .find((campaign: any) => (campaign.campaignId === coupon.advertiser || campaign.campaignId === coupon.advertiser.toString()) && campaign.network === affiliateNetwork.id);
+                                        const affiliateCampaign = affiliateCampaignsNetworks.data
+                                            .find((campaign: any) => (campaign.campaignId === coupon.advertiser || campaign.campaignId === coupon.advertiser.toString()) && campaign.network === affiliateNetwork.id);
 
-                                if(!affiliateCampaignsNetwork && affiliateCampaign){
-                                    const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
-                                    const shortUrl = await this.shortUrlService.createShortUrl(coupon.deeplink);
+                                        if(!affiliateCampaignsNetwork && affiliateCampaign && coupon.code?.trim()){
+                                            const affiliateCampaignDomain = affiliateCampaigns.data.find((campaign: any) => campaign.domain === affiliateCampaign.domain);
+                                            const shortUrl = coupon.deeplink ? await this.shortUrlService.createShortUrl(coupon.deeplink) : null;
 
-                                    await Repository.insert(AffiliateCouponsEntity, {
-                                        network: affiliateNetwork.id,
-                                        advertiser: coupon.advertiser,
-                                        promotionId: coupon.promotionId,
-                                        title: coupon.title,
-                                        description: coupon.description,
-                                        code: coupon.code,
-                                        active: coupon.active,
-                                        expiration: coupon.expiration,
-                                        link: coupon.link,
-                                        campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
-                                        campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
-                                        deeplink: coupon.deeplink,
-                                        shortUrl: shortUrl
-                                    });
+                                            await Repository.insert(AffiliateCouponsEntity, {
+                                                network: affiliateNetwork.id,
+                                                advertiser: coupon.advertiser,
+                                                promotionId: coupon.promotionId,
+                                                title: coupon.title,
+                                                description: coupon.description,
+                                                code: coupon.code,
+                                                active: coupon.active,
+                                                expiration: coupon.expiration,
+                                                link: coupon.link,
+                                                campaign: (affiliateCampaignDomain) ? affiliateCampaignDomain.id : null,
+                                                campaignName: (affiliateCampaignDomain) ? affiliateCampaignDomain.name : null,
+                                                deeplink: coupon.deeplink,
+                                                shortUrl: shortUrl
+                                            });
+                                        }
+                                    } catch(e) {
+                                        console.error(`[getCouponsByNetwork] Error processing coupon ${coupon.promotionId}:`, e);
+                                    }
                                 }
-                            });
+                            }
                         }
                     }
+                } catch(e) {
+                    console.error(`[getCouponsByNetwork] Error processing account ${affiliateAccount.id}:`, e);
                 }
             }
         }
