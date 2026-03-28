@@ -15,16 +15,6 @@
         <script type="module" src="/src/entry-client.ts" async></script>
         <script type="text/javascript" src="/beacons.min.js" async></script>
         <script type="text/javascript" src="/comments.min.js" async></script>
-        <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-        <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js?v=0.0.25');
-                });
-            }
-        </script>
 
         <analytics />
         <custom-js />

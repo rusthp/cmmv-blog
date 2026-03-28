@@ -473,8 +473,9 @@ async function bootstrap() {
             if (served) return;
         }
 
-        if (url !== '/' && !url.includes('?') && /\.\w+$/.test(url)) {
-            const staticPath = path.resolve('dist', '.' + url);
+        if (url !== '/' && /\.\w+(\?.*)?$/.test(url)) {
+            const cleanUrl = url.split('?')[0];
+            const staticPath = path.resolve('dist', '.' + cleanUrl);
             const served = await serveStaticFile(req, res, staticPath);
             if (served) return;
         }
