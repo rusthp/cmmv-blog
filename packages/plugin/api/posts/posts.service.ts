@@ -18,6 +18,7 @@ import {
 } from "./posts.interface";
 
 import { slugify } from "../utils/extra.utils";
+import { moderateContent } from "../utils/content-moderation.utils";
 import { MediasService } from "../medias/medias.service";
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
@@ -424,6 +425,21 @@ export class PostsPublicService {
 
         if(data.post.slug.length > 100)
             throw new Error("The slug must be less than 100 characters");
+
+        // ── Competitor mention guard ──────────────────────────────────────────
+        const moderation = moderateContent({
+            title: data.post.title,
+            content: data.post.content,
+            excerpt: (data.post as any).excerpt,
+        });
+
+        if (!moderation.approved) {
+            throw new HttpException(
+                `Content blocked: competitor mention(s) detected — ${moderation.violations.join(', ')}`,
+                HttpStatus.UNPROCESSABLE_ENTITY
+            );
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         if (data.post.content) {
             data.post.content = data.post.content
