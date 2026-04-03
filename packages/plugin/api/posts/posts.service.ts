@@ -18,7 +18,7 @@ import {
 } from "./posts.interface";
 
 import { slugify } from "../utils/extra.utils";
-import { moderateContent } from "../utils/content-moderation.utils";
+import { moderateContent, fixContentWithAI } from "../utils/content-moderation.utils";
 import { MediasService } from "../medias/medias.service";
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
@@ -426,7 +426,7 @@ export class PostsPublicService {
         if(data.post.slug.length > 100)
             throw new Error("The slug must be less than 100 characters");
 
-        // ── Competitor mention guard ──────────────────────────────────────────
+        // ── Competitor mention guard — auto-fix with AI ───────────────────────
         const moderation = moderateContent({
             title: data.post.title,
             content: data.post.content,
@@ -434,9 +434,28 @@ export class PostsPublicService {
         });
 
         if (!moderation.approved) {
-            throw new HttpException(
-                `Content blocked: competitor mention(s) detected — ${moderation.violations.join(', ')}`,
-                HttpStatus.UNPROCESSABLE_ENTITY
+            this.logger.warning(
+                `⚠️ Competitor mention(s) detected in post "${data.post.title}": ` +
+                `${moderation.violations.join(', ')} — rewriting with AI`
+            );
+
+            const fixed = await fixContentWithAI(
+                {
+                    title: data.post.title,
+                    content: data.post.content,
+                    excerpt: (data.post as any).excerpt ?? '',
+                },
+                moderation.violations,
+                this.aiContentService
+            );
+
+            data.post.title = fixed.title;
+            data.post.content = fixed.content;
+            if ((data.post as any).excerpt !== undefined)
+                (data.post as any).excerpt = fixed.excerpt;
+
+            this.logger.log(
+                `✅ Post auto-corrected — violations removed: ${moderation.violations.join(', ')}`
             );
         }
         // ─────────────────────────────────────────────────────────────────────
