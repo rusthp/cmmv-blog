@@ -696,15 +696,11 @@ iframe {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Forçar texto branco em todos os elementos de post - REGRAS MAIS ESPECÍFICAS */
-.post-card *,
-.bg-white *,
-.rounded-lg *,
-.shadow-md *,
-.border *,
-.overflow-hidden * {
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+/* Forçar texto branco nos cards de listagem (NÃO no conteúdo interno do post) */
+.post-card > *,
+.post-card > * > * {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* Texto de descrição/conteúdo dos posts */
@@ -770,15 +766,161 @@ iframe {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
 }
 
-/* Garantir que elementos específicos sejam brancos */
+/* Garantir cor base para prose — sem forçar tudo igual */
 .prose,
-.prose *,
 .content,
-.content *,
-.description,
-.description * {
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+.description {
+    color: #e2e8f0;
+}
+
+/* =============================================
+   HIERARQUIA VISUAL DO CONTEÚDO DO POST
+   ============================================= */
+
+/* H2 — título de seção: azul claro com borda roxa */
+.post-content h2,
+.prose h2 {
+    color: #87ceeb !important;
+    font-size: 1.55rem !important;
+    font-weight: 700 !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 0.4rem !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 2px solid rgba(124, 58, 237, 0.5) !important;
+    text-shadow: 0 0 12px rgba(135, 206, 235, 0.25) !important;
+    letter-spacing: -0.01em !important;
+}
+
+/* H3 — sub-seção: azul mais suave */
+.post-content h3,
+.prose h3 {
+    color: #a5d8f0 !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    padding-top: 1rem !important;
+    margin-bottom: 0.6rem !important;
+    text-shadow: none !important;
+}
+
+/* H4 — menor: branco levemente acinzentado */
+.post-content h4,
+.prose h4 {
+    color: #cbd5e1 !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Parágrafo — corpo do texto */
+.post-content p,
+.prose p {
+    color: #e2e8f0 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.75 !important;
+    margin-bottom: 1.2rem !important;
+    text-shadow: none !important;
+    font-weight: 400 !important;
+}
+
+/* Negrito / destaque — dourado */
+.post-content strong,
+.post-content b,
+.prose strong,
+.prose b {
+    color: #ffcc00 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 0 8px rgba(255, 204, 0, 0.2) !important;
+}
+
+/* Itálico — branco suave levemente diferenciado */
+.post-content em,
+.post-content i,
+.prose em,
+.prose i {
+    color: #e2e8f0 !important;
+    font-style: italic !important;
+}
+
+/* Links dentro do post */
+.post-content a,
+.prose a {
+    color: #87ceeb !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px !important;
+    text-decoration-color: rgba(135, 206, 235, 0.4) !important;
+    transition: color 0.2s, text-decoration-color 0.2s !important;
+    text-shadow: none !important;
+}
+
+.post-content a:hover,
+.prose a:hover {
+    color: #add8e6 !important;
+    text-decoration-color: #add8e6 !important;
+}
+
+/* Blockquote — destaque lateral roxo */
+.post-content blockquote,
+.prose blockquote {
+    border-left: 4px solid #7c3aed !important;
+    background: rgba(124, 58, 237, 0.1) !important;
+    padding: 0.8rem 1.2rem !important;
+    margin: 1.5rem 0 !important;
+    border-radius: 0 8px 8px 0 !important;
+    color: #cbd5e1 !important;
+    font-style: italic !important;
+}
+
+.post-content blockquote p,
+.prose blockquote p {
+    color: #cbd5e1 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Listas */
+.post-content ul,
+.post-content ol,
+.prose ul,
+.prose ol {
+    color: #e2e8f0 !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1.2rem !important;
+}
+
+.post-content li,
+.prose li {
+    color: #e2e8f0 !important;
+    margin-bottom: 0.4rem !important;
+    line-height: 1.7 !important;
+}
+
+/* Código inline */
+.post-content code,
+.prose code {
+    background: rgba(124, 58, 237, 0.2) !important;
+    color: #a5d8f0 !important;
+    padding: 0.15rem 0.4rem !important;
+    border-radius: 4px !important;
+    font-size: 0.9em !important;
+    border: 1px solid rgba(124, 58, 237, 0.3) !important;
+}
+
+/* Bloco de código */
+.post-content pre,
+.prose pre {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(124, 58, 237, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 1rem 1.2rem !important;
+    overflow-x: auto !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.post-content pre code,
+.prose pre code {
+    background: transparent !important;
+    border: none !important;
+    color: #e2e8f0 !important;
+    padding: 0 !important;
 }
 
 /* Critical CSS optimizations */
