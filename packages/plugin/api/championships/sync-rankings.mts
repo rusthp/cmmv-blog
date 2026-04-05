@@ -3,14 +3,13 @@
  * Run with: npx tsx packages/plugin/api/championships/sync-rankings.mts
  */
 
+import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import Database from 'better-sqlite3';
 
 const REGIONS = ['global', 'americas', 'europe', 'asia'] as const;
 const GITHUB_BASE = 'https://raw.githubusercontent.com/ValveSoftware/counter-strike_regional_standings/main/live';
 
-// Find the database file
 function findDb(): string {
     const candidates = [
         '/root/cmmv-blog/apps/api/database.sqlite',
@@ -24,9 +23,14 @@ function findDb(): string {
 }
 
 function generateUUID(): string {
-    const h = () => Math.random().toString(16).slice(2, 10).padStart(8, '0');
-    const s = () => Math.random().toString(16).slice(2, 6).padStart(4, '0');
-    return `${h()}-${s()}-4${s().slice(1)}-${['8','9','a','b'][Math.floor(Math.random()*4)]}${s().slice(1)}-${h()}${s()}`;
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
+function sqlEscape(s: string): string {
+    return s.replace(/'/g, "''");
 }
 
 async function fetchLatest(region: string): Promise<{ date: string; content: string }> {
@@ -52,7 +56,7 @@ async function fetchLatest(region: string): Promise<{ date: string; content: str
         try {
             const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
             if (res.ok) {
-                console.log(`  ✓ ${region} @ ${date}`);
+                console.log(`  ✓ fetched ${region} @ ${date}`);
                 return { date, content: await res.text() };
             }
         } catch {}
@@ -77,36 +81,33 @@ function parseMarkdown(content: string, region: string, snapshotDate: string): a
     return entries;
 }
 
+function runSql(dbPath: string, sql: string) {
+    execSync(`sqlite3 "${dbPath}"`, { input: sql, stdio: ['pipe', 'pipe', 'pipe'] });
+}
+
 async function main() {
     const dbPath = findDb();
     console.log(`Database: ${dbPath}`);
-    const db = new Database(dbPath);
 
     // Ensure table exists
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS blog_cs2_rankings (
-            id TEXT PRIMARY KEY,
-            standing INTEGER NOT NULL,
-            points INTEGER NOT NULL,
-            teamName TEXT NOT NULL,
-            roster TEXT,
-            region TEXT NOT NULL,
-            snapshotDate TEXT NOT NULL,
-            logoUrl TEXT,
-            detailsSlug TEXT,
-            createdAt TEXT DEFAULT (datetime('now')),
-            updatedAt TEXT DEFAULT (datetime('now'))
-        );
-        CREATE INDEX IF NOT EXISTS idx_cs2r_region ON blog_cs2_rankings(region);
-        CREATE INDEX IF NOT EXISTS idx_cs2r_snap ON blog_cs2_rankings(snapshotDate);
-        CREATE INDEX IF NOT EXISTS idx_cs2r_standing ON blog_cs2_rankings(standing);
+    runSql(dbPath, `
+CREATE TABLE IF NOT EXISTS blog_cs2_rankings (
+    id TEXT PRIMARY KEY,
+    standing INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    teamName TEXT NOT NULL,
+    roster TEXT,
+    region TEXT NOT NULL,
+    snapshotDate TEXT NOT NULL,
+    logoUrl TEXT,
+    detailsSlug TEXT,
+    createdAt TEXT DEFAULT (datetime('now')),
+    updatedAt TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cs2r_region ON blog_cs2_rankings(region);
+CREATE INDEX IF NOT EXISTS idx_cs2r_snap ON blog_cs2_rankings(snapshotDate);
+CREATE INDEX IF NOT EXISTS idx_cs2r_standing ON blog_cs2_rankings(standing);
     `);
-
-    const insert = db.prepare(`
-        INSERT INTO blog_cs2_rankings (id, standing, points, teamName, roster, region, snapshotDate, logoUrl, detailsSlug)
-        VALUES (@id, @standing, @points, @teamName, @roster, @region, @snapshotDate, @logoUrl, @detailsSlug)
-    `);
-    const deleteOld = db.prepare(`DELETE FROM blog_cs2_rankings WHERE region = @region AND snapshotDate = @snapshotDate`);
 
     for (const region of REGIONS) {
         try {
@@ -114,20 +115,25 @@ async function main() {
             const entries = parseMarkdown(content, region, date);
             console.log(`  Parsed ${entries.length} entries for ${region}`);
 
-            const tx = db.transaction(() => {
-                deleteOld.run({ region, snapshotDate: date });
-                for (const e of entries) {
-                    insert.run({ ...e, id: generateUUID() });
-                }
-            });
-            tx();
+            // Build batch SQL
+            const lines: string[] = [
+                `DELETE FROM blog_cs2_rankings WHERE region='${region}' AND snapshotDate='${date}';`,
+                'BEGIN;',
+            ];
+            for (const e of entries) {
+                lines.push(
+                    `INSERT INTO blog_cs2_rankings (id,standing,points,teamName,roster,region,snapshotDate,logoUrl,detailsSlug) VALUES ('${generateUUID()}',${e.standing},${e.points},'${sqlEscape(e.teamName)}','${sqlEscape(e.roster)}','${region}','${date}','','${sqlEscape(e.detailsSlug)}');`
+                );
+            }
+            lines.push('COMMIT;');
+
+            runSql(dbPath, lines.join('\n'));
             console.log(`  ✓ Inserted ${entries.length} rows for ${region}`);
         } catch (e: any) {
             console.error(`  ✗ ${region}: ${e.message}`);
         }
     }
 
-    db.close();
     console.log('Done!');
 }
 
