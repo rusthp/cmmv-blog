@@ -6,6 +6,8 @@ import {
     Config
 } from "@cmmv/core";
 
+import { proxyManager } from '../proxy/proxy-manager';
+
 import {
     Repository, LessThan
 } from "@cmmv/repository";
@@ -500,7 +502,7 @@ export class ChannelsService {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-            const response = await fetch(rss, {
+            const response = await proxyManager.fetch(rss, {
                 signal: controller.signal,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',

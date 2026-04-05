@@ -3,6 +3,7 @@ import { Repository } from "@cmmv/repository";
 import * as crypto from 'crypto';
 import * as dns from 'dns';
 import { promisify } from 'util';
+import { proxyManager } from '../proxy/proxy-manager';
 
 const dnsLookup = promisify(dns.lookup);
 
@@ -117,11 +118,13 @@ export class ImagePipelineWorker {
                         `[pipeline][IMG] attempt=${attempt+1} url=${normalizedUrl.substring(0, 80)} referer=${attemptReferer}`
                     );
 
-                    const response: Response = await fetch(normalizedUrl, {
+                    const response = await proxyManager.fetch(normalizedUrl, {
                         method: 'GET',
                         headers: attemptHeaders,
                         redirect: 'follow',
+                        follow: 10,
                         signal: controller.signal,
+                        size: MAX_SIZE,
                     });
 
                     clearTimeout(timeout);
@@ -144,40 +147,14 @@ export class ImagePipelineWorker {
                         throw new Error(`Invalid content-type: ${contentType}`);
                     }
 
-                    const contentLengthHeader = response.headers.get('content-length');
-                    if (contentLengthHeader) {
-                        const size = parseInt(contentLengthHeader, 10);
-                        if (size > MAX_SIZE) throw new Error(`Image too large: ${size} bytes`);
-                    }
+                    // node-fetch v2: .buffer() reads the full body as Buffer
+                    const imgBuffer: Buffer = await response.buffer();
+                    totalBytes = imgBuffer.length;
 
-                    const chunks: Uint8Array[] = [];
-                    totalBytes = 0;
-
-                    if (response.body) {
-                        const reader = response.body.getReader();
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            if (value) {
-                                chunks.push(value);
-                                totalBytes += value.length;
-                                if (totalBytes > MAX_SIZE) {
-                                    reader.cancel("Max size exceeded");
-                                    throw new Error(`Image exceeded max size limits during streaming (> 5MB).`);
-                                }
-                            }
-                        }
-                    } else {
-                        const buffer = await response.arrayBuffer();
-                        const uint8 = new Uint8Array(buffer);
-                        if (uint8.length > MAX_SIZE) throw new Error("Image exceeded max size limits");
-                        chunks.push(uint8);
-                        totalBytes = uint8.length;
-                    }
-
+                    if (totalBytes > MAX_SIZE) throw new Error(`Image exceeded max size (${totalBytes} bytes)`);
                     if (totalBytes < 1000) throw new Error("Image too small");
 
-                    fullBuffer = Buffer.concat(chunks);
+                    fullBuffer = imgBuffer;
                     break; // success — exit retry loop
                 } catch (err: any) {
                     clearTimeout(timeout);

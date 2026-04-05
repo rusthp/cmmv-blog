@@ -2,6 +2,7 @@ import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 import { PIPELINE_STATE } from "./pipeline-constants";
 import { ImagePipelineWorker } from "./image-pipeline";
+import { proxyManager } from '../proxy/proxy-manager';
 
 /**
  * Worker responsible for creating blog posts from generated feed items.
@@ -573,7 +574,7 @@ export class PostingWorker {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-            const response = await fetch(url, {
+            const response = await proxyManager.fetch(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -581,26 +582,14 @@ export class PostingWorker {
                 },
                 signal: controller.signal,
                 redirect: 'follow',
+                follow: 10,
             });
 
             clearTimeout(timeoutId);
             if (!response.ok) return '';
 
-            const reader = response.body?.getReader();
-            if (!reader) return '';
-
-            let html = '';
-            let bytesRead = 0;
-            const maxBytes = 100000; // 100KB — enough for meta + early content
-
-            while (bytesRead < maxBytes) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                html += new TextDecoder().decode(value);
-                bytesRead += value.length;
-            }
-
-            try { reader.cancel(); } catch {}
+            // node-fetch v2: use text() with 100KB limit via size option
+            const html = (await response.text()).substring(0, 100000);
 
             const decode = (s: string) => s
                 .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
