@@ -58,7 +58,7 @@ export class ChampionshipsService {
     }
 
     async getTournaments(status?: string): Promise<any[]> {
-        const { Cs2TournamentEntity } = await this.getEntities();
+        const { Cs2TournamentEntity } = this.getEntities();
         if (!Cs2TournamentEntity) return [];
 
         const where: any = {};
@@ -77,7 +77,7 @@ export class ChampionshipsService {
     }
 
     async getTournamentBySlug(slug: string): Promise<any | null> {
-        const { Cs2TournamentEntity } = await this.getEntities();
+        const { Cs2TournamentEntity } = this.getEntities();
         if (!Cs2TournamentEntity) return null;
 
         const t = await Repository.findOne(Cs2TournamentEntity, { slug });
@@ -86,7 +86,7 @@ export class ChampionshipsService {
     }
 
     async getTournamentMatches(slug: string, status?: string): Promise<any[]> {
-        const { Cs2MatchEntity } = await this.getEntities();
+        const { Cs2MatchEntity } = this.getEntities();
         if (!Cs2MatchEntity) return [];
 
         const where: any = { tournamentSlug: slug };
@@ -102,7 +102,7 @@ export class ChampionshipsService {
     }
 
     async getUpcomingMatches(limit = 20): Promise<any[]> {
-        const { Cs2MatchEntity } = await this.getEntities();
+        const { Cs2MatchEntity } = this.getEntities();
         if (!Cs2MatchEntity) return [];
 
         const results = await Repository.findAll(Cs2MatchEntity, {
@@ -115,7 +115,7 @@ export class ChampionshipsService {
     }
 
     async getRecentResults(limit = 20): Promise<any[]> {
-        const { Cs2MatchEntity } = await this.getEntities();
+        const { Cs2MatchEntity } = this.getEntities();
         if (!Cs2MatchEntity) return [];
 
         const results = await Repository.findAll(Cs2MatchEntity, {
@@ -128,7 +128,7 @@ export class ChampionshipsService {
     }
 
     async getTeams(limit = 50): Promise<any[]> {
-        const { Cs2TeamEntity } = await this.getEntities();
+        const { Cs2TeamEntity } = this.getEntities();
         if (!Cs2TeamEntity) return [];
 
         const results = await Repository.findAll(Cs2TeamEntity, {
@@ -165,7 +165,7 @@ export class ChampionshipsService {
     }
 
     private async syncAllMatchesFromOngoing(): Promise<number> {
-        const { Cs2TournamentEntity } = await this.getEntities();
+        const { Cs2TournamentEntity } = this.getEntities();
         if (!Cs2TournamentEntity) return 0;
 
         const ongoing = await Repository.findAll(Cs2TournamentEntity, {
@@ -228,7 +228,7 @@ export class ChampionshipsService {
     // ─── Upsert Helpers ───────────────────────────────────────────
 
     private async upsertTournament(t: any, endpointStatus: string): Promise<void> {
-        const { Cs2TournamentEntity } = await this.getEntities();
+        const { Cs2TournamentEntity } = this.getEntities();
         if (!Cs2TournamentEntity) return;
 
         const existing = await Repository.findOne(Cs2TournamentEntity, {
@@ -283,7 +283,7 @@ export class ChampionshipsService {
     }
 
     private async upsertMatch(m: any, tournamentSlug?: string): Promise<void> {
-        const { Cs2MatchEntity } = await this.getEntities();
+        const { Cs2MatchEntity } = this.getEntities();
         if (!Cs2MatchEntity) return;
 
         const existing = await Repository.findOne(Cs2MatchEntity, {
@@ -345,7 +345,7 @@ export class ChampionshipsService {
     }
 
     private async upsertTeam(t: any): Promise<void> {
-        const { Cs2TeamEntity } = await this.getEntities();
+        const { Cs2TeamEntity } = this.getEntities();
         if (!Cs2TeamEntity) return;
 
         const existing = await Repository.findOne(Cs2TeamEntity, {
@@ -417,20 +417,11 @@ export class ChampionshipsService {
         catch { return []; }
     }
 
-    private async getEntities(): Promise<Record<string, any>> {
-        const entities: Record<string, any> = {};
-
-        for (const [key, path] of [
-            ['Cs2TournamentEntity', '../../.generated/entities/repository/cs2-tournament.entity'],
-            ['Cs2MatchEntity', '../../.generated/entities/repository/cs2-match.entity'],
-            ['Cs2TeamEntity', '../../.generated/entities/repository/cs2-team.entity'],
-        ] as const) {
-            try {
-                const mod = await import(path);
-                entities[key] = mod[key];
-            } catch {}
-        }
-
-        return entities;
+    private getEntities(): Record<string, any> {
+        return {
+            Cs2TournamentEntity: Repository.getEntity("Cs2TournamentEntity"),
+            Cs2MatchEntity: Repository.getEntity("Cs2MatchEntity"),
+            Cs2TeamEntity: Repository.getEntity("Cs2TeamEntity"),
+        };
     }
 }

@@ -4,23 +4,19 @@ import { Repository } from "@cmmv/repository";
 const REGIONS = ['global', 'americas', 'europe', 'asia'] as const;
 type Region = typeof REGIONS[number];
 
-// GitHub raw base
 const GITHUB_BASE =
     'https://raw.githubusercontent.com/ValveSoftware/counter-strike_regional_standings/main/live';
 
-// Months to search back when looking for the latest snapshot
 const LOOKBACK_MONTHS = 3;
 
 @Service('blog_cs2_rankings')
 export class RankingsService {
     private readonly logger = new Logger('RankingsService');
 
-    @Cron('0 6 * * *') // daily at 06:00
+    @Cron('0 6 * * *')
     async cronSync() {
         await this.syncAll();
     }
-
-    // ─── Public API ───────────────────────────────────────────────
 
     async syncAll(): Promise<{ region: string; count: number }[]> {
         const stats: { region: string; count: number }[] = [];
@@ -40,10 +36,9 @@ export class RankingsService {
     }
 
     async getRankings(region: string = 'global', limit = 200): Promise<any[]> {
-        const entity = await this.getEntity();
+        const entity = Repository.getEntity("Cs2RankingEntity");
         if (!entity) return [];
 
-        // Get latest snapshot date for this region
         const latest = await this.getLatestSnapshot(region);
         if (!latest) return [];
 
@@ -60,17 +55,16 @@ export class RankingsService {
         return this.getLatestSnapshot(region);
     }
 
-    // ─── Sync Logic ───────────────────────────────────────────────
-
     private async syncRegion(region: Region): Promise<number> {
         const { date, content } = await this.fetchLatestFile(region);
         const entries = this.parseMarkdown(content, region, date);
 
-        const entity = await this.getEntity();
-        if (!entity) return 0;
+        const entity = Repository.getEntity("Cs2RankingEntity");
+        if (!entity) {
+            this.logger.log(`[rankings] Cs2RankingEntity not found — table may not exist yet`);
+            return 0;
+        }
 
-        // Delete old entries for this region/date combo first
-        // (simplest upsert: clear and re-insert)
         try {
             await Repository.delete(entity, { region, snapshotDate: date });
         } catch {}
@@ -83,7 +77,6 @@ export class RankingsService {
     }
 
     private async fetchLatestFile(region: Region): Promise<{ date: string; content: string }> {
-        // Try most recent months
         const now = new Date();
         const candidates: string[] = [];
 
@@ -91,7 +84,6 @@ export class RankingsService {
             const d = new Date(now);
             d.setMonth(d.getMonth() - Math.floor(i / 2));
 
-            // Try day 1 and day 2 of each month (Valve usually posts on ~2nd)
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
 
@@ -100,7 +92,11 @@ export class RankingsService {
             }
         }
 
-        for (const date of candidates) {
+        // Deduplicate
+        const seen = new Set<string>();
+        const unique = candidates.filter(c => !seen.has(c) && seen.add(c));
+
+        for (const date of unique) {
             const year = date.substring(0, 4);
             const url = `${GITHUB_BASE}/${year}/standings_${region}_${date}.md`;
 
@@ -108,6 +104,7 @@ export class RankingsService {
                 const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
                 if (res.ok) {
                     const content = await res.text();
+                    this.logger.log(`[rankings] fetched ${region} @ ${date} (${content.length} bytes)`);
                     return { date, content };
                 }
             } catch {}
@@ -121,7 +118,6 @@ export class RankingsService {
         const lines = content.split('\n');
 
         for (const line of lines) {
-            // Match table data rows: | 1 | 2029 | Vitality | ... |
             const match = line.match(/^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|/);
             if (!match) continue;
 
@@ -132,14 +128,12 @@ export class RankingsService {
 
             if (isNaN(standing) || isNaN(points) || !teamName) continue;
 
-            // Roster: comma separated player names
             const roster = rosterRaw
                 .split(',')
-                .map(p => p.trim())
-                .filter(p => p.length > 0)
+                .map((p: string) => p.trim())
+                .filter((p: string) => p.length > 0)
                 .join(', ');
 
-            // Extract details slug from 5th column if present
             const detailsMatch = line.match(/\[details\]\(([^)]+)\)/);
             const detailsSlug = detailsMatch
                 ? detailsMatch[1].replace('details/', '').replace('.md', '')
@@ -160,13 +154,10 @@ export class RankingsService {
         return entries;
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────
-
     private async getLatestSnapshot(region: string): Promise<string | null> {
-        const entity = await this.getEntity();
+        const entity = Repository.getEntity("Cs2RankingEntity");
         if (!entity) return null;
 
-        // Find newest snapshotDate for this region
         const results = await Repository.findAll(entity, {
             where: { region },
             order: { snapshotDate: 'DESC' },
@@ -175,14 +166,5 @@ export class RankingsService {
         });
 
         return results?.data?.[0]?.snapshotDate || null;
-    }
-
-    private async getEntity(): Promise<any> {
-        try {
-            const mod = await import('../../.generated/entities/repository/cs2-ranking.entity');
-            return mod['Cs2RankingEntity'];
-        } catch {
-            return null;
-        }
     }
 }
