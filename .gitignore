@@ -408,6 +408,7 @@ dist
 .turbo
 
 # Secrets and credentials
+proxies.txt
 *.key
 *.pem
 *.p12
