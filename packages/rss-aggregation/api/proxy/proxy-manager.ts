@@ -46,7 +46,7 @@ export class ProxyManager {
 
         try {
             if (!fs.existsSync(resolved)) {
-                this.logger.warn(`[ProxyManager] File not found: ${resolved}`);
+                this.logger.log(`[ProxyManager] File not found: ${resolved}`);
                 return;
             }
 
@@ -63,7 +63,7 @@ export class ProxyManager {
 
             this.logger.log(`[ProxyManager] Loaded ${this.proxies.length} proxies from ${resolved}`);
         } catch (e: any) {
-            this.logger.warn(`[ProxyManager] Failed to load proxies: ${e.message}`);
+            this.logger.log(`[ProxyManager] Failed to load proxies: ${e.message}`);
         }
     }
 
@@ -82,7 +82,7 @@ export class ProxyManager {
         const available = this.proxies.filter(p => p.failCount < this.MAX_FAILS);
 
         if (available.length === 0) {
-            this.logger.warn('[ProxyManager] All proxies blacklisted — using direct connection');
+            this.logger.log('[ProxyManager] All proxies blacklisted — using direct connection');
             return null;
         }
 
@@ -97,7 +97,7 @@ export class ProxyManager {
         proxy.failCount++;
         proxy.lastFail = Date.now();
         if (proxy.failCount >= this.MAX_FAILS)
-            this.logger.warn(`[ProxyManager] Blacklisted: ${proxyUrl.substring(7, 40)}...`);
+            this.logger.log(`[ProxyManager] Blacklisted: ${proxyUrl.substring(7, 40)}...`);
     }
 
     markSuccess(proxyUrl: string): void {
@@ -130,7 +130,7 @@ export class ProxyManager {
             return response;
         } catch (err: any) {
             this.markFailed(proxy.url);
-            this.logger.warn(
+            this.logger.log(
                 `[ProxyManager] Proxy error (${proxy.url.substring(7, 35)}): ${err.message} — retrying direct`
             );
             return nodeFetch.default(url, options);
