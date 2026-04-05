@@ -81,6 +81,8 @@ const SENSITIVE_KEYS = [
     // Firebase settings
     "blog.firebaseClientEmail",
     "blog.firebasePrivateKey",
+    // Championships / PandaScore
+    "blog.pandascoreToken",
     // Auto-pipeline scheduling
     "blog.autoPipelineBaseIntervalMinutes",
     "blog.autoPipelineMinIntervalMinutes",

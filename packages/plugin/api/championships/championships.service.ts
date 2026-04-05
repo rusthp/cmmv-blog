@@ -6,10 +6,13 @@ import { Repository } from "@cmmv/repository";
 
 const PANDASCORE_BASE = 'https://api.pandascore.co';
 
+// PandaScore uses /csgo/ prefix for CS2 (legacy slug: cs-go)
+// Correct endpoints: /csgo/tournaments/running|upcoming|past  (NOT filter[status])
+// Match endpoints:   /csgo/matches/running|upcoming|past
+
 @Service('blog_championships')
 export class ChampionshipsService {
     private readonly logger = new Logger('ChampionshipsService');
-    private syncing = false;
 
     private get apiToken(): string {
         return Config.get<string>('blog.pandascoreToken', '');
@@ -24,261 +27,207 @@ export class ChampionshipsService {
 
     // ─── Cron Jobs ────────────────────────────────────────────────
 
-    @Cron('0 */6 * * *') // every 6 hours — full tournament sync
+    @Cron('0 */6 * * *')
     async cronSyncTournaments() {
         if (!this.apiToken) return;
         await this.syncTournaments();
     }
 
-    @Cron('*/30 * * * *') // every 30 min — update live/recent matches
+    @Cron('*/15 * * * *')
     async cronSyncMatches() {
         if (!this.apiToken) return;
-        await this.syncRunningMatches();
+        await this.syncRunningAndUpcomingMatches();
     }
 
-    // ─── Public Methods ───────────────────────────────────────────
+    // ─── Public API ───────────────────────────────────────────────
 
     async syncAll(): Promise<{ tournaments: number; matches: number; teams: number }> {
         const stats = { tournaments: 0, matches: 0, teams: 0 };
+
         if (!this.apiToken) {
-            this.logger.warn('[championships] No PandaScore token configured (blog.pandascoreToken)');
+            this.logger.warn('[championships] No PandaScore token — set blog.pandascoreToken in settings');
             return stats;
         }
-        this.logger.log('[championships] Starting full sync...');
+
+        this.logger.log('[championships] Full sync starting...');
         stats.tournaments = await this.syncTournaments();
-        stats.matches = await this.syncAllMatches();
-        stats.teams = await this.syncTopTeams();
+        stats.matches = await this.syncAllMatchesFromOngoing();
+        stats.teams = await this.syncTeams();
         this.logger.log(`[championships] Sync done: ${JSON.stringify(stats)}`);
         return stats;
     }
 
     async getTournaments(status?: string): Promise<any[]> {
-        try {
-            const { Cs2TournamentEntity } = await this.getEntities();
-            if (!Cs2TournamentEntity) return [];
+        const { Cs2TournamentEntity } = await this.getEntities();
+        if (!Cs2TournamentEntity) return [];
 
-            const where: any = {};
-            if (status && status !== 'all') where.status = status;
+        const where: any = {};
+        if (status && status !== 'all') where.status = status;
 
-            const results = await Repository.findAll(Cs2TournamentEntity, {
-                where,
-                order: { startDate: 'DESC' },
-                limit: 100,
-            });
+        const results = await Repository.findAll(Cs2TournamentEntity, {
+            where,
+            order: { startDate: 'DESC' },
+            limit: 200,
+        });
 
-            return (results?.data || []).map((t: any) => ({
-                ...t,
-                teams: this.parseJson(t.teamsJson),
-            }));
-        } catch (e: any) {
-            this.logger.error(`[championships] getTournaments error: ${e.message}`);
-            return [];
-        }
+        return (results?.data || []).map((t: any) => ({
+            ...t,
+            teams: this.parseJson(t.teamsJson),
+        }));
     }
 
     async getTournamentBySlug(slug: string): Promise<any | null> {
-        try {
-            const { Cs2TournamentEntity } = await this.getEntities();
-            if (!Cs2TournamentEntity) return null;
+        const { Cs2TournamentEntity } = await this.getEntities();
+        if (!Cs2TournamentEntity) return null;
 
-            const tournament = await Repository.findOne(Cs2TournamentEntity, { slug });
-            if (!tournament) return null;
-
-            return { ...tournament, teams: this.parseJson(tournament.teamsJson) };
-        } catch (e: any) {
-            this.logger.error(`[championships] getTournamentBySlug error: ${e.message}`);
-            return null;
-        }
+        const t = await Repository.findOne(Cs2TournamentEntity, { slug });
+        if (!t) return null;
+        return { ...t, teams: this.parseJson(t.teamsJson) };
     }
 
     async getTournamentMatches(slug: string, status?: string): Promise<any[]> {
-        try {
-            const { Cs2MatchEntity } = await this.getEntities();
-            if (!Cs2MatchEntity) return [];
+        const { Cs2MatchEntity } = await this.getEntities();
+        if (!Cs2MatchEntity) return [];
 
-            const where: any = { tournamentSlug: slug };
-            if (status && status !== 'all') where.status = status;
+        const where: any = { tournamentSlug: slug };
+        if (status && status !== 'all') where.status = status;
 
-            const results = await Repository.findAll(Cs2MatchEntity, {
-                where,
-                order: { scheduledAt: 'ASC' },
-                limit: 200,
-            });
+        const results = await Repository.findAll(Cs2MatchEntity, {
+            where,
+            order: { scheduledAt: 'ASC' },
+            limit: 200,
+        });
 
-            return results?.data || [];
-        } catch (e: any) {
-            this.logger.error(`[championships] getTournamentMatches error: ${e.message}`);
-            return [];
-        }
+        return results?.data || [];
     }
 
     async getUpcomingMatches(limit = 20): Promise<any[]> {
-        try {
-            const { Cs2MatchEntity } = await this.getEntities();
-            if (!Cs2MatchEntity) return [];
+        const { Cs2MatchEntity } = await this.getEntities();
+        if (!Cs2MatchEntity) return [];
 
-            const results = await Repository.findAll(Cs2MatchEntity, {
-                where: { status: 'not_started' },
-                order: { scheduledAt: 'ASC' },
-                limit,
-            });
+        const results = await Repository.findAll(Cs2MatchEntity, {
+            where: { status: 'not_started' },
+            order: { scheduledAt: 'ASC' },
+            limit,
+        });
 
-            return results?.data || [];
-        } catch (e: any) {
-            this.logger.error(`[championships] getUpcomingMatches error: ${e.message}`);
-            return [];
-        }
+        return results?.data || [];
     }
 
     async getRecentResults(limit = 20): Promise<any[]> {
-        try {
-            const { Cs2MatchEntity } = await this.getEntities();
-            if (!Cs2MatchEntity) return [];
+        const { Cs2MatchEntity } = await this.getEntities();
+        if (!Cs2MatchEntity) return [];
 
-            const results = await Repository.findAll(Cs2MatchEntity, {
-                where: { status: 'finished' },
-                order: { endedAt: 'DESC' },
-                limit,
-            });
+        const results = await Repository.findAll(Cs2MatchEntity, {
+            where: { status: 'finished' },
+            order: { endedAt: 'DESC' },
+            limit,
+        });
 
-            return results?.data || [];
-        } catch (e: any) {
-            this.logger.error(`[championships] getRecentResults error: ${e.message}`);
-            return [];
-        }
+        return results?.data || [];
     }
 
     async getTeams(limit = 50): Promise<any[]> {
-        try {
-            const { Cs2TeamEntity } = await this.getEntities();
-            if (!Cs2TeamEntity) return [];
+        const { Cs2TeamEntity } = await this.getEntities();
+        if (!Cs2TeamEntity) return [];
 
-            const results = await Repository.findAll(Cs2TeamEntity, {
-                order: { ranking: 'ASC' },
-                limit,
-            });
+        const results = await Repository.findAll(Cs2TeamEntity, {
+            order: { ranking: 'ASC' },
+            limit,
+        });
 
-            return results?.data || [];
-        } catch (e: any) {
-            this.logger.error(`[championships] getTeams error: ${e.message}`);
-            return [];
-        }
+        return results?.data || [];
     }
 
-    // ─── PandaScore Sync ──────────────────────────────────────────
+    // ─── Sync: Tournaments ────────────────────────────────────────
 
     private async syncTournaments(): Promise<number> {
-        try {
-            const statuses = ['running', 'upcoming', 'past'];
-            let total = 0;
+        let total = 0;
 
-            for (const status of statuses) {
+        // PandaScore uses path-based status, not query param
+        for (const endpoint of ['running', 'upcoming', 'past']) {
+            try {
                 const data = await this.pandascoreGet(
-                    `/csgo/tournaments?filter[status]=${status}&page[size]=50&sort=-begin_at`
+                    `/csgo/tournaments/${endpoint}?page[size]=50&sort=-begin_at`
                 );
                 if (!Array.isArray(data)) continue;
 
                 for (const t of data) {
-                    await this.upsertTournament(t);
+                    await this.upsertTournament(t, endpoint);
                     total++;
                 }
+            } catch (e: any) {
+                this.logger.warn(`[championships] syncTournaments/${endpoint}: ${e.message}`);
             }
-
-            return total;
-        } catch (e: any) {
-            this.logger.error(`[championships] syncTournaments error: ${e.message}`);
-            return 0;
         }
+
+        return total;
     }
 
-    private async syncAllMatches(): Promise<number> {
-        try {
-            const { Cs2TournamentEntity } = await this.getEntities();
-            if (!Cs2TournamentEntity) return 0;
+    private async syncAllMatchesFromOngoing(): Promise<number> {
+        const { Cs2TournamentEntity } = await this.getEntities();
+        if (!Cs2TournamentEntity) return 0;
 
-            const ongoing = await Repository.findAll(Cs2TournamentEntity, {
-                where: { status: 'ongoing' },
-                limit: 50,
-            });
+        const ongoing = await Repository.findAll(Cs2TournamentEntity, {
+            where: { status: 'ongoing' },
+            limit: 50,
+        });
 
-            let total = 0;
-            for (const t of (ongoing?.data || [])) {
-                const count = await this.syncMatchesForTournament(t.externalId, t.slug);
-                total += count;
+        let total = 0;
+        for (const t of (ongoing?.data || [])) {
+            try {
+                const data = await this.pandascoreGet(
+                    `/csgo/tournaments/${t.externalId}/matches?page[size]=100`
+                );
+                if (!Array.isArray(data)) continue;
+                for (const m of data) {
+                    await this.upsertMatch(m, t.slug);
+                    total++;
+                }
+            } catch (e: any) {
+                this.logger.warn(`[championships] syncMatches for ${t.slug}: ${e.message}`);
             }
-
-            return total;
-        } catch (e: any) {
-            this.logger.error(`[championships] syncAllMatches error: ${e.message}`);
-            return 0;
         }
+
+        return total;
     }
 
-    private async syncRunningMatches(): Promise<void> {
-        try {
-            const running = await this.pandascoreGet('/csgo/matches/running?page[size]=20');
-            if (!Array.isArray(running)) return;
-
-            for (const m of running) {
-                await this.upsertMatch(m);
-            }
-
-            const upcoming = await this.pandascoreGet('/csgo/matches/upcoming?page[size]=30&sort=scheduled_at');
-            if (Array.isArray(upcoming)) {
-                for (const m of upcoming) {
+    private async syncRunningAndUpcomingMatches(): Promise<void> {
+        for (const endpoint of ['running', 'upcoming']) {
+            try {
+                const size = endpoint === 'upcoming' ? 30 : 20;
+                const data = await this.pandascoreGet(
+                    `/csgo/matches/${endpoint}?page[size]=${size}&sort=scheduled_at`
+                );
+                if (!Array.isArray(data)) continue;
+                for (const m of data) {
                     await this.upsertMatch(m);
                 }
+            } catch (e: any) {
+                this.logger.warn(`[championships] syncMatches/${endpoint}: ${e.message}`);
             }
-        } catch (e: any) {
-            this.logger.error(`[championships] syncRunningMatches error: ${e.message}`);
         }
     }
 
-    private async syncMatchesForTournament(externalId: string, slug: string): Promise<number> {
+    private async syncTeams(): Promise<number> {
         try {
-            const data = await this.pandascoreGet(
-                `/csgo/tournaments/${externalId}/matches?page[size]=100`
-            );
+            const data = await this.pandascoreGet('/csgo/teams?page[size]=100&sort=modified_at');
             if (!Array.isArray(data)) return 0;
-
-            for (const m of data) {
-                await this.upsertMatch(m, slug);
-            }
-
-            return data.length;
-        } catch (e: any) {
-            this.logger.error(`[championships] syncMatchesForTournament error: ${e.message}`);
-            return 0;
-        }
-    }
-
-    private async syncTopTeams(): Promise<number> {
-        try {
-            const data = await this.pandascoreGet('/csgo/teams?sort=id&page[size]=100');
-            if (!Array.isArray(data)) return 0;
-
-            const rankings = await this.pandascoreGet('/csgo/teams/rankings?page[size]=30');
-            const rankMap = new Map<string, number>();
-            if (Array.isArray(rankings)) {
-                rankings.forEach((r: any, i: number) => {
-                    if (r.team?.id) rankMap.set(String(r.team.id), i + 1);
-                });
-            }
 
             for (const t of data) {
-                await this.upsertTeam(t, rankMap.get(String(t.id)));
+                await this.upsertTeam(t);
             }
 
             return data.length;
         } catch (e: any) {
-            this.logger.error(`[championships] syncTopTeams error: ${e.message}`);
+            this.logger.warn(`[championships] syncTeams: ${e.message}`);
             return 0;
         }
     }
 
     // ─── Upsert Helpers ───────────────────────────────────────────
 
-    private async upsertTournament(t: any): Promise<void> {
+    private async upsertTournament(t: any, endpointStatus: string): Promise<void> {
         const { Cs2TournamentEntity } = await this.getEntities();
         if (!Cs2TournamentEntity) return;
 
@@ -286,31 +235,44 @@ export class ChampionshipsService {
             externalId: String(t.id)
         });
 
+        // t.type = 'online' | 'lan' | etc (direct field from PandaScore)
+        const isOnline = t.type === 'online' || (t.live_supported && !t.country);
+
+        // Location: country field or league location
+        const location = t.country || t.region || '';
+
         const teams = (t.teams || []).map((team: any) => ({
             id: String(team.id),
             name: team.name,
             acronym: team.acronym || '',
             logoUrl: team.image_url || '',
+            location: team.location || '',
         }));
+
+        const statusMap: Record<string, string> = {
+            running: 'ongoing',
+            upcoming: 'upcoming',
+            past: 'finished',
+        };
 
         const data = {
             externalId: String(t.id),
             name: t.name || '',
             slug: t.slug || String(t.id),
-            status: this.mapTournamentStatus(t.status),
+            status: statusMap[endpointStatus] || 'upcoming',
             startDate: t.begin_at || null,
             endDate: t.end_at || null,
             prizePool: t.prizepool || '',
-            location: t.location || '',
-            online: !!t.live_supported,
+            location,
+            online: isOnline,
             tier: t.tier || '',
             logoUrl: t.league?.image_url || '',
-            bannerUrl: t.serie?.image_url || '',
+            bannerUrl: t.serie?.image_url || t.league?.image_url || '',
             leagueName: t.league?.name || '',
             leagueLogo: t.league?.image_url || '',
             serieName: t.serie?.full_name || t.serie?.name || '',
             teamsJson: JSON.stringify(teams),
-            featured: (t.tier === 's' || t.tier === 'a'),
+            featured: t.tier === 's' || t.tier === 'a',
         };
 
         if (existing) {
@@ -329,17 +291,27 @@ export class ChampionshipsService {
         });
 
         const opponents = m.opponents || [];
-        const results = m.results || [];
+        const results: Array<{ score: number; team_id: number }> = m.results || [];
 
         const team1 = opponents[0]?.opponent;
         const team2 = opponents[1]?.opponent;
-        const score1 = results.find((r: any) => r.team_id === team1?.id)?.score || 0;
-        const score2 = results.find((r: any) => r.team_id === team2?.id)?.score || 0;
 
-        const slug = tournamentSlug || m.tournament?.slug || String(m.tournament?.id || '');
+        // results is [{ score, team_id }] — match by team_id
+        const score1 = results.find(r => r.team_id === team1?.id)?.score ?? 0;
+        const score2 = results.find(r => r.team_id === team2?.id)?.score ?? 0;
 
-        const streams = m.streams_list || m.streams || [];
-        const streamUrl = streams.find((s: any) => s.language === 'pt' || s.language === 'en')?.raw_url || '';
+        // tournament slug: prefer passed arg, then from match.tournament object
+        const slug = tournamentSlug
+            || m.tournament?.slug
+            || String(m.tournament_id || '');
+
+        // Stream: prefer pt-BR, fallback to main or en
+        const streams: any[] = m.streams_list || [];
+        const stream = streams.find(s => s.language === 'pt')
+            || streams.find(s => s.main)
+            || streams.find(s => s.language === 'en')
+            || null;
+        const streamUrl = stream?.raw_url || '';
 
         const data = {
             externalId: String(m.id),
@@ -361,7 +333,7 @@ export class ChampionshipsService {
             team2Logo: team2?.image_url || '',
             team2Acronym: team2?.acronym || '',
             team2Score: score2,
-            winnerExternalId: m.winner?.id ? String(m.winner.id) : '',
+            winnerExternalId: m.winner_id ? String(m.winner_id) : '',
             streamUrl,
         };
 
@@ -372,7 +344,7 @@ export class ChampionshipsService {
         }
     }
 
-    private async upsertTeam(t: any, ranking?: number): Promise<void> {
+    private async upsertTeam(t: any): Promise<void> {
         const { Cs2TeamEntity } = await this.getEntities();
         if (!Cs2TeamEntity) return;
 
@@ -386,9 +358,9 @@ export class ChampionshipsService {
             slug: t.slug || String(t.id),
             acronym: t.acronym || '',
             logoUrl: t.image_url || '',
-            nationality: t.nationality || '',
+            nationality: t.location || t.nationality || '',
             region: t.location || '',
-            ranking: ranking || 0,
+            ranking: 0,
         };
 
         if (existing) {
@@ -398,7 +370,7 @@ export class ChampionshipsService {
         }
     }
 
-    // ─── Utility ──────────────────────────────────────────────────
+    // ─── Utilities ────────────────────────────────────────────────
 
     private async pandascoreGet(path: string): Promise<any> {
         const url = `${PANDASCORE_BASE}${path}`;
@@ -408,20 +380,11 @@ export class ChampionshipsService {
         });
 
         if (!response.ok) {
-            throw new Error(`PandaScore ${response.status}: ${path}`);
+            const body = await response.text().catch(() => '');
+            throw new Error(`PandaScore ${response.status} ${path}: ${body.substring(0, 200)}`);
         }
 
         return response.json();
-    }
-
-    private mapTournamentStatus(status: string): string {
-        const map: Record<string, string> = {
-            running: 'ongoing',
-            upcoming: 'upcoming',
-            finished: 'finished',
-            cancelled: 'cancelled',
-        };
-        return map[status] || status || 'upcoming';
     }
 
     private mapMatchStatus(status: string): string {
@@ -433,7 +396,7 @@ export class ChampionshipsService {
             cancelled: 'canceled',
             postponed: 'not_started',
         };
-        return map[status] || status || 'not_started';
+        return map[status] || 'not_started';
     }
 
     private extractPhase(match: any): string {
@@ -444,7 +407,9 @@ export class ChampionshipsService {
         if (name.includes('playoff') || name.includes('eliminat')) return 'playoffs';
         if (name.includes('group') || name.includes('grupo')) return 'group_stage';
         if (name.includes('qualifier') || name.includes('qualif')) return 'qualifier';
-        return match.tournament_round_number ? 'playoffs' : 'group_stage';
+        if (name.includes('decider')) return 'playoffs';
+        if (name.includes('upper') || name.includes('lower')) return 'playoffs';
+        return 'group_stage';
     }
 
     private parseJson(json: string): any[] {
@@ -452,35 +417,20 @@ export class ChampionshipsService {
         catch { return []; }
     }
 
-    private async getEntities() {
-        try {
-            const { Repository: Repo } = await import('@cmmv/repository');
-            const entities: any = {};
+    private async getEntities(): Promise<Record<string, any>> {
+        const entities: Record<string, any> = {};
 
+        for (const [key, path] of [
+            ['Cs2TournamentEntity', '../../.generated/entities/repository/cs2-tournament.entity'],
+            ['Cs2MatchEntity', '../../.generated/entities/repository/cs2-match.entity'],
+            ['Cs2TeamEntity', '../../.generated/entities/repository/cs2-team.entity'],
+        ] as const) {
             try {
-                const { Cs2TournamentEntity } = await import(
-                    '../../.generated/entities/repository/cs2-tournament.entity'
-                );
-                entities.Cs2TournamentEntity = Cs2TournamentEntity;
+                const mod = await import(path);
+                entities[key] = mod[key];
             } catch {}
-
-            try {
-                const { Cs2MatchEntity } = await import(
-                    '../../.generated/entities/repository/cs2-match.entity'
-                );
-                entities.Cs2MatchEntity = Cs2MatchEntity;
-            } catch {}
-
-            try {
-                const { Cs2TeamEntity } = await import(
-                    '../../.generated/entities/repository/cs2-team.entity'
-                );
-                entities.Cs2TeamEntity = Cs2TeamEntity;
-            } catch {}
-
-            return entities;
-        } catch {
-            return {};
         }
+
+        return entities;
     }
 }
