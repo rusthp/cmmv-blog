@@ -1,10 +1,14 @@
 import { Controller, Get, Post, Param, Query } from '@cmmv/http';
 import { Auth } from '@cmmv/auth';
 import { ChampionshipsService } from './championships.service';
+import { RankingsService } from './rankings.service';
 
 @Controller('cs2')
 export class ChampionshipsController {
-    constructor(private readonly service: ChampionshipsService) {}
+    constructor(
+        private readonly service: ChampionshipsService,
+        private readonly rankingsService: RankingsService,
+    ) {}
 
     @Get('tournaments')
     async getTournaments(@Query('status') status?: string) {
@@ -46,10 +50,36 @@ export class ChampionshipsController {
         return { data: teams, total: teams.length };
     }
 
+    // ─── Rankings (Valve Major Standings) ────────────────────────
+
+    @Get('rankings')
+    async getRankings(
+        @Query('region') region?: string,
+        @Query('limit') limit?: string,
+    ) {
+        const data = await this.rankingsService.getRankings(
+            region || 'global',
+            parseInt(limit || '200'),
+        );
+        return { data, total: data.length };
+    }
+
+    // ─── Sync ─────────────────────────────────────────────────────
+
     @Post('sync')
     @Auth()
     async syncAll() {
-        const stats = await this.service.syncAll();
+        const [pandaStats, rankingStats] = await Promise.all([
+            this.service.syncAll(),
+            this.rankingsService.syncAll(),
+        ]);
+        return { success: true, pandascore: pandaStats, rankings: rankingStats };
+    }
+
+    @Post('sync/rankings')
+    @Auth()
+    async syncRankings() {
+        const stats = await this.rankingsService.syncAll();
         return { success: true, stats };
     }
 }

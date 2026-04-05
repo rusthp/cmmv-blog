@@ -22,7 +22,8 @@ export function createRouter() {
                     { path: '/terms-of-service', component: () => import('./views/TermsOfService.vue') },
                     { path: '/terms-of-privacy', component: () => import('./views/TermsOfPrivacy.vue') },
                     { path: '/campeonatos', component: () => import('./views/PageChampionships.vue') },
-                    { path: '/campeonatos/:slug', component: () => import('./views/PageChampionship.vue') }
+                    { path: '/campeonatos/:slug', component: () => import('./views/PageChampionship.vue') },
+                    { path: '/ranking', component: () => import('./views/PageRanking.vue') }
                 ]
             }
         ]
