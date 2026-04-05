@@ -20,7 +20,9 @@ export function createRouter() {
                     { path: '/author/:slug', component: () => import('./views/PageAuthor.vue') },
                     { path: '/contato', component: () => import('./views/ContactPage.vue') },
                     { path: '/terms-of-service', component: () => import('./views/TermsOfService.vue') },
-                    { path: '/terms-of-privacy', component: () => import('./views/TermsOfPrivacy.vue') }
+                    { path: '/terms-of-privacy', component: () => import('./views/TermsOfPrivacy.vue') },
+                    { path: '/campeonatos', component: () => import('./views/PageChampionships.vue') },
+                    { path: '/campeonatos/:slug', component: () => import('./views/PageChampionship.vue') }
                 ]
             }
         ]
