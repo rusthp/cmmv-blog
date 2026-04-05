@@ -2265,6 +2265,26 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- PandaScore Integration -->
+                            <div class="space-y-4 p-4 border border-neutral-700 rounded-md">
+                                <h3 class="text-lg font-medium text-white border-b border-neutral-700 pb-2">
+                                    PandaScore — CS2 Championships
+                                </h3>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-neutral-300">PandaScore API Token</label>
+                                    <input
+                                        v-model="settings.pandascoreToken"
+                                        type="password"
+                                        class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        placeholder="Enter your PandaScore API token"
+                                    />
+                                    <p class="text-xs text-neutral-500">
+                                        Required to sync CS2 tournaments, matches and teams from PandaScore.
+                                        Get your token at <a href="https://pandascore.co" target="_blank" class="text-blue-400 hover:underline">pandascore.co</a>.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -4366,6 +4386,7 @@ const settings = ref({
     redditClientSecret: "",
     redditUsername: "",
     redditPassword: "",
+    pandascoreToken: "",
 
     // SEO
     metaDescription: "",
@@ -4677,6 +4698,7 @@ const tabFieldMap = {
         "redditClientSecret",
         "redditUsername",
         "redditPassword",
+        "pandascoreToken",
         "firebaseApiKey",
         "firebaseAuthDomain",
         "firebaseProjectId",
