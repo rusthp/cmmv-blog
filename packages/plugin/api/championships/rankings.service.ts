@@ -11,7 +11,14 @@ const LOOKBACK_MONTHS = 3;
 
 @Service('blog_cs2_rankings')
 export class RankingsService {
-    private readonly logger = new Logger('RankingsService');
+    private static readonly logger = new Logger('RankingsService');
+
+    static log(msg: string) {
+        try { RankingsService.logger.log(msg); } catch {}
+    }
+    static warn(msg: string) {
+        try { RankingsService.logger.warn(msg); } catch {}
+    }
 
     @Cron('0 6 * * *')
     async cronSync() {
@@ -25,9 +32,9 @@ export class RankingsService {
             try {
                 const count = await this.syncRegion(region);
                 stats.push({ region, count });
-                this.logger.log(`[rankings] synced ${count} entries for ${region}`);
+                RankingsService.log(`[rankings] synced ${count} entries for ${region}`);
             } catch (e: any) {
-                this.logger.log(`[rankings] failed ${region}: ${e.message}`);
+                RankingsService.log(`[rankings] failed ${region}: ${e.message}`);
                 stats.push({ region, count: 0 });
             }
         }
@@ -61,7 +68,7 @@ export class RankingsService {
 
         const entity = Repository.getEntity("Cs2RankingEntity");
         if (!entity) {
-            this.logger.log(`[rankings] Cs2RankingEntity not found — table may not exist yet`);
+            RankingsService.log(`[rankings] Cs2RankingEntity not found — table may not exist yet`);
             return 0;
         }
 
@@ -104,7 +111,7 @@ export class RankingsService {
                 const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
                 if (res.ok) {
                     const content = await res.text();
-                    this.logger.log(`[rankings] fetched ${region} @ ${date} (${content.length} bytes)`);
+                    RankingsService.log(`[rankings] fetched ${region} @ ${date} (${content.length} bytes)`);
                     return { date, content };
                 }
             } catch {}

@@ -12,7 +12,14 @@ const PANDASCORE_BASE = 'https://api.pandascore.co';
 
 @Service('blog_championships')
 export class ChampionshipsService {
-    private readonly logger = new Logger('ChampionshipsService');
+    private static readonly logger = new Logger('ChampionshipsService');
+
+    static warn(msg: string) {
+        try { ChampionshipsService.logger.warn(msg); } catch {}
+    }
+    static log(msg: string) {
+        try { ChampionshipsService.logger.log(msg); } catch {}
+    }
 
     private get apiToken(): string {
         return Config.get<string>('blog.pandascoreToken', '');
@@ -45,15 +52,15 @@ export class ChampionshipsService {
         const stats = { tournaments: 0, matches: 0, teams: 0 };
 
         if (!this.apiToken) {
-            this.logger.warn('[championships] No PandaScore token — set blog.pandascoreToken in settings');
+            ChampionshipsService.warn('[championships] No PandaScore token — set blog.pandascoreToken in settings');
             return stats;
         }
 
-        this.logger.log('[championships] Full sync starting...');
+        ChampionshipsService.log('[championships] Full sync starting...');
         stats.tournaments = await this.syncTournaments();
         stats.matches = await this.syncAllMatchesFromOngoing();
         stats.teams = await this.syncTeams();
-        this.logger.log(`[championships] Sync done: ${JSON.stringify(stats)}`);
+        ChampionshipsService.log(`[championships] Sync done: ${JSON.stringify(stats)}`);
         return stats;
     }
 
@@ -157,7 +164,7 @@ export class ChampionshipsService {
                     total++;
                 }
             } catch (e: any) {
-                this.logger.warn(`[championships] syncTournaments/${endpoint}: ${e.message}`);
+                ChampionshipsService.warn(`[championships] syncTournaments/${endpoint}: ${e.message}`);
             }
         }
 
@@ -185,7 +192,7 @@ export class ChampionshipsService {
                     total++;
                 }
             } catch (e: any) {
-                this.logger.warn(`[championships] syncMatches for ${t.slug}: ${e.message}`);
+                ChampionshipsService.warn(`[championships] syncMatches for ${t.slug}: ${e.message}`);
             }
         }
 
@@ -204,7 +211,7 @@ export class ChampionshipsService {
                     await this.upsertMatch(m);
                 }
             } catch (e: any) {
-                this.logger.warn(`[championships] syncMatches/${endpoint}: ${e.message}`);
+                ChampionshipsService.warn(`[championships] syncMatches/${endpoint}: ${e.message}`);
             }
         }
     }
@@ -220,7 +227,7 @@ export class ChampionshipsService {
 
             return data.length;
         } catch (e: any) {
-            this.logger.warn(`[championships] syncTeams: ${e.message}`);
+            ChampionshipsService.warn(`[championships] syncTeams: ${e.message}`);
             return 0;
         }
     }
