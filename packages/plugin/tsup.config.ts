@@ -12,5 +12,8 @@ export default defineConfig({
     splitting: false,
     clean: true,
     dts: true,
-    sourcemap: true
+    sourcemap: true,
+    external: [
+        /\.vue$/
+    ]
 });

@@ -1,0 +1,47 @@
+import {
+    Contract, AbstractContract,
+    ContractField
+} from "@cmmv/core";
+
+@Contract({
+    namespace: 'Blog',
+    controllerName: 'EsportsTeams',
+    protoPackage: 'blog',
+    subPath: '/blog',
+    generateController: false,
+    generateBoilerplates: false,
+    auth: false,
+    options: {
+        moduleContract: true,
+        databaseSchemaName: "blog_esports_teams",
+        databaseTimestamps: true
+    }
+})
+export class EsportsTeamContract extends AbstractContract {
+    @ContractField({ protoType: 'string', nullable: false, index: true })
+    externalId!: string;
+
+    @ContractField({ protoType: 'string', nullable: false, index: true, defaultValue: 'csgo' })
+    game!: string;
+
+    @ContractField({ protoType: 'string', nullable: false, index: true })
+    name!: string;
+
+    @ContractField({ protoType: 'string', nullable: false, index: true })
+    slug!: string;
+
+    @ContractField({ protoType: 'string', nullable: true })
+    acronym!: string;
+
+    @ContractField({ protoType: 'string', nullable: true })
+    logoUrl!: string;
+
+    @ContractField({ protoType: 'string', nullable: true })
+    nationality!: string;
+
+    @ContractField({ protoType: 'string', nullable: true })
+    region!: string;
+
+    @ContractField({ protoType: 'int32', nullable: true, defaultValue: 0, index: true })
+    ranking!: number;
+}

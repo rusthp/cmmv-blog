@@ -8,7 +8,14 @@
       "Bash(wsl -- find /root -name node -type f)",
       "Bash(wsl -- find /usr -name node -type f)",
       "Bash(wsl -- bash -c \"ls /home/\")",
-      "Bash(wsl -- bash -c \"ls /home/rusthp/.nvm/versions/node/ 2>/dev/null && echo found_nvm || ls /home/rusthp/.local/share/fnm/ 2>/dev/null && echo found_fnm || echo ''no manager''\")"
+      "Bash(wsl -- bash -c \"ls /home/rusthp/.nvm/versions/node/ 2>/dev/null && echo found_nvm || ls /home/rusthp/.local/share/fnm/ 2>/dev/null && echo found_fnm || echo ''no manager''\")",
+      "Bash(find /b/voxelpromo/src/jobs -name *.ts)",
+      "Bash(find /b/cmmv-blog -name *.config.* -o -name .env* -o -name *twitter* -type f)",
+      "Bash(node test-twitter.mjs)",
+      "Bash(ls /mnt/)",
+      "Bash(ls /b)",
+      "Bash(ls /c)",
+      "Bash(node -e \":*)"
     ]
   }
 }

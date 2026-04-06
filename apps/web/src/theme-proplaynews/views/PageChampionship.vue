@@ -201,8 +201,8 @@ async function load() {
     try {
         loading.value = true;
         const [tRes, mRes] = await Promise.all([
-            fetch(`/api/cs2/tournaments/${slug.value}`),
-            fetch(`/api/cs2/tournaments/${slug.value}/matches`),
+            fetch(`/api/esports/tournaments/${slug.value}`),
+            fetch(`/api/esports/tournaments/${slug.value}/matches`),
         ]);
         tournament.value = await tRes.json();
         const matchData = await mRes.json();

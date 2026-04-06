@@ -3,7 +3,7 @@ import { Auth } from '@cmmv/auth';
 import { ChampionshipsService } from './championships.service';
 import { RankingsService } from './rankings.service';
 
-@Controller('cs2')
+@Controller('esports')
 export class ChampionshipsController {
     constructor(
         private readonly service: ChampionshipsService,
@@ -11,8 +11,15 @@ export class ChampionshipsController {
     ) {}
 
     @Get('tournaments')
-    async getTournaments(@Query('status') status?: string) {
-        const tournaments = await this.service.getTournaments(status);
+    async getTournaments(@Query('status') status?: string, @Query('game') game?: string) {
+        let tournaments = await this.service.getTournaments(status, game);
+        
+        // Auto-sync if the new table is completely empty
+        if (tournaments.length === 0) {
+            await this.service.syncAll();
+            tournaments = await this.service.getTournaments(status, game);
+        }
+        
         return { data: tournaments, total: tournaments.length };
     }
 
@@ -33,20 +40,20 @@ export class ChampionshipsController {
     }
 
     @Get('matches/upcoming')
-    async getUpcomingMatches(@Query('limit') limit?: string) {
-        const matches = await this.service.getUpcomingMatches(parseInt(limit || '20'));
+    async getUpcomingMatches(@Query('limit') limit?: string, @Query('game') game?: string) {
+        const matches = await this.service.getUpcomingMatches(game, parseInt(limit || '20'));
         return { data: matches, total: matches.length };
     }
 
     @Get('matches/results')
-    async getRecentResults(@Query('limit') limit?: string) {
-        const matches = await this.service.getRecentResults(parseInt(limit || '20'));
+    async getRecentResults(@Query('limit') limit?: string, @Query('game') game?: string) {
+        const matches = await this.service.getRecentResults(game, parseInt(limit || '20'));
         return { data: matches, total: matches.length };
     }
 
     @Get('teams')
-    async getTeams(@Query('limit') limit?: string) {
-        const teams = await this.service.getTeams(parseInt(limit || '50'));
+    async getTeams(@Query('limit') limit?: string, @Query('game') game?: string) {
+        const teams = await this.service.getTeams(game, parseInt(limit || '50'));
         return { data: teams, total: teams.length };
     }
 
@@ -62,6 +69,18 @@ export class ChampionshipsController {
             parseInt(limit || '200'),
         );
         return { data, total: data.length };
+    }
+
+    @Get('rankings/status')
+    async getRankingsStatus() {
+        const status = await this.rankingsService.getSyncStatus();
+        return status;
+    }
+
+    @Get('rankings/sync-now')
+    async syncRankingsNow() {
+        const stats = await this.rankingsService.syncAll();
+        return { success: true, stats };
     }
 
     // ─── Sync ─────────────────────────────────────────────────────

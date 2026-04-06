@@ -188,7 +188,15 @@ const serveStaticFile = async (req: http.IncomingMessage, res: http.ServerRespon
             fileCache.set(filePath, { buffer, etag, mtime });
         }
 
-        const contentType = mime.lookup(filePath) || 'application/octet-stream';
+        // mime-types maps .ts to 'video/mp2t' (MPEG Transport Stream)
+        // which breaks Vite's module loading. Override for TypeScript files.
+        const ext = path.extname(filePath).toLowerCase();
+        let contentType: string;
+        if (ext === '.ts' || ext === '.tsx' || ext === '.mts') {
+            contentType = 'application/javascript';
+        } else {
+            contentType = mime.lookup(filePath) || 'application/octet-stream';
+        }
 
         if (ifNoneMatch === etag) {
             res.writeHead(304, {
@@ -468,9 +476,14 @@ async function bootstrap() {
         }
 
         if (url.startsWith('/src/theme-') && /\.\w+$/.test(url)) {
-            const srcPath = path.resolve(process.cwd(), '.' + url);
-            const served = await serveStaticFile(req, res, srcPath);
-            if (served) return;
+            // In dev mode, skip .ts/.vue/.tsx files — let Vite middleware handle them
+            const urlExt = path.extname(url.split('?')[0]).toLowerCase();
+            const viteHandled = ['.ts', '.tsx', '.vue', '.mts', '.js', '.mjs'];
+            if (!isDev || !viteHandled.includes(urlExt)) {
+                const srcPath = path.resolve(process.cwd(), '.' + url);
+                const served = await serveStaticFile(req, res, srcPath);
+                if (served) return;
+            }
         }
 
         if (url !== '/' && /\.\w+(\?.*)?$/.test(url)) {

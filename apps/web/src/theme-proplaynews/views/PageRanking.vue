@@ -1,140 +1,253 @@
 <template>
     <div class="ranking-page">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="header-content">
-                <div class="header-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
+        <!-- Hero Header -->
+        <div class="ranking-hero">
+            <div class="hero-glow"></div>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <div class="badge-ring">
+                        <span class="badge-icon">🏆</span>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="page-title">Ranking Mundial CS2</h1>
-                    <p class="page-subtitle">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        Ranking Mundial
+                        <span class="title-accent">CS2</span>
+                    </h1>
+                    <p class="hero-subtitle">
                         Standings oficiais da Valve para o próximo Major
-                        <span v-if="snapshotDate" class="snapshot-date">· {{ formatSnapshotDate(snapshotDate) }}</span>
+                        <span v-if="snapshotDate" class="snapshot-pill">
+                            📅
+                            {{ formatSnapshotDate(snapshotDate) }}
+                        </span>
                     </p>
+                </div>
+                <div class="hero-stats" v-if="rankings.length > 0">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ rankings.length }}</span>
+                        <span class="stat-label">Times</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-box">
+                        <span class="stat-value">{{ majorSlots }}</span>
+                        <span class="stat-label">Major Slots</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-box">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">Regiões</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Region Tabs -->
-        <div class="region-tabs">
-            <button
-                v-for="tab in regionTabs"
-                :key="tab.value"
-                class="region-tab"
-                :class="{ active: activeRegion === tab.value }"
-                @click="setRegion(tab.value)"
-            >
-                <span class="tab-flag">{{ tab.flag }}</span>
-                {{ tab.label }}
-            </button>
+        <div class="region-section">
+            <div class="region-tabs">
+                <button
+                    v-for="tab in regionTabs"
+                    :key="tab.value"
+                    class="region-tab"
+                    :class="{ active: activeRegion === tab.value }"
+                    @click="setRegion(tab.value)"
+                >
+                    <span class="tab-indicator"></span>
+                    <span class="tab-emoji">{{ tab.flag }}</span>
+                    <span class="tab-text">{{ tab.label }}</span>
+                </button>
+            </div>
         </div>
 
         <!-- Loading -->
         <div v-if="loading" class="loading-state">
-            <div v-for="n in 20" :key="n" class="skeleton-row"></div>
+            <div class="skeleton-header">
+                <div class="skeleton-pulse sk-rank"></div>
+                <div class="skeleton-pulse sk-team"></div>
+                <div class="skeleton-pulse sk-roster"></div>
+                <div class="skeleton-pulse sk-points"></div>
+            </div>
+            <div v-for="n in 14" :key="n" class="skeleton-row" :style="{ animationDelay: `${n * 0.04}s` }">
+                <div class="skeleton-pulse sk-rank"></div>
+                <div class="skeleton-pulse sk-team"></div>
+                <div class="skeleton-pulse sk-roster"></div>
+                <div class="skeleton-pulse sk-points"></div>
+            </div>
         </div>
 
         <!-- Empty -->
         <div v-else-if="rankings.length === 0" class="empty-state">
-            <div class="empty-icon">📊</div>
-            <p>Ranking ainda não sincronizado.</p>
-            <p class="empty-sub">Os dados são atualizados mensalmente pela Valve.</p>
+            <div class="empty-visual">
+                <div class="empty-ring">
+                    <span class="empty-icon">⭐</span>
+                </div>
+            </div>
+            <h3 class="empty-title">Ranking ainda não sincronizado</h3>
+            <p class="empty-desc">
+                Os dados são obtidos do repositório oficial da Valve e atualizados mensalmente.
+            </p>
+            <button class="empty-retry" @click="load(activeRegion)">
+                🔄 Tentar novamente
+            </button>
         </div>
 
-        <!-- Table -->
-        <div v-else class="ranking-table-wrapper">
-            <table class="ranking-table">
-                <thead>
-                    <tr>
-                        <th class="col-rank">#</th>
-                        <th class="col-team">Time</th>
-                        <th class="col-roster">Jogadores</th>
-                        <th class="col-points">Pontos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="entry in rankings"
-                        :key="entry.id"
-                        class="ranking-row"
-                        :class="getRowClass(entry.standing)"
-                    >
-                        <!-- Rank -->
-                        <td class="col-rank">
-                            <div class="rank-cell">
-                                <span class="rank-medal" v-if="entry.standing <= 3">
-                                    {{ entry.standing === 1 ? '🥇' : entry.standing === 2 ? '🥈' : '🥉' }}
-                                </span>
-                                <span class="rank-number" :class="{ 'top16': entry.standing <= 16 }">
-                                    {{ entry.standing }}
-                                </span>
-                            </div>
-                        </td>
+        <!-- Ranking Table -->
+        <div v-else class="ranking-container">
+            <!-- Major Qualification Line Legend -->
+            <div class="legend-bar">
+                <div class="legend-item">
+                    <span class="legend-dot legend-gold"></span>
+                    <span>Pódio</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot legend-qualified"></span>
+                    <span>Classificado Major</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot legend-contender"></span>
+                    <span>Contender</span>
+                </div>
+            </div>
 
-                        <!-- Team -->
-                        <td class="col-team">
-                            <div class="team-cell">
-                                <div class="team-logo" v-if="entry.logoUrl">
-                                    <img :src="entry.logoUrl" :alt="entry.teamName" />
-                                </div>
-                                <div class="team-logo-placeholder" v-else>
-                                    {{ entry.teamName.substring(0, 2).toUpperCase() }}
-                                </div>
-                                <span class="team-name">{{ entry.teamName }}</span>
-                            </div>
-                        </td>
+            <div class="table-wrapper">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th class="col-rank">#</th>
+                            <th class="col-team">Time</th>
+                            <th class="col-roster">Jogadores</th>
+                            <th class="col-points">Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template v-for="(entry, idx) in displayedRankings" :key="entry.id">
+                            <tr
+                                class="ranking-row"
+                                :class="getRowClass(entry.standing)"
+                                :style="{ animationDelay: `${idx * 0.02}s` }"
+                            >
+                                <!-- Rank -->
+                                <td class="col-rank">
+                                    <div class="rank-cell">
+                                        <span v-if="entry.standing === 1" class="rank-crown">👑</span>
+                                        <span v-else-if="entry.standing === 2" class="rank-medal silver">🥈</span>
+                                        <span v-else-if="entry.standing === 3" class="rank-medal bronze">🥉</span>
+                                        <span
+                                            class="rank-number"
+                                            :class="{
+                                                'rank-top1': entry.standing === 1,
+                                                'rank-top3': entry.standing <= 3,
+                                                'rank-top8': entry.standing > 3 && entry.standing <= 8,
+                                                'rank-top16': entry.standing > 8 && entry.standing <= majorSlots,
+                                            }"
+                                        >{{ entry.standing }}</span>
+                                    </div>
+                                </td>
 
-                        <!-- Roster -->
-                        <td class="col-roster">
-                            <div class="roster-cell">
-                                <span
-                                    v-for="(player, i) in parsePlayers(entry.roster)"
-                                    :key="i"
-                                    class="player-tag"
-                                >{{ player }}</span>
-                            </div>
-                        </td>
+                                <!-- Team -->
+                                <td class="col-team">
+                                    <div class="team-cell">
+                                        <div class="team-avatar" :class="getAvatarClass(entry.standing)">
+                                            <img
+                                                v-if="(getTeamLogo(entry.teamName) || entry.logoUrl) && !entry.logoError"
+                                                :src="getTeamLogo(entry.teamName) || entry.logoUrl"
+                                                :alt="entry.teamName"
+                                                loading="lazy"
+                                                @error="entry.logoError = true"
+                                            />
+                                            <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
+                                        </div>
+                                        <div class="team-info">
+                                            <span class="team-name" :class="{ 'team-elite': entry.standing <= 3 }">
+                                                <span v-if="getTeamFlag(entry)" class="team-flag">{{ getTeamFlag(entry) }}</span>
+                                                {{ entry.teamName }}
+                                            </span>
+                                            <span v-if="entry.standing <= majorSlots" class="major-badge">
+                                                Major
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
 
-                        <!-- Points -->
-                        <td class="col-points">
-                            <div class="points-cell">
-                                <div class="points-bar-wrap">
-                                    <div
-                                        class="points-bar"
-                                        :style="{ width: getBarWidth(entry.points) + '%' }"
-                                        :class="getBarClass(entry.standing)"
-                                    ></div>
-                                </div>
-                                <span class="points-value">{{ entry.points.toLocaleString() }}</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                <!-- Roster -->
+                                <td class="col-roster">
+                                    <div class="roster-cell">
+                                        <span
+                                            v-for="(player, i) in parsePlayers(entry.roster)"
+                                            :key="i"
+                                            class="player-chip"
+                                            :class="{ 'player-star': i === 0 && entry.standing <= 10 }"
+                                        >{{ player }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Points -->
+                                <td class="col-points">
+                                    <div class="points-cell">
+                                        <div class="points-bar-track">
+                                            <div
+                                                class="points-bar-fill"
+                                                :class="getBarClass(entry.standing)"
+                                                :style="{ width: getBarWidth(entry.points) + '%' }"
+                                            ></div>
+                                        </div>
+                                        <span class="points-value" :class="{ 'points-elite': entry.standing <= 3 }">
+                                            {{ entry.points.toLocaleString('pt-BR') }}
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Major Cutoff Line -->
+                            <tr v-if="entry.standing === majorSlots && rankings.length > majorSlots" class="major-cutoff-row">
+                                <td colspan="4">
+                                    <div class="cutoff-line">
+                                        <span class="cutoff-label">▲ Classificados para o Major ▲</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Load More Button -->
+            <div v-if="displayLimit < rankings.length" class="flex justify-center py-12">
+                <button
+                    @click="displayLimit += 50"
+                    class="flex items-center justify-center px-8 py-3 text-sm font-bold uppercase tracking-wider text-slate-300 transition-all duration-300 bg-slate-800/60 border border-slate-700/60 rounded-full hover:bg-slate-800 hover:text-white hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-1 cursor-pointer"
+                >
+                    <svg class="w-4 h-4 mr-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                    Ver mais times
+                </button>
+            </div>
         </div>
 
-        <!-- Source note -->
-        <div class="source-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="info-icon">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            Dados oficiais da Valve Software via
-            <a href="https://github.com/ValveSoftware/counter-strike_regional_standings" target="_blank" rel="noopener">
-                counter-strike_regional_standings
-            </a>
-            · Top 16 se classificam para o Major
+        <!-- Source -->
+        <div class="source-footer">
+            <span class="source-icon-emoji">ℹ️</span>
+            <span>
+                Dados oficiais da Valve Software via
+                <a href="https://github.com/ValveSoftware/counter-strike_regional_standings" target="_blank" rel="noopener">
+                    counter-strike_regional_standings
+                </a>
+                · Top {{ majorSlots }} se classificam para o Major
+            </span>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onServerPrefetch } from 'vue';
 import { useHead } from '@unhead/vue';
 
 useHead({ title: 'Ranking Mundial CS2 — ProPlay News' });
+
+const isSSR = import.meta.env.SSR;
+const apiBase = isSSR
+    ? (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+    : '';
 
 const regionTabs = [
     { label: 'Global', value: 'global', flag: '🌍' },
@@ -145,19 +258,42 @@ const regionTabs = [
 
 const activeRegion = ref('global');
 const rankings = ref<any[]>([]);
+const displayLimit = ref(50);
 const snapshotDate = ref('');
 const loading = ref(true);
+
+const majorSlots = computed(() => {
+    switch (activeRegion.value) {
+        case 'europe': return 14;
+        case 'americas': return 7;
+        case 'asia': return 3;
+        case 'global': return 24;
+        default: return 16;
+    }
+});
 
 const maxPoints = computed(() =>
     rankings.value.length > 0 ? rankings.value[0].points : 1
 );
 
+const displayedRankings = computed(() => 
+    rankings.value.slice(0, displayLimit.value)
+);
+
 async function load(region: string) {
     loading.value = true;
+    displayLimit.value = 50;
     try {
-        const res = await fetch(`/api/cs2/rankings?region=${region}&limit=200`);
+        // In SSR: use absolute URL to backend API (no /api prefix — goes direct)
+        // In client: use relative URL with /api prefix (Vite proxy strips it)
+        const url = isSSR
+            ? `${apiBase}/esports/rankings?region=${region}&limit=200`
+            : `/api/esports/rankings?region=${region}&limit=200`;
+
+        const res = await fetch(url);
         const json = await res.json();
-        rankings.value = json.data || [];
+        const result = json.result || json;
+        rankings.value = result.data || json.data || [];
         snapshotDate.value = rankings.value[0]?.snapshotDate || '';
     } catch {
         rankings.value = [];
@@ -182,118 +318,489 @@ function getBarWidth(points: number): number {
 
 function getBarClass(standing: number): string {
     if (standing <= 3) return 'bar-gold';
-    if (standing <= 8) return 'bar-blue';
-    if (standing <= 16) return 'bar-green';
-    return 'bar-gray';
+    if (standing <= 8) return 'bar-cyan';
+    if (standing <= majorSlots.value) return 'bar-green';
+    return 'bar-default';
 }
 
 function getRowClass(standing: number): string {
+    if (standing === 1) return 'row-champion';
     if (standing <= 3) return 'row-podium';
-    if (standing <= 16) return 'row-qualified';
+    if (standing <= majorSlots.value) return 'row-qualified';
     return '';
 }
 
-function formatSnapshotDate(date: string): string {
-    // "2026_03_02" → "02/03/2026"
-    const parts = date.split('_');
-    if (parts.length !== 3) return date;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+function getAvatarClass(standing: number): string {
+    if (standing === 1) return 'avatar-champion';
+    if (standing <= 3) return 'avatar-podium';
+    if (standing <= 8) return 'avatar-elite';
+    if (standing <= majorSlots.value) return 'avatar-qualified';
+    return '';
 }
 
-onMounted(() => load('global'));
+function getInitials(name: string): string {
+    if (!name) return '??';
+    const words = name.split(/[\s.-]+/).filter(Boolean);
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+// Player nationality mapping — used to determine team nationality from roster
+const PLAYER_COUNTRY: Record<string, string> = {
+    'fer': 'BR', 'fnx': 'BR', 'taco': 'BR', 'drop': 'BR', 'trk': 'BR',
+    'heat': 'BR', 'qck': 'BR', 'nython': 'BR', 'bzka': 'BR', 'lukxo': 'BR',
+    'dtxz': 'BR', 'spike': 'BR', 'khalil': 'BR', 'raafa': 'BR', 'jzz': 'BR',
+    'pilot': 'BR', 'murizzum': 'BR', 'n3k4y': 'BR', 'v$': 'BR', 'hardzao': 'BR',
+    'zevy': 'BR', 'mazin': 'BR', 'chelo': 'BR', 'crisby': 'BR', 'tuyz': 'BR',
+    'mwzera': 'BR', 'nbl': 'BR', 'shz': 'BR', 'dgzin': 'BR', 'fastdrawn': 'BR',
+    'pax': 'BR', 'nqz': 'BR', 'raizen': 'BR', 'dav1de': 'BR', 'hnt': 'BR',
+    // Denmark
+    'device': 'DK', 'magisk': 'DK', 'blamef': 'DK', 'karrigan': 'DK',
+    'br0': 'DK', 'jabbi': 'DK', 'stavn': 'DK', 'nicoodoz': 'DK', 'sjuush': 'DK',
+    'farlig': 'DK', 'roej': 'DK', 'b1n0': 'DK', 'kyxsan': 'DK',
+    // France
+    'apoka': 'FR', 'shox': 'FR', 'kioresh': 'FR', 'xms': 'FR', 'bodyy': 'FR',
+    'z3hr': 'FR', 'misutaaa': 'FR', 'r3salt': 'FR', 's1ren': 'FR', 'mezii': 'FR',
+    'flameZ': 'FR', 'afro': 'FR', 'vsm': 'FR', 'blix': 'FR', 'xertioN': 'FR',
+    'dumau': 'FR', 'penn': 'FR', 'nK': 'FR', 'hAdji': 'FR', 'woro2k': 'FR',
+    'to1nou': 'FR', 'tex': 'FR', 'sixer': 'FR', 'eksem': 'FR', 's1N': 'FR',
+    // Germany
+    'syrsoN': 'DE', 'krimbo': 'DE', 'tiziaN': 'DE', 'prosus': 'DE', 'cmzn': 'DE',
+    'reecky': 'DE', 'deq': 'DE', 'blowzy': 'DE', 'tabseN': 'DE', 'isak': 'DE',
+    // United Kingdom
+    'harry': 'GB', 'imoRR': 'GB', 'hades': 'GB',
+    // Poland
+    'furlan': 'PL', 'mwlky': 'PL', 'innocent': 'PL', 'siuhy': 'PL',
+    'karol': 'PL', 'mynio': 'PL', 'michu': 'PL', 'kapsien': 'PL',
+    'phr': 'PL', 'zedo': 'PL', 'reiko': 'PL', 'dycha': 'PL',
+    'keiko': 'PL', 'nawrot': 'PL', 'gryzhyn': 'PL', 'davuuf': 'PL',
+    // Sweden
+    'friberg': 'SE', 'twist': 'SE', 'leX': 'SE', 's3pt3ri0n': 'SE', 'phzy': 'SE',
+    'nicoo': 'SE', 'plopski': 'SE', 'headtr1ck': 'SE', 'zet': 'SE',
+    'peppzor': 'SE', 'f1n': 'SE', 'n3z': 'SE',
+    // Russia
+    'sh1ro': 'RU', 'ax1Le': 'RU', 'perfecto': 'RU', 'electroNic': 'RU', 'nafany': 'RU',
+    'interz': 'RU', 'fame': 'RU', 'flamus': 'RU', 'jame': 'RU', 'buster': 'RU',
+    'qikert': 'RU', 'zorte': 'RU', 'norwi': 'RU', 'forester': 'RU', 'zont1x': 'RU',
+    'rmn': 'RU', 's1leNt': 'RU', 'chopper': 'RU', 's0me': 'RU', 'notineki': 'RU',
+    // Ukraine
+    'b1t': 'UA', 'npl': 'UA', 'demho': 'UA', 'w0nderful': 'UA', 'ducha': 'UA',
+    'kapacho': 'UA', 'anarkez': 'UA', 'kade0': 'UA', 'krizzeN': 'UA', 'kvik': 'UA',
+    '777': 'UA', 'bondik': 'UA', 'kory': 'UA', 'kizZz': 'UA', 'shadiy': 'UA',
+    'sp3ktre': 'UA', 'magixx': 'UA', // Belarus
+    'prophecy': 'BY', 'g3nism': 'BY', 'v4lk': 'BY', // Kazakhstan
+    'aff1N1ty': 'KZ', 'seized': 'KZ', // Serbia
+    'hugo': 'RS', 'LETN1': 'RS', 's1NNer': 'RS', 'torres': 'RS', 'd0c': 'RS',
+    'k1ll': 'RS', // Czech
+    'nbK': 'CZ', 'forsyy': 'CZ', 'beastik': 'CZ', 'daduke': 'CZ',
+    'lack1': 'CZ', // Finland
+    'allu': 'FI', 'sergej': 'FI', 'suNny': 'FI', 'zehN': 'FI', 'k1to': 'FI',
+    // Austria
+    'zero': 'AT', 'cromen': 'AT', 'starxo': 'AT', // Netherlands
+    'denis': 'NL', 'devoduveka': 'NL', 'vexite': 'NL', 'jayzhard': 'NL',
+    // Belgium
+    'exeter': 'BE', // Norway
+    'jkaem': 'NO', 'k0nfig': 'NO', 'rain': 'NO', 'torben': 'NO',
+    // Latvia
+    'snatchie': 'LV', // Lithuania
+    'nuko': 'LT', 'nukkye': 'LT', // Portugal
+    'forjj': 'PT', 'suspicious': 'PT', 'zeek': 'PT', 's1nnfer': 'PT',
+    'exp': 'PT', 'sicko': 'PT', 'cortez': 'PT', // Spain
+    'alex': 'ES', 'mixwell': 'ES', 'koldamenta': 'ES', 'sheyo': 'ES', 'barbarr': 'ES',
+    // Turkey
+    'woxic': 'TR', 'calm': 'TR', 'ruxic': 'TR', // Estonia
+    // Australia
+    'liazz': 'AU', 'hazrd': 'AU', 'sico': 'AU', 'aliStair': 'AU',
+    'pan': 'AU', 'dexter': 'AU', 'gratisfaction': 'AU', 'insight': 'AU',
+    // New Zealand
+    'dexter': 'NZ', // USA
+    'stanislaw': 'US', 'shahZaM': 'US', 'autimatic': 'US', 'reltuC': 'US',
+    'Brehze': 'US', 'oSee': 'US', 'viz': 'US', 'crashies': 'US',
+    'Foxy': 'US', 'leaf': 'US', 'daps': 'US', 'marved': 'US',
+    // Canada
+    'nafoo': 'CA', 'EZ': 'CA', 'FASHR': 'CA', // Argentina
+    'dgt': 'AR', 'malbs': 'AR', 'bravinn': 'AR', 'jks': 'AR', 'rigo': 'AR', 'n1k3n': 'AR',
+    // Chile
+    'kiNgg': 'CL', // Colombia
+    'krii': 'CO', // Mongolia
+    'bLaz1ng': 'MN', 'techno4k': 'MN', '910': 'MN', 'adik': 'MN', 'sk0R': 'MN',
+    'shine': 'MN', 'bodya': 'MN', 'pure': 'MN', // Japan
+    'Meiy': 'JP', 'StyuN': 'JP', 'Astar': 'JP', // China
+    'advent': 'CN', 'qzr': 'CN', 'somebody': 'CN', 'danking': 'CN', 'summer': 'CN',
+    'kaze': 'CN', 'tb': 'CN', 'mercury': 'CN', 'z4kr': 'CN',
+    // Slovakia
+    'oskar': 'SK', // Israel
+    'r1cky': 'IL', // Georgia
+    'hooch': 'GE', // Romania
+    'h1gg3r': 'RO', // Israel
+    // Australia
+    'insight': 'AU',
+};
+
+function detectTeamNationalityFromRoster(roster: string): string | null {
+    if (!roster) return null;
+    const players = roster.split(',').map(p => p.trim()).filter(Boolean);
+    const countryCounts: Record<string, number> = {};
+    for (const player of players) {
+        const code = PLAYER_COUNTRY[player];
+        if (code) countryCounts[code] = (countryCounts[code] || 0) + 1;
+    }
+    let bestCode: string | null = null;
+    let bestCount = 0;
+    for (const [code, count] of Object.entries(countryCounts)) {
+        if (count >= 3 && count > bestCount) {
+            bestCode = code;
+            bestCount = count;
+        }
+    }
+    return bestCode;
+}
+
+const KNOWN_LOGOS: Record<string, string> = {
+    'vitality': 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Team_Vitality_logo.svg',
+    'furia': 'https://upload.wikimedia.org/wikipedia/pt/4/4b/Furia_Esports_logo.png',
+    'mouz': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Mouz_logo.svg',
+    'natus vincere': 'https://upload.wikimedia.org/wikipedia/en/a/a3/Natus_Vincere_logo.svg',
+    'navi': 'https://upload.wikimedia.org/wikipedia/en/a/a3/Natus_Vincere_logo.svg',
+    'faze': 'https://upload.wikimedia.org/wikipedia/commons/9/90/FaZe_Clan_logo.svg',
+    'faze clan': 'https://upload.wikimedia.org/wikipedia/commons/9/90/FaZe_Clan_logo.svg',
+    'spirit': 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Team_Spirit_logo.svg',
+    'team spirit': 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Team_Spirit_logo.svg',
+    'g2': 'https://upload.wikimedia.org/wikipedia/en/3/3c/G2_Esports_logo.svg',
+    'liquid': 'https://upload.wikimedia.org/wikipedia/en/f/f1/Team_Liquid_logo.svg',
+    'team liquid': 'https://upload.wikimedia.org/wikipedia/en/f/f1/Team_Liquid_logo.svg',
+    'astralis': 'https://upload.wikimedia.org/wikipedia/en/3/33/Astralis_logo.svg',
+    'heroic': 'https://upload.wikimedia.org/wikipedia/commons/1/12/Heroic_logo.svg',
+    'virtus.pro': 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Virtus.pro_logo.svg',
+    'the mongolz': 'https://upload.wikimedia.org/wikipedia/commons/8/87/The_Mongolz_logo.png',
+    'complexity': 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Complexity_Gaming_logo.svg',
+    'nip': 'https://upload.wikimedia.org/wikipedia/en/6/60/Ninjas_in_Pyjamas_logo.svg',
+    'ninjas in pyjamas': 'https://upload.wikimedia.org/wikipedia/en/6/60/Ninjas_in_Pyjamas_logo.svg',
+    'fnatic': 'https://upload.wikimedia.org/wikipedia/en/4/43/Fnatic_logo.svg',
+    'cloud9': 'https://upload.wikimedia.org/wikipedia/commons/f/f7/Cloud9_logo.svg',
+    'big': 'https://upload.wikimedia.org/wikipedia/commons/8/87/BIG_logo.svg',
+    'ence': 'https://upload.wikimedia.org/wikipedia/en/1/1e/ENCE_logo.svg',
+    'imperial': 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Imperial_Esports_logo.svg',
+    'mibr': 'https://upload.wikimedia.org/wikipedia/en/2/2b/Made_in_Brazil_logo.svg',
+    'pain': 'https://upload.wikimedia.org/wikipedia/en/3/3f/PaiN_Gaming_logo.svg',
+    'gamerlegion': 'https://upload.wikimedia.org/wikipedia/commons/8/8a/GamerLegion_logo.svg',
+    'parivision': 'https://upload.wikimedia.org/wikipedia/commons/a/af/PARIVISION_Logo.png'
+};
+
+function getTeamLogo(teamName: string): string {
+    if (!teamName) return '';
+    const key = teamName.toLowerCase().trim();
+    return KNOWN_LOGOS[key] || '';
+}
+
+function formatSnapshotDate(date: string): string {
+    const parts = date.split('_');
+    if (parts.length !== 3) return date;
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const monthIdx = parseInt(parts[1]) - 1;
+    return `${parts[2]} ${months[monthIdx] || parts[1]} ${parts[0]}`;
+}
+
+// Country code to flag emoji using Unicode regional indicators
+function countryCodeToFlag(countryCode: string): string {
+    if (!countryCode || countryCode.length !== 2) return '';
+    const base = 127397; // 0x1F1E6 - 'A' offset
+    const codePoints = [...countryCode.toUpperCase()].map(c =>
+        String.fromCodePoint(base + c.charCodeAt(0))
+    );
+    return codePoints.join('');
+}
+
+// Parse team country — first from detailsSlug (backend-set), fallback to roster detection
+function getTeamCountryCode(entry: any): string | null {
+    // Try detailsSlug prefix first (format: "CC/slug" set by backend)
+    const slug = entry.detailsSlug || '';
+    const slugMatch = slug.match(/^([A-Z]{2})(?:\/.*)?$/i);
+    if (slugMatch) return slugMatch[1];
+    // Fallback: detect from roster
+    return detectTeamNationalityFromRoster(entry.roster);
+}
+
+function getTeamFlag(entry: any): string {
+    const code = getTeamCountryCode(entry);
+    return code ? countryCodeToFlag(code) : '';
+}
+
+// SSR: pre-fetch ranking data on server so HTML includes the table
+onServerPrefetch(async () => {
+    await load('global');
+});
+
+// Client: also load data on mount (for hydration and region switching)
+onMounted(() => {
+    if (rankings.value.length === 0) {
+        load('global');
+    } else {
+        loading.value = false;
+    }
+});
 </script>
 
 <style scoped>
+/* ─── Base ─────────────────────────────────────────── */
 .ranking-page {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 0 1rem 3rem;
 }
 
-/* Header */
-.page-header {
+/* ─── Hero Header ──────────────────────────────────── */
+.ranking-hero {
+    position: relative;
+    padding: 2.5rem 2rem 2rem;
     margin-bottom: 1.5rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.9) 50%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    overflow: hidden;
 }
 
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.hero-glow {
+    position: absolute;
+    top: -60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+    pointer-events: none;
 }
 
-.header-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    border-radius: 12px;
+.hero-content {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.hero-badge {
     flex-shrink: 0;
 }
 
-.header-icon svg {
-    width: 28px;
-    height: 28px;
-    color: #1a1a2e;
+.badge-ring {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.08));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: badge-pulse 3s ease-in-out infinite;
+    overflow: hidden;
 }
 
-.page-title {
-    font-size: 1.75rem;
-    font-weight: 800;
+.badge-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+    50% { box-shadow: 0 0 20px 4px rgba(255, 215, 0, 0.15); }
+}
+
+.hero-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.hero-title {
+    font-size: 1.85rem;
+    font-weight: 900;
     color: #f1f5f9;
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
 }
 
-.page-subtitle {
-    color: #64748b;
-    font-size: 0.9rem;
+.title-accent {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 0.88rem;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
 }
 
-.snapshot-date {
-    color: #87ceeb;
+.snapshot-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: #c4b5fd;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
-/* Region Tabs */
+.icon-calendar {
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+}
+
+.hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.stat-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.stat-label {
+    font-size: 0.68rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 32px;
+    background: rgba(148, 163, 184, 0.15);
+}
+
+/* ─── Region Tabs ──────────────────────────────────── */
+.region-section {
+    margin-bottom: 1.25rem;
+}
+
 .region-tabs {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
 
 .region-tab {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.45rem 1.1rem;
-    border-radius: 8px;
-    border: 1px solid rgba(135, 206, 235, 0.2);
-    background: rgba(135, 206, 235, 0.04);
+    padding: 0.55rem 1.15rem;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    background: rgba(15, 23, 42, 0.6);
     color: #64748b;
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.tab-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+    border-radius: 2px;
+    transition: width 0.25s ease;
 }
 
 .region-tab:hover {
-    border-color: rgba(135, 206, 235, 0.4);
+    border-color: rgba(139, 92, 246, 0.3);
     color: #94a3b8;
+    background: rgba(139, 92, 246, 0.05);
 }
 
 .region-tab.active {
-    background: rgba(135, 206, 235, 0.12);
-    border-color: #87ceeb;
-    color: #87ceeb;
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #c4b5fd;
 }
 
-/* Table */
-.ranking-table-wrapper {
-    border-radius: 12px;
+.region-tab.active .tab-indicator {
+    width: 60%;
+}
+
+.tab-emoji {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* ─── Legend Bar ───────────────────────────────────── */
+.legend-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.06);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-gold {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+}
+
+.legend-qualified {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+
+.legend-contender {
+    background: rgba(100, 116, 139, 0.5);
+}
+
+/* ─── Table ────────────────────────────────────────── */
+.ranking-container {
+    animation: fadeInUp 0.4s ease;
+}
+
+.table-wrapper {
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(135, 206, 235, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    background: rgba(15, 23, 42, 0.4);
 }
 
 .ranking-table {
@@ -302,135 +809,242 @@ onMounted(() => load('global'));
 }
 
 .ranking-table thead tr {
-    background: rgba(135, 206, 235, 0.08);
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, rgba(15, 23, 42, 0.3) 100%);
 }
 
 .ranking-table th {
-    padding: 0.75rem 1rem;
+    padding: 0.8rem 1rem;
     text-align: left;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: #64748b;
-    border-bottom: 1px solid rgba(135, 206, 235, 0.1);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
 }
 
+/* ─── Rows ─────────────────────────────────────────── */
 .ranking-row {
-    border-bottom: 1px solid rgba(135, 206, 235, 0.06);
-    transition: background 0.15s;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.04);
+    transition: all 0.15s ease;
+    animation: rowSlideIn 0.3s ease both;
 }
 
 .ranking-row:hover {
-    background: rgba(135, 206, 235, 0.05);
+    background: rgba(139, 92, 246, 0.04);
+}
+
+.ranking-row.row-champion {
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.02) 60%, transparent 100%);
+    border-left: 3px solid #fbbf24;
+}
+
+.ranking-row.row-champion:hover {
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.03) 60%, transparent 100%);
+}
+
+.ranking-row.row-podium {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.04) 0%, transparent 60%);
+    border-left: 3px solid rgba(251, 191, 36, 0.5);
+}
+
+.ranking-row.row-qualified {
+    border-left: 3px solid rgba(74, 222, 128, 0.25);
 }
 
 .ranking-row:last-child {
     border-bottom: none;
 }
 
-.ranking-row.row-podium {
-    background: rgba(251, 191, 36, 0.04);
-}
-
-.ranking-row.row-qualified {
-    border-left: 2px solid rgba(74, 222, 128, 0.3);
-}
-
 .ranking-table td {
-    padding: 0.65rem 1rem;
+    padding: 0.6rem 1rem;
     vertical-align: middle;
 }
 
-/* Rank column */
-.col-rank { width: 60px; }
+/* ─── Rank Column ──────────────────────────────────── */
+.col-rank { width: 65px; }
 
 .rank-cell {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.25rem;
+}
+
+.rank-crown {
+    font-size: 1.2rem;
+    animation: crownFloat 2s ease-in-out infinite;
+}
+
+@keyframes crownFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
 }
 
 .rank-medal {
-    font-size: 1.1rem;
+    font-size: 1rem;
 }
 
 .rank-number {
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #475569;
     min-width: 24px;
+    font-variant-numeric: tabular-nums;
 }
 
-.rank-number.top16 {
-    color: #4ade80;
+.rank-number.rank-top1 {
+    color: #fbbf24;
+    font-size: 1.1rem;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
 }
 
-/* Team column */
-.col-team { width: 200px; }
+.rank-number.rank-top3 { color: #fbbf24; }
+.rank-number.rank-top8 { color: #38bdf8; }
+.rank-number.rank-top16 { color: #4ade80; }
+
+/* ─── Team Column ──────────────────────────────────── */
+.col-team { width: 220px; }
 
 .team-cell {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
 }
 
-.team-logo {
-    width: 28px;
-    height: 28px;
+.team-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(100, 116, 139, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    transition: all 0.2s ease;
+    overflow: hidden;
 }
 
-.team-logo img {
+.team-avatar img {
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
-.team-logo-placeholder {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    background: rgba(135, 206, 235, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.avatar-initials {
     font-size: 0.6rem;
     font-weight: 800;
-    color: #87ceeb;
-    flex-shrink: 0;
+    color: #64748b;
+    letter-spacing: -0.03em;
+}
+
+.avatar-champion {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.08));
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.avatar-champion .avatar-initials { color: #fbbf24; }
+
+.avatar-podium {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.04));
+    border-color: rgba(251, 191, 36, 0.2);
+}
+
+.avatar-podium .avatar-initials { color: #fbbf24; }
+
+.avatar-elite {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(56, 189, 248, 0.03));
+    border-color: rgba(56, 189, 248, 0.15);
+}
+
+.avatar-elite .avatar-initials { color: #38bdf8; }
+
+.avatar-qualified {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), rgba(74, 222, 128, 0.03));
+    border-color: rgba(74, 222, 128, 0.12);
+}
+
+.avatar-qualified .avatar-initials { color: #4ade80; }
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
 }
 
 .team-name {
     font-weight: 700;
     color: #e2e8f0;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
+    max-width: 150px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-/* Roster column */
+.team-flag {
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.15));
+}
+
+.team-name.team-elite {
+    color: #fbbf24;
+}
+
+.major-badge {
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* ─── Roster Column ────────────────────────────────── */
 .col-roster { width: auto; }
 
 .roster-cell {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem;
+    gap: 0.25rem;
 }
 
-.player-tag {
-    font-size: 0.72rem;
-    color: #64748b;
-    background: rgba(100, 116, 139, 0.12);
+.player-chip {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    background: rgba(100, 116, 139, 0.08);
+    border: 1px solid rgba(100, 116, 139, 0.08);
     border-radius: 4px;
-    padding: 0.15rem 0.4rem;
+    padding: 0.12rem 0.4rem;
     white-space: nowrap;
+    transition: all 0.15s ease;
 }
 
-/* Points column */
-.col-points { width: 160px; }
+.player-chip:hover {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.15);
+    color: #c4b5fd;
+}
+
+.player-chip.player-star {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(251, 191, 36, 0.12);
+}
+
+/* ─── Points Column ────────────────────────────────── */
+.col-points { width: 170px; }
 
 .points-cell {
     display: flex;
@@ -438,105 +1052,279 @@ onMounted(() => load('global'));
     gap: 0.6rem;
 }
 
-.points-bar-wrap {
+.points-bar-track {
     flex: 1;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 2px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 3px;
     overflow: hidden;
 }
 
-.points-bar {
+.points-bar-fill {
     height: 100%;
-    border-radius: 2px;
-    transition: width 0.4s ease;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.bar-gold { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.bar-blue { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-.bar-green { background: linear-gradient(90deg, #10b981, #4ade80); }
-.bar-gray { background: rgba(100, 116, 139, 0.4); }
+.bar-gold {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+.bar-cyan {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.2);
+}
+
+.bar-green {
+    background: linear-gradient(90deg, #10b981, #4ade80);
+}
+
+.bar-default {
+    background: rgba(100, 116, 139, 0.3);
+}
 
 .points-value {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: #94a3b8;
-    min-width: 48px;
+    min-width: 44px;
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Skeleton */
-.loading-state {
+.points-value.points-elite {
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.15);
+}
+
+/* ─── Major Cutoff ─────────────────────────────────── */
+.major-cutoff-row td {
+    padding: 0 !important;
+}
+
+.cutoff-line {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border-radius: 12px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0;
+    position: relative;
+}
+
+.cutoff-line::before,
+.cutoff-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.3), transparent);
+}
+
+.cutoff-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(74, 222, 128, 0.5);
+    padding: 0 1rem;
+    white-space: nowrap;
+}
+
+/* ─── Loading ──────────────────────────────────────── */
+.loading-state {
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(135, 206, 235, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.06);
+    background: rgba(15, 23, 42, 0.4);
+}
+
+.skeleton-header {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
 }
 
 .skeleton-row {
-    height: 52px;
+    display: flex;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.03);
+    animation: fadeIn 0.3s ease both;
+}
+
+.skeleton-pulse {
+    border-radius: 6px;
     background: linear-gradient(90deg,
-        rgba(135,206,235,0.03) 25%,
-        rgba(135,206,235,0.08) 50%,
-        rgba(135,206,235,0.03) 75%
+        rgba(139, 92, 246, 0.04) 25%,
+        rgba(139, 92, 246, 0.08) 50%,
+        rgba(139, 92, 246, 0.04) 75%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.8s infinite;
 }
+
+.sk-rank { width: 40px; height: 20px; }
+.sk-team { width: 180px; height: 20px; }
+.sk-roster { flex: 1; height: 20px; }
+.sk-points { width: 120px; height: 20px; }
 
 @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
 
-/* Empty */
+/* ─── Empty ────────────────────────────────────────── */
 .empty-state {
     text-align: center;
-    padding: 5rem 0;
-    color: #475569;
+    padding: 5rem 2rem;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.06);
 }
 
-.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-.empty-sub { font-size: 0.85rem; color: #334155; margin-top: 0.3rem; }
+.empty-visual {
+    margin-bottom: 1.5rem;
+}
 
-/* Source note */
-.source-note {
+.empty-ring {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.03));
+    border: 1px solid rgba(139, 92, 246, 0.15);
     display: flex;
     align-items: center;
+    justify-content: center;
+    animation: emptyPulse 3s ease-in-out infinite;
+    overflow: hidden;
+}
+
+.empty-icon {
+    font-size: 32px;
+    line-height: 1;
+    opacity: 0.6;
+}
+
+@keyframes emptyPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+    50% { box-shadow: 0 0 30px 8px rgba(139, 92, 246, 0.08); }
+}
+
+.empty-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin: 0 0 0.5rem;
+}
+
+.empty-desc {
+    font-size: 0.85rem;
+    color: #475569;
+    margin: 0 0 1.5rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-retry {
+    display: inline-flex;
+    align-items: center;
     gap: 0.4rem;
+    padding: 0.6rem 1.5rem;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: rgba(139, 92, 246, 0.08);
+    color: #c4b5fd;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.empty-retry:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+}
+
+.retry-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ─── Source Footer ────────────────────────────────── */
+.source-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-top: 1.5rem;
-    font-size: 0.78rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.05);
+    font-size: 0.76rem;
     color: #475569;
 }
 
-.info-icon {
-    width: 14px;
-    height: 14px;
+.source-icon-emoji {
+    font-size: 14px;
     flex-shrink: 0;
+    opacity: 0.7;
 }
 
-.source-note a {
-    color: #87ceeb;
+.source-footer a {
+    color: #8b5cf6;
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
 }
 
-.source-note a:hover { text-decoration: underline; }
+.source-footer a:hover {
+    color: #a78bfa;
+    text-decoration: underline;
+}
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ─── Animations ───────────────────────────────────── */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Responsive ───────────────────────────────────── */
+@media (max-width: 900px) {
     .col-roster { display: none; }
-    .team-name { max-width: 120px; }
-    .page-title { font-size: 1.4rem; }
+    .hero-stats { display: none; }
+    .team-name { max-width: 100px; }
+    .col-team { width: 180px; }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+    .ranking-hero { padding: 1.5rem 1rem; }
+    .hero-title { font-size: 1.4rem; }
+    .hero-subtitle { font-size: 0.8rem; }
+    .badge-ring { width: 44px; height: 44px; }
+    .badge-ring svg { width: 24px; height: 24px; }
+
     .ranking-table th,
     .ranking-table td {
-        padding: 0.5rem 0.6rem;
+        padding: 0.45rem 0.6rem;
     }
+
     .col-points { width: 100px; }
-    .points-bar-wrap { display: none; }
+    .points-bar-track { display: none; }
+    .team-name { max-width: 80px; font-size: 0.82rem; }
+    .major-badge { display: none; }
+    .legend-bar { display: none; }
 }
 </style>

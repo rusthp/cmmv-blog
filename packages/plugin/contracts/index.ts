@@ -4,6 +4,12 @@ export * from './medias.contract';
 export * from './redirects.contract';
 export * from "./themes.contract";
 
+// Esports
+export * from './esports-tournament.contract';
+export * from './esports-match.contract';
+export * from './esports-team.contract';
+export * from './cs2-ranking.contract';
+
 // Whitelabel
 export * from './whitelabel.contract';
 export * from './whitelabel-access.contract';

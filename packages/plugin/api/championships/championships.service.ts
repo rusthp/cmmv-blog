@@ -6,23 +6,21 @@ import { Repository } from "@cmmv/repository";
 
 const PANDASCORE_BASE = 'https://api.pandascore.co';
 
-// PandaScore uses /csgo/ prefix for CS2 (legacy slug: cs-go)
-// Correct endpoints: /csgo/tournaments/running|upcoming|past  (NOT filter[status])
-// Match endpoints:   /csgo/matches/running|upcoming|past
+const SUPPORTED_GAMES = ['csgo', 'dota2', 'valorant', 'r6siege', 'lol'];
 
 @Service('blog_championships')
 export class ChampionshipsService {
     private static readonly logger = new Logger('ChampionshipsService');
 
     static warn(msg: string) {
-        try { ChampionshipsService.logger.warn(msg); } catch {}
+        try { ChampionshipsService.logger.log(msg); } catch {}
     }
     static log(msg: string) {
         try { ChampionshipsService.logger.log(msg); } catch {}
     }
 
     private get apiToken(): string {
-        return Config.get<string>('blog.pandascoreToken', '');
+        return Config.get<string>('blog.pandascoreToken', 'nUO1wT0wR9Vpvv1B4n_G9TGVqjPPr4wtIzN-mRxV0B4hmHR83SY');
     }
 
     private get headers() {
@@ -64,85 +62,83 @@ export class ChampionshipsService {
         return stats;
     }
 
-    async getTournaments(status?: string): Promise<any[]> {
-        const { Cs2TournamentEntity } = this.getEntities();
-        if (!Cs2TournamentEntity) return [];
+    async getTournaments(status?: string, game?: string): Promise<any[]> {
+        const { EsportsTournamentEntity } = this.getEntities();
+        if (!EsportsTournamentEntity) return [];
 
-        const where: any = {};
-        if (status && status !== 'all') where.status = status;
+        const queries: any = { limit: '200' };
+        if (status && status !== 'all') queries.status = status;
+        if (game && game !== 'all') queries.game = game;
 
-        const results = await Repository.findAll(Cs2TournamentEntity, {
-            where,
-            order: { startDate: 'DESC' },
-            limit: 200,
-        });
+        const results = await Repository.findAll(EsportsTournamentEntity, queries);
 
-        return (results?.data || []).map((t: any) => ({
+        const tournaments = (results?.data || []).map((t: any) => ({
             ...t,
             teams: this.parseJson(t.teamsJson),
         }));
+
+        return tournaments.sort((a: any, b: any) => {
+            const da = a.startDate || '9999';
+            const db = b.startDate || '9999';
+            return db > da ? 1 : db < da ? -1 : 0;
+        });
     }
 
     async getTournamentBySlug(slug: string): Promise<any | null> {
-        const { Cs2TournamentEntity } = this.getEntities();
-        if (!Cs2TournamentEntity) return null;
+        const { EsportsTournamentEntity } = this.getEntities();
+        if (!EsportsTournamentEntity) return null;
 
-        const t = await Repository.findOne(Cs2TournamentEntity, { slug });
+        const t = (await Repository.findOne(EsportsTournamentEntity, { slug })) as any;
         if (!t) return null;
         return { ...t, teams: this.parseJson(t.teamsJson) };
     }
 
     async getTournamentMatches(slug: string, status?: string): Promise<any[]> {
-        const { Cs2MatchEntity } = this.getEntities();
-        if (!Cs2MatchEntity) return [];
+        const { EsportsMatchEntity } = this.getEntities();
+        if (!EsportsMatchEntity) return [];
 
-        const where: any = { tournamentSlug: slug };
-        if (status && status !== 'all') where.status = status;
+        const queries: any = { tournamentSlug: slug, limit: '200', sortBy: 'scheduledAt', sort: 'ASC' };
+        if (status && status !== 'all') queries.status = status;
 
-        const results = await Repository.findAll(Cs2MatchEntity, {
-            where,
-            order: { scheduledAt: 'ASC' },
-            limit: 200,
-        });
-
+        const results = await Repository.findAll(EsportsMatchEntity, queries);
         return results?.data || [];
     }
 
-    async getUpcomingMatches(limit = 20): Promise<any[]> {
-        const { Cs2MatchEntity } = this.getEntities();
-        if (!Cs2MatchEntity) return [];
+    async getUpcomingMatches(game?: string, limit = 20): Promise<any[]> {
+        const { EsportsMatchEntity } = this.getEntities();
+        if (!EsportsMatchEntity) return [];
 
-        const results = await Repository.findAll(Cs2MatchEntity, {
-            where: { status: 'not_started' },
-            order: { scheduledAt: 'ASC' },
-            limit,
-        });
+        const queries: any = { status: 'not_started', limit: String(limit), sortBy: 'scheduledAt', sort: 'ASC' };
+        if (game && game !== 'all') queries.game = game;
 
+        const results = await Repository.findAll(EsportsMatchEntity, queries);
         return results?.data || [];
     }
 
-    async getRecentResults(limit = 20): Promise<any[]> {
-        const { Cs2MatchEntity } = this.getEntities();
-        if (!Cs2MatchEntity) return [];
+    async getRecentResults(game?: string, limit = 20): Promise<any[]> {
+        const { EsportsMatchEntity } = this.getEntities();
+        if (!EsportsMatchEntity) return [];
 
-        const results = await Repository.findAll(Cs2MatchEntity, {
-            where: { status: 'finished' },
-            order: { endedAt: 'DESC' },
-            limit,
+        const queries: any = { status: 'finished', limit: String(limit) };
+        if (game && game !== 'all') queries.game = game;
+
+        const results = await Repository.findAll(EsportsMatchEntity, queries);
+        const matches = results?.data || [];
+        return matches.sort((a: any, b: any) => {
+            const da = a.endedAt || '';
+            const db = b.endedAt || '';
+            return db > da ? 1 : db < da ? -1 : 0;
         });
-
-        return results?.data || [];
     }
 
-    async getTeams(limit = 50): Promise<any[]> {
-        const { Cs2TeamEntity } = this.getEntities();
-        if (!Cs2TeamEntity) return [];
+    async getTeams(game?: string, limit = 50): Promise<any[]> {
+        const { EsportsTeamEntity } = this.getEntities();
+        if (!EsportsTeamEntity) return [];
 
-        const results = await Repository.findAll(Cs2TeamEntity, {
-            order: { ranking: 'ASC' },
-            limit,
-        });
+        const queries: any = { limit: String(limit), sortBy: 'ranking', sort: 'ASC' };
+        if (game && game !== 'all') queries.game = game;
 
+        const results = await Repository.findAll(EsportsTeamEntity, queries);
         return results?.data || [];
     }
 
@@ -151,20 +147,21 @@ export class ChampionshipsService {
     private async syncTournaments(): Promise<number> {
         let total = 0;
 
-        // PandaScore uses path-based status, not query param
-        for (const endpoint of ['running', 'upcoming', 'past']) {
-            try {
-                const data = await this.pandascoreGet(
-                    `/csgo/tournaments/${endpoint}?page[size]=50&sort=-begin_at`
-                );
-                if (!Array.isArray(data)) continue;
+        for (const game of SUPPORTED_GAMES) {
+            for (const endpoint of ['running', 'upcoming', 'past']) {
+                try {
+                    const data = await this.pandascoreGet(
+                        `/${game}/tournaments/${endpoint}?page[size]=50&sort=-begin_at`
+                    );
+                    if (!Array.isArray(data)) continue;
 
-                for (const t of data) {
-                    await this.upsertTournament(t, endpoint);
-                    total++;
+                    for (const t of data) {
+                        await this.upsertTournament(t, endpoint, game);
+                        total++;
+                    }
+                } catch (e: any) {
+                    ChampionshipsService.warn(`[championships] syncTournaments/${game}/${endpoint}: ${e.message}`);
                 }
-            } catch (e: any) {
-                ChampionshipsService.warn(`[championships] syncTournaments/${endpoint}: ${e.message}`);
             }
         }
 
@@ -172,27 +169,28 @@ export class ChampionshipsService {
     }
 
     private async syncAllMatchesFromOngoing(): Promise<number> {
-        const { Cs2TournamentEntity } = this.getEntities();
-        if (!Cs2TournamentEntity) return 0;
+        const { EsportsTournamentEntity } = this.getEntities();
+        if (!EsportsTournamentEntity) return 0;
 
-        const ongoing = await Repository.findAll(Cs2TournamentEntity, {
-            where: { status: 'ongoing' },
-            limit: 50,
+        const ongoing = await Repository.findAll(EsportsTournamentEntity, {
+            status: 'ongoing',
+            limit: '50',
         });
 
         let total = 0;
         for (const t of (ongoing?.data || [])) {
             try {
+                // Determine game from t.game
                 const data = await this.pandascoreGet(
-                    `/csgo/tournaments/${t.externalId}/matches?page[size]=100`
+                    `/${t.game}/tournaments/${t.externalId}/matches?page[size]=100`
                 );
                 if (!Array.isArray(data)) continue;
                 for (const m of data) {
-                    await this.upsertMatch(m, t.slug);
+                    await this.upsertMatch(m, t.game, t.slug);
                     total++;
                 }
             } catch (e: any) {
-                ChampionshipsService.warn(`[championships] syncMatches for ${t.slug}: ${e.message}`);
+                ChampionshipsService.warn(`[championships] syncMatches for ${t.slug} (${t.game}): ${e.message}`);
             }
         }
 
@@ -200,52 +198,54 @@ export class ChampionshipsService {
     }
 
     private async syncRunningAndUpcomingMatches(): Promise<void> {
-        for (const endpoint of ['running', 'upcoming']) {
-            try {
-                const size = endpoint === 'upcoming' ? 30 : 20;
-                const data = await this.pandascoreGet(
-                    `/csgo/matches/${endpoint}?page[size]=${size}&sort=scheduled_at`
-                );
-                if (!Array.isArray(data)) continue;
-                for (const m of data) {
-                    await this.upsertMatch(m);
+        for (const game of SUPPORTED_GAMES) {
+            for (const endpoint of ['running', 'upcoming']) {
+                try {
+                    const size = endpoint === 'upcoming' ? 30 : 20;
+                    const data = await this.pandascoreGet(
+                        `/${game}/matches/${endpoint}?page[size]=${size}&sort=scheduled_at`
+                    );
+                    if (!Array.isArray(data)) continue;
+                    for (const m of data) {
+                        await this.upsertMatch(m, game);
+                    }
+                } catch (e: any) {
+                    ChampionshipsService.warn(`[championships] syncMatches/${game}/${endpoint}: ${e.message}`);
                 }
-            } catch (e: any) {
-                ChampionshipsService.warn(`[championships] syncMatches/${endpoint}: ${e.message}`);
             }
         }
     }
 
     private async syncTeams(): Promise<number> {
-        try {
-            const data = await this.pandascoreGet('/csgo/teams?page[size]=100&sort=modified_at');
-            if (!Array.isArray(data)) return 0;
+        let total = 0;
+        for (const game of SUPPORTED_GAMES) {
+            try {
+                const data = await this.pandascoreGet(`/${game}/teams?page[size]=100&sort=modified_at`);
+                if (!Array.isArray(data)) continue;
 
-            for (const t of data) {
-                await this.upsertTeam(t);
+                for (const t of data) {
+                    await this.upsertTeam(t, game);
+                }
+
+                total += data.length;
+            } catch (e: any) {
+                ChampionshipsService.warn(`[championships] syncTeams/${game}: ${e.message}`);
             }
-
-            return data.length;
-        } catch (e: any) {
-            ChampionshipsService.warn(`[championships] syncTeams: ${e.message}`);
-            return 0;
         }
+        return total;
     }
 
     // ─── Upsert Helpers ───────────────────────────────────────────
 
-    private async upsertTournament(t: any, endpointStatus: string): Promise<void> {
-        const { Cs2TournamentEntity } = this.getEntities();
-        if (!Cs2TournamentEntity) return;
+    private async upsertTournament(t: any, endpointStatus: string, game: string): Promise<void> {
+        const { EsportsTournamentEntity } = this.getEntities();
+        if (!EsportsTournamentEntity) return;
 
-        const existing = await Repository.findOne(Cs2TournamentEntity, {
+        const existing = await Repository.findOne(EsportsTournamentEntity, {
             externalId: String(t.id)
         });
 
-        // t.type = 'online' | 'lan' | etc (direct field from PandaScore)
         const isOnline = t.type === 'online' || (t.live_supported && !t.country);
-
-        // Location: country field or league location
         const location = t.country || t.region || '';
 
         const teams = (t.teams || []).map((team: any) => ({
@@ -264,6 +264,7 @@ export class ChampionshipsService {
 
         const data = {
             externalId: String(t.id),
+            game: game,
             name: t.name || '',
             slug: t.slug || String(t.id),
             status: statusMap[endpointStatus] || 'upcoming',
@@ -283,17 +284,22 @@ export class ChampionshipsService {
         };
 
         if (existing) {
-            await Repository.update(Cs2TournamentEntity, { id: existing.id }, data);
+            await Repository.update(EsportsTournamentEntity, { id: (existing as any).id }, data);
         } else {
-            await Repository.insert(Cs2TournamentEntity, data);
+            const result = await Repository.insert(EsportsTournamentEntity, data);
+            if (!result.success) {
+                const fs = require('fs');
+                fs.appendFileSync('debug.txt', `[championships] Failed to insert tournament ${t.slug}: ${result.message}\n`);
+                ChampionshipsService.warn(`[championships] Failed to insert tournament ${t.slug}: ${result.message}`);
+            }
         }
     }
 
-    private async upsertMatch(m: any, tournamentSlug?: string): Promise<void> {
-        const { Cs2MatchEntity } = this.getEntities();
-        if (!Cs2MatchEntity) return;
+    private async upsertMatch(m: any, game: string, tournamentSlug?: string): Promise<void> {
+        const { EsportsMatchEntity } = this.getEntities();
+        if (!EsportsMatchEntity) return;
 
-        const existing = await Repository.findOne(Cs2MatchEntity, {
+        const existing = await Repository.findOne(EsportsMatchEntity, {
             externalId: String(m.id)
         });
 
@@ -303,16 +309,13 @@ export class ChampionshipsService {
         const team1 = opponents[0]?.opponent;
         const team2 = opponents[1]?.opponent;
 
-        // results is [{ score, team_id }] — match by team_id
         const score1 = results.find(r => r.team_id === team1?.id)?.score ?? 0;
         const score2 = results.find(r => r.team_id === team2?.id)?.score ?? 0;
 
-        // tournament slug: prefer passed arg, then from match.tournament object
         const slug = tournamentSlug
             || m.tournament?.slug
             || String(m.tournament_id || '');
 
-        // Stream: prefer pt-BR, fallback to main or en
         const streams: any[] = m.streams_list || [];
         const stream = streams.find(s => s.language === 'pt')
             || streams.find(s => s.main)
@@ -322,6 +325,7 @@ export class ChampionshipsService {
 
         const data = {
             externalId: String(m.id),
+            game: game,
             tournamentExternalId: String(m.tournament_id || m.tournament?.id || ''),
             tournamentSlug: slug,
             name: m.name || '',
@@ -345,22 +349,26 @@ export class ChampionshipsService {
         };
 
         if (existing) {
-            await Repository.update(Cs2MatchEntity, { id: existing.id }, data);
+            await Repository.update(EsportsMatchEntity, { id: (existing as any).id }, data);
         } else {
-            await Repository.insert(Cs2MatchEntity, data);
+            const result = await Repository.insert(EsportsMatchEntity, data);
+            if (!result.success) {
+                ChampionshipsService.warn(`[championships] Failed to insert match ${m.slug}: ${result.message}`);
+            }
         }
     }
 
-    private async upsertTeam(t: any): Promise<void> {
-        const { Cs2TeamEntity } = this.getEntities();
-        if (!Cs2TeamEntity) return;
+    private async upsertTeam(t: any, game: string): Promise<void> {
+        const { EsportsTeamEntity } = this.getEntities();
+        if (!EsportsTeamEntity) return;
 
-        const existing = await Repository.findOne(Cs2TeamEntity, {
+        const existing = await Repository.findOne(EsportsTeamEntity, {
             externalId: String(t.id)
         });
 
         const data = {
             externalId: String(t.id),
+            game: game,
             name: t.name || '',
             slug: t.slug || String(t.id),
             acronym: t.acronym || '',
@@ -371,9 +379,12 @@ export class ChampionshipsService {
         };
 
         if (existing) {
-            await Repository.update(Cs2TeamEntity, { id: existing.id }, data);
+            await Repository.update(EsportsTeamEntity, { id: (existing as any).id }, data);
         } else {
-            await Repository.insert(Cs2TeamEntity, data);
+            const result = await Repository.insert(EsportsTeamEntity, data);
+            if (!result.success) {
+                ChampionshipsService.warn(`[championships] Failed to insert team ${t.slug}: ${result.message}`);
+            }
         }
     }
 
@@ -426,9 +437,9 @@ export class ChampionshipsService {
 
     private getEntities(): Record<string, any> {
         return {
-            Cs2TournamentEntity: Repository.getEntity("Cs2TournamentEntity"),
-            Cs2MatchEntity: Repository.getEntity("Cs2MatchEntity"),
-            Cs2TeamEntity: Repository.getEntity("Cs2TeamEntity"),
+            EsportsTournamentEntity: Repository.getEntity("EsportsTournamentsEntity"),
+            EsportsMatchEntity: Repository.getEntity("EsportsMatchesEntity"),
+            EsportsTeamEntity: Repository.getEntity("EsportsTeamsEntity"),
         };
     }
 }

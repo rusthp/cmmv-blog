@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.194",
+    "version": "0.1.196",
     "description": "Blog package for CMMV",
     "scripts": {
         "build": "tsup"
@@ -24,6 +24,9 @@
         "@cmmv/cache": "^0.15.0",
         "@cmmv/core": "0.17.0",
         "@cmmv/http": "0.17.0",
+        "axios": "^1.6.8",
+        "cheerio": "^1.0.0-rc.12",
+        "https-proxy-agent": "^7.0.4",
         "busboy": "^1.6.0",
         "cache-manager-fs-binary": "^1.0.4",
         "jsonwebtoken": "^9.0.2",

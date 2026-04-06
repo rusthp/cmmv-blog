@@ -46,7 +46,19 @@
       "Bash(node fix-seo.mjs)",
       "Bash(rm fix-seo.mjs)",
       "Bash(node fix-seo2.mjs)",
-      "Bash(rm fix-seo2.mjs)"
+      "Bash(rm fix-seo2.mjs)",
+      "Read(//mnt/b/**)",
+      "Bash(pnpm run:*)",
+      "Bash(wsl -e bash -c \"cd /mnt/b/cmmv-blog && pnpm run build 2>&1 | tail -60\")",
+      "Bash(wsl -e bash -c \"which node && node --version && which pnpm && cd /mnt/b/cmmv-blog && pnpm run build 2>&1 | tail -60\")",
+      "Bash(wsl -e bash -lc \"cd /mnt/b/cmmv-blog && node --version && pnpm --version\")",
+      "Bash(wsl -e bash -c \"source ~/.nvm/nvm.sh 2>/dev/null; source ~/.bashrc 2>/dev/null; export NVM_DIR=\"\"$HOME/.nvm\"\"; [ -s \"\"$NVM_DIR/nvm.sh\"\" ] && . \"\"$NVM_DIR/nvm.sh\"\"; cd /mnt/b/cmmv-blog && node --version 2>&1\")",
+      "Bash(wsl -e bash -c \"find /usr/local/bin /usr/bin ~/.nvm ~/.local -name ''node'' 2>/dev/null | head -5\")",
+      "Bash(wsl -e bash -c \"export PATH=\"\"/home/rusthp/.local/share/fnm/node-versions/v22.15.0/installation/bin:$PATH\"\"; cd /mnt/b/cmmv-blog && node --version && pnpm --version\")",
+      "Bash(wsl -e bash -c \"export PATH=\"\"/home/rusthp/.local/share/fnm/node-versions/v22.15.0/installation/bin:$PATH\"\"; cd /mnt/b/cmmv-blog && pnpm run build 2>&1 | tail -60\")",
+      "Bash(find /b/cmmv-blog -type f -name *[Cc]omment*)",
+      "Bash(grep -A 10 -B 5 script.*src.*comments /b/cmmv-blog/apps/web/src/theme-*/views/PagePost.vue)",
+      "Bash(grep -A 30 \"script:\" /b/cmmv-blog/apps/web/src/theme-*/views/PagePost.vue)"
     ]
   }
 }

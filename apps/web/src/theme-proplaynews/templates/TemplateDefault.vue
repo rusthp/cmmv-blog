@@ -27,7 +27,7 @@
                                 </button>
                             </div>
                             <a v-else
-                                :href="`/category/${category.slug}`"
+                                :href="category.slug === 'campeonatos' ? '/campeonatos' : `/category/${category.slug}`"
                                 class="text-white hover:bg-blue-400/30 hover:text-[#ffcc00] px-2 py-1 rounded text-sm whitespace-nowrap transition-colors"
                             >
                                 {{ category.name }}
@@ -129,7 +129,7 @@
                                     <a
                                         v-for="child in mainNavCategories.childrenMap[category.id]"
                                         :key="child.id"
-                                        :href="`/category/${child.slug}`"
+                                        :href="child.slug === 'campeonatos' ? '/campeonatos' : `/category/${child.slug}`"
                                         class="block px-4 py-2 text-sm text-white hover:bg-blue-400/30 hover:text-[#ffcc00] rounded"
                                     >
                                         {{ child.name }}
@@ -138,7 +138,7 @@
                             </div>
                             <a
                                 v-else
-                                :href="`/category/${category.slug}`"
+                                :href="category.slug === 'campeonatos' ? '/campeonatos' : `/category/${category.slug}`"
                                 class="block text-white hover:bg-blue-400/30 hover:text-[#ffcc00] rounded px-3 py-2 text-sm"
                             >
                                 {{ category.name }}
@@ -191,7 +191,7 @@
                 }"
             >
                 <a v-for="child in mainNavCategories.childrenMap[category.id]" :key="child.id"
-                    :href="`/category/${child.slug}`"
+                    :href="child.slug === 'campeonatos' ? '/campeonatos' : `/category/${child.slug}`"
                     class="block text-white hover:bg-blue-400/20 hover:text-[#ffcc00] px-3 py-2 text-sm transition-colors"
                 >
                     {{ child.name }}
