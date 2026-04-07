@@ -22,7 +22,7 @@
                         </span>
                     </p>
                 </div>
-                <div class="hero-stats" v-if="rankings.length > 0" style="display:flex;align-items:center;gap:1rem;margin-left:auto;">
+                <div class="hero-stats" v-if="rankings.length > 0" style="display:flex;align-items:center;gap:1rem;margin-left:auto;flex-shrink:0;">
                     <div class="stat-box" style="display:flex;flex-direction:column;align-items:center;gap:0.1rem;">
                         <span class="stat-value" style="font-size:1.35rem;font-weight:800;color:#e2e8f0;line-height:1.2;">{{ rankings.length }}</span>
                         <span class="stat-label" style="font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Times</span>
@@ -149,8 +149,8 @@
                                     <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
                                         <div class="team-avatar" :class="getAvatarClass(entry.standing)" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
                                             <img
-                                                v-if="(getTeamLogo(entry.teamName) || entry.logoUrl) && !entry.logoError"
-                                                :src="getTeamLogo(entry.teamName) || entry.logoUrl"
+                                                v-if="getTeamLogoSrc(entry) && !entry.logoError"
+                                                :src="getTeamLogoSrc(entry)"
                                                 :alt="entry.teamName"
                                                 loading="lazy"
                                                 @error="entry.logoError = true"
@@ -262,7 +262,7 @@ const activeRegion = ref('global');
 const rankings = ref<any[]>([]);
 const displayLimit = ref(50);
 const snapshotDate = ref('');
-const loading = ref(true);
+const loading = ref(!import.meta.env.SSR);
 
 const majorSlots = computed(() => {
     switch (activeRegion.value) {
@@ -495,6 +495,15 @@ function getTeamLogo(teamName: string): string {
     return KNOWN_LOGOS[key] || '';
 }
 
+function getTeamLogoSrc(entry: any): string {
+    const known = getTeamLogo(entry.teamName);
+    if (known) return known;
+    // Only use logoUrl if it's an absolute URL (http/https) — ignore relative paths that 404
+    const url = entry.logoUrl || '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return '';
+}
+
 function formatSnapshotDate(date: string): string {
     const parts = date.split('_');
     if (parts.length !== 3) return date;
@@ -579,6 +588,7 @@ onMounted(() => {
     align-items: center;
     gap: 1.25rem;
     flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .hero-badge {
