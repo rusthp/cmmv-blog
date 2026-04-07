@@ -22,20 +22,20 @@
                         </span>
                     </p>
                 </div>
-                <div class="hero-stats" v-if="rankings.length > 0">
-                    <div class="stat-box">
-                        <span class="stat-value">{{ rankings.length }}</span>
-                        <span class="stat-label">Times</span>
+                <div class="hero-stats" v-if="rankings.length > 0" style="display:flex;align-items:center;gap:1rem;margin-left:auto;">
+                    <div class="stat-box" style="display:flex;flex-direction:column;align-items:center;gap:0.1rem;">
+                        <span class="stat-value" style="font-size:1.35rem;font-weight:800;color:#e2e8f0;line-height:1.2;">{{ rankings.length }}</span>
+                        <span class="stat-label" style="font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Times</span>
                     </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-box">
-                        <span class="stat-value">{{ majorSlots }}</span>
-                        <span class="stat-label">Major Slots</span>
+                    <div class="stat-divider" style="width:1px;height:32px;background:rgba(148,163,184,0.15);flex-shrink:0;"></div>
+                    <div class="stat-box" style="display:flex;flex-direction:column;align-items:center;gap:0.1rem;">
+                        <span class="stat-value" style="font-size:1.35rem;font-weight:800;color:#e2e8f0;line-height:1.2;">{{ majorSlots }}</span>
+                        <span class="stat-label" style="font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Major Slots</span>
                     </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-box">
-                        <span class="stat-value">4</span>
-                        <span class="stat-label">Regiões</span>
+                    <div class="stat-divider" style="width:1px;height:32px;background:rgba(148,163,184,0.15);flex-shrink:0;"></div>
+                    <div class="stat-box" style="display:flex;flex-direction:column;align-items:center;gap:0.1rem;">
+                        <span class="stat-value" style="font-size:1.35rem;font-weight:800;color:#e2e8f0;line-height:1.2;">4</span>
+                        <span class="stat-label" style="font-size:0.68rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Regiões</span>
                     </div>
                 </div>
             </div>
@@ -43,16 +43,17 @@
 
         <!-- Region Tabs -->
         <div class="region-section">
-            <div class="region-tabs">
+            <div class="region-tabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                 <button
                     v-for="tab in regionTabs"
                     :key="tab.value"
                     class="region-tab"
                     :class="{ active: activeRegion === tab.value }"
                     @click="setRegion(tab.value)"
+                    style="position:relative;display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 1.15rem;border-radius:10px;border:1px solid rgba(148,163,184,0.1);background:rgba(15,23,42,0.6);color:#64748b;font-weight:600;font-size:0.85rem;cursor:pointer;"
                 >
                     <span class="tab-indicator"></span>
-                    <span class="tab-emoji">{{ tab.flag }}</span>
+                    <span class="tab-emoji" style="font-size:1rem;line-height:1;">{{ tab.flag }}</span>
                     <span class="tab-text">{{ tab.label }}</span>
                 </button>
             </div>
@@ -93,17 +94,17 @@
         <!-- Ranking Table -->
         <div v-else class="ranking-container">
             <!-- Major Qualification Line Legend -->
-            <div class="legend-bar">
-                <div class="legend-item">
-                    <span class="legend-dot legend-gold"></span>
+            <div class="legend-bar" style="display:flex;gap:1.5rem;padding:0.75rem 1rem;margin-bottom:0.75rem;border-radius:10px;background:rgba(15,23,42,0.5);border:1px solid rgba(148,163,184,0.06);">
+                <div class="legend-item" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;color:#64748b;font-weight:500;">
+                    <span class="legend-dot legend-gold" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);flex-shrink:0;"></span>
                     <span>Pódio</span>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot legend-qualified"></span>
+                <div class="legend-item" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;color:#64748b;font-weight:500;">
+                    <span class="legend-dot legend-qualified" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#4ade80,#22c55e);flex-shrink:0;"></span>
                     <span>Classificado Major</span>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot legend-contender"></span>
+                <div class="legend-item" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;color:#64748b;font-weight:500;">
+                    <span class="legend-dot legend-contender" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(100,116,139,0.5);flex-shrink:0;"></span>
                     <span>Contender</span>
                 </div>
             </div>
@@ -127,7 +128,7 @@
                             >
                                 <!-- Rank -->
                                 <td class="col-rank">
-                                    <div class="rank-cell">
+                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.25rem;">
                                         <span v-if="entry.standing === 1" class="rank-crown">👑</span>
                                         <span v-else-if="entry.standing === 2" class="rank-medal silver">🥈</span>
                                         <span v-else-if="entry.standing === 3" class="rank-medal bronze">🥉</span>
@@ -145,8 +146,8 @@
 
                                 <!-- Team -->
                                 <td class="col-team">
-                                    <div class="team-cell">
-                                        <div class="team-avatar" :class="getAvatarClass(entry.standing)">
+                                    <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
+                                        <div class="team-avatar" :class="getAvatarClass(entry.standing)" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
                                             <img
                                                 v-if="(getTeamLogo(entry.teamName) || entry.logoUrl) && !entry.logoError"
                                                 :src="getTeamLogo(entry.teamName) || entry.logoUrl"
@@ -156,12 +157,12 @@
                                             />
                                             <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
                                         </div>
-                                        <div class="team-info">
-                                            <span class="team-name" :class="{ 'team-elite': entry.standing <= 3 }">
-                                                <span v-if="getTeamFlag(entry)" class="team-flag">{{ getTeamFlag(entry) }}</span>
+                                        <div class="team-info" style="display:flex;align-items:center;gap:0.4rem;min-width:0;">
+                                            <span class="team-name" :class="{ 'team-elite': entry.standing <= 3 }" style="display:inline-flex;align-items:center;gap:0.35rem;font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;">
+                                                <span v-if="getTeamFlag(entry)" class="team-flag" style="font-size:1rem;line-height:1;flex-shrink:0;">{{ getTeamFlag(entry) }}</span>
                                                 {{ entry.teamName }}
                                             </span>
-                                            <span v-if="entry.standing <= majorSlots" class="major-badge">
+                                            <span v-if="entry.standing <= majorSlots" class="major-badge" style="display:inline-flex;align-items:center;font-size:0.58rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#4ade80;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);padding:0.1rem 0.35rem;border-radius:4px;flex-shrink:0;white-space:nowrap;">
                                                 Major
                                             </span>
                                         </div>
@@ -170,19 +171,20 @@
 
                                 <!-- Roster -->
                                 <td class="col-roster">
-                                    <div class="roster-cell">
+                                    <div class="roster-cell" style="display:flex;flex-wrap:wrap;gap:0.25rem;">
                                         <span
                                             v-for="(player, i) in parsePlayers(entry.roster)"
                                             :key="i"
                                             class="player-chip"
                                             :class="{ 'player-star': i === 0 && entry.standing <= 10 }"
+                                            style="display:inline-block;font-size:0.7rem;color:#94a3b8;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.08);border-radius:4px;padding:0.12rem 0.4rem;white-space:nowrap;"
                                         >{{ player }}</span>
                                     </div>
                                 </td>
 
                                 <!-- Points -->
                                 <td class="col-points">
-                                    <div class="points-cell">
+                                    <div class="points-cell" style="display:flex;align-items:center;gap:0.6rem;">
                                         <div class="points-bar-track">
                                             <div
                                                 class="points-bar-fill"

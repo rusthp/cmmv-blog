@@ -11,13 +11,17 @@ export class ChampionshipsController {
   ) {}
 
   @Get('tournaments')
-  async getTournaments(@Query('status') status?: string, @Query('game') game?: string) {
-    const result = await this.service.getTournamentsWithCount(status, game);
+  async getTournaments(
+    @Query('status') status?: string,
+    @Query('game') game?: string,
+    @Query('region') region?: string
+  ) {
+    const result = await this.service.getTournamentsWithCount(status, game, region);
 
     // Auto-sync if the new table is completely empty
     if (result.data.length === 0) {
       await this.service.syncAll();
-      const retryResult = await this.service.getTournamentsWithCount(status, game);
+      const retryResult = await this.service.getTournamentsWithCount(status, game, region);
       return retryResult;
     }
 
@@ -25,8 +29,8 @@ export class ChampionshipsController {
   }
 
   @Get('tournaments/counts')
-  async getTournamentCounts(@Query('game') game?: string) {
-    return this.service.getStatusCounts(game);
+  async getTournamentCounts(@Query('game') game?: string, @Query('region') region?: string) {
+    return this.service.getStatusCounts(game, region);
   }
 
   @Get('tournaments/:slug')

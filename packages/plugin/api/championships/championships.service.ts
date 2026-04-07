@@ -69,13 +69,14 @@ export class ChampionshipsService {
     return stats;
   }
 
-  async getTournaments(status?: string, game?: string): Promise<any[]> {
+  async getTournaments(status?: string, game?: string, region?: string): Promise<any[]> {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return [];
 
     const queries: any = { limit: '200' };
     if (status && status !== 'all') queries.status = status;
     if (game && game !== 'all') queries.game = game;
+    if (region && region !== 'all') queries.region = region;
 
     const results = await Repository.findAll(EsportsTournamentEntity, queries);
 
@@ -93,7 +94,8 @@ export class ChampionshipsService {
 
   async getTournamentsWithCount(
     status?: string,
-    game?: string
+    game?: string,
+    region?: string
   ): Promise<{ data: any[]; total: number }> {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { data: [], total: 0 };
@@ -101,6 +103,7 @@ export class ChampionshipsService {
     const queries: any = { limit: '200' };
     if (status && status !== 'all') queries.status = status;
     if (game && game !== 'all') queries.game = game;
+    if (region && region !== 'all') queries.region = region;
 
     const results = await Repository.findAll(EsportsTournamentEntity, queries);
 
@@ -122,23 +125,26 @@ export class ChampionshipsService {
   }
 
   async getStatusCounts(
-    game?: string
+    game?: string,
+    region?: string
   ): Promise<{ all: number; ongoing: number; upcoming: number; finished: number }> {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { all: 0, ongoing: 0, upcoming: 0, finished: 0 };
 
-    const gameFilter = game && game !== 'all' ? { game } : {};
+    const baseFilter: any = {};
+    if (game && game !== 'all') baseFilter.game = game;
+    if (region && region !== 'all') baseFilter.region = region;
 
     const [allResults, ongoingResults, upcomingResults, finishedResults] = await Promise.all([
-      Repository.findAll(EsportsTournamentEntity, { ...gameFilter, limit: '1' }),
-      Repository.findAll(EsportsTournamentEntity, { ...gameFilter, status: 'ongoing', limit: '1' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, limit: '1' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'ongoing', limit: '1' }),
       Repository.findAll(EsportsTournamentEntity, {
-        ...gameFilter,
+        ...baseFilter,
         status: 'upcoming',
         limit: '1',
       }),
       Repository.findAll(EsportsTournamentEntity, {
-        ...gameFilter,
+        ...baseFilter,
         status: 'finished',
         limit: '1',
       }),
@@ -330,13 +336,29 @@ export class ChampionshipsService {
     const isOnline = t.type === 'online' || (t.live_supported && !t.country);
     const location = t.country || t.region || '';
 
-    const teams = (t.teams || []).map((team: any) => ({
+    // Use expected_roster when teams array is empty (more complete data)
+    const teamsSource = (t.teams && t.teams.length > 0)
+      ? t.teams
+      : (t.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+
+    const teams = teamsSource.map((team: any) => ({
       id: String(team.id),
       name: team.name,
       acronym: team.acronym || '',
       logoUrl: team.image_url || '',
       location: team.location || '',
     }));
+
+    const numberOfTeams = teams.length || t.participants_count || 0;
+
+    // Detect prize type: money vs qualification slot
+    const prizePool = t.prizepool || (
+      (t.name || t.serie?.name || '').toLowerCase().match(/slot|qualifier|vaga|berth|qualificat/)
+        ? 'Vaga em torneio' : ''
+    );
+
+    // Extract region from PandaScore data
+    const region = t.region || '';
 
     const statusMap: Record<string, string> = {
       running: 'ongoing',
@@ -352,7 +374,7 @@ export class ChampionshipsService {
       status: statusMap[endpointStatus] || 'upcoming',
       startDate: t.begin_at || null,
       endDate: t.end_at || null,
-      prizePool: t.prizepool || '',
+      prizePool,
       location,
       online: isOnline,
       tier: t.tier || '',
@@ -362,6 +384,8 @@ export class ChampionshipsService {
       leagueLogo: t.league?.image_url || '',
       serieName: t.serie?.full_name || t.serie?.name || '',
       teamsJson: JSON.stringify(teams),
+      region,
+      numberOfTeams,
       featured: t.tier === 's' || t.tier === 'a',
     };
 

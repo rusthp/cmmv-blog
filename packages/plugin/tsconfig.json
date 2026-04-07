@@ -1,17 +1,28 @@
 {
     "extends": "../../tsconfig.json",
-    "include": ["**/*.ts"],
+    "include": [
+        "**/*.ts"
+    ],
     "compilerOptions": {
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "strictPropertyInitialization": false,
         "noImplicitAny": false,
         "module": "NodeNext",
+        "types": [],
         "paths": {
-            "@generated": ["../../apps/api/.generated"],
-            "@generated/*": ["../../apps/api/.generated/*"],
-            "@cmmv/ai-content": ["../../packages/ai-content/src"],
-            "@cmmv/ai-content/*": ["../../packages/ai-content/src/*"]
+            "@generated": [
+                "../../apps/api/.generated"
+            ],
+            "@generated/*": [
+                "../../apps/api/.generated/*"
+            ],
+            "@cmmv/ai-content": [
+                "../../packages/ai-content/src"
+            ],
+            "@cmmv/ai-content/*": [
+                "../../packages/ai-content/src/*"
+            ]
         }
     }
 }

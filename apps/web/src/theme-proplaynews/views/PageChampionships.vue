@@ -19,6 +19,19 @@
       </button>
     </div>
 
+    <!-- REGION FILTER -->
+    <div class="region-nav">
+      <button
+        v-for="r in regions"
+        :key="r.value"
+        class="region-tab"
+        :class="{ active: activeRegion === r.value }"
+        @click="setRegion(r.value)"
+      >
+        {{ r.label }}
+      </button>
+    </div>
+
     <!-- CONTENT AREA -->
     <div class="championships-content">
       <!-- Secondary Status Tabs -->
@@ -121,8 +134,14 @@
             </div>
             <h3 class="card-title">{{ getCardTitle(t) }}</h3>
             <p class="card-date">{{ formatCardDate(t.startDate, t.endDate) }}</p>
-            <div v-if="t.prizePool" class="card-prize">
-              {{ t.prizePool }}
+            <div class="card-bottom-row">
+              <div v-if="t.prizePool" class="card-prize" :class="getPrizeClass(t.prizePool)">
+                <span class="prize-icon">{{ getPrizeIcon(t.prizePool) }}</span>
+                {{ t.prizePool }}
+              </div>
+              <div v-if="getTeamCount(t) > 0" class="card-teams">
+                {{ getTeamCount(t) }} times
+              </div>
             </div>
           </div>
         </a>
@@ -153,8 +172,18 @@ const statusTabs = [
   { label: 'Encerrados', value: 'finished' },
 ];
 
+const regions = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Brasil', value: 'BR' },
+  { label: 'Am. do Sul', value: 'SA' },
+  { label: 'Europa', value: 'EU' },
+  { label: 'Am. do Norte', value: 'NA' },
+  { label: 'Asia', value: 'APAC' },
+];
+
 const activeGame = ref('all');
 const activeStatus = ref('all');
+const activeRegion = ref('all');
 
 const tournaments = ref<any[]>([]);
 const loading = ref(true);
@@ -170,7 +199,7 @@ function getCount(status: string) {
   return statusCounts.value[status] || 0;
 }
 
-watch([activeGame, activeStatus], () => {
+watch([activeGame, activeStatus, activeRegion], () => {
   load();
 });
 
@@ -181,6 +210,7 @@ async function load() {
     const params = new URLSearchParams();
     if (activeStatus.value !== 'all') params.append('status', activeStatus.value);
     if (activeGame.value !== 'all') params.append('game', activeGame.value);
+    if (activeRegion.value !== 'all') params.append('region', activeRegion.value);
     params.append('limit', '200');
 
     const url = `/api/esports/tournaments?${params.toString()}`;
@@ -202,10 +232,13 @@ async function load() {
 
 async function updateAllStatusCounts() {
   try {
-    const gameParam = activeGame.value !== 'all' ? `?game=${activeGame.value}` : '';
+    const countParams = new URLSearchParams();
+    if (activeGame.value !== 'all') countParams.append('game', activeGame.value);
+    if (activeRegion.value !== 'all') countParams.append('region', activeRegion.value);
+    const countQuery = countParams.toString() ? `?${countParams.toString()}` : '';
 
     // Fetch all counts from the optimized endpoint in a single request
-    const res = await fetch(`/api/esports/tournaments/counts${gameParam}`);
+    const res = await fetch(`/api/esports/tournaments/counts${countQuery}`);
     const json = await res.json();
 
     statusCounts.value = {
@@ -224,6 +257,33 @@ function setGame(value: string) {
 }
 function setStatus(value: string) {
   activeStatus.value = value;
+}
+function setRegion(value: string) {
+  activeRegion.value = value;
+}
+
+function getPrizeClass(prizePool: string): string {
+  if (!prizePool) return '';
+  const lower = prizePool.toLowerCase();
+  if (lower.includes('vaga') || lower.includes('slot') || lower.includes('berth')) {
+    return 'prize-slot';
+  }
+  return 'prize-money';
+}
+
+function getPrizeIcon(prizePool: string): string {
+  if (!prizePool) return '';
+  const lower = prizePool.toLowerCase();
+  if (lower.includes('vaga') || lower.includes('slot') || lower.includes('berth')) {
+    return '\uD83C\uDFC6'; // trophy
+  }
+  return '\uD83D\uDCB0'; // money bag
+}
+
+function getTeamCount(t: any): number {
+  if (t.numberOfTeams && t.numberOfTeams > 0) return t.numberOfTeams;
+  const teams = t.teams || [];
+  return teams.length;
 }
 
 function getGameShortLabel(gameSlug: string): string {
@@ -365,6 +425,37 @@ onMounted(load);
   background: #3182ce;
   border-color: #3182ce;
   color: #ffffff;
+}
+
+/* Region Navigation */
+.region-nav {
+  display: flex;
+  gap: 0.375rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.region-tab {
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: transparent;
+  color: #718096;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  border: 1px solid #2d3748;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.region-tab:hover {
+  color: #e2e8f0;
+  border-color: #4a5568;
+}
+
+.region-tab.active {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
 }
 
 /* Content Area */
@@ -645,10 +736,38 @@ onMounted(load);
   margin: 0;
 }
 
+.card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .card-prize {
   font-size: 0.875rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.card-prize.prize-money {
   color: #ecc94b;
+}
+
+.card-prize.prize-slot {
+  color: #63b3ed;
+}
+
+.prize-icon {
+  font-size: 0.8125rem;
+}
+
+.card-teams {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Loading State */

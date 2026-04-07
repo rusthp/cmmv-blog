@@ -69,6 +69,12 @@ export class EsportsTournamentContract extends AbstractContract {
     @ContractField({ protoType: 'string', nullable: true })
     teamsJson!: string; // JSON array of team objects
 
+    @ContractField({ protoType: 'string', nullable: true, index: true })
+    region!: string; // NA | EU | BR | SA | APAC | global
+
+    @ContractField({ protoType: 'int32', nullable: false, defaultValue: 0 })
+    numberOfTeams!: number;
+
     @ContractField({ protoType: 'boolean', nullable: false, defaultValue: true, index: true })
     featured!: boolean;
 }

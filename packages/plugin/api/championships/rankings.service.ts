@@ -345,20 +345,16 @@ export class RankingsService {
             RankingsService.warn(`[rankings] delete failed: ${e.message}`);
         }
 
+        // Phase 1: Insert all entries first (fast path — no blocking logo downloads)
         let inserted = 0;
         let firstError = '';
 
         for (const entry of entries) {
-            try {
-                // Fetch high-quality logo only for Top 50 to optimize build time and avoid bans
-                if (entry.standing <= 50) {
-                    const fallbackUrl = teamMap.get(entry.teamName.toLowerCase().trim());
-                    const logo = await this.logoScraper.findAndDownloadLogo(entry.teamName, fallbackUrl);
-                    if (logo) {
-                        entry.logoUrl = logo;
-                    }
-                }
+            // Use teamMap logo as initial fallback (already in memory)
+            const fallbackUrl = teamMap.get(entry.teamName.toLowerCase().trim());
+            if (fallbackUrl) entry.logoUrl = fallbackUrl;
 
+            try {
                 const result = await Repository.insert(entity, entry);
                 if (result?.success) {
                     inserted++;
@@ -375,6 +371,22 @@ export class RankingsService {
         }
 
         RankingsService.log(`[rankings] synced ${inserted}/${entries.length} entries for ${region}`);
+
+        // Phase 2: Download and cache logos for Top 50 in background (non-blocking)
+        setImmediate(async () => {
+            const top50 = entries.filter(e => e.standing <= 50);
+            for (const entry of top50) {
+                try {
+                    const fallbackUrl = teamMap.get(entry.teamName.toLowerCase().trim());
+                    const logo = await this.logoScraper.findAndDownloadLogo(entry.teamName, fallbackUrl);
+                    if (logo && logo !== entry.logoUrl) {
+                        await Repository.updateOne(entity, { region, snapshotDate: entry.snapshotDate, standing: entry.standing }, { logoUrl: logo });
+                    }
+                } catch { /* logo download failures are non-critical */ }
+            }
+            RankingsService.log(`[rankings] background logo download complete for ${region} top 50`);
+        });
+
         return inserted;
     }
 
