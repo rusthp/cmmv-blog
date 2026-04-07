@@ -1,133 +1,156 @@
 <template>
-    <div class="championships-page">
-        <!-- HEADER -->
-        <div class="page-header">
-            <h1 class="page-title">Campeonatos de e-Sports</h1>
-            <p class="page-subtitle">O seu portal central de cobertura mundial. Acompanhe os torneios de seus jogos favoritos.</p>
-        </div>
-
-        <!-- PRIMARY GAMES TABS -->
-        <div class="games-nav">
-            <button 
-                v-for="g in games" 
-                :key="g.value" 
-                class="game-tab"
-                :class="{ active: activeGame === g.value }"
-                @click="setGame(g.value)"
-            >
-                <img v-if="g.icon" :src="g.icon" class="game-icon" width="20" height="20" alt="" />
-                <span v-else class="game-icon-emoji">{{ g.emoji }}</span>
-                {{ g.label }}
-            </button>
-        </div>
-
-        <!-- CONTENT AREA -->
-        <div class="championships-content">
-            <!-- Secondary Status Tabs -->
-            <div class="status-tabs-container">
-                <div class="status-tabs">
-                    <button 
-                        v-for="tab in statusTabs" 
-                        :key="tab.value"
-                        class="status-tab"
-                        :class="{ active: activeStatus === tab.value }"
-                        @click="setStatus(tab.value)"
-                    >
-                        {{ tab.label }}
-                        <span class="tab-count">{{ getCount(tab.value) }}</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loading State -->
-            <div v-if="loading" class="timeline-loading">
-                <div v-for="n in 6" :key="n" class="skeleton-list-item"></div>
-            </div>
-
-            <!-- Empty State -->
-            <div v-else-if="filteredTournaments.length === 0" class="empty-state">
-                <div class="empty-icon">🎮</div>
-                <h3>Nenhum campeonato encontrado</h3>
-                <p>Não há eventos nesta categoria para os filtros selecionados.</p>
-            </div>
-
-            <!-- TIMELINE LIST (Draft5 Style) -->
-            <div v-else class="timeline-list">
-                <a 
-                    v-for="t in filteredTournaments" 
-                    :key="t.id" 
-                    :href="`/campeonatos/${t.slug}`"
-                    class="timeline-card"
-                    :class="{ featured: t.featured, ongoing: t.status === 'ongoing' }"
-                >
-                    <!-- Status / Identity -->
-                    <div class="tl-identity">
-                        <div class="tl-logo-box">
-                            <img v-if="t.logoUrl" :src="t.logoUrl" :alt="t.name" />
-                            <span v-else>{{ t.name?.substring(0, 2).toUpperCase() }}</span>
-                        </div>
-                        <div class="tl-game-badge" :title="getGameLabel(t.game)">
-                            {{ getGameEmoji(t.game) }}
-                        </div>
-                    </div>
-
-                    <!-- Details -->
-                    <div class="tl-details">
-                        <div class="tl-header">
-                            <h3 class="tl-name">{{ t.name }}</h3>
-                            <div class="tl-badges">
-                                <span v-if="t.tier" class="badge tier-badge dark">Tier {{ t.tier.toUpperCase() }}</span>
-                                <span class="badge type-badge" :class="t.online ? 'online' : 'lan'">
-                                    {{ t.online ? 'Online' : 'LAN' }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="tl-meta">
-                            <span class="meta-item dates">
-                                📅 {{ formatTimelineDate(t.startDate, t.endDate) }}
-                            </span>
-                            <span v-if="t.prizePool" class="meta-item prize">
-                                🏆 {{ t.prizePool }}
-                            </span>
-                            <span v-if="t.location && !t.online" class="meta-item location">
-                                📍 {{ t.location }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Status Tag -->
-                    <div class="tl-status-col">
-                        <span class="status-pill" :class="t.status">
-                            <span v-if="t.status === 'ongoing'" class="live-dot"></span>
-                            {{ statusLabel(t.status) }}
-                        </span>
-                    </div>
-                </a>
-            </div>
-        </div>
+  <div class="championships-page">
+    <!-- HEADER -->
+    <div class="page-header">
+      <h1 class="page-title">Campeonatos</h1>
+      <p class="page-subtitle">Acompanhe os principais torneios e competições de e-Sports.</p>
     </div>
+
+    <!-- PRIMARY GAMES TABS -->
+    <div class="games-nav">
+      <button
+        v-for="g in games"
+        :key="g.value"
+        class="game-tab"
+        :class="{ active: activeGame === g.value }"
+        @click="setGame(g.value)"
+      >
+        {{ g.label }}
+      </button>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="championships-content">
+      <!-- Secondary Status Tabs -->
+      <div class="status-tabs-container">
+        <div class="status-tabs">
+          <button
+            v-for="tab in statusTabs"
+            :key="tab.value"
+            class="status-tab"
+            :class="{ active: activeStatus === tab.value }"
+            @click="setStatus(tab.value)"
+          >
+            {{ tab.label }}
+            <span class="tab-count">{{ getCount(tab.value) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="cards-grid-loading">
+        <div v-for="n in 8" :key="n" class="skeleton-card"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="filteredTournaments.length === 0" class="empty-state">
+        <h3>Nenhum campeonato encontrado</h3>
+        <p>Não há eventos nesta categoria para os filtros selecionados.</p>
+      </div>
+
+      <!-- CARDS GRID (Draft5 Style) -->
+      <div v-else class="cards-grid">
+        <a
+          v-for="t in filteredTournaments"
+          :key="t.id"
+          :href="`/campeonatos/${t.slug}`"
+          class="tournament-card"
+        >
+          <!-- Banner/Image Area -->
+          <div class="card-banner">
+            <template v-if="t.bannerUrl">
+              <img
+                :src="t.bannerUrl"
+                :alt="t.name"
+                class="banner-image"
+                @error="handleImageError"
+              />
+            </template>
+            <template v-else-if="t.leagueLogo">
+              <div class="banner-placeholder banner-with-logo" :class="`game-${t.game}`">
+                <img
+                  :src="t.leagueLogo"
+                  :alt="t.name"
+                  class="banner-logo-bg"
+                  @error="handleImageError"
+                />
+                <span class="game-label">{{ getGameShortLabel(t.game) }}</span>
+              </div>
+            </template>
+            <template v-else-if="t.logoUrl">
+              <div class="banner-placeholder banner-with-logo" :class="`game-${t.game}`">
+                <img
+                  :src="t.logoUrl"
+                  :alt="t.name"
+                  class="banner-logo-bg"
+                  @error="handleImageError"
+                />
+                <span class="game-label">{{ getGameShortLabel(t.game) }}</span>
+              </div>
+            </template>
+            <div v-else class="banner-placeholder" :class="`game-${t.game}`">
+              <span class="game-label">{{ getGameShortLabel(t.game) }}</span>
+              <span v-if="t.tier" class="tier-badge-placeholder"
+                >Tier {{ t.tier.toUpperCase() }}</span
+              >
+            </div>
+
+            <!-- Top Badges -->
+            <div class="card-badges">
+              <span class="badge badge-type" :class="t.online ? 'online' : 'lan'">
+                {{ t.online ? 'Online' : 'LAN' }}
+              </span>
+              <span class="badge badge-status" :class="t.status">
+                {{ statusLabel(t.status) }}
+              </span>
+            </div>
+
+            <!-- Progress bar for ongoing -->
+            <div v-if="t.status === 'ongoing'" class="progress-bar">
+              <div class="progress-fill" :style="{ width: getProgress(t) + '%' }"></div>
+            </div>
+          </div>
+
+          <!-- Info Area -->
+          <div class="card-info">
+            <div class="card-logo">
+              <img v-if="t.logoUrl" :src="t.logoUrl" :alt="t.name" @error="handleLogoError" />
+              <div v-else class="logo-placeholder">
+                {{ getInitials(t.name) }}
+              </div>
+            </div>
+            <h3 class="card-title">{{ getCardTitle(t) }}</h3>
+            <p class="card-date">{{ formatCardDate(t.startDate, t.endDate) }}</p>
+            <div v-if="t.prizePool" class="card-prize">
+              {{ t.prizePool }}
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useHead } from '@unhead/vue';
 
-useHead({ title: 'Campeonatos de e-Sports — ProPlay News' });
+useHead({ title: 'Campeonatos — ProPlay News' });
 
 const games = [
-    { label: 'Geral', value: 'all', emoji: '🌐' },
-    { label: 'CS2', value: 'csgo', emoji: '🔫' },
-    { label: 'Valorant', value: 'valorant', emoji: '🎯' },
-    { label: 'League of Legends', value: 'lol', emoji: '⚔️' },
-    { label: 'Dota 2', value: 'dota2', emoji: '🛡️' },
-    { label: 'Rainbow 6', value: 'r6siege', emoji: '🧨' },
+  { label: 'Todos', value: 'all' },
+  { label: 'CS2', value: 'csgo' },
+  { label: 'Valorant', value: 'valorant' },
+  { label: 'League of Legends', value: 'lol' },
+  { label: 'Dota 2', value: 'dota2' },
+  { label: 'Rainbow 6', value: 'r6siege' },
 ];
 
 const statusTabs = [
-    { label: 'Todos', value: 'all' },
-    { label: 'Em Andamento', value: 'ongoing' },
-    { label: 'Próximos', value: 'upcoming' },
-    { label: 'Encerrados', value: 'finished' },
+  { label: 'Todos', value: 'all' },
+  { label: 'Em andamento', value: 'ongoing' },
+  { label: 'Proximos', value: 'upcoming' },
+  { label: 'Encerrados', value: 'finished' },
 ];
 
 const activeGame = ref('all');
@@ -136,72 +159,151 @@ const activeStatus = ref('all');
 const tournaments = ref<any[]>([]);
 const loading = ref(true);
 
+// Status counts - fetched from backend
+const statusCounts = ref({ all: 0, ongoing: 0, upcoming: 0, finished: 0 });
+
 const filteredTournaments = computed(() => {
-    return tournaments.value;
+  return tournaments.value;
 });
 
 function getCount(status: string) {
-    if (status === 'all') return tournaments.value.length;
-    return tournaments.value.filter(t => t.status === status).length;
+  return statusCounts.value[status] || 0;
 }
 
-// Watch both game and status to trigger reactive fetch
 watch([activeGame, activeStatus], () => {
-    load();
+  load();
 });
 
 async function load() {
-    try {
-        loading.value = true;
-        
-        const params = new URLSearchParams();
-        if (activeStatus.value !== 'all') params.append('status', activeStatus.value);
-        if (activeGame.value !== 'all') params.append('game', activeGame.value);
+  try {
+    loading.value = true;
 
-        const res = await fetch(`/api/esports/tournaments?${params.toString()}`);
-        const json = await res.json();
-        tournaments.value = json.data || [];
-    } catch {
-        tournaments.value = [];
-    } finally {
-        loading.value = false;
-    }
+    const params = new URLSearchParams();
+    if (activeStatus.value !== 'all') params.append('status', activeStatus.value);
+    if (activeGame.value !== 'all') params.append('game', activeGame.value);
+    params.append('limit', '200');
+
+    const url = `/api/esports/tournaments?${params.toString()}`;
+
+    const res = await fetch(url);
+    const json = await res.json();
+
+    tournaments.value = json.data || json.result?.data || [];
+
+    // Fetch counts for all statuses from the optimized endpoint
+    await updateAllStatusCounts();
+  } catch (error) {
+    console.error('[Championships] Error loading tournaments:', error);
+    tournaments.value = [];
+  } finally {
+    loading.value = false;
+  }
 }
 
-function setGame(value: string) { activeGame.value = value; }
-function setStatus(value: string) { activeStatus.value = value; }
+async function updateAllStatusCounts() {
+  try {
+    const gameParam = activeGame.value !== 'all' ? `?game=${activeGame.value}` : '';
 
-function getGameLabel(gameSlug: string): string {
-    const item = games.find(g => g.value === gameSlug);
-    return item ? item.label : gameSlug;
+    // Fetch all counts from the optimized endpoint in a single request
+    const res = await fetch(`/api/esports/tournaments/counts${gameParam}`);
+    const json = await res.json();
+
+    statusCounts.value = {
+      all: json.all || 0,
+      ongoing: json.ongoing || 0,
+      upcoming: json.upcoming || 0,
+      finished: json.finished || 0,
+    };
+  } catch (error) {
+    console.error('[Championships] Error fetching status counts:', error);
+  }
 }
 
-function getGameEmoji(gameSlug: string): string {
-    const item = games.find(g => g.value === gameSlug);
-    return item ? item.emoji : '🎮';
+function setGame(value: string) {
+  activeGame.value = value;
+}
+function setStatus(value: string) {
+  activeStatus.value = value;
+}
+
+function getGameShortLabel(gameSlug: string): string {
+  const map: Record<string, string> = {
+    csgo: 'CS2',
+    valorant: 'VAL',
+    lol: 'LoL',
+    dota2: 'D2',
+    r6siege: 'R6',
+  };
+  return map[gameSlug] || gameSlug.toUpperCase();
 }
 
 function statusLabel(status: string): string {
-    const map: Record<string, string> = {
-        ongoing: '🔴 AO VIVO',
-        upcoming: 'EM BREVE',
-        finished: 'ENCERRADO',
-        cancelled: 'CANCELADO',
-    };
-    return map[status] || status.toUpperCase();
+  const map: Record<string, string> = {
+    ongoing: 'Ao vivo',
+    upcoming: 'Em breve',
+    finished: 'Encerrado',
+    cancelled: 'Cancelado',
+  };
+  return map[status] || status.toUpperCase();
 }
 
-function formatTimelineDate(startStr: string, endStr: string): string {
-    if (!startStr) return 'TBA';
-    const s = new Date(startStr);
-    const e = endStr ? new Date(endStr) : null;
-    
-    const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
-    const sStr = s.toLocaleDateString('pt-BR', opts);
-    
-    if (!e || s.getTime() === e.getTime()) return sStr;
-    const eStr = e.toLocaleDateString('pt-BR', opts);
-    return `${sStr} — ${eStr}`;
+function formatCardDate(startStr: string, endStr: string): string {
+  if (!startStr) return 'Data a definir';
+  const s = new Date(startStr);
+  const e = endStr ? new Date(endStr) : null;
+
+  const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: '2-digit' };
+  const sStr = s.toLocaleDateString('pt-BR', opts);
+
+  if (!e || s.getTime() === e.getTime()) return sStr;
+  const eStr = e.toLocaleDateString('pt-BR', opts);
+  return `${sStr} - ${eStr}`;
+}
+
+function getProgress(tournament: any): number {
+  if (!tournament.startDate || !tournament.endDate) return 50;
+  const start = new Date(tournament.startDate).getTime();
+  const end = new Date(tournament.endDate).getTime();
+  const now = Date.now();
+
+  if (now < start) return 0;
+  if (now > end) return 100;
+
+  return Math.round(((now - start) / (end - start)) * 100);
+}
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  return name.substring(0, 2).toUpperCase();
+}
+
+function getCardTitle(t: any): string {
+  if (!t) return '';
+  const league = t.leagueName || '';
+  const name = t.name || '';
+  // If name is generic, prefix with league
+  if (
+    name.toLowerCase() === 'playoffs' ||
+    name.toLowerCase() === 'group stage' ||
+    name.toLowerCase() === 'regular season'
+  ) {
+    return league ? `${league} — ${name}` : name;
+  }
+  return name;
+}
+
+function handleImageError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  if (img) img.style.display = 'none';
+}
+
+function handleLogoError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  if (img) {
+    img.style.display = 'none';
+    const placeholder = img.parentElement?.querySelector('.logo-placeholder');
+    if (placeholder) placeholder.style.display = 'flex';
+  }
 }
 
 onMounted(load);
@@ -209,368 +311,414 @@ onMounted(load);
 
 <style scoped>
 .championships-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem;
-    font-family: 'Inter', sans-serif;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .page-header {
-    margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .page-title {
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: #f8fafc;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.01em;
 }
 
 .page-subtitle {
-    color: #94a3b8;
-    font-size: 1.1rem;
+  color: #a0aec0;
+  font-size: 0.95rem;
+  margin: 0;
 }
 
-/* Games Navigation (Pills) */
+/* Games Navigation */
 .games-nav {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    background: rgba(15, 23, 42, 0.4);
-    padding: 1rem;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .game-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.25rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    color: #cbd5e1;
-    font-weight: 600;
-    font-size: 0.95rem;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #1a202c;
+  color: #a0aec0;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid #2d3748;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .game-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
+  background: #2d3748;
+  color: #e2e8f0;
 }
 
 .game-tab.active {
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(59, 130, 246, 0.15));
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #e0f2fe;
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
-}
-
-.game-icon-emoji {
-    font-size: 1.2rem;
+  background: #3182ce;
+  border-color: #3182ce;
+  color: #ffffff;
 }
 
 /* Content Area */
 .championships-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* Secondary Status Tabs */
+/* Status Tabs */
 .status-tabs-container {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding-bottom: 1rem;
+  border-bottom: 2px solid #1a202c;
 }
 
 .status-tabs {
-    display: flex;
-    gap: 1.5rem;
+  display: flex;
+  gap: 2rem;
 }
 
 .status-tab {
-    background: transparent;
-    border: none;
-    color: #64748b;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 0.5rem 0;
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: color 0.2s;
+  background: transparent;
+  border: none;
+  color: #718096;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.75rem 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .status-tab:hover {
-    color: #cbd5e1;
+  color: #e2e8f0;
 }
 
 .status-tab.active {
-    color: #38bdf8;
+  color: #3182ce;
 }
 
 .status-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1rem;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #38bdf8;
-    border-radius: 3px 3px 0 0;
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3182ce;
 }
 
 .tab-count {
-    background: rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
-    font-size: 0.75rem;
-    padding: 0.1rem 0.5rem;
-    border-radius: 999px;
+  background: #2d3748;
+  color: #a0aec0;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 500;
 }
 
 .status-tab.active .tab-count {
-    background: rgba(56, 189, 248, 0.2);
-    color: #38bdf8;
+  background: #3182ce;
+  color: #ffffff;
 }
 
-/* TIMELINE LIST (Draft5 Style) */
-.timeline-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+/* CARDS GRID */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 
-.timeline-card {
-    display: flex;
-    align-items: center;
-    background: rgba(30, 41, 59, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-left: 4px solid #475569;
-    border-radius: 12px;
-    padding: 1.25rem;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    gap: 1.5rem;
+.tournament-card {
+  display: flex;
+  flex-direction: column;
+  background: #1a202c;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.timeline-card:hover {
-    background: rgba(30, 41, 59, 0.7);
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateX(4px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+.tournament-card:hover {
+  border-color: #4a5568;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.timeline-card.ongoing {
-    border-left-color: #ef4444; /* Red for live */
+/* Banner Area */
+.card-banner {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: #0f1419;
+  overflow: hidden;
 }
 
-.timeline-card.featured {
-    border-left-color: #f59e0b; /* Gold for featured */
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* Identity / Logo */
-.tl-identity {
-    position: relative;
-    width: 90px;
-    height: 60px;
-    flex-shrink: 0;
+/* Banner placeholder with logo background */
+.banner-with-logo {
+  position: relative;
+  overflow: hidden;
 }
 
-.tl-logo-box {
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    color: #64748b;
-    font-weight: bold;
-    font-size: 1.2rem;
+.banner-logo-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  max-height: 70%;
+  object-fit: contain;
+  opacity: 0.2;
+  filter: blur(1px);
 }
 
-.tl-logo-box img {
-    max-width: 80%;
-    max-height: 80%;
-    object-fit: contain;
+.banner-with-logo .game-label {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-.tl-game-badge {
-    position: absolute;
-    bottom: -8px;
-    right: -8px;
-    background: #1e293b;
-    border: 2px solid #0f172a;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+.banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 2rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.1em;
 }
 
-/* Details */
-.tl-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+.tier-badge-placeholder {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.tl-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+.banner-placeholder.game-csgo {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+.banner-placeholder.game-valorant {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%);
+}
+.banner-placeholder.game-lol {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
+}
+.banner-placeholder.game-dota2 {
+  background: linear-gradient(135deg, #1a1a2e 0%, #3d1f1f 100%);
+}
+.banner-placeholder.game-r6siege {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2e3d1f 100%);
 }
 
-.tl-name {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin: 0;
-}
-
-.tl-badges {
-    display: flex;
-    gap: 0.5rem;
+/* Card Badges */
+.card-badges {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-.tier-badge.dark { background: #334155; color: #cbd5e1; }
-.type-badge.lan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
-.type-badge.online { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
-
-/* Meta */
-.tl-meta {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
+.badge-type {
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
 }
 
-.meta-item {
-    font-size: 0.85rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
+.badge-status {
+  color: #ffffff;
+  backdrop-filter: blur(4px);
 }
 
-.meta-item.prize { color: #fcd34d; font-weight: 600; }
-
-/* Status Col */
-.tl-status-col {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+.badge-status.ongoing {
+  background: #e53e3e;
 }
 
-.status-pill {
-    padding: 0.4rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    letter-spacing: 0.05em;
+.badge-status.upcoming {
+  background: #3182ce;
 }
 
-.status-pill.ongoing { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-.status-pill.upcoming { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
-.status-pill.finished { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
-
-.live-dot {
-    width: 6px;
-    height: 6px;
-    background: currentColor;
-    border-radius: 50%;
-    animation: blink 1.5s infinite;
+.badge-status.finished {
+  background: #4a5568;
 }
 
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+/* Progress Bar */
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Empty & Loading */
+.progress-fill {
+  height: 100%;
+  background: #e53e3e;
+  transition: width 0.3s ease;
+}
+
+/* Card Info */
+.card-info {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: #2d3748;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-placeholder {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #718096;
+}
+
+.card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-date {
+  font-size: 0.8125rem;
+  color: #718096;
+  margin: 0;
+}
+
+.card-prize {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ecc94b;
+}
+
+/* Loading State */
+.cards-grid-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.skeleton-card {
+  height: 280px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1a202c 25%, #2d3748 50%, #1a202c 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Empty State */
 .empty-state {
-    text-align: center;
-    padding: 5rem 0;
-    background: rgba(30, 41, 59, 0.3);
-    border-radius: 16px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-}
-
-.empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+  text-align: center;
+  padding: 4rem 0;
+  color: #718096;
 }
 
 .empty-state h3 {
-    color: #e2e8f0;
-    margin-bottom: 0.5rem;
-    font-size: 1.25rem;
+  color: #e2e8f0;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .empty-state p {
-    color: #64748b;
+  margin: 0;
+  font-size: 0.875rem;
 }
 
-.timeline-loading {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.skeleton-list-item {
-    height: 100px;
-    border-radius: 12px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 75%);
-    background-size: 200% 100%;
-    animation: placeholder-shimmer 2s infinite linear;
-}
-
-@keyframes placeholder-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
-    .timeline-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    .tl-status-col {
-        width: 100%;
-        align-items: flex-start;
-    }
-    .status-tabs {
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-    }
-    .status-tab {
-        white-space: nowrap;
-    }
+  .championships-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .cards-grid,
+  .cards-grid-loading {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .status-tabs {
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .status-tab {
+    white-space: nowrap;
+    font-size: 0.8125rem;
+  }
 }
 </style>

@@ -5,100 +5,100 @@ import { RankingsService } from './rankings.service';
 
 @Controller('esports')
 export class ChampionshipsController {
-    constructor(
-        private readonly service: ChampionshipsService,
-        private readonly rankingsService: RankingsService,
-    ) {}
+  constructor(
+    private readonly service: ChampionshipsService,
+    private readonly rankingsService: RankingsService
+  ) {}
 
-    @Get('tournaments')
-    async getTournaments(@Query('status') status?: string, @Query('game') game?: string) {
-        let tournaments = await this.service.getTournaments(status, game);
-        
-        // Auto-sync if the new table is completely empty
-        if (tournaments.length === 0) {
-            await this.service.syncAll();
-            tournaments = await this.service.getTournaments(status, game);
-        }
-        
-        return { data: tournaments, total: tournaments.length };
+  @Get('tournaments')
+  async getTournaments(@Query('status') status?: string, @Query('game') game?: string) {
+    const result = await this.service.getTournamentsWithCount(status, game);
+
+    // Auto-sync if the new table is completely empty
+    if (result.data.length === 0) {
+      await this.service.syncAll();
+      const retryResult = await this.service.getTournamentsWithCount(status, game);
+      return retryResult;
     }
 
-    @Get('tournaments/:slug')
-    async getTournament(@Param('slug') slug: string) {
-        const tournament = await this.service.getTournamentBySlug(slug);
-        if (!tournament) return { error: 'Not found' };
-        return tournament;
-    }
+    return result;
+  }
 
-    @Get('tournaments/:slug/matches')
-    async getTournamentMatches(
-        @Param('slug') slug: string,
-        @Query('status') status?: string,
-    ) {
-        const matches = await this.service.getTournamentMatches(slug, status);
-        return { data: matches, total: matches.length };
-    }
+  @Get('tournaments/counts')
+  async getTournamentCounts(@Query('game') game?: string) {
+    return this.service.getStatusCounts(game);
+  }
 
-    @Get('matches/upcoming')
-    async getUpcomingMatches(@Query('limit') limit?: string, @Query('game') game?: string) {
-        const matches = await this.service.getUpcomingMatches(game, parseInt(limit || '20'));
-        return { data: matches, total: matches.length };
-    }
+  @Get('tournaments/:slug')
+  async getTournament(@Param('slug') slug: string) {
+    const tournament = await this.service.getTournamentBySlug(slug);
+    if (!tournament) return { error: 'Not found' };
+    return tournament;
+  }
 
-    @Get('matches/results')
-    async getRecentResults(@Query('limit') limit?: string, @Query('game') game?: string) {
-        const matches = await this.service.getRecentResults(game, parseInt(limit || '20'));
-        return { data: matches, total: matches.length };
-    }
+  @Get('tournaments/:slug/matches')
+  async getTournamentMatches(@Param('slug') slug: string, @Query('status') status?: string) {
+    const matches = await this.service.getTournamentMatches(slug, status);
+    return { data: matches, total: matches.length };
+  }
 
-    @Get('teams')
-    async getTeams(@Query('limit') limit?: string, @Query('game') game?: string) {
-        const teams = await this.service.getTeams(game, parseInt(limit || '50'));
-        return { data: teams, total: teams.length };
-    }
+  @Get('matches/upcoming')
+  async getUpcomingMatches(@Query('limit') limit?: string, @Query('game') game?: string) {
+    const matches = await this.service.getUpcomingMatches(game, parseInt(limit || '20'));
+    return { data: matches, total: matches.length };
+  }
 
-    // ─── Rankings (Valve Major Standings) ────────────────────────
+  @Get('matches/results')
+  async getRecentResults(@Query('limit') limit?: string, @Query('game') game?: string) {
+    const matches = await this.service.getRecentResults(game, parseInt(limit || '20'));
+    return { data: matches, total: matches.length };
+  }
 
-    @Get('rankings')
-    async getRankings(
-        @Query('region') region?: string,
-        @Query('limit') limit?: string,
-    ) {
-        const data = await this.rankingsService.getRankings(
-            region || 'global',
-            parseInt(limit || '200'),
-        );
-        return { data, total: data.length };
-    }
+  @Get('teams')
+  async getTeams(@Query('limit') limit?: string, @Query('game') game?: string) {
+    const teams = await this.service.getTeams(game, parseInt(limit || '50'));
+    return { data: teams, total: teams.length };
+  }
 
-    @Get('rankings/status')
-    async getRankingsStatus() {
-        const status = await this.rankingsService.getSyncStatus();
-        return status;
-    }
+  // ─── Rankings (Valve Major Standings) ────────────────────────
 
-    @Get('rankings/sync-now')
-    async syncRankingsNow() {
-        const stats = await this.rankingsService.syncAll();
-        return { success: true, stats };
-    }
+  @Get('rankings')
+  async getRankings(@Query('region') region?: string, @Query('limit') limit?: string) {
+    const data = await this.rankingsService.getRankings(
+      region || 'global',
+      parseInt(limit || '200')
+    );
+    return { data, total: data.length };
+  }
 
-    // ─── Sync ─────────────────────────────────────────────────────
+  @Get('rankings/status')
+  async getRankingsStatus() {
+    const status = await this.rankingsService.getSyncStatus();
+    return status;
+  }
 
-    @Post('sync')
-    @Auth()
-    async syncAll() {
-        const [pandaStats, rankingStats] = await Promise.all([
-            this.service.syncAll(),
-            this.rankingsService.syncAll(),
-        ]);
-        return { success: true, pandascore: pandaStats, rankings: rankingStats };
-    }
+  @Get('rankings/sync-now')
+  async syncRankingsNow() {
+    const stats = await this.rankingsService.syncAll();
+    return { success: true, stats };
+  }
 
-    @Post('sync/rankings')
-    @Auth()
-    async syncRankings() {
-        const stats = await this.rankingsService.syncAll();
-        return { success: true, stats };
-    }
+  // ─── Sync ─────────────────────────────────────────────────────
+
+  @Post('sync')
+  @Auth()
+  async syncAll() {
+    const [pandaStats, rankingStats] = await Promise.all([
+      this.service.syncAll(),
+      this.rankingsService.syncAll(),
+    ]);
+    return { success: true, pandascore: pandaStats, rankings: rankingStats };
+  }
+
+  @Post('sync/rankings')
+  @Auth()
+  async syncRankings() {
+    const stats = await this.rankingsService.syncAll();
+    return { success: true, stats };
+  }
 }
