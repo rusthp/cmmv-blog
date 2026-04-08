@@ -6,6 +6,8 @@ export const PIPELINE_STATE = {
     PENDING: 'pending',
     CLASSIFYING: 'classifying',
     CLASSIFIED: 'classified',
+    KEYWORD_PENDING: 'keyword_pending',
+    KEYWORD_DONE: 'keyword_done',
     GENERATING: 'generating',
     GENERATED: 'generated',
     POSTING: 'posting',
@@ -26,4 +28,7 @@ export interface GeneratedContent {
     content: string;
     tags: string[];
     categories: string[];
+    metaTitle?: string;
+    metaDescription?: string;
+    slug?: string;
 }

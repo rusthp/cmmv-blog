@@ -222,15 +222,28 @@ export class PostingWorker {
                         processedContent += `<br><br><p><strong>Fonte:</strong> <a href="${raw.link}" target="_blank" rel="noopener noreferrer">${sourceName}</a></p>`;
                     }
 
-                    // Branded SEO title
-                    const metaTitle = raw.title?.length > 85
-                        ? raw.title.substring(0, 85) + '...'
-                        : `${raw.title} | ${siteName}`;
+                    // SEO metadata — prefer AI-generated fields, fall back to heuristic
+                    const aiMetaTitle: string | undefined = raw.seoMetaTitle;
+                    const aiMetaDesc: string | undefined = raw.seoMetaDescription;
+                    const aiSlug: string | undefined = raw.seoSlug;
+
+                    // metaTitle: AI-generated > branded truncation
+                    const metaTitle = aiMetaTitle
+                        ? `${aiMetaTitle} | ${siteName}`.substring(0, 100)
+                        : raw.title?.length > 85
+                            ? raw.title.substring(0, 85) + '...'
+                            : `${raw.title} | ${siteName}`;
+
+                    // metaDescription: AI-generated > excerpt
+                    const metaDescription = aiMetaDesc || excerpt;
+
+                    // slug: AI-generated > existing slug
+                    const finalSlug = aiSlug || slug;
 
                     // Create post (always scheduled)
                     const postData: any = {
                         title: raw.title,
-                        slug,
+                        slug: finalSlug,
                         content: processedContent,
                         status: 'cron',
                         type: 'post',
@@ -242,7 +255,7 @@ export class PostingWorker {
                         categories,
                         excerpt,
                         metaTitle,
-                        metaDescription: excerpt,
+                        metaDescription,
                         metaKeywords: tags.join(', '),
                         publishedAt: null,
                         autoPublishAt: publishAt,
@@ -257,12 +270,12 @@ export class PostingWorker {
                         await Repository.insert(MetaEntity, {
                             post: post.data.id,
                             metaTitle,
-                            metaDescription: excerpt,
-                            ogTitle: raw.title?.substring(0, 100),
-                            ogDescription: excerpt,
+                            metaDescription,
+                            ogTitle: (aiMetaTitle || raw.title)?.substring(0, 100),
+                            ogDescription: metaDescription,
                             ogImage: validatedImage,
-                            twitterTitle: raw.title?.substring(0, 100),
-                            twitterDescription: excerpt,
+                            twitterTitle: (aiMetaTitle || raw.title)?.substring(0, 100),
+                            twitterDescription: metaDescription,
                             twitterImage: validatedImage,
                         });
 

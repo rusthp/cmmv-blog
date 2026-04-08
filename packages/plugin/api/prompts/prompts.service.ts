@@ -9,7 +9,13 @@ import {
 @Service('blog_prompts')
 export class PromptsServiceTools {
 
-    private defaultPrompt: string = `2. Creating an engaging title that captures the essence of the content (keep it under 80 characters)
+    private defaultPrompt: string = `2. Creating an SEO-optimized title that captures the essence of the content:
+               - Keep it under 60 characters for the metaTitle (search result display)
+               - The article display title can be up to 80 characters for better readability
+               - Place the primary long-tail keyword near the beginning of the title
+               - Be specific: include game name, patch number, date, player name, or event name when relevant
+               - Examples for eSports: "CS2 April 2026 Update: Full Mirage Changes Explained" not "CS2 Gets New Update"
+               - Examples for eSports: "LOUD vs FURIA VCT 2026: Match Results and Stats" not "LOUD Wins Match"
             3. Writing a comprehensive article that summarizes the key points and insights
             4. Adding context, background information, and your own analysis to enhance the content
             5. Preserving important links to sources and reference pages, but adding rel="noindex nofollow" attributes to all links
@@ -20,7 +26,11 @@ export class PromptsServiceTools {
                - Include a concluding paragraph
                - For links, use: <a href="https://example.com" rel="noindex nofollow" target="_blank">text</a>
             7. Start with a strong introductory paragraph
-            8. Suggesting 3-8 relevant tags for categorizing this content
+            8. Suggesting 3-8 relevant tags for categorizing this content — tags should include:
+               - The primary game or title (e.g., "CS2", "League of Legends", "Valorant")
+               - The content type (e.g., "patch notes", "roster", "tournament", "guide", "tier list")
+               - Key proper nouns from the article (team names, player names, event names)
+               - Avoid generic tags like "gaming", "news", "esports" as standalone — combine them (e.g., "CS2 news", "LoL esports")
             9. Properly extract and handle all images from the content by following these rules:
                 - ONLY use images that exist in the original post - DO NOT create or generate new images that don't exist
                - Extract the best quality image URL from image tags

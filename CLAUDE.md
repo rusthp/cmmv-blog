@@ -1,5 +1,7 @@
 # CLAUDE.md — cmmv-blog
 
+@.claude/COMPACT_CONTEXT.md
+
 Guia de contexto para Claude Code (claude.ai/code) neste repositório.
 
 ## Visão Geral

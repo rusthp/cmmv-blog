@@ -39,10 +39,18 @@ export class AutoPipelineController {
         return { result: true, message: "postWorker executed" };
     }
 
+    @Get("keywords", { exclude: true })
+    async runKeywords() {
+        const svc: any = Application.resolveProvider(AutoPipelineService);
+        await svc.keywordEngineWorker();
+        return { result: true, message: "keywordEngineWorker executed" };
+    }
+
     @Get("runall", { exclude: true })
     async runAll() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.classifyWorker();
+        await svc.keywordEngineWorker();
         await svc.generateWorker();
         await svc.postWorker();
         return { result: true, message: "Full pipeline executed" };
@@ -298,18 +306,22 @@ export class AutoPipelineController {
         logger.log("2. Running Classify Worker...");
         await autoPipelineService.classifyWorker();
 
-        // 3. Generate
-        logger.log("3. Running Generate Worker...");
+        // 3. Keyword Engine
+        logger.log("3. Running Keyword Engine Worker...");
+        await autoPipelineService.keywordEngineWorker();
+
+        // 4. Generate
+        logger.log("4. Running Generate Worker...");
         await autoPipelineService.generateWorker();
 
-        // 4. Post
-        logger.log("4. Running Post Worker...");
+        // 5. Post
+        logger.log("5. Running Post Worker...");
         await autoPipelineService.postWorker();
 
         return {
             result: true,
             message: "Full pipeline test executed",
-            steps: ["fetch", "classify", "generate", "post"]
+            steps: ["fetch", "classify", "keywords", "generate", "post"]
         };
     }
 }

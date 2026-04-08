@@ -33,8 +33,9 @@ export class GenerationWorker {
 
             GenerationWorker.logger.log("[pipeline] generateWorker: Starting generation cycle");
 
-            const classifiedItems = await Repository.findAll(FeedRawEntity, {
-                pipelineState: PIPELINE_STATE.CLASSIFIED,
+            // Prefer KEYWORD_DONE items; fall back to CLASSIFIED if keyword engine hasn't run yet
+            let classifiedItems = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.KEYWORD_DONE,
                 rejected: false,
                 limit: maxPerCycle,
                 sortBy: "relevance",
@@ -42,7 +43,17 @@ export class GenerationWorker {
             });
 
             if (!classifiedItems || classifiedItems.data.length === 0) {
-                GenerationWorker.logger.log("[pipeline] generateWorker: No classified items to generate");
+                classifiedItems = await Repository.findAll(FeedRawEntity, {
+                    pipelineState: PIPELINE_STATE.CLASSIFIED,
+                    rejected: false,
+                    limit: maxPerCycle,
+                    sortBy: "relevance",
+                    sort: "DESC"
+                });
+            }
+
+            if (!classifiedItems || classifiedItems.data.length === 0) {
+                GenerationWorker.logger.log("[pipeline] generateWorker: No items to generate");
                 return;
             }
 
@@ -54,10 +65,14 @@ export class GenerationWorker {
                     break;
                 }
 
+                const fromState = raw.pipelineState === PIPELINE_STATE.KEYWORD_DONE
+                    ? PIPELINE_STATE.KEYWORD_DONE
+                    : PIPELINE_STATE.CLASSIFIED;
+
                 try {
                     const locked = await this.transitionState(
                         raw.id,
-                        PIPELINE_STATE.CLASSIFIED,
+                        fromState,
                         PIPELINE_STATE.GENERATING,
                         { aiAttempts: raw.aiAttempts || 0 }
                     );
@@ -70,16 +85,22 @@ export class GenerationWorker {
                         const result = await this.generateContentForRaw(raw, promptId);
 
                         if (result) {
+                            const updatePayload: Record<string, any> = {
+                                pipelineState: PIPELINE_STATE.GENERATED,
+                                title: result.title,
+                                content: result.content,
+                                suggestedTags: result.tags || [],
+                                suggestedCategories: result.categories || [],
+                            };
+
+                            if (result.metaTitle) updatePayload.seoMetaTitle = result.metaTitle;
+                            if (result.metaDescription) updatePayload.seoMetaDescription = result.metaDescription;
+                            if (result.slug) updatePayload.seoSlug = result.slug;
+
                             await Repository.updateOne(
                                 FeedRawEntity,
                                 Repository.queryBuilder({ id: raw.id }),
-                                {
-                                    pipelineState: PIPELINE_STATE.GENERATED,
-                                    title: result.title,
-                                    content: result.content,
-                                    suggestedTags: result.tags || [],
-                                    suggestedCategories: result.categories || [],
-                                }
+                                updatePayload
                             );
 
                             this.pipelineLog(raw.id, `generated: title="${result.title?.substring(0, 50)}..."`);
@@ -128,12 +149,23 @@ export class GenerationWorker {
             category: raw.category,
         };
 
+        // ── Inject keyword context if available ──
+        const keywordContext = raw.seoMainKeyword
+            ? `\n            TARGET SEO KEYWORD: "${raw.seoMainKeyword}"
+            KEYWORD VARIATIONS: ${(raw.seoKeywordVariations || []).join(', ')}
+            SEO SCORE: ${raw.seoScore ?? 50}/100 (lower = easier to rank — this is a ${(raw.seoScore ?? 50) < 40 ? 'high-opportunity, low-competition' : 'competitive'} keyword)
+
+            IMPORTANT: Build this article around the target keyword above. Use it naturally in the title, first paragraph, and subheadings.
+            The metaTitle MUST start with or include: "${raw.seoMainKeyword}"`
+            : '';
+
         // ── Pass 1: Generate initial content ──
         const prompt = `
             You are a content generator for a news aggregation platform that uses the TipTap editor.
 
             Please transform the following content by:
             1. Translating it to ${language}
+            ${keywordContext}
             ${await promptService.getDefaultPrompt(promptId)}
 
             IMPORTANT: DO NOT write any conclusion or summary paragraph. The article should feel unfinished and open-ended.
@@ -155,8 +187,16 @@ export class GenerationWorker {
               "title": "translated and rewritten title",
               "content": "HTML-formatted content with proper tags",
               "suggestedTags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-              "suggestedCategories": ["categoryName1", "categoryName2"]
-            }`;
+              "suggestedCategories": ["categoryName1", "categoryName2"],
+              "metaTitle": "SEO title with primary long-tail keyword, max 60 characters, no brand suffix",
+              "metaDescription": "Compelling meta description with primary keyword, 120-155 characters, includes a call-to-action or key insight",
+              "slug": "url-friendly-slug-with-primary-keyword-in-kebab-case-max-60-chars"
+            }
+
+            SEO RULES for metaTitle, metaDescription, and slug:
+            - metaTitle: Include the primary long-tail keyword near the start. Max 60 chars. No brand suffix. Be specific (e.g., "CS2 April 2026 Update: Mirage Changes and Recoil Fix" not "CS2 Update").
+            - metaDescription: 120-155 chars. Include primary keyword naturally. End with a benefit or call-to-action ("Learn what changed", "See the full patch notes", "Find out who moved").
+            - slug: lowercase, hyphens only, primary keyword first, max 60 chars, no stopwords (the, a, an, in, of, for). Example: "cs2-april-2026-update-mirage-changes" not "the-latest-cs2-update-from-valve".`;
 
         this.pipelineLog(raw.id, `generating (attempt ${(raw.aiAttempts || 0) + 1}/${maxAttempts})`);
         const generatedText = await aiContentService.generateContent(prompt);
@@ -239,11 +279,27 @@ export class GenerationWorker {
             this.pipelineLog(raw.id, `continuation failed (non-fatal): ${continuationError}`);
         }
 
+        // Validate and trim SEO fields
+        const metaTitle = typeof parsedContent.metaTitle === 'string'
+            ? parsedContent.metaTitle.trim().substring(0, 60)
+            : undefined;
+
+        const metaDescription = typeof parsedContent.metaDescription === 'string'
+            ? parsedContent.metaDescription.trim().substring(0, 155)
+            : undefined;
+
+        const slug = typeof parsedContent.slug === 'string'
+            ? parsedContent.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').substring(0, 60)
+            : undefined;
+
         return {
             title: parsedContent.title,
             content: parsedContent.content,
             tags: parsedContent.suggestedTags || [],
             categories: parsedContent.suggestedCategories || [],
+            metaTitle,
+            metaDescription,
+            slug,
         };
     }
 
@@ -292,7 +348,8 @@ export class GenerationWorker {
             await this.transitionState(rawId, currentState, PIPELINE_STATE.FAILED, { aiAttempts: attempts });
             this.pipelineError(rawId, `Max attempts (${maxAttempts}) reached. Marked as failed. Error: ${error}`);
         } else {
-            const retryState = PIPELINE_STATE.CLASSIFIED;
+            // Retry to KEYWORD_DONE if keywords were already generated, otherwise CLASSIFIED
+            const retryState = raw.seoMainKeyword ? PIPELINE_STATE.KEYWORD_DONE : PIPELINE_STATE.CLASSIFIED;
             await Repository.updateOne(
                 FeedRawEntity,
                 Repository.queryBuilder({ id: rawId }),

@@ -9,6 +9,7 @@ import {
 import { AIContentService } from "@cmmv/ai-content";
 
 import { ClassificationWorker } from "./classification-worker";
+import { KeywordEngineWorker } from "./keyword-engine";
 import { GenerationWorker } from "./generation-worker";
 import { PostingWorker } from "./posting-worker";
 import { ImagePipelineWorker } from "./image-pipeline";
@@ -20,7 +21,8 @@ let mediasServiceInstance: any = null;
  * and delegates actual work to dedicated workers:
  *
  *   ClassificationWorker  → AI-based relevance scoring
- *   GenerationWorker      → 2-pass AI content generation
+ *   KeywordEngineWorker   → long-tail keyword generation (CLASSIFIED → KEYWORD_DONE)
+ *   GenerationWorker      → 2-pass AI content generation (KEYWORD_DONE → GENERATED)
  *   PostingWorker          → post creation, categories, scheduling
  *   ImagePipelineWorker    → image download, cache, placeholder
  */
@@ -29,6 +31,7 @@ export class AutoPipelineService {
     private static readonly logger = new Logger("AutoPipelineService");
 
     private static classificationWorkerInstance: ClassificationWorker;
+    private static keywordEngineInstance: KeywordEngineWorker;
     private static generationWorkerInstance: GenerationWorker;
     private static postingWorkerInstance: PostingWorker;
     private static imagePipelineInstance: ImagePipelineWorker;
@@ -48,6 +51,7 @@ export class AutoPipelineService {
 
         AutoPipelineService.imagePipelineInstance = new ImagePipelineWorker(mediasServiceInstance);
         AutoPipelineService.classificationWorkerInstance = new ClassificationWorker();
+        AutoPipelineService.keywordEngineInstance = new KeywordEngineWorker();
         AutoPipelineService.generationWorkerInstance = new GenerationWorker();
         AutoPipelineService.postingWorkerInstance = new PostingWorker(AutoPipelineService.imagePipelineInstance);
     }
@@ -68,6 +72,16 @@ export class AutoPipelineService {
             await AutoPipelineService.classificationWorkerInstance.run();
         } catch (err) {
             console.error('[pipeline] classifyWorkerCron error:', err);
+        }
+    }
+
+    @Cron("5,35 * * * *")
+    async keywordEngineWorkerCron() {
+        try {
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.keywordEngineInstance.run();
+        } catch (err) {
+            console.error('[pipeline] keywordEngineWorkerCron error:', err);
         }
     }
 
@@ -97,6 +111,10 @@ export class AutoPipelineService {
 
     async classifyWorker(): Promise<void> {
         return AutoPipelineService.classificationWorkerInstance.run();
+    }
+
+    async keywordEngineWorker(): Promise<void> {
+        return AutoPipelineService.keywordEngineInstance.run();
     }
 
     async generateWorker(): Promise<void> {

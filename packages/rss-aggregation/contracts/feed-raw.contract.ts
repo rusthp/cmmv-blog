@@ -181,4 +181,51 @@ export class FeedRawContract extends AbstractContract {
         exclude: true,
     })
     suggestedCategories?: string[];
+
+    // ── SEO fields populated by KeywordEngineWorker ──
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        exclude: true,
+    })
+    seoMainKeyword?: string;
+
+    @ContractField({
+        protoType: 'array',
+        nullable: true,
+        objectType: 'string',
+        protoRepeated: true,
+        array: true,
+        exclude: true,
+    })
+    seoKeywordVariations?: string[];
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        exclude: true,
+    })
+    seoMetaTitle?: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        exclude: true,
+    })
+    seoMetaDescription?: string;
+
+    @ContractField({
+        protoType: 'string',
+        nullable: true,
+        exclude: true,
+    })
+    seoSlug?: string;
+
+    @ContractField({
+        protoType: 'int32',
+        nullable: true,
+        defaultValue: 0,
+    })
+    seoScore?: number;
 }
