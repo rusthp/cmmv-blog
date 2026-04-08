@@ -224,6 +224,7 @@ export const useAdminClient = () => {
 
     const autopost = {
         testTwitter: () => api.authRootRequest('autopost/test-twitter', 'GET'),
+        testBluesky: () => api.authRootRequest('autopost/test-bluesky', 'GET'),
     };
 
     const contact = {

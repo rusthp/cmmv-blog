@@ -1620,6 +1620,157 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Bluesky -->
+                            <div
+                                class="space-y-4 p-4 border border-neutral-700 rounded-md"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-medium text-white">
+                                        Bluesky
+                                    </h3>
+                                    <div>
+                                        <label
+                                            class="relative inline-flex items-center cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                v-model="
+                                                    settings.autoPostBluesky
+                                                "
+                                                class="sr-only peer"
+                                            />
+                                            <div
+                                                class="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+                                            ></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="settings.autoPostBluesky"
+                                    class="space-y-4"
+                                >
+                                    <div class="space-y-2">
+                                        <label
+                                            class="block text-sm font-medium text-neutral-300"
+                                            >Bluesky Handle</label
+                                        >
+                                        <input
+                                            v-model="
+                                                settings.blueskySocialHandle
+                                            "
+                                            type="text"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="yourhandle.bsky.social"
+                                        />
+                                        <p class="text-xs text-neutral-500">
+                                            Your Bluesky handle (e.g.
+                                            yourhandle.bsky.social)
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label
+                                            class="block text-sm font-medium text-neutral-300"
+                                            >App Password</label
+                                        >
+                                        <input
+                                            v-model="
+                                                settings.blueskyAppPassword
+                                            "
+                                            type="password"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="••••••••••••"
+                                        />
+                                        <p class="text-xs text-neutral-500">
+                                            Generate an App Password in Bluesky
+                                            Settings &rarr; Privacy and Security
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            @click="testBlueskyConnection"
+                                            :disabled="blueskyTestInProgress"
+                                            class="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm rounded-md flex items-center gap-2"
+                                        >
+                                            <svg v-if="blueskyTestInProgress" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                            <span>{{ blueskyTestInProgress ? 'Testando...' : 'Testar Conexão Bluesky' }}</span>
+                                        </button>
+                                        <span v-if="blueskyTestResult" :class="blueskyTestResult.success ? 'text-green-400' : 'text-red-400'" class="text-sm">
+                                            {{ blueskyTestResult.message }}
+                                        </span>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <a
+                                            href="https://bsky.app/settings/app-passwords"
+                                            target="_blank"
+                                            class="text-blue-500 hover:text-blue-400 text-sm flex items-center"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="h-4 w-4 mr-1"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                                />
+                                            </svg>
+                                            Generate Bluesky App Password
+                                        </a>
+                                        <p
+                                            class="text-xs text-neutral-500 mt-1"
+                                        >
+                                            Use an App Password, not your account
+                                            password
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label
+                                            class="block text-sm font-medium text-neutral-300"
+                                            >Post Format</label
+                                        >
+                                        <textarea
+                                            v-model="
+                                                settings.blueskyPostFormat
+                                            "
+                                            rows="2"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="🚀 {title}{br}{url}"
+                                        ></textarea>
+                                        <p class="text-xs text-neutral-500">
+                                            Max 300 characters. Leave empty to
+                                            use default format
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <input
+                                                id="bsky-image"
+                                                type="checkbox"
+                                                v-model="
+                                                    settings.blueskyIncludeImage
+                                                "
+                                                class="h-4 w-4 mr-2 rounded text-blue-600 bg-neutral-700 border-neutral-600 focus:ring-blue-500"
+                                            />
+                                            <label
+                                                for="bsky-image"
+                                                class="text-sm text-neutral-300"
+                                                >Include featured image</label
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- Pipeline Scheduling -->
                             <div class="space-y-4">
                                 <h3 class="text-lg font-medium text-white border-b border-neutral-700 pb-2">
@@ -4490,6 +4641,11 @@ const settings = ref({
     linkedInAccessToken: "",
     linkedInPostFormat: "New post: {title} - {excerpt} {url}",
     linkedInIncludeImage: false,
+    autoPostBluesky: false,
+    blueskySocialHandle: "",
+    blueskyAppPassword: "",
+    blueskyPostFormat: "🚀 {title}\n\n{url}",
+    blueskyIncludeImage: true,
 
     // CDN Settings
     cloudflareToken: "",
@@ -4690,6 +4846,11 @@ const tabFieldMap = {
         "linkedInAccessToken",
         "linkedInPostFormat",
         "linkedInIncludeImage",
+        "autoPostBluesky",
+        "blueskySocialHandle",
+        "blueskyAppPassword",
+        "blueskyPostFormat",
+        "blueskyIncludeImage",
     ],
     integrations: [
         "youtubeApiKey",
@@ -5178,6 +5339,23 @@ const testTwitterConnection = async () => {
         twitterTestResult.value = { success: false, message: (err && err.message) || 'Erro desconhecido' };
     } finally {
         twitterTestInProgress.value = false;
+    }
+};
+
+const blueskyTestInProgress = ref(false);
+const blueskyTestResult = ref(null);
+
+const testBlueskyConnection = async () => {
+    if (blueskyTestInProgress.value) return;
+    blueskyTestInProgress.value = true;
+    blueskyTestResult.value = null;
+    try {
+        const response = await adminClient.autopost.testBluesky();
+        blueskyTestResult.value = response?.result ?? response;
+    } catch (err) {
+        blueskyTestResult.value = { success: false, message: (err && err.message) || 'Erro desconhecido' };
+    } finally {
+        blueskyTestInProgress.value = false;
     }
 };
 
