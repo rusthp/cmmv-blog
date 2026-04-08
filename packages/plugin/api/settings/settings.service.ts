@@ -373,6 +373,13 @@ VITE_DEFAULT_THEME="default"`);
                     flags: flags
                 });
             }
+
+            // Keep in-memory Config in sync
+            let parsedValue: any = setting.value;
+            const type = setting.type || (settingStoraged?.type);
+            if (type === "boolean") parsedValue = setting.value === "true" || setting.value === "1" || setting.value === true;
+            else if (type === "number") parsedValue = parseInt(String(setting.value));
+            Config.set(setting.key, parsedValue);
         }
 
         return { message: "Settings updated" };
