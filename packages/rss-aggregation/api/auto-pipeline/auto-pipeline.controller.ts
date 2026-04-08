@@ -46,6 +46,20 @@ export class AutoPipelineController {
         return { result: true, message: "keywordEngineWorker executed" };
     }
 
+    @Get("enrich-keywords", { exclude: true })
+    async runEnrichKeywords() {
+        const svc: any = Application.resolveProvider(AutoPipelineService);
+        await svc.keywordSuggestionsWorker();
+        return { result: true, message: "keywordSuggestionsWorker executed" };
+    }
+
+    @Get("update-posts", { exclude: true })
+    async runUpdatePosts() {
+        const svc: any = Application.resolveProvider(AutoPipelineService);
+        await svc.postUpdateWorker();
+        return { result: true, message: "postUpdateWorker executed" };
+    }
+
     @Get("runall", { exclude: true })
     async runAll() {
         const svc: any = Application.resolveProvider(AutoPipelineService);

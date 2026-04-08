@@ -37,5 +37,8 @@ export * from './prompts.contract';
 // Contact
 export * from './contact.contract';
 
+// SEO Metrics
+export * from './post-seo-metrics.contract';
+
 // ShortUrl
 export * from './shorturl.contract';

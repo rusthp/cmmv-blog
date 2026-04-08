@@ -10,8 +10,10 @@ import { AIContentService } from "@cmmv/ai-content";
 
 import { ClassificationWorker } from "./classification-worker";
 import { KeywordEngineWorker } from "./keyword-engine";
+import { KeywordSuggestionsWorker } from "./keyword-suggestions.worker";
 import { GenerationWorker } from "./generation-worker";
 import { PostingWorker } from "./posting-worker";
+import { PostUpdateWorker } from "./post-update-worker";
 import { ImagePipelineWorker } from "./image-pipeline";
 
 let mediasServiceInstance: any = null;
@@ -32,8 +34,10 @@ export class AutoPipelineService {
 
     private static classificationWorkerInstance: ClassificationWorker;
     private static keywordEngineInstance: KeywordEngineWorker;
+    private static keywordSuggestionsInstance: KeywordSuggestionsWorker;
     private static generationWorkerInstance: GenerationWorker;
     private static postingWorkerInstance: PostingWorker;
+    private static postUpdateWorkerInstance: PostUpdateWorker;
     private static imagePipelineInstance: ImagePipelineWorker;
 
     constructor(
@@ -52,8 +56,10 @@ export class AutoPipelineService {
         AutoPipelineService.imagePipelineInstance = new ImagePipelineWorker(mediasServiceInstance);
         AutoPipelineService.classificationWorkerInstance = new ClassificationWorker();
         AutoPipelineService.keywordEngineInstance = new KeywordEngineWorker();
+        AutoPipelineService.keywordSuggestionsInstance = new KeywordSuggestionsWorker();
         AutoPipelineService.generationWorkerInstance = new GenerationWorker();
         AutoPipelineService.postingWorkerInstance = new PostingWorker(AutoPipelineService.imagePipelineInstance);
+        AutoPipelineService.postUpdateWorkerInstance = new PostUpdateWorker();
     }
 
     // ─── Kill Switch ──────────────────────────────────────────
@@ -95,6 +101,16 @@ export class AutoPipelineService {
         }
     }
 
+    @Cron("15,45 * * * *")
+    async keywordSuggestionsWorkerCron() {
+        try {
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.keywordSuggestionsInstance.run();
+        } catch (err) {
+            console.error('[pipeline] keywordSuggestionsWorkerCron error:', err);
+        }
+    }
+
     @Cron(CronExpression.EVERY_10_MINUTES)
     async postWorkerCron() {
         try {
@@ -102,6 +118,16 @@ export class AutoPipelineService {
             await AutoPipelineService.postingWorkerInstance.run();
         } catch (err) {
             console.error('[pipeline] postWorkerCron error:', err);
+        }
+    }
+
+    @Cron("0 3 * * *")
+    async postUpdateWorkerCron() {
+        try {
+            if (!AutoPipelineService.isEnabled()) return;
+            await AutoPipelineService.postUpdateWorkerInstance.run();
+        } catch (err) {
+            console.error('[pipeline] postUpdateWorkerCron error:', err);
         }
     }
 
@@ -123,6 +149,14 @@ export class AutoPipelineService {
 
     async postWorker(): Promise<void> {
         return AutoPipelineService.postingWorkerInstance.run();
+    }
+
+    async keywordSuggestionsWorker(): Promise<void> {
+        return AutoPipelineService.keywordSuggestionsInstance.run();
+    }
+
+    async postUpdateWorker(): Promise<void> {
+        return AutoPipelineService.postUpdateWorkerInstance.run();
     }
 
     /**

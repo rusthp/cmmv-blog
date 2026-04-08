@@ -284,4 +284,13 @@ export class PostsContract extends AbstractContract {
         exclude: true,
     })
     comments: number;
+
+    @ContractField({
+        protoType: 'boolean',
+        nullable: false,
+        defaultValue: false,
+        index: true,
+        exclude: true,
+    })
+    needsSeoUpdate: boolean;
 }
