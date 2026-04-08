@@ -223,6 +223,7 @@ export const useAdminClient = () => {
     };
 
     const autopost = {
+        testFacebook: () => api.authRootRequest('autopost/test-facebook', 'GET'),
         testTwitter: () => api.authRootRequest('autopost/test-twitter', 'GET'),
         testBluesky: () => api.authRootRequest('autopost/test-bluesky', 'GET'),
     };

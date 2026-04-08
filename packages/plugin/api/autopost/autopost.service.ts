@@ -275,6 +275,31 @@ export class AutopostService {
     }
 
     /**
+     * Test Facebook credentials by fetching the page name.
+     */
+    async testFacebookConnection(): Promise<{ success: boolean; message: string }> {
+        const pageId = Config.get<string>("blog.facebookPageId");
+        const accessToken = Config.get<string>("blog.facebookAccessToken");
+
+        if (!pageId || !accessToken)
+            return { success: false, message: "Page ID e Access Token não configurados." };
+
+        try {
+            const res = await fetch(
+                `https://graph.facebook.com/v21.0/${pageId}?fields=name&access_token=${accessToken}`
+            );
+            const data = await res.json() as any;
+
+            if (res.ok && data?.name)
+                return { success: true, message: `Conectado à página: ${data.name}` };
+
+            return { success: false, message: `Facebook API error: ${data?.error?.message || res.statusText}` };
+        } catch (err: any) {
+            return { success: false, message: `Erro de conexão: ${err.message}` };
+        }
+    }
+
+    /**
      * Builds an OAuth 1.0a Authorization header for Twitter requests.
      */
     /**

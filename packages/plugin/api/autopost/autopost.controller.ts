@@ -14,6 +14,12 @@ import {
 export class AutopostController {
     constructor(private readonly autopostService: AutopostService) {}
 
+    @Get("test-facebook")
+    @Auth()
+    async testFacebook() {
+        return this.autopostService.testFacebookConnection();
+    }
+
     @Get("test-twitter")
     @Auth()
     async testTwitter() {

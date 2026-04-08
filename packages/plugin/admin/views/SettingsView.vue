@@ -1245,6 +1245,21 @@
                                         </p>
                                     </div>
 
+                                    <div class="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            @click="testFacebookConnection"
+                                            :disabled="facebookTestInProgress"
+                                            class="px-4 py-2 bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white text-sm rounded-md flex items-center gap-2"
+                                        >
+                                            <svg v-if="facebookTestInProgress" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                            <span>{{ facebookTestInProgress ? 'Testando...' : 'Testar Conexão Facebook' }}</span>
+                                        </button>
+                                        <span v-if="facebookTestResult" :class="facebookTestResult.success ? 'text-green-400' : 'text-red-400'" class="text-sm">
+                                            {{ facebookTestResult.message }}
+                                        </span>
+                                    </div>
+
                                     <div class="space-y-2">
                                         <a
                                             href="https://developers.facebook.com/tools/explorer/"
@@ -5324,6 +5339,23 @@ const handleLinkedInCallback = async (event) => {
 const cachePurgeInProgress = ref(false);
 const cfCachePurgeInProgress = ref(false);
 const allCachePurgeInProgress = ref(false);
+
+const facebookTestInProgress = ref(false);
+const facebookTestResult = ref(null);
+
+const testFacebookConnection = async () => {
+    if (facebookTestInProgress.value) return;
+    facebookTestInProgress.value = true;
+    facebookTestResult.value = null;
+    try {
+        const response = await adminClient.autopost.testFacebook();
+        facebookTestResult.value = response?.result ?? response;
+    } catch (err) {
+        facebookTestResult.value = { success: false, message: (err && err.message) || 'Erro desconhecido' };
+    } finally {
+        facebookTestInProgress.value = false;
+    }
+};
 
 const twitterTestInProgress = ref(false);
 const twitterTestResult = ref(null);
