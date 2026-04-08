@@ -19,4 +19,10 @@ export class AutopostController {
     async testTwitter() {
         return this.autopostService.testTwitterConnection();
     }
+
+    @Get("test-bluesky")
+    @Auth()
+    async testBluesky() {
+        return this.autopostService.testBlueskyConnection();
+    }
 }

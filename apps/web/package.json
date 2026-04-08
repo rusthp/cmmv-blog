@@ -1,6 +1,6 @@
 {
     "name": "cmmv-blog",
-    "version": "0.0.204",
+    "version": "0.0.205",
     "private": true,
     "description": "Blog package for CMMV",
     "type": "module",

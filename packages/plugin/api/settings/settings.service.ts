@@ -36,6 +36,7 @@ const SENSITIVE_KEYS = [
     "blog.twitterAccessToken",
     "blog.twitterAccessTokenSecret",
     "blog.linkedInAccessToken",
+    "blog.blueskyAppPassword",
     // Email settings
     "blog.smtpPassword",
     "blog.awsSecretKey",

@@ -133,6 +133,7 @@ export class AutopostService {
             { name: 'Facebook', enabled: Config.get<boolean>("blog.autoPostFacebook", false), handler: this.postToFacebook.bind(this) },
             { name: 'Twitter', enabled: Config.get<boolean>("blog.autoPostTwitter", false), handler: this.postToTwitter.bind(this) },
             { name: 'LinkedIn', enabled: Config.get<boolean>("blog.autoPostLinkedIn", false), handler: this.postToLinkedIn.bind(this) },
+            { name: 'Bluesky', enabled: Config.get<boolean>("blog.autoPostBluesky", false), handler: this.postToBluesky.bind(this) },
         ];
 
         if (Config.get<boolean>("blog.enableLinkTracking", false))
@@ -459,6 +460,158 @@ export class AutopostService {
             AutopostService.logger.debug(`Twitter API response: ${JSON.stringify(data)}`);
         } catch (error: any) {
             throw new Error(`Failed to post to Twitter: ${error.message || 'Unknown error'}`);
+        }
+    }
+
+    /**
+     * Post to Bluesky via AT Protocol (no SDK — raw fetch).
+     * Supports text + link card with thumbnail.
+     * Config keys: blog.blueskySocialHandle, blog.blueskyAppPassword,
+     *              blog.blueskyPostFormat, blog.blueskyIncludeImage
+     */
+    private async postToBluesky(payload: SocialPostPayload): Promise<void> {
+        const handle = Config.get<string>("blog.blueskySocialHandle");
+        const appPassword = Config.get<string>("blog.blueskyAppPassword");
+        const postFormat = Config.get<string>("blog.blueskyPostFormat");
+        const includeImage = Config.get<boolean>("blog.blueskyIncludeImage", true);
+
+        if (!handle || !appPassword)
+            throw new Error("Bluesky configuration is incomplete. Handle and App Password are required.");
+
+        const pdsUrl = "https://bsky.social";
+
+        // 1. Create session
+        const sessionRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier: handle, password: appPassword }),
+        });
+
+        if (!sessionRes.ok) {
+            const err = await sessionRes.json() as any;
+            throw new Error(`Bluesky auth failed: ${err?.message || sessionRes.statusText}`);
+        }
+
+        const session = await sessionRes.json() as any;
+        const accessToken: string = session.accessJwt;
+        const did: string = session.did;
+
+        let postUrl = payload.url;
+        if (postUrl.includes("utm_source={network}"))
+            postUrl = postUrl.replace("utm_source={network}", "utm_source=bluesky");
+
+        // 2. Build post text (300 char limit on Bluesky)
+        const template = postFormat || "{title}\n\n{url}";
+        let text = template
+            .replace("{title}", payload.title)
+            .replace("{excerpt}", payload.excerpt || "")
+            .replace("{url}", postUrl)
+            .replace("{author}", payload.author)
+            .replace("{tags}", Array.isArray(payload.tags) ? payload.tags.join(", ") : "")
+            .replace("{categories}", Array.isArray(payload.categories) ? payload.categories.join(", ") : "");
+
+        if (text.length > 300)
+            text = text.substring(0, 297) + "...";
+
+        // 3. Build record
+        const record: any = {
+            $type: "app.bsky.feed.post",
+            text,
+            createdAt: new Date().toISOString(),
+            langs: ["pt-BR"],
+        };
+
+        // 4. Link card embed (external) — upload thumbnail if available
+        let thumbBlob: any = null;
+
+        if (includeImage && payload.featureImage) {
+            try {
+                const imgRes = await fetch(payload.featureImage, { signal: AbortSignal.timeout(10000) });
+
+                if (imgRes.ok) {
+                    const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+
+                    // Bluesky limit: 1MB per image
+                    if (imgBuffer.length <= 1 * 1024 * 1024) {
+                        const mimeType = imgRes.headers.get("content-type") || "image/jpeg";
+                        const blobRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+                            method: "POST",
+                            headers: {
+                                "Authorization": `Bearer ${accessToken}`,
+                                "Content-Type": mimeType,
+                            },
+                            body: imgBuffer,
+                        });
+
+                        if (blobRes.ok) {
+                            const blobData = await blobRes.json() as any;
+                            thumbBlob = blobData.blob;
+                        }
+                    }
+                }
+            } catch {
+                AutopostService.logger.debug("Bluesky thumbnail upload failed, posting without image");
+            }
+        }
+
+        record.embed = {
+            $type: "app.bsky.embed.external",
+            external: {
+                uri: postUrl,
+                title: payload.title,
+                description: payload.excerpt || payload.title,
+                ...(thumbBlob ? { thumb: thumbBlob } : {}),
+            },
+        };
+
+        // 5. Create post
+        const postRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                repo: did,
+                collection: "app.bsky.feed.post",
+                record,
+            }),
+        });
+
+        if (!postRes.ok) {
+            const err = await postRes.json() as any;
+            throw new Error(`Bluesky post failed: ${err?.message || postRes.statusText}`);
+        }
+
+        const postData = await postRes.json() as any;
+        AutopostService.logger.debug(`Bluesky post created: ${postData.uri}`);
+    }
+
+    /**
+     * Test Bluesky credentials by creating and immediately deleting a session.
+     */
+    async testBlueskyConnection(): Promise<{ success: boolean; message: string; handle?: string }> {
+        const handle = Config.get<string>("blog.blueskySocialHandle");
+        const appPassword = Config.get<string>("blog.blueskyAppPassword");
+
+        if (!handle || !appPassword)
+            return { success: false, message: "Handle e App Password não configurados." };
+
+        try {
+            const res = await fetch("https://bsky.social/xrpc/com.atproto.server.createSession", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ identifier: handle, password: appPassword }),
+            });
+
+            const data = await res.json() as any;
+
+            if (res.ok && data?.handle)
+                return { success: true, message: `Conectado como @${data.handle}`, handle: data.handle };
+
+            return { success: false, message: `Bluesky error: ${data?.message || res.statusText}` };
+        } catch (err: any) {
+            return { success: false, message: `Erro de conexão: ${err.message}` };
         }
     }
 
