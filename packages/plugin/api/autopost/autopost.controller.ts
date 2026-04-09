@@ -7,10 +7,6 @@ import {
 } from "@cmmv/auth";
 
 import {
-    Repository
-} from "@cmmv/repository";
-
-import {
     AutopostService
 } from './autopost.service';
 
@@ -36,10 +32,11 @@ export class AutopostController {
         return this.autopostService.testBlueskyConnection();
     }
 
-    @Post("repost/:id")
     @Auth()
+    @Post("repost/:id")
     async repost(@Param("id") id: string) {
         try {
+            const { Repository } = await import("@cmmv/repository");
             const PostsEntity = Repository.getEntity("PostsEntity");
             const post = await Repository.findOne(PostsEntity, { id });
 
@@ -47,7 +44,7 @@ export class AutopostController {
                 return { success: false, message: `Post ${id} not found` };
 
             await this.autopostService.sendToSocialNetworks(post);
-            return { success: true, message: `Post "${post.title}" sent to social networks` };
+            return { success: true, message: `Post "${(post as any).title}" sent to social networks` };
         } catch (err: any) {
             return { success: false, message: err?.message || "Unknown error" };
         }
