@@ -38,7 +38,7 @@ export class AutopostController {
 
     @Get("repost/:id")
     async repost(@Param("id") id: string, @Queries() queries: any) {
-        const signature = Config.get<string>("api.signature", "");
+        const signature = Config.get<string>("api.signature", "") || process.env.API_SIGNATURE || "";
         if (!signature || queries?.key !== signature)
             return { success: false, message: "Unauthorized" };
 
