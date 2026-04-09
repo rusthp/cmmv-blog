@@ -203,19 +203,35 @@ export class AutopostService {
      * @param template - The template to use for formatting the message
      * @returns The formatted message
      */
+    private tagsToHashtags(tags: string[], maxTags = 5): string {
+        if (!Array.isArray(tags) || tags.length === 0) return '';
+        return tags
+            .slice(0, maxTags)
+            .map(tag => '#' + tag
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .trim()
+                .split(/\s+/)
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join('')
+            )
+            .join(' ');
+    }
+
     private formatPostMessage(payload: SocialPostPayload, template: string): string {
         let message = template || 'New post: {title} {url}';
 
         message = message.replace('{title}', payload.title);
-        message = message.replace('{excerpt}', payload.excerpt);
+        message = message.replace('{excerpt}', payload.excerpt || '');
         message = message.replace('{url}', payload.url);
         message = message.replace('{author}', payload.author);
 
         const tagsStr = Array.isArray(payload.tags) ? payload.tags.join(', ') : '';
         const categoriesStr = Array.isArray(payload.categories) ? payload.categories.join(', ') : '';
+        const hashtagsStr = this.tagsToHashtags(payload.tags);
 
         message = message.replace('{tags}', tagsStr);
         message = message.replace('{categories}', categoriesStr);
+        message = message.replace('{hashtags}', hashtagsStr);
 
         return message;
     }
@@ -526,14 +542,8 @@ export class AutopostService {
             postUrl = postUrl.replace("utm_source={network}", "utm_source=bluesky");
 
         // 2. Build post text (300 char limit on Bluesky)
-        const template = postFormat || "{title}\n\n{url}";
-        let text = template
-            .replace("{title}", payload.title)
-            .replace("{excerpt}", payload.excerpt || "")
-            .replace("{url}", postUrl)
-            .replace("{author}", payload.author)
-            .replace("{tags}", Array.isArray(payload.tags) ? payload.tags.join(", ") : "")
-            .replace("{categories}", Array.isArray(payload.categories) ? payload.categories.join(", ") : "");
+        const payloadWithBskyUrl = { ...payload, url: postUrl };
+        let text = this.formatPostMessage(payloadWithBskyUrl, postFormat || "{title}\n\n{hashtags}\n\n{url}");
 
         if (text.length > 300)
             text = text.substring(0, 297) + "...";
