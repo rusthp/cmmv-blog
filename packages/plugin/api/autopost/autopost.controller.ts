@@ -1,6 +1,10 @@
 import {
-    Controller, Post, Get, Param
+    Controller, Get, Param, Queries
 } from '@cmmv/http';
+
+import {
+    Config
+} from "@cmmv/core";
 
 import {
     Auth
@@ -33,8 +37,11 @@ export class AutopostController {
     }
 
     @Get("repost/:id")
-    @Auth()
-    async repost(@Param("id") id: string) {
+    async repost(@Param("id") id: string, @Queries() queries: any) {
+        const signature = Config.get<string>("api.signature", "");
+        if (!signature || queries?.key !== signature)
+            return { success: false, message: "Unauthorized" };
+
         try {
             const { Repository } = await import("@cmmv/repository");
             const PostsEntity = Repository.getEntity("PostsEntity");
