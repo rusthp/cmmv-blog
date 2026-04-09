@@ -1786,6 +1786,23 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- AI for Social Posts -->
+                            <div class="space-y-4 p-4 border border-neutral-700 rounded-md">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-base font-medium text-white">IA para Redes Sociais</h3>
+                                        <p class="text-xs text-neutral-400 mt-1">Gera textos engajados com emojis e hashtags usando Groq ou OpenAI</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="settings.useAiForSocialPosts" class="sr-only peer" />
+                                        <div class="w-11 h-6 bg-neutral-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-neutral-500">
+                                    Requer chave Groq ou OpenAI configurada na aba IA. Usa Groq (gratuito) se disponível.
+                                </p>
+                            </div>
+
                             <!-- Pipeline Scheduling -->
                             <div class="space-y-4">
                                 <h3 class="text-lg font-medium text-white border-b border-neutral-700 pb-2">
@@ -4661,6 +4678,7 @@ const settings = ref({
     blueskyAppPassword: "",
     blueskyPostFormat: "🚀 {title}\n\n{url}",
     blueskyIncludeImage: true,
+    useAiForSocialPosts: false,
 
     // CDN Settings
     cloudflareToken: "",
@@ -4866,6 +4884,7 @@ const tabFieldMap = {
         "blueskyAppPassword",
         "blueskyPostFormat",
         "blueskyIncludeImage",
+        "useAiForSocialPosts",
     ],
     integrations: [
         "youtubeApiKey",
