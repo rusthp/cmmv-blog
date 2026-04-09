@@ -198,6 +198,79 @@ export class AutopostService {
     }
 
     /**
+     * Generate an engaging social post using AI (Groq or OpenAI).
+     * Returns null if AI is not configured or fails — caller falls back to template.
+     */
+    private async generateAiSocialPost(payload: SocialPostPayload, network: 'facebook' | 'twitter' | 'bluesky'): Promise<string | null> {
+        const apiKey = Config.get<string>("blog.groqApiKey") || Config.get<string>("blog.openaiApiKey");
+        const useGroq = !!Config.get<string>("blog.groqApiKey");
+
+        if (!apiKey) return null;
+
+        const maxChars = network === 'twitter' ? 260 : network === 'bluesky' ? 290 : 900;
+        const hashtagsStr = this.tagsToHashtags(payload.tags, 6);
+
+        const prompt = `Você é um redator de redes sociais especializado em conteúdo de games e esportes eletrônicos para o portal ProplayNews.
+Crie uma postagem em português para ${network === 'facebook' ? 'Facebook' : network === 'twitter' ? 'X/Twitter' : 'Bluesky'} sobre o seguinte artigo:
+
+Título: ${payload.title}
+Resumo: ${payload.excerpt || payload.title}
+Tags: ${payload.tags.join(', ')}
+URL: ${payload.url}
+
+Regras:
+- Máximo ${maxChars} caracteres (incluindo a URL)
+- Use emojis relevantes para engajamento (🎮🔥💪🏆✨)
+- Seja empolgante e conversacional, no estilo de fã de games
+- Inclua uma pergunta ou call-to-action para engajar a audiência
+- Termine com hashtags relevantes: ${hashtagsStr}
+- Inclua a URL no final
+- NÃO inclua aspas em volta do texto
+- Responda APENAS com o texto da postagem, sem explicações`;
+
+        try {
+            const endpoint = useGroq
+                ? 'https://api.groq.com/openai/v1/chat/completions'
+                : 'https://api.openai.com/v1/chat/completions';
+
+            const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 400,
+                    temperature: 0.8,
+                }),
+                signal: AbortSignal.timeout(15000),
+            });
+
+            if (!res.ok) return null;
+
+            const data = await res.json() as any;
+            const text: string = data?.choices?.[0]?.message?.content?.trim() || '';
+
+            if (!text) return null;
+
+            // Ensure URL is in the post
+            if (!text.includes(payload.url)) {
+                return text.length + payload.url.length + 1 <= maxChars + 50
+                    ? `${text}\n${payload.url}`
+                    : `${text.substring(0, maxChars - payload.url.length - 2)}\n${payload.url}`;
+            }
+
+            return text;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
      * Format post message with template
      * @param payload - The payload containing post details
      * @param template - The template to use for formatting the message
@@ -250,11 +323,19 @@ export class AutopostService {
         if (!pageId || !accessToken)
             throw new Error("Facebook configuration is incomplete. Page ID and Access Token are required.");
 
-        const message = this.formatPostMessage(payload, postFormat);
-
         let postUrl = payload.url;
         if (postUrl.includes('utm_source={network}'))
             postUrl = postUrl.replace('utm_source={network}', 'utm_source=facebook');
+
+        const useAi = Config.get<boolean>("blog.useAiForSocialPosts", false);
+        let message: string;
+
+        if (useAi) {
+            const aiText = await this.generateAiSocialPost({ ...payload, url: postUrl }, 'facebook');
+            message = aiText || this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
+        } else {
+            message = this.formatPostMessage(payload, postFormat);
+        }
 
         const requestData: any = {
             message: message,
@@ -454,11 +535,19 @@ export class AutopostService {
         if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret)
             throw new Error("Twitter configuration is incomplete. API keys and access tokens are required.");
 
-        const message = this.formatPostMessage(payload, postFormat);
-
         let postUrl = payload.url;
         if (postUrl.includes('utm_source={network}'))
             postUrl = postUrl.replace('utm_source={network}', 'utm_source=twitter');
+
+        const useAiTwitter = Config.get<boolean>("blog.useAiForSocialPosts", false);
+        let message: string;
+
+        if (useAiTwitter) {
+            const aiText = await this.generateAiSocialPost({ ...payload, url: postUrl }, 'twitter');
+            message = aiText || this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
+        } else {
+            message = this.formatPostMessage(payload, postFormat);
+        }
 
         const oauth = {
             consumer_key: apiKey,
@@ -543,7 +632,15 @@ export class AutopostService {
 
         // 2. Build post text (300 char limit on Bluesky)
         const payloadWithBskyUrl = { ...payload, url: postUrl };
-        let text = this.formatPostMessage(payloadWithBskyUrl, postFormat || "{title}\n\n{hashtags}\n\n{url}");
+        const useAiBsky = Config.get<boolean>("blog.useAiForSocialPosts", false);
+        let text: string;
+
+        if (useAiBsky) {
+            const aiText = await this.generateAiSocialPost(payloadWithBskyUrl, 'bluesky');
+            text = aiText || this.formatPostMessage(payloadWithBskyUrl, postFormat || "{title}\n\n{hashtags}\n\n{url}");
+        } else {
+            text = this.formatPostMessage(payloadWithBskyUrl, postFormat || "{title}\n\n{hashtags}\n\n{url}");
+        }
 
         if (text.length > 300)
             text = text.substring(0, 297) + "...";
