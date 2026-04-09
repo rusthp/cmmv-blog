@@ -32,8 +32,8 @@ export class AutopostController {
         return this.autopostService.testBlueskyConnection();
     }
 
+    @Get("repost/:id")
     @Auth()
-    @Post("repost/:id")
     async repost(@Param("id") id: string) {
         try {
             const { Repository } = await import("@cmmv/repository");
