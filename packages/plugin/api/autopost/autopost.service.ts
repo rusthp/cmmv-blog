@@ -198,6 +198,116 @@ export class AutopostService {
     }
 
     /**
+     * Detect content category from tags and title for prompt specialization.
+     */
+    private detectContentCategory(payload: SocialPostPayload): string {
+        const text = `${payload.title} ${payload.tags.join(' ')} ${payload.categories.join(' ')}`.toLowerCase();
+
+        if (/\b(major|blast|iem|esl|pgl|eswc|faceit|torneio|campeonat|classificat|semifinal|final|champion)\b/.test(text))
+            return 'tournament';
+        if (/\b(eliminou|eliminad|venceu|ganhou|derrotou|upset|virada|surpreendeu|surpreend)\b/.test(text))
+            return 'upset';
+        if (/\b(classificou|classificaç|chances|probabilidade|ranking|standings|pontos)\b/.test(text))
+            return 'standings';
+        if (/\b(cs2|counter.strike|csgo|cs:go)\b/.test(text))
+            return 'cs2';
+        if (/\b(valorant)\b/.test(text))
+            return 'valorant';
+        if (/\b(league of legends|lol|cblol)\b/.test(text))
+            return 'lol';
+        if (/\b(dota|ti\b|the international)\b/.test(text))
+            return 'dota';
+        if (/\b(rainbow six|r6|siege)\b/.test(text))
+            return 'r6';
+        if (/\b(furia|pain gaming|loud|nip|natus|team liquid|cloud9|g2|navi|vitality)\b/.test(text))
+            return 'team_news';
+
+        return 'general';
+    }
+
+    /**
+     * Build a specialized prompt based on content category and network.
+     */
+    private buildSocialPrompt(payload: SocialPostPayload, network: 'facebook' | 'twitter' | 'bluesky', category: string): string {
+        const networkName = network === 'facebook' ? 'Facebook' : network === 'twitter' ? 'X/Twitter' : 'Bluesky';
+        const maxChars = network === 'twitter' ? 260 : network === 'bluesky' ? 290 : 900;
+        const hashtagsStr = this.tagsToHashtags(payload.tags, 6);
+
+        const categoryInstructions: Record<string, string> = {
+            tournament: `Este é um artigo sobre torneio/campeonato de esports.
+Estilo: empolgante, use dados numéricos se disponíveis, crie suspense sobre quem vai vencer.
+Emojis prioritários: 🏆🔥💥🎮✨
+CTA: pergunta sobre quem o leitor acha que vai ganhar ou qual time vai surpreender.`,
+
+            upset: `Este é um artigo sobre uma virada ou resultado surpreendente.
+Estilo: dramático, use "Incrível!", "Surpreendente!", transmita a emoção do momento.
+Emojis prioritários: 😱🔥💪🏆⚡
+CTA: pergunte se o leitor esperava esse resultado ou qual a reação dele.`,
+
+            standings: `Este é um artigo sobre classificação/ranking/chances de times.
+Estilo: analítico mas empolgante, cite os times brasileiros com destaque, use percentuais se houver.
+Emojis prioritários: 🇧🇷🔥💪📊🎯
+CTA: pergunte qual time BR o leitor acredita que vai se classificar.`,
+
+            cs2: `Este é um artigo sobre CS2/Counter-Strike.
+Estilo: vocabulário de fã de CS (fale em tática, clutch, eco, pistol round quando relevante), empolgante.
+Emojis prioritários: 🎮🔫💥🔥🏆
+CTA: pergunta relacionada ao meta atual, times favoritos ou jogadas.`,
+
+            valorant: `Este é um artigo sobre Valorant.
+Estilo: dinâmico, use vocabulário do jogo (agentes, spike, clutch) quando relevante.
+Emojis prioritários: 🎮⚡🔥💥🏆
+CTA: pergunta sobre agente favorito, time preferido ou expectativas.`,
+
+            lol: `Este é um artigo sobre League of Legends/CBLOL.
+Estilo: apaixonado pela cena BR de LoL, cite o CBLOL quando relevante.
+Emojis prioritários: 🎮⚔️🔥🏆🇧🇷
+CTA: pergunta sobre time favorito no CBLOL ou expectativas do campeonato.`,
+
+            dota: `Este é um artigo sobre Dota 2.
+Estilo: apaixonado pela cena, cite The International ou Dota Play quando relevante.
+Emojis prioritários: 🎮🗡️🔥🏆💎
+CTA: pergunta sobre heróis, times ou expectativas do TI.`,
+
+            r6: `Este é um artigo sobre Rainbow Six Siege/R6.
+Estilo: tático, empolgante, mencione a cena BR quando relevante.
+Emojis prioritários: 🎮🔫💥🔥🏆
+CTA: pergunta sobre operadores favoritos ou expectativas dos campeonatos.`,
+
+            team_news: `Este é um artigo sobre novidades de times de esports.
+Estilo: focado no torcedor, empolgante, destaque o impacto para o time.
+Emojis prioritários: 🔥💪🏆🎮✨
+CTA: reação dos fãs ao acontecimento, pergunta sobre expectativas.`,
+
+            general: `Este é um artigo geral de games/esports.
+Estilo: empolgante e conversacional para fãs de games.
+Emojis prioritários: 🎮🔥💥🏆✨
+CTA: pergunta aberta para engajar a comunidade gamer.`,
+        };
+
+        const instructions = categoryInstructions[category] || categoryInstructions['general'];
+
+        return `Você é o redator oficial das redes sociais do ProplayNews, o maior portal de esports do Brasil.
+Crie uma postagem em português para ${networkName} sobre o seguinte artigo:
+
+Título: ${payload.title}
+Resumo: ${payload.excerpt || payload.title}
+Tags: ${payload.tags.slice(0, 10).join(', ')}
+URL: ${payload.url}
+
+${instructions}
+
+Regras obrigatórias:
+- Máximo ${maxChars} caracteres no total (contando URL)
+- Escreva em português brasileiro informal e empolgante
+- Inclua a URL no final (em linha separada)
+- Termine com as hashtags: ${hashtagsStr}
+- NÃO use aspas no início ou fim do texto
+- NÃO inclua prefixos como "Postagem:" ou "Texto:"
+- Responda APENAS com o texto final da postagem`;
+    }
+
+    /**
      * Generate an engaging social post using AI (Groq or OpenAI).
      * Returns null if AI is not configured or fails — caller falls back to template.
      */
@@ -207,26 +317,9 @@ export class AutopostService {
 
         if (!apiKey) return null;
 
+        const category = this.detectContentCategory(payload);
+        const prompt = this.buildSocialPrompt(payload, network, category);
         const maxChars = network === 'twitter' ? 260 : network === 'bluesky' ? 290 : 900;
-        const hashtagsStr = this.tagsToHashtags(payload.tags, 6);
-
-        const prompt = `Você é um redator de redes sociais especializado em conteúdo de games e esportes eletrônicos para o portal ProplayNews.
-Crie uma postagem em português para ${network === 'facebook' ? 'Facebook' : network === 'twitter' ? 'X/Twitter' : 'Bluesky'} sobre o seguinte artigo:
-
-Título: ${payload.title}
-Resumo: ${payload.excerpt || payload.title}
-Tags: ${payload.tags.join(', ')}
-URL: ${payload.url}
-
-Regras:
-- Máximo ${maxChars} caracteres (incluindo a URL)
-- Use emojis relevantes para engajamento (🎮🔥💪🏆✨)
-- Seja empolgante e conversacional, no estilo de fã de games
-- Inclua uma pergunta ou call-to-action para engajar a audiência
-- Termine com hashtags relevantes: ${hashtagsStr}
-- Inclua a URL no final
-- NÃO inclua aspas em volta do texto
-- Responda APENAS com o texto da postagem, sem explicações`;
 
         try {
             const endpoint = useGroq
@@ -244,8 +337,8 @@ Regras:
                 body: JSON.stringify({
                     model,
                     messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 400,
-                    temperature: 0.8,
+                    max_tokens: 500,
+                    temperature: 0.85,
                 }),
                 signal: AbortSignal.timeout(15000),
             });
@@ -257,11 +350,9 @@ Regras:
 
             if (!text) return null;
 
-            // Ensure URL is in the post
             if (!text.includes(payload.url)) {
-                return text.length + payload.url.length + 1 <= maxChars + 50
-                    ? `${text}\n${payload.url}`
-                    : `${text.substring(0, maxChars - payload.url.length - 2)}\n${payload.url}`;
+                const withUrl = `${text}\n${payload.url}`;
+                return withUrl.length <= maxChars + 100 ? withUrl : `${text.substring(0, maxChars - payload.url.length - 2)}\n${payload.url}`;
             }
 
             return text;
