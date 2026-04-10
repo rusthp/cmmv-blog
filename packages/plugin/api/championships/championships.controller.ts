@@ -92,6 +92,15 @@ export class ChampionshipsController {
     return { success: true, stats };
   }
 
+  @Get('sync-now')
+  async syncNow() {
+    const [pandaStats, rankingStats] = await Promise.all([
+      this.service.syncAll(),
+      this.rankingsService.syncAll(),
+    ]);
+    return { success: true, pandascore: pandaStats, rankings: rankingStats };
+  }
+
   // ─── Sync ─────────────────────────────────────────────────────
 
   @Post('sync')

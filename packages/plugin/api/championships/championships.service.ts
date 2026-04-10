@@ -136,25 +136,25 @@ export class ChampionshipsService {
     if (region && region !== 'all') baseFilter.region = region;
 
     const [allResults, ongoingResults, upcomingResults, finishedResults] = await Promise.all([
-      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, limit: '1' }),
-      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'ongoing', limit: '1' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, limit: '1000' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'ongoing', limit: '1000' }),
       Repository.findAll(EsportsTournamentEntity, {
         ...baseFilter,
         status: 'upcoming',
-        limit: '1',
+        limit: '1000',
       }),
       Repository.findAll(EsportsTournamentEntity, {
         ...baseFilter,
         status: 'finished',
-        limit: '1',
+        limit: '1000',
       }),
     ]);
 
     return {
-      all: allResults?.count || 0,
-      ongoing: ongoingResults?.count || 0,
-      upcoming: upcomingResults?.count || 0,
-      finished: finishedResults?.count || 0,
+      all: (allResults?.data || []).length,
+      ongoing: (ongoingResults?.data || []).length,
+      upcoming: (upcomingResults?.data || []).length,
+      finished: (finishedResults?.data || []).length,
     };
   }
 
@@ -304,15 +304,22 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return 0;
 
-    const ongoing = await Repository.findAll(EsportsTournamentEntity, {
-      status: 'ongoing',
-      limit: '50',
-    });
+    // Sync matches for ongoing, upcoming, and recently finished tournaments
+    const [ongoing, upcoming, finished] = await Promise.all([
+      Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '50' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'upcoming', limit: '30' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'finished', limit: '20' }),
+    ]);
+
+    const allTournaments = [
+      ...(ongoing?.data || []),
+      ...(upcoming?.data || []),
+      ...(finished?.data || []),
+    ];
 
     let total = 0;
-    for (const t of ongoing?.data || []) {
+    for (const t of allTournaments) {
       try {
-        // Determine game from t.game
         const data = await this.pandascoreGet(
           `/${t.game}/tournaments/${t.externalId}/matches?page[size]=100`
         );
