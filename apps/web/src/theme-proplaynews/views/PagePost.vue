@@ -710,6 +710,94 @@ const getAdHtml = (position) => {
     return '';
 };
 
+// Known esports teams — wrapped in <em class="team-name">
+const KNOWN_TEAMS = [
+    'FURIA','LOUD','paiN Gaming','paiN','MIBR','Imperial','Fluxo','KRÜ','KRU','Leviatán','Leviatan',
+    'NAVI','Natus Vincere','Astralis','Team Liquid','Liquid','Fnatic','G2 Esports','G2','Vitality','Cloud9','C9',
+    'FaZe Clan','FaZe','NIP','Ninjas in Pyjamas','MOUZ','mousesports','OG','BIG','ENCE',
+    'Evil Geniuses','EG','100 Thieves','T1','GenG','Gen.G','KT Rolster','KT','DRX','SKT',
+    'Sentinels','NRG','Optic','OpTic','TSM','Team SoloMid','TL','NV','Team Envy','Complexity',
+    'Heroic','HEET','Monte','Apeks','forZe','Spirit','Virtus.pro','VP','Eternal Fire','Falcons',
+    'Legacy','Sharks','ODDIK','RED Canids','RED','Corinthians','Flamengo',
+];
+
+// Known esports players — wrapped in <em class="player-name">
+const KNOWN_PLAYERS = [
+    's1mple','NiKo','ZywOo','device','sh1ro','broky','ropz','Twistzz','rain','karrigan',
+    'Fallen','FalleN','fer','coldzera','TACO','boltz','KSCERATO','yuurih','arT','vini',
+    'aspas','pancada','Less','Sacy','sacy','heat','havoc','RgLMentor',
+    'TenZ','Shroud','shroud','ScreaM','scream','Cryocells','Derke','Leo','nAts','Alfa',
+    'Faker','Ruler','Zeus','Gumayusi','Keria','Chovy','Canyon','ShowMaker',
+    'Simple','Electronic','Hobbit','Perfecto','B1T','Jame','qikert','Yekindar',
+    'Insani','insani','HEN1','LUCAS1','trk','Guerri','fnx','felps','ableJ',
+    'Stewie2k','autimatic','RUSH','mixwell','Xeppa','DiegoL','soulcas','Alfajer',
+];
+
+// Esports-specific bold keywords
+const BOLD_KEYWORDS = [
+    'Major','Champions','Worlds','Grand Final','Grande Final','Playoffs','playoff',
+    'MVP','ace','clutch','round','match point','overtime','pistol round',
+    'headshot','spike','eco','full buy','force buy','anti-eco','save',
+    'eliminado','classificado','campeão','campeao','vice-campeão',
+    'derrota','vitória','vitoria','semifinal','quartas','final',
+];
+
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function applyEsportsFormatting(html: string): string {
+    // Only process text nodes inside <p> and <li> — avoid breaking HTML tags
+    // We use a tag-aware split strategy
+    return html.replace(/(<p[^>]*>)([\s\S]*?)(<\/p>)|(<li[^>]*>)([\s\S]*?)(<\/li>)/g, (match, p1, p2, p3, l1, l2, l3) => {
+        const openTag = p1 || l1;
+        const closeTag = p3 || l3;
+        let text = p2 !== undefined ? p2 : l2;
+
+        // Skip if content already has highlight spans (avoid double processing)
+        if (text.includes('class="player-name"') || text.includes('class="team-name"')) {
+            return match;
+        }
+
+        // Apply bold keywords first
+        BOLD_KEYWORDS.forEach(kw => {
+            const rx = new RegExp(`\\b(${escapeRegex(kw)})\\b`, 'g');
+            text = text.replace(rx, '<strong class="kw-bold">$1</strong>');
+        });
+
+        // Apply team names
+        KNOWN_TEAMS.forEach(team => {
+            const rx = new RegExp(`(?<![\\w#@])${escapeRegex(team)}(?![\\w])`, 'g');
+            text = text.replace(rx, (m) => {
+                // Don't double-wrap if already inside a tag
+                if (text.slice(Math.max(0, text.indexOf(m) - 30), text.indexOf(m)).includes('<em')) return m;
+                return `<em class="team-name">${m}</em>`;
+            });
+        });
+
+        // Apply player names (italic)
+        KNOWN_PLAYERS.forEach(player => {
+            const rx = new RegExp(`(?<![\\w#@])${escapeRegex(player)}(?![\\w])`, 'g');
+            text = text.replace(rx, `<em class="player-name">${player}</em>`);
+        });
+
+        return openTag + text + closeTag;
+    });
+}
+
+function addLazyImages(html: string): string {
+    // Add loading="lazy" to all img tags that don't have it
+    return html.replace(/<img(?![^>]*loading=)/g, '<img loading="lazy"');
+}
+
+function addImageAlt(html: string, postTitle: string): string {
+    // Add alt attribute to images without one
+    return html.replace(/<img([^>]*?)(?:\salt=""|\salt='')?(?=[^>]*>)/g, (match, attrs) => {
+        if (/\balt\s*=\s*["'][^"']*["']/.test(attrs)) return match;
+        return `<img${attrs} alt="${postTitle}"`;
+    });
+}
+
 function processPostContent(content) {
     if (!content) return '';
 
@@ -743,6 +831,13 @@ function processPostContent(content) {
             </div>`;
         });
     });
+
+    // Lazy images + alt text
+    processedContent = addLazyImages(processedContent);
+    processedContent = addImageAlt(processedContent, post.value?.title || '');
+
+    // Esports formatting (teams, players, keywords)
+    processedContent = applyEsportsFormatting(processedContent);
 
     if (!isSSR && (processedContent.includes('twitter-tweet') || processedContent.includes('twitter-embed'))) {
         setTimeout(() => {
@@ -1255,11 +1350,44 @@ const sidebarLeftAdContainer = ref(null);
 </script>
 
 <style scoped>
+/* ─── Esports Typography ─── */
+.post-content :deep(.player-name) {
+    font-style: italic;
+    font-weight: 600;
+    color: #1a56db;
+    text-decoration: none;
+}
+
+.post-content :deep(.team-name) {
+    font-style: italic;
+    font-weight: 700;
+    color: #111827;
+}
+
+.post-content :deep(.kw-bold) {
+    font-weight: 700;
+    color: #111827;
+}
+
+/* ─── Content images ─── */
 .post-content :deep(img) {
     max-width: 100%;
     height: auto;
-    border-radius: 4px;
-    margin: 1rem 0;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    display: block;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.post-content :deep(figure) {
+    margin: 1.5rem 0;
+}
+
+.post-content :deep(figcaption) {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 0.375rem;
 }
 
 .post-content :deep(iframe) {
@@ -1301,43 +1429,98 @@ const sidebarLeftAdContainer = ref(null);
 }
 
 .post-content :deep(blockquote) {
-                    border-left: 4px solid #ffcc00;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #666;
+    border-left: 4px solid #ffcc00;
+    padding: 0.75rem 1.25rem;
+    margin: 1.5rem 0;
+    color: #374151;
+    background: #fafafa;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
 }
 
-.post-content :deep(h2),
-.post-content :deep(h3),
+.post-content :deep(blockquote p) {
+    margin: 0;
+}
+
+.post-content :deep(h2) {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 2.25rem;
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 2px solid #f3f4f6;
+    line-height: 1.3;
+}
+
+.post-content :deep(h3) {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.35;
+}
+
 .post-content :deep(h4),
 .post-content :deep(h5),
 .post-content :deep(h6) {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .post-content :deep(p) {
-    margin-bottom: 1rem;
-    line-height: 1.7;
+    margin-bottom: 1.125rem;
+    line-height: 1.8;
+    color: #1f2937;
+    font-size: 1rem;
 }
 
 .post-content :deep(ul),
 .post-content :deep(ol) {
-    margin: 1rem 0;
-    padding-left: 2rem;
+    margin: 1rem 0 1.25rem;
+    padding-left: 1.75rem;
 }
 
 .post-content :deep(li) {
     margin-bottom: 0.5rem;
+    line-height: 1.7;
+    color: #374151;
+}
+
+.post-content :deep(li::marker) {
+    color: #6b7280;
 }
 
 .post-content :deep(a) {
-                    color: #333333;
+    color: #1a56db;
     text-decoration: underline;
+    text-decoration-color: rgba(26,86,219,0.3);
+    text-underline-offset: 2px;
+    transition: color 0.15s, text-decoration-color 0.15s;
 }
 
 .post-content :deep(a:hover) {
-    color: #064019;
+    color: #1e40af;
+    text-decoration-color: #1e40af;
+}
+
+.post-content :deep(strong) {
+    font-weight: 700;
+    color: #111827;
+}
+
+.post-content :deep(em) {
+    font-style: italic;
+}
+
+.post-content :deep(hr) {
+    border: none;
+    border-top: 2px solid #f3f4f6;
+    margin: 2rem 0;
 }
 
 /* Twitter/X embed styles */
