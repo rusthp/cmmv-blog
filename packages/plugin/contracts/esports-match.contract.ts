@@ -85,4 +85,18 @@ export class EsportsMatchContract extends AbstractContract {
 
     @ContractField({ protoType: 'string', nullable: true })
     streamUrl!: string;
+
+    // Bracket connectivity
+    @ContractField({ protoType: 'int32', nullable: true })
+    roundNumber!: number; // 1 = first round, 2 = second, etc.
+
+    @ContractField({ protoType: 'string', nullable: true })
+    nextMatchId!: string; // externalId of the match winner advances to
+
+    @ContractField({ protoType: 'string', nullable: true })
+    bracketSection!: string; // upper | lower | grand_final
+
+    // Data source tracking
+    @ContractField({ protoType: 'string', nullable: true, defaultValue: 'pandascore' })
+    dataSource!: string; // pandascore | draft5 | vlr | lolesports
 }

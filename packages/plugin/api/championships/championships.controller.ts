@@ -2,12 +2,18 @@ import { Controller, Get, Post, Param, Query } from '@cmmv/http';
 import { Auth } from '@cmmv/auth';
 import { ChampionshipsService } from './championships.service';
 import { RankingsService } from './rankings.service';
+import { LolEsportsService } from './lolesports.service';
+import { Draft5Service } from './draft5.service';
+import { VlrService } from './vlr.service';
 
 @Controller('esports')
 export class ChampionshipsController {
   constructor(
     private readonly service: ChampionshipsService,
-    private readonly rankingsService: RankingsService
+    private readonly rankingsService: RankingsService,
+    private readonly lolService: LolEsportsService,
+    private readonly draft5Service: Draft5Service,
+    private readonly vlrService: VlrService,
   ) {}
 
   @Get('tournaments')
@@ -48,6 +54,14 @@ export class ChampionshipsController {
 
   @Get('tournaments/:slug/brackets')
   async getTournamentBrackets(@Param('slug') slug: string) {
+    // Determine game from slug prefix or tournament record
+    const tournament = await this.service.getTournamentBySlug(slug);
+    const game = (tournament as any)?.game || '';
+
+    if (game === 'lol' || slug.startsWith('lol-')) {
+      return this.lolService.getTournamentBracket(slug);
+    }
+
     return this.service.getTournamentBrackets(slug);
   }
 
@@ -99,6 +113,24 @@ export class ChampionshipsController {
       this.rankingsService.syncAll(),
     ]);
     return { success: true, pandascore: pandaStats, rankings: rankingStats };
+  }
+
+  @Get('sync-lol')
+  async syncLol() {
+    const stats = await this.lolService.syncAll();
+    return { success: true, lolesports: stats };
+  }
+
+  @Get('sync-draft5')
+  async syncDraft5() {
+    const stats = await this.draft5Service.syncAll();
+    return { success: true, draft5: stats };
+  }
+
+  @Get('sync-vlr')
+  async syncVlr() {
+    const stats = await this.vlrService.syncAll();
+    return { success: true, vlr: stats };
   }
 
   // ─── Sync ─────────────────────────────────────────────────────
