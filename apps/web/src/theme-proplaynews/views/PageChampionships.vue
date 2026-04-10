@@ -383,9 +383,8 @@ onMounted(load);
 
 <style scoped>
 .championships-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
+  width: 100%;
+  padding: 1rem 0;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -552,6 +551,7 @@ onMounted(load);
   overflow: hidden;
   text-decoration: none;
   transition: all 0.2s ease;
+  min-width: 0;
 }
 
 .tournament-card:hover {
@@ -841,14 +841,7 @@ onMounted(load);
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-  .cards-grid,
-  .cards-grid-loading {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .championships-page {
     padding: 1.5rem 1rem;
   }
