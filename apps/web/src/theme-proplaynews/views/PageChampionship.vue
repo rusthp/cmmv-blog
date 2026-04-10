@@ -74,7 +74,7 @@
         <div class="tabs">
             <button class="tab" :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">Visão Geral</button>
             <button class="tab" :class="{ active: activeTab === 'matches' }" @click="activeTab = 'matches'">Partidas</button>
-            <button v-if="brackets.hasPlayoffs" class="tab" :class="{ active: activeTab === 'brackets' }" @click="activeTab = 'brackets'">Brackets</button>
+            <button v-if="brackets.phases.length > 0" class="tab" :class="{ active: activeTab === 'brackets' }" @click="activeTab = 'brackets'">Brackets</button>
             <button class="tab" :class="{ active: activeTab === 'teams' }" @click="activeTab = 'teams'">Equipes</button>
         </div>
 
