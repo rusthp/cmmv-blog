@@ -113,9 +113,14 @@
               <span class="badge badge-type" :class="t.online ? 'online' : 'lan'">
                 {{ t.online ? 'Online' : 'LAN' }}
               </span>
-              <span class="badge badge-status" :class="t.status">
-                {{ statusLabel(t.status) }}
-              </span>
+              <div class="card-badges-right">
+                <span v-if="t.tier" class="badge badge-tier">
+                  Tier {{ t.tier.toUpperCase() }}
+                </span>
+                <span class="badge badge-status" :class="t.status">
+                  {{ statusLabel(t.status) }}
+                </span>
+              </div>
             </div>
 
             <!-- Progress bar for ongoing -->
@@ -241,11 +246,12 @@ async function updateAllStatusCounts() {
     const res = await fetch(`/api/esports/tournaments/counts${countQuery}`);
     const json = await res.json();
 
+    const counts = json.result || json;
     statusCounts.value = {
-      all: json.all || 0,
-      ongoing: json.ongoing || 0,
-      upcoming: json.upcoming || 0,
-      finished: json.finished || 0,
+      all: counts.all || 0,
+      ongoing: counts.ongoing || 0,
+      upcoming: counts.upcoming || 0,
+      finished: counts.finished || 0,
     };
   } catch (error) {
     console.error('[Championships] Error fetching status counts:', error);
@@ -282,8 +288,14 @@ function getPrizeIcon(prizePool: string): string {
 
 function getTeamCount(t: any): number {
   if (t.numberOfTeams && t.numberOfTeams > 0) return t.numberOfTeams;
-  const teams = t.teams || [];
-  return teams.length;
+  if (t.teams && t.teams.length > 0) return t.teams.length;
+  if (t.teamsJson) {
+    try {
+      const parsed = JSON.parse(t.teamsJson);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.length;
+    } catch {}
+  }
+  return 0;
 }
 
 function getGameShortLabel(gameSlug: string): string {
@@ -527,7 +539,7 @@ onMounted(load);
 /* CARDS GRID */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
 }
 
@@ -636,7 +648,15 @@ onMounted(load);
   right: 0.75rem;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 0.5rem;
+}
+
+.card-badges-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
 }
 
 .badge {
@@ -669,6 +689,13 @@ onMounted(load);
 
 .badge-status.finished {
   background: #4a5568;
+}
+
+.badge-tier {
+  background: rgba(0, 0, 0, 0.7);
+  color: #ecc94b;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(236, 201, 75, 0.3);
 }
 
 /* Progress Bar */
@@ -773,7 +800,7 @@ onMounted(load);
 /* Loading State */
 .cards-grid-loading {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
 }
 
@@ -814,6 +841,13 @@ onMounted(load);
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .cards-grid,
+  .cards-grid-loading {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .championships-page {
     padding: 1.5rem 1rem;
@@ -825,7 +859,7 @@ onMounted(load);
 
   .cards-grid,
   .cards-grid-loading {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
 
