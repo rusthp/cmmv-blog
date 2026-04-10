@@ -12,6 +12,8 @@ import { proxyManager } from '../proxy/proxy-manager';
 export class PostingWorker {
     private static readonly logger = new Logger("PostingWorker");
     private static isRunning = false;
+    /** Titles currently in-flight across all concurrent invocations (normalized). */
+    private static readonly processingTitles = new Set<string>();
 
     constructor(private readonly imagePipeline: ImagePipelineWorker) {}
 
@@ -76,13 +78,32 @@ export class PostingWorker {
                         raw.title
                     );
 
-                    // Duplicate check (normalized title match)
+                    // Duplicate check — process-level in-flight guard first,
+                    // then DB lookup. Both checks together prevent the race condition
+                    // where two workers process different FeedRaw items with the same
+                    // title concurrently: neither sees the other's DB write yet, but
+                    // the in-memory Set blocks the second one immediately.
+                    const normalizedTitle = this.normalizeTitle(raw.title || '');
+                    if (PostingWorker.processingTitles.has(normalizedTitle)) {
+                        PostingWorker.logger.log(
+                            `[pipeline][WARN] In-flight duplicate for "${raw.title}". Skipping.`
+                        );
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: raw.id }),
+                            { pipelineState: PIPELINE_STATE.GENERATED }
+                        );
+                        continue;
+                    }
+                    PostingWorker.processingTitles.add(normalizedTitle);
+
                     const duplicatePost = await this.findDuplicatePost(PostsEntity, raw.title);
 
                     if (duplicatePost) {
                         PostingWorker.logger.log(
                             `[pipeline][WARN] Duplicate detected for "${raw.title}" (matched: "${duplicatePost.title}"). Skipping.`
                         );
+                        PostingWorker.processingTitles.delete(normalizedTitle);
                         await Repository.updateOne(
                             FeedRawEntity,
                             Repository.queryBuilder({ id: raw.id }),
@@ -285,14 +306,21 @@ export class PostingWorker {
                             { pipelineState: PIPELINE_STATE.DONE, postRef: post.data.id }
                         );
 
+                        PostingWorker.processingTitles.delete(normalizedTitle);
+
                         const publishDate = new Date(publishAt).toISOString();
                         this.pipelineLog(raw.id,
                             `done: postId=${post.data.id}, status=cron, publishAt=${publishDate}, categories=${categories.length}, tags=${tags.length}`
                         );
                     } else {
+                        PostingWorker.processingTitles.delete(normalizedTitle);
                         await this.handleFailure(raw.id, PIPELINE_STATE.POSTING, "Post creation returned no data", maxAttempts);
                     }
                 } catch (error) {
+                    // Ensure the title lock is always released, even on unexpected errors
+                    if (raw?.title) {
+                        PostingWorker.processingTitles.delete(this.normalizeTitle(raw.title));
+                    }
                     await this.handleFailure(
                         raw.id,
                         PIPELINE_STATE.POSTING,

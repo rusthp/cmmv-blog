@@ -304,6 +304,66 @@ export class AutoPipelineController {
         return '';
     }
 
+    @Get("dedup-posts", { exclude: true })
+    async dedupPosts() {
+        const logger = new Logger("DedupPosts");
+        const PostsEntity = Repository.getEntity("PostsEntity");
+
+        // Fetch all posts ordered by createdAt ASC so we keep the oldest
+        const all = await Repository.findAll(PostsEntity, {
+            limit: 5000,
+            sortBy: 'createdAt',
+            sort: 'ASC',
+            deleted: false,
+        });
+
+        const posts = all?.data || [];
+        const seen = new Map<string, string>(); // normalizedTitle → id to keep
+        const toDelete: string[] = [];
+
+        const normalizeTitle = (t: string) => (t || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        for (const post of posts) {
+            const key = normalizeTitle(post.title || '');
+            if (!key) continue;
+            if (seen.has(key)) {
+                toDelete.push(post.id);
+            } else {
+                seen.set(key, post.id);
+            }
+        }
+
+        logger.log(`Found ${toDelete.length} duplicate posts to soft-delete`);
+
+        let deleted = 0;
+        for (const id of toDelete) {
+            try {
+                await Repository.updateOne(
+                    PostsEntity,
+                    Repository.queryBuilder({ id }),
+                    { deleted: true }
+                );
+                deleted++;
+            } catch (e: any) {
+                logger.log(`Failed to soft-delete post ${id}: ${e.message}`);
+            }
+        }
+
+        return {
+            result: true,
+            message: `Dedup complete: ${deleted} duplicate posts soft-deleted`,
+            total: posts.length,
+            duplicatesFound: toDelete.length,
+            deleted,
+        };
+    }
+
     @Get("test-full-pipeline", { exclude: true })
     async runTestPipeline() {
         const logger = new Logger("PipelineTest");
