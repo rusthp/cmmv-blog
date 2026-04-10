@@ -74,212 +74,291 @@
         <div class="tabs">
             <button class="tab" :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">Visão Geral</button>
             <button class="tab" :class="{ active: activeTab === 'matches' }" @click="activeTab = 'matches'">Partidas</button>
-            <button v-if="brackets.phases.length > 0" class="tab" :class="{ active: activeTab === 'brackets' }" @click="activeTab = 'brackets'">Brackets</button>
             <button class="tab" :class="{ active: activeTab === 'teams' }" @click="activeTab = 'teams'">Equipes</button>
         </div>
 
         <!-- Tab: Overview -->
         <div v-if="activeTab === 'overview'" class="overview-content">
-            <div class="info-section">
-                <h3>Informações do Torneio</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Inicio</span>
-                        <span class="info-value">{{ formatDate(tournament.startDate) }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Fim</span>
-                        <span class="info-value">{{ formatDate(tournament.endDate) }}</span>
-                    </div>
-                    <div v-if="tournament.prizePool" class="info-item">
-                        <span class="info-label">Premiacao</span>
-                        <span class="info-value" :class="getPrizeInfoClass(tournament.prizePool)">
-                            {{ getPrizeIcon(tournament.prizePool) }} {{ tournament.prizePool }}
-                        </span>
-                    </div>
-                    <div v-if="tournament.region" class="info-item">
-                        <span class="info-label">Regiao</span>
-                        <span class="info-value">{{ getRegionLabel(tournament.region) }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Times</span>
-                        <span class="info-value">{{ getTeamCount(tournament) }}</span>
-                    </div>
-                    <div v-if="tournament.location" class="info-item">
-                        <span class="info-label">Local</span>
-                        <span class="info-value">{{ tournament.location }}</span>
-                    </div>
-                    <div v-if="tournament.leagueName" class="info-item">
-                        <span class="info-label">Liga</span>
-                        <span class="info-value">{{ tournament.leagueName }}</span>
+
+            <!-- FASES section (bracket phases) -->
+            <div v-if="hasAnyMatches" class="phases-section">
+                <div class="section-title">FASES</div>
+
+                <!-- Phase sub-tabs -->
+                <div class="phase-tabs" v-if="brackets.phases.length > 0">
+                    <button
+                        v-for="ph in brackets.phases"
+                        :key="ph"
+                        class="phase-tab"
+                        :class="{ active: activePhase === ph }"
+                        @click="activePhase = ph"
+                    >{{ formatPhase(ph) }}</button>
+                </div>
+
+                <!-- Bracket view for playoff phases -->
+                <div v-if="isPlayoffPhase(activePhase)" class="bracket-area">
+                    <div class="bracket-section-label">{{ formatPhase(activePhase).toUpperCase() }}</div>
+                    <div class="bracket-tree-wrapper">
+                        <div class="bracket-tree">
+                            <!-- For phase-based bracket, show sub-phases as columns -->
+                            <template v-if="brackets.phases.length > 0">
+                                <div
+                                    v-for="(phase, colIdx) in playoffPhases"
+                                    :key="phase"
+                                    class="bracket-column"
+                                >
+                                    <div class="bracket-col-label">{{ formatPhase(phase) }}</div>
+                                    <div class="bracket-col-body" :style="bracketColStyle(colIdx, playoffPhases.length)">
+                                        <div
+                                            v-for="(m, mIdx) in (brackets.brackets[phase] || [])"
+                                            :key="m.id"
+                                            class="bk-slot"
+                                            :style="bracketSlotStyle(mIdx, brackets.brackets[phase]?.length || 1, colIdx)"
+                                        >
+                                            <div class="bk-match" :class="{ 'is-live': m.status === 'running', 'is-done': m.status === 'finished' }">
+                                                <div v-if="m.status === 'running'" class="bk-live-dot"></div>
+                                                <div class="bk-team" :class="getBracketTeamClass(m, 1)">
+                                                    <div class="bk-logo">
+                                                        <img v-if="m.team1Logo" :src="m.team1Logo" />
+                                                        <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                                    </div>
+                                                    <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
+                                                    <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
+                                                </div>
+                                                <div class="bk-divider"></div>
+                                                <div class="bk-team" :class="getBracketTeamClass(m, 2)">
+                                                    <div class="bk-logo">
+                                                        <img v-if="m.team2Logo" :src="m.team2Logo" />
+                                                        <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                                    </div>
+                                                    <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
+                                                    <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
+                                                </div>
+                                                <div class="bk-footer">
+                                                    <span>MD{{ m.numberOfGames }}</span>
+                                                    <span>{{ formatTime(m.scheduledAt) }}</span>
+                                                </div>
+                                            </div>
+                                            <!-- SVG connector to next column -->
+                                            <svg v-if="colIdx < playoffPhases.length - 1" class="bk-connector-svg" :viewBox="`0 0 48 ${bracketConnectorHeight(mIdx, brackets.brackets[phase]?.length || 1)}`" preserveAspectRatio="none">
+                                                <path
+                                                    :d="bracketConnectorPath(mIdx, brackets.brackets[phase]?.length || 1)"
+                                                    fill="none"
+                                                    stroke="#3a4a5c"
+                                                    stroke-width="1.5"
+                                                />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div v-if="upcomingMatches.length > 0" class="matches-preview">
-                <h3>Próximas Partidas</h3>
-                <div class="match-list">
-                    <div v-for="m in upcomingMatches.slice(0, 5)" :key="m.id" class="match-card-simple">
-                        <div class="match-teams-simple">
-                            <div class="team-simple">
+                <!-- Group standings for group phase -->
+                <div v-else-if="activePhase === 'group_stage'" class="groups-area">
+                    <div v-for="(groupMatches, groupName) in groupedByGroup" :key="groupName" class="group-block">
+                        <div class="group-title">{{ groupName }}</div>
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Equipes</th>
+                                    <th title="Pontos">P</th>
+                                    <th title="Jogos">J</th>
+                                    <th title="Vitórias">V</th>
+                                    <th title="Empates">E</th>
+                                    <th title="Derrotas">D</th>
+                                    <th title="Saldo de Rounds">SR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(row, idx) in computeStandings(groupMatches)" :key="row.id" :class="getStandingsRowClass(idx, computeStandings(groupMatches).length)">
+                                    <td class="rank">{{ idx + 1 }}</td>
+                                    <td class="team-cell">
+                                        <div class="team-icon-sm">
+                                            <img v-if="row.logo" :src="row.logo" />
+                                            <span v-else>{{ getInitials(row.name) }}</span>
+                                        </div>
+                                        {{ row.name }}
+                                    </td>
+                                    <td class="pts">{{ row.points }}</td>
+                                    <td>{{ row.played }}</td>
+                                    <td class="win">{{ row.wins }}</td>
+                                    <td>{{ row.draws }}</td>
+                                    <td class="loss">{{ row.losses }}</td>
+                                    <td :class="row.roundDiff >= 0 ? 'sr-pos' : 'sr-neg'">{{ row.roundDiff > 0 ? '+' : '' }}{{ row.roundDiff }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="standings-legend">
+                            <span class="legend-promote">&#9679; 1º a 2º - Classificados aos playoffs</span>
+                            <span class="legend-elim">&#9679; 3º a 4º - Eliminados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generic match list for other phases -->
+                <div v-else class="phase-match-list">
+                    <div v-for="m in (brackets.brackets[activePhase] || [])" :key="m.id" class="match-row">
+                        <div class="mr-phase">{{ formatPhase(m.phase) }}</div>
+                        <div class="mr-format">MD{{ m.numberOfGames }}</div>
+                        <div class="mr-teams">
+                            <div class="mr-team" :class="getTeamClassMatch(m, 1)">
                                 <div class="team-icon-sm">
                                     <img v-if="m.team1Logo" :src="m.team1Logo" />
                                     <span v-else>{{ getInitials(m.team1Name) }}</span>
                                 </div>
                                 <span>{{ m.team1Name || 'TBA' }}</span>
+                                <span class="mr-score">{{ m.team1Score ?? 0 }}</span>
                             </div>
-                            <span class="vs-text">vs</span>
-                            <div class="team-simple">
+                            <span class="mr-sep">x</span>
+                            <div class="mr-team right" :class="getTeamClassMatch(m, 2)">
+                                <span class="mr-score">{{ m.team2Score ?? 0 }}</span>
+                                <span>{{ m.team2Name || 'TBA' }}</span>
                                 <div class="team-icon-sm">
                                     <img v-if="m.team2Logo" :src="m.team2Logo" />
                                     <span v-else>{{ getInitials(m.team2Name) }}</span>
                                 </div>
-                                <span>{{ m.team2Name || 'TBA' }}</span>
                             </div>
                         </div>
-                        <div class="match-meta">
-                            <span>{{ formatPhase(m.phase) }}</span>
-                            <span>{{ formatTime(m.scheduledAt) }}</span>
-                        </div>
+                        <div class="mr-date">{{ formatTime(m.scheduledAt) }}</div>
                     </div>
                 </div>
             </div>
 
-            <div v-if="finishedMatches.length > 0" class="matches-preview">
-                <h3>Resultados Recentes</h3>
-                <div class="match-list">
-                    <div v-for="m in finishedMatches.slice(0, 5)" :key="m.id" class="match-card-simple">
-                        <div class="match-teams-simple">
-                            <div class="team-simple" :class="{ winner: m.winnerExternalId === m.team1ExternalId }">
-                                <div class="team-icon-sm">
-                                    <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                    <span v-else>{{ getInitials(m.team1Name) }}</span>
+            <!-- INFORMAÇÕES side block (always visible) -->
+            <div class="info-card">
+                <div class="section-title">INFORMAÇÕES</div>
+                <div v-if="tournament.prizePool" class="info-row">
+                    <span class="info-label-sm">Premiação:</span>
+                    <span class="info-val-prize">{{ getPrizeIcon(tournament.prizePool) }} {{ tournament.prizePool }}</span>
+                </div>
+                <div class="section-title mt">DATAS</div>
+                <div class="info-dates">
+                    <div>
+                        <div class="info-label-sm">INICIO</div>
+                        <div class="info-date">{{ formatDateLong(tournament.startDate) }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label-sm">FINAL</div>
+                        <div class="info-date">{{ formatDateLong(tournament.endDate) }}</div>
+                    </div>
+                </div>
+                <div v-if="tournament.location" class="section-title mt">LOCAL</div>
+                <div v-if="tournament.location" class="info-location">{{ tournament.location }}</div>
+                <div v-if="tournament.region" class="section-title mt">REGIÃO</div>
+                <div v-if="tournament.region" class="info-location">{{ getRegionLabel(tournament.region) }}</div>
+            </div>
+
+            <!-- CALENDÁRIO -->
+            <div v-if="hasAnyMatches" class="calendar-section">
+                <div class="section-title">CALENDÁRIO</div>
+
+                <div v-if="upcomingMatches.length > 0" class="cal-group">
+                    <div class="cal-group-label">PRÓXIMAS PARTIDAS</div>
+                    <div v-for="(dayGroup, day) in groupByDay(upcomingMatches.slice(0, 10))" :key="day" class="cal-day">
+                        <div class="cal-day-header">&#128197; {{ day }}</div>
+                        <div v-for="m in dayGroup" :key="m.id" class="cal-match">
+                            <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
+                            <div class="cal-teams">
+                                <div class="cal-team">
+                                    <div class="team-icon-sm">
+                                        <img v-if="m.team1Logo" :src="m.team1Logo" />
+                                        <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                    </div>
+                                    {{ m.team1Name || 'TBA' }}
                                 </div>
-                                <span>{{ m.team1Name || 'TBA' }}</span>
-                                <span class="score-sm">{{ m.team1Score ?? 0 }}</span>
-                            </div>
-                            <span class="vs-text">x</span>
-                            <div class="team-simple" :class="{ winner: m.winnerExternalId === m.team2ExternalId }">
-                                <div class="team-icon-sm">
-                                    <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                    <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                <span class="cal-score">{{ m.team1Score ?? 0 }}</span>
+                                <span class="cal-format">MD{{ m.numberOfGames }}</span>
+                                <span class="cal-score">{{ m.team2Score ?? 0 }}</span>
+                                <div class="cal-team right">
+                                    {{ m.team2Name || 'TBA' }}
+                                    <div class="team-icon-sm">
+                                        <img v-if="m.team2Logo" :src="m.team2Logo" />
+                                        <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                    </div>
                                 </div>
-                                <span>{{ m.team2Name || 'TBA' }}</span>
-                                <span class="score-sm">{{ m.team2Score ?? 0 }}</span>
                             </div>
+                            <div class="cal-league">{{ tournament.leagueName || tournament.name }}</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div v-if="upcomingMatches.length === 0 && finishedMatches.length === 0" class="empty-tournament">
+                <div v-if="finishedMatches.length > 0" class="cal-group">
+                    <div class="cal-group-label">RESULTADOS RECENTES</div>
+                    <div v-for="(dayGroup, day) in groupByDay(finishedMatches.slice(0, 10))" :key="day" class="cal-day">
+                        <div class="cal-day-header">&#128197; {{ day }}</div>
+                        <div v-for="m in dayGroup" :key="m.id" class="cal-match">
+                            <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
+                            <div class="cal-teams">
+                                <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId }">
+                                    <div class="team-icon-sm">
+                                        <img v-if="m.team1Logo" :src="m.team1Logo" />
+                                        <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                    </div>
+                                    {{ m.team1Name || 'TBA' }}
+                                </div>
+                                <span class="cal-score done">{{ m.team1Score ?? 0 }}</span>
+                                <span class="cal-format">MD{{ m.numberOfGames }}</span>
+                                <span class="cal-score done">{{ m.team2Score ?? 0 }}</span>
+                                <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId }">
+                                    {{ m.team2Name || 'TBA' }}
+                                    <div class="team-icon-sm">
+                                        <img v-if="m.team2Logo" :src="m.team2Logo" />
+                                        <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cal-league">{{ tournament.leagueName || tournament.name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="upcomingMatches.length === 0 && finishedMatches.length === 0" class="empty-tournament">
+                    <div class="empty-icon">📅</div>
+                    <h4>Partidas em breve</h4>
+                    <p>As partidas serão adicionadas conforme o campeonato se aproxima.</p>
+                </div>
+            </div>
+            <div v-else class="empty-tournament">
                 <div class="empty-icon">📅</div>
                 <h4>Partidas em breve</h4>
                 <p>As partidas serão adicionadas conforme o campeonato se aproxima.</p>
             </div>
         </div>
 
-        <!-- Tab: Matches -->
+        <!-- Tab: Matches (full list) -->
         <div v-if="activeTab === 'matches'" class="tab-content">
             <div v-if="matches.length === 0" class="empty-content">
                 <p>Nenhuma partida registrada ainda.</p>
             </div>
-            <div v-else class="match-list">
-                <div v-for="m in matches" :key="m.id" class="match-card-simple">
-                    <div class="match-header-simple">
-                        <span>{{ formatPhase(m.phase) }}</span>
-                        <span>MD{{ m.numberOfGames }}</span>
-                        <span>{{ formatFullDate(m.scheduledAt) }}</span>
-                    </div>
-                    <div class="match-teams-simple">
-                        <div class="team-simple" :class="getTeamClassMatch(m, 1)">
-                            <div class="team-icon-sm">
-                                <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                <span v-else>{{ getInitials(m.team1Name) }}</span>
-                            </div>
-                            <span>{{ m.team1Name || 'TBA' }}</span>
-                            <span class="score-sm">{{ m.team1Score ?? 0 }}</span>
-                        </div>
-                        <span class="vs-text">x</span>
-                        <div class="team-simple" :class="getTeamClassMatch(m, 2)">
-                            <div class="team-icon-sm">
-                                <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                <span v-else>{{ getInitials(m.team2Name) }}</span>
-                            </div>
-                            <span>{{ m.team2Name || 'TBA' }}</span>
-                            <span class="score-sm">{{ m.team2Score ?? 0 }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab: Brackets -->
-        <div v-if="activeTab === 'brackets'" class="tab-content">
-            <div v-if="bracketsLoading" class="empty-content">
-                <div class="spinner"></div>
-            </div>
-            <div v-else-if="brackets.phases.length === 0" class="empty-content">
-                <p>Sem dados de bracket disponíveis.</p>
-            </div>
-            <div v-else class="bracket-tree-wrapper">
-                <div class="bracket-tree">
-                    <div
-                        v-for="(phase, colIdx) in brackets.phases"
-                        :key="phase"
-                        class="bracket-column"
-                    >
-                        <div class="bracket-column-header">{{ formatPhase(phase) }}</div>
-                        <div
-                            class="bracket-column-matches"
-                            :style="{ '--col': colIdx, '--total-cols': brackets.phases.length }"
-                        >
-                            <div
-                                v-for="(m, matchIdx) in brackets.brackets[phase]"
-                                :key="m.id"
-                                class="bk-match-wrap"
-                                :class="{ 'has-next': colIdx < brackets.phases.length - 1 }"
-                            >
-                                <div
-                                    class="bk-match"
-                                    :class="{ 'is-live': m.status === 'running', 'is-done': m.status === 'finished' }"
-                                >
-                                    <div v-if="m.status === 'running'" class="bk-live-dot"></div>
-                                    <div class="bk-team" :class="getBracketTeamClass(m, 1)">
-                                        <div class="bk-logo">
-                                            <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                            <span v-else>{{ getInitials(m.team1Name) }}</span>
-                                        </div>
-                                        <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
-                                        <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
-                                    </div>
-                                    <div class="bk-divider"></div>
-                                    <div class="bk-team" :class="getBracketTeamClass(m, 2)">
-                                        <div class="bk-logo">
-                                            <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                            <span v-else>{{ getInitials(m.team2Name) }}</span>
-                                        </div>
-                                        <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
-                                        <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
-                                    </div>
-                                    <div class="bk-footer">
-                                        <span>MD{{ m.numberOfGames }}</span>
-                                        <span>{{ formatTime(m.scheduledAt) }}</span>
-                                    </div>
+            <div v-else>
+                <div v-for="(dayGroup, day) in groupByDay(matches)" :key="day" class="cal-day">
+                    <div class="cal-day-header">&#128197; {{ day }}</div>
+                    <div v-for="m in dayGroup" :key="m.id" class="cal-match">
+                        <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
+                        <div class="cal-teams">
+                            <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId && m.status === 'finished' }">
+                                <div class="team-icon-sm">
+                                    <img v-if="m.team1Logo" :src="m.team1Logo" />
+                                    <span v-else>{{ getInitials(m.team1Name) }}</span>
                                 </div>
-                                <!-- Connector lines to next round -->
-                                <div v-if="colIdx < brackets.phases.length - 1" class="bk-connector">
-                                    <svg class="connector-svg" viewBox="0 0 40 100" preserveAspectRatio="none">
-                                        <path
-                                            d="M0,50 C20,50 20,50 40,50"
-                                            fill="none"
-                                            stroke="#2d3748"
-                                            stroke-width="1.5"
-                                        />
-                                    </svg>
+                                {{ m.team1Name || 'TBA' }}
+                            </div>
+                            <span class="cal-score" :class="{ done: m.status === 'finished' }">{{ m.team1Score ?? 0 }}</span>
+                            <span class="cal-format">MD{{ m.numberOfGames }}</span>
+                            <span class="cal-score" :class="{ done: m.status === 'finished' }">{{ m.team2Score ?? 0 }}</span>
+                            <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId && m.status === 'finished' }">
+                                {{ m.team2Name || 'TBA' }}
+                                <div class="team-icon-sm">
+                                    <img v-if="m.team2Logo" :src="m.team2Logo" />
+                                    <span v-else>{{ getInitials(m.team2Name) }}</span>
                                 </div>
                             </div>
                         </div>
+                        <div class="cal-phase">{{ formatPhase(m.phase) }}</div>
                     </div>
                 </div>
             </div>
@@ -321,6 +400,10 @@ const loading = ref(true);
 const bracketsLoading = ref(false);
 const loadError = ref<string | null>(null);
 const activeTab = ref('overview');
+const activePhase = ref('');
+
+const PLAYOFF_PHASES = ['qualifier', 'playoffs', 'quarter_final', 'semi_final', 'grand_final'];
+const PHASE_ORDER = ['qualifier', 'group_stage', 'quarter_final', 'semi_final', 'playoffs', 'grand_final'];
 
 const teams = computed(() => {
     const t = tournament.value;
@@ -329,6 +412,26 @@ const teams = computed(() => {
 });
 const upcomingMatches = computed(() => matches.value.filter(m => m.status === 'not_started'));
 const finishedMatches = computed(() => matches.value.filter(m => m.status === 'finished'));
+const hasAnyMatches = computed(() => matches.value.length > 0);
+
+const playoffPhases = computed(() =>
+    brackets.value.phases.filter(p => PLAYOFF_PHASES.includes(p))
+        .sort((a, b) => PHASE_ORDER.indexOf(a) - PHASE_ORDER.indexOf(b))
+);
+
+const groupedByGroup = computed(() => {
+    const phaseMatches = brackets.value.brackets['group_stage'] || [];
+    const groups: Record<string, any[]> = {};
+    phaseMatches.forEach(m => {
+        const key = m.groupName || 'Grupo A';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(m);
+    });
+    if (Object.keys(groups).length === 0 && phaseMatches.length > 0) {
+        groups['Grupo A'] = phaseMatches;
+    }
+    return groups;
+});
 
 async function load() {
     loading.value = true;
@@ -362,6 +465,11 @@ async function load() {
 
         // Load brackets in background (non-blocking)
         loadBrackets();
+
+        // Set default active phase
+        if (brackets.value.phases.length > 0) {
+            activePhase.value = brackets.value.phases[0];
+        }
     } catch (error: any) {
         console.error('Error loading championship:', error);
         if (error.name === 'AbortError') {
@@ -381,6 +489,9 @@ async function loadBrackets() {
         if (res.ok) {
             const data = await res.json();
             brackets.value = data.result || data;
+            if (brackets.value.phases.length > 0 && !activePhase.value) {
+                activePhase.value = brackets.value.phases[0];
+            }
         }
     } catch {
         // non-critical
@@ -478,14 +589,115 @@ function getBracketTeamClass(match: any, teamNumber: number): string {
     return teamId === match.winnerExternalId ? 'winner' : 'loser';
 }
 
+function isPlayoffPhase(phase: string): boolean {
+    return PLAYOFF_PHASES.includes(phase);
+}
+
+function formatDateLong(dateStr?: string): string {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function formatTimeOnly(dateStr?: string): string {
+    if (!dateStr) return 'TBA';
+    const d = new Date(dateStr);
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+}
+
+function groupByDay(list: any[]): Record<string, any[]> {
+    const result: Record<string, any[]> = {};
+    const sorted = [...list].sort((a, b) => {
+        if (!a.scheduledAt) return 1;
+        if (!b.scheduledAt) return -1;
+        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+    });
+    for (const m of sorted) {
+        if (!m.scheduledAt) {
+            const key = 'Data a definir';
+            if (!result[key]) result[key] = [];
+            result[key].push(m);
+            continue;
+        }
+        const d = new Date(m.scheduledAt);
+        const key = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+        if (!result[key]) result[key] = [];
+        result[key].push(m);
+    }
+    return result;
+}
+
+function computeStandings(phaseMatches: any[]): any[] {
+    const teams: Record<string, any> = {};
+
+    for (const m of phaseMatches) {
+        if (m.status !== 'finished') {
+            // Still register teams
+            for (const [id, name, logo] of [[m.team1ExternalId, m.team1Name, m.team1Logo], [m.team2ExternalId, m.team2Name, m.team2Logo]]) {
+                if (id && !teams[id]) teams[id] = { id, name, logo, points: 0, played: 0, wins: 0, draws: 0, losses: 0, roundDiff: 0 };
+            }
+            continue;
+        }
+
+        const t1 = m.team1ExternalId || m.team1Name;
+        const t2 = m.team2ExternalId || m.team2Name;
+        if (!teams[t1]) teams[t1] = { id: t1, name: m.team1Name, logo: m.team1Logo, points: 0, played: 0, wins: 0, draws: 0, losses: 0, roundDiff: 0 };
+        if (!teams[t2]) teams[t2] = { id: t2, name: m.team2Name, logo: m.team2Logo, points: 0, played: 0, wins: 0, draws: 0, losses: 0, roundDiff: 0 };
+
+        teams[t1].played++;
+        teams[t2].played++;
+
+        const s1 = m.team1Score ?? 0;
+        const s2 = m.team2Score ?? 0;
+        teams[t1].roundDiff += s1 - s2;
+        teams[t2].roundDiff += s2 - s1;
+
+        if (m.winnerExternalId === t1) {
+            teams[t1].wins++; teams[t1].points += 3;
+            teams[t2].losses++;
+        } else if (m.winnerExternalId === t2) {
+            teams[t2].wins++; teams[t2].points += 3;
+            teams[t1].losses++;
+        } else {
+            teams[t1].draws++; teams[t1].points++;
+            teams[t2].draws++; teams[t2].points++;
+        }
+    }
+
+    return Object.values(teams).sort((a, b) => b.points - a.points || b.wins - a.wins || b.roundDiff - a.roundDiff);
+}
+
+function getStandingsRowClass(idx: number, total: number): string {
+    if (idx < 2) return 'row-promote';
+    if (idx >= total - 2) return 'row-elim';
+    return '';
+}
+
+// Bracket layout helpers
+function bracketColStyle(colIdx: number, totalCols: number) {
+    return {};
+}
+
+function bracketSlotStyle(matchIdx: number, totalMatches: number, colIdx: number) {
+    return {};
+}
+
+function bracketConnectorHeight(matchIdx: number, totalMatches: number): number {
+    return 80;
+}
+
+function bracketConnectorPath(matchIdx: number, totalMatches: number): string {
+    return 'M0,40 C24,40 24,40 48,40';
+}
+
 onMounted(load);
 </script>
 
 <style scoped>
 .championship-detail {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
+    width: 100%;
+    padding: 1.5rem 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -533,97 +745,131 @@ onMounted(load);
 .tab:hover { color: #e2e8f0; }
 .tab.active { color: #3182ce; border-bottom-color: #3182ce; }
 
-.overview-content { display: flex; flex-direction: column; gap: 2rem; }
+/* ─── OVERVIEW LAYOUT ─── */
+.overview-content {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    grid-template-rows: auto auto;
+    gap: 1.5rem;
+    align-items: start;
+}
 
-.info-section { background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; padding: 1.5rem; }
-.info-section h3 { font-size: 0.875rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin: 0 0 1rem; }
-.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-.info-item { display: flex; flex-direction: column; gap: 0.25rem; }
-.info-label { font-size: 0.75rem; color: #718096; }
-.info-value { font-size: 0.9375rem; color: #e2e8f0; font-weight: 600; }
-.info-value.prize { color: #ecc94b; }
-.info-value.prize-slot-info { color: #63b3ed; }
-.stat-value.prize-slot { color: #63b3ed; }
-.prize-icon-stat { font-size: 0.875rem; margin-right: 0.125rem; }
+.phases-section {
+    grid-column: 1;
+    background: #161b22;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    overflow: hidden;
+}
 
-.matches-preview h3 { font-size: 0.875rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; margin: 0 0 1rem; }
-.match-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.info-card {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    background: #161b22;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 1.25rem;
+}
 
-.match-card-simple { background: #1a202c; border: 1px solid #2d3748; border-radius: 6px; padding: 1rem; }
-.match-header-simple { display: flex; justify-content: space-between; font-size: 0.6875rem; color: #718096; margin-bottom: 0.75rem; text-transform: uppercase; }
-.match-teams-simple { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.calendar-section {
+    grid-column: 1;
+    background: #161b22;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    overflow: hidden;
+}
 
-.team-simple { display: flex; align-items: center; gap: 0.625rem; flex: 1; font-size: 0.875rem; color: #cbd5e0; }
-.team-simple.winner { color: #ffffff; font-weight: 600; }
-.team-simple.loser { opacity: 0.5; }
+/* Section title */
+.section-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 1rem 1.25rem 0.5rem;
+}
+.section-title.mt { padding-top: 1.25rem; border-top: 1px solid #2d3748; margin-top: 1rem; }
 
-.team-icon-sm { width: 28px; height: 28px; border-radius: 4px; background: #2d3748; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-.team-icon-sm img { width: 100%; height: 100%; object-fit: contain; }
-.team-icon-sm span { font-size: 0.625rem; font-weight: 700; color: #718096; }
+/* Phase sub-tabs */
+.phase-tabs {
+    display: flex;
+    border-bottom: 2px solid #2d3748;
+    padding: 0 1.25rem;
+    gap: 0;
+}
 
-.vs-text { font-size: 0.75rem; color: #4a5568; font-weight: 600; }
-.score-sm { font-weight: 700; color: #4a5568; margin-left: auto; }
-.team-simple.winner .score-sm { color: #68d391; }
-.match-meta { display: flex; justify-content: space-between; font-size: 0.6875rem; color: #718096; margin-top: 0.5rem; }
+.phase-tab {
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #718096;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    transition: color 0.15s;
+}
+.phase-tab:hover { color: #e2e8f0; }
+.phase-tab.active { color: #3182ce; border-bottom-color: #3182ce; }
 
-/* ─── Visual Bracket Tree ─── */
+/* Bracket section label */
+.bracket-section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    padding: 0.75rem 1.25rem 0.5rem;
+    letter-spacing: 0.06em;
+}
+
+/* ─── BRACKET TREE ─── */
+.bracket-area { padding: 0 0.75rem 1.25rem; }
+
 .bracket-tree-wrapper {
     overflow-x: auto;
-    padding-bottom: 1rem;
 }
 
 .bracket-tree {
     display: flex;
-    gap: 0;
     align-items: flex-start;
     min-width: max-content;
+    gap: 0;
 }
 
 .bracket-column {
     display: flex;
     flex-direction: column;
-    min-width: 240px;
+    min-width: 220px;
 }
 
-.bracket-column-header {
+.bracket-col-label {
     font-size: 0.6875rem;
     font-weight: 700;
-    color: #718096;
+    color: #4a5568;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     text-align: center;
-    padding: 0.5rem 0.75rem 0.75rem;
-    border-bottom: 1px solid #1a202c;
+    padding: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
-.bracket-column-matches {
+.bracket-col-body {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    justify-content: space-around;
     flex: 1;
-}
-
-/* Each match + its connector line */
-.bk-match-wrap {
-    display: flex;
-    align-items: center;
-    position: relative;
+    gap: 0.75rem;
     padding: 0.5rem 0;
 }
 
-/* Connector on the right side of each match */
-.bk-connector {
-    flex-shrink: 0;
-    width: 40px;
-    height: 100%;
+.bk-slot {
     display: flex;
     align-items: center;
-}
-
-.connector-svg {
-    width: 40px;
-    height: 80px;
+    position: relative;
 }
 
 .bk-match {
@@ -633,95 +879,244 @@ onMounted(load);
     border-radius: 6px;
     overflow: hidden;
     flex: 1;
+    min-width: 180px;
     transition: border-color 0.15s;
 }
-
 .bk-match:hover { border-color: #4a5568; }
-.bk-match.is-live { border-color: #9b2c2c; box-shadow: 0 0 0 1px #9b2c2c44; }
-.bk-match.is-done { border-color: #2d3748; }
+.bk-match.is-live { border-color: #e53e3e; box-shadow: 0 0 0 1px #e53e3e33; }
 
 .bk-live-dot {
-    position: absolute;
-    top: 6px; right: 8px;
-    width: 6px; height: 6px;
-    border-radius: 50%;
+    position: absolute; top: 6px; right: 8px;
+    width: 6px; height: 6px; border-radius: 50%;
     background: #fc8181;
     animation: pulse-dot 1.2s ease-in-out infinite;
 }
-
 @keyframes pulse-dot {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.8); }
 }
 
 .bk-team {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    color: #a0aec0;
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.75rem; font-size: 0.8125rem; color: #a0aec0;
 }
-
-.bk-team.winner {
-    color: #ffffff;
-    font-weight: 600;
-    background: rgba(255,255,255,0.04);
-}
-
-.bk-team.loser {
-    color: #4a5568;
-}
-
-.bk-team.live {
-    color: #fc8181;
-}
+.bk-team.winner { color: #fff; font-weight: 600; background: rgba(255,255,255,0.04); }
+.bk-team.loser { color: #4a5568; }
+.bk-team.live { color: #fc8181; }
 
 .bk-logo {
-    width: 22px; height: 22px;
-    border-radius: 3px;
-    background: #2d3748;
+    width: 22px; height: 22px; border-radius: 3px; background: #2d3748;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
 }
-
 .bk-logo img { width: 100%; height: 100%; object-fit: contain; }
 .bk-logo span { font-size: 0.5rem; font-weight: 700; color: #718096; }
 
-.bk-name {
+.bk-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-score { font-weight: 700; font-size: 0.9375rem; min-width: 1.25rem; text-align: right; color: #4a5568; }
+.bk-team.winner .bk-score { color: #68d391; }
+.bk-divider { height: 1px; background: #2d3748; }
+.bk-footer { display: flex; justify-content: space-between; padding: 0.25rem 0.75rem; font-size: 0.5625rem; color: #4a5568; border-top: 1px solid #1a202c; }
+
+.bk-connector-svg {
+    width: 48px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+/* ─── STANDINGS TABLE ─── */
+.groups-area {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+}
+
+.group-block {}
+
+.group-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.625rem;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.standings-table th {
+    color: #718096;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.375rem 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid #2d3748;
+}
+
+.standings-table th:first-child,
+.standings-table th:nth-child(2) { text-align: left; }
+
+.standings-table td {
+    padding: 0.5rem 0.5rem;
+    color: #cbd5e0;
+    text-align: center;
+    border-bottom: 1px solid #1a202c;
+}
+
+.standings-table .rank { color: #718096; font-weight: 700; font-size: 0.75rem; }
+.standings-table .team-cell { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #e2e8f0; text-align: left; white-space: nowrap; }
+.standings-table .pts { font-weight: 700; color: #e2e8f0; }
+.standings-table .win { color: #68d391; }
+.standings-table .loss { color: #fc8181; }
+.standings-table .sr-pos { color: #68d391; font-weight: 600; }
+.standings-table .sr-neg { color: #fc8181; font-weight: 600; }
+
+.row-promote td:first-child { border-left: 3px solid #3182ce; }
+.row-elim td:first-child { border-left: 3px solid #e53e3e; }
+
+.standings-legend {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+}
+.legend-promote { color: #3182ce; }
+.legend-elim { color: #e53e3e; }
+
+/* ─── MATCH ROW (generic phase) ─── */
+.phase-match-list { padding: 0.5rem 0; }
+
+.match-row {
+    display: grid;
+    grid-template-columns: 80px 40px 1fr 90px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    border-bottom: 1px solid #1a202c;
+    font-size: 0.8125rem;
+}
+.match-row:last-child { border-bottom: none; }
+
+.mr-phase { font-size: 0.6875rem; color: #718096; text-transform: uppercase; font-weight: 600; }
+.mr-format { font-size: 0.6875rem; color: #4a5568; text-align: center; background: #1a202c; padding: 0.125rem 0.375rem; border-radius: 3px; }
+.mr-teams { display: flex; align-items: center; gap: 0.5rem; }
+.mr-team { display: flex; align-items: center; gap: 0.375rem; flex: 1; color: #a0aec0; }
+.mr-team.right { flex-direction: row-reverse; }
+.mr-team.winner { color: #e2e8f0; font-weight: 600; }
+.mr-team.loser { color: #4a5568; }
+.mr-score { font-weight: 700; font-size: 1rem; color: #e2e8f0; min-width: 1.25rem; text-align: center; }
+.mr-sep { color: #4a5568; font-size: 0.75rem; }
+.mr-date { font-size: 0.6875rem; color: #718096; text-align: right; }
+
+/* ─── INFO CARD ─── */
+.info-row { padding: 0.5rem 0; font-size: 0.875rem; }
+.info-label-sm { font-size: 0.6875rem; color: #718096; font-weight: 700; text-transform: uppercase; }
+.info-val-prize { font-size: 0.9375rem; font-weight: 700; color: #ecc94b; display: block; margin-top: 0.25rem; }
+.info-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 0.5rem 0; }
+.info-date { font-size: 0.875rem; font-weight: 600; color: #3182ce; margin-top: 0.25rem; }
+.info-location { font-size: 0.875rem; color: #a0aec0; padding: 0.375rem 0 0.25rem; }
+
+/* ─── CALENDAR ─── */
+.cal-group { }
+.cal-group-label {
+    font-size: 0.6875rem; font-weight: 800; color: #a0aec0;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0.75rem 1.25rem 0.5rem;
+}
+
+.cal-day { }
+
+.cal-day-header {
+    font-size: 0.75rem; font-weight: 700; color: #718096;
+    text-transform: uppercase; background: #0d1117;
+    padding: 0.5rem 1.25rem; letter-spacing: 0.04em;
+    border-top: 1px solid #2d3748; border-bottom: 1px solid #2d3748;
+}
+
+.cal-match {
+    display: grid;
+    grid-template-columns: 48px 1fr 120px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid #1a202c;
+    transition: background 0.1s;
+}
+.cal-match:hover { background: #1a202c; }
+.cal-match:last-child { border-bottom: none; }
+
+.cal-time { font-size: 0.75rem; color: #718096; font-weight: 600; text-align: center; }
+
+.cal-teams {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cal-team {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     flex: 1;
+    font-size: 0.8125rem;
+    color: #a0aec0;
+    font-weight: 500;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
+.cal-team.right { flex-direction: row-reverse; }
+.cal-winner { color: #e2e8f0; font-weight: 700; }
 
-.bk-score {
+.cal-score {
     font-weight: 700;
     font-size: 0.9375rem;
-    min-width: 1.25rem;
-    text-align: right;
     color: #4a5568;
+    min-width: 1.5rem;
+    text-align: center;
+}
+.cal-score.done { color: #e2e8f0; }
+
+.cal-format {
+    font-size: 0.6875rem;
+    color: #4a5568;
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    padding: 0.125rem 0.4rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.bk-team.winner .bk-score { color: #68d391; }
-.bk-team.loser .bk-score { color: #4a5568; }
-
-.bk-divider { height: 1px; background: #2d3748; }
-
-.bk-footer {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.5625rem;
-    color: #4a5568;
-    border-top: 1px solid #1a202c;
+.cal-league {
+    font-size: 0.6875rem; color: #718096;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Empty */
-.empty-tournament { text-align: center; padding: 3rem 2rem; background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; }
-.empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-.empty-tournament h4 { font-size: 1.125rem; color: #e2e8f0; margin: 0 0 0.5rem; }
-.empty-tournament p { font-size: 0.875rem; color: #718096; margin: 0; }
+.cal-phase { font-size: 0.6875rem; color: #718096; text-align: right; }
+
+/* ─── COMMON ─── */
+.team-icon-sm {
+    width: 24px; height: 24px; border-radius: 3px; background: #2d3748;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+}
+.team-icon-sm img { width: 100%; height: 100%; object-fit: contain; }
+.team-icon-sm span { font-size: 0.5625rem; font-weight: 700; color: #718096; }
+
+.empty-tournament {
+    text-align: center; padding: 3rem 2rem;
+    color: #718096;
+}
+.empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
+.empty-tournament h4 { font-size: 1rem; color: #e2e8f0; margin: 0 0 0.5rem; }
+.empty-tournament p { font-size: 0.875rem; margin: 0; }
 .empty-content { text-align: center; padding: 3rem; color: #718096; }
 
 /* Teams */
@@ -734,23 +1129,32 @@ onMounted(load);
 /* Loading/Error */
 .loading-page, .error-page, .not-found { display: flex; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
 .loading-container, .error-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-
 .spinner { width: 48px; height: 48px; border: 4px solid #2d3748; border-top-color: #3182ce; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .loading-container p, .error-container p { color: #718096; font-size: 0.875rem; margin: 0; }
 .retry-button { background: #3182ce; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
 .retry-button:hover { background: #2c5282; }
 .not-found h2 { color: #e2e8f0; margin: 0 0 1rem; }
 .back-link { color: #3182ce; text-decoration: none; font-weight: 600; }
-.back-link:hover { text-decoration: underline; }
+
+/* Tab content */
+.tab-content { padding: 0; }
+
+@media (max-width: 900px) {
+    .overview-content {
+        grid-template-columns: 1fr;
+    }
+    .info-card { grid-row: auto; grid-column: 1; }
+    .calendar-section { grid-column: 1; }
+}
 
 @media (max-width: 768px) {
     .champ-header { flex-direction: column; align-items: flex-start; }
     .header-right { width: 100%; }
     .quick-stats { justify-content: space-around; }
-    .info-grid { grid-template-columns: 1fr; }
-    .bracket-tree { gap: 0; }
-    .bracket-column { min-width: 200px; }
+    .groups-area { grid-template-columns: 1fr; }
+    .match-row { grid-template-columns: 1fr; }
+    .cal-match { grid-template-columns: 40px 1fr; }
+    .cal-league { display: none; }
 }
 </style>
