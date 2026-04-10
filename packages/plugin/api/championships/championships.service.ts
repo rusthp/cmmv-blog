@@ -213,6 +213,54 @@ export class ChampionshipsService {
     });
   }
 
+  async getTournamentBrackets(slug: string): Promise<{
+    phases: string[];
+    brackets: Record<string, any[]>;
+    hasPlayoffs: boolean;
+  }> {
+    const { EsportsMatchEntity } = this.getEntities();
+    if (!EsportsMatchEntity) return { phases: [], brackets: {}, hasPlayoffs: false };
+
+    const results = await Repository.findAll(EsportsMatchEntity, {
+      tournamentSlug: slug,
+      limit: '200',
+      sortBy: 'scheduledAt',
+      sort: 'ASC',
+    });
+
+    const matches: any[] = results?.data || [];
+
+    // Phase display order
+    const PHASE_ORDER = [
+      'qualifier',
+      'group_stage',
+      'quarter_final',
+      'semi_final',
+      'playoffs',
+      'grand_final',
+    ];
+
+    // Group matches by phase
+    const grouped: Record<string, any[]> = {};
+    for (const m of matches) {
+      const phase = m.phase || 'group_stage';
+      if (!grouped[phase]) grouped[phase] = [];
+      grouped[phase].push(m);
+    }
+
+    // Sort phases by display order
+    const phases = Object.keys(grouped).sort((a, b) => {
+      const ia = PHASE_ORDER.indexOf(a);
+      const ib = PHASE_ORDER.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+
+    const playoffPhases = ['quarter_final', 'semi_final', 'playoffs', 'grand_final'];
+    const hasPlayoffs = phases.some(p => playoffPhases.includes(p));
+
+    return { phases, brackets: grouped, hasPlayoffs };
+  }
+
   async getTeams(game?: string, limit = 50): Promise<any[]> {
     const { EsportsTeamEntity } = this.getEntities();
     if (!EsportsTeamEntity) return [];

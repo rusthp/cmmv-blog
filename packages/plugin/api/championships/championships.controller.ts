@@ -46,6 +46,11 @@ export class ChampionshipsController {
     return { data: matches, total: matches.length };
   }
 
+  @Get('tournaments/:slug/brackets')
+  async getTournamentBrackets(@Param('slug') slug: string) {
+    return this.service.getTournamentBrackets(slug);
+  }
+
   @Get('matches/upcoming')
   async getUpcomingMatches(@Query('limit') limit?: string, @Query('game') game?: string) {
     const matches = await this.service.getUpcomingMatches(game, parseInt(limit || '20'));
