@@ -222,37 +222,62 @@
             <div v-else-if="brackets.phases.length === 0" class="empty-content">
                 <p>Sem dados de bracket disponíveis.</p>
             </div>
-            <div v-else class="brackets-container">
-                <div v-for="phase in brackets.phases" :key="phase" class="bracket-phase">
-                    <h3 class="phase-title">{{ formatPhase(phase) }}</h3>
-                    <div class="bracket-matches">
+            <div v-else class="bracket-tree-wrapper">
+                <div class="bracket-tree">
+                    <div
+                        v-for="(phase, colIdx) in brackets.phases"
+                        :key="phase"
+                        class="bracket-column"
+                    >
+                        <div class="bracket-column-header">{{ formatPhase(phase) }}</div>
                         <div
-                            v-for="m in brackets.brackets[phase]"
-                            :key="m.id"
-                            class="bracket-match"
-                            :class="{ 'is-finished': m.status === 'finished', 'is-live': m.status === 'running' }"
+                            class="bracket-column-matches"
+                            :style="{ '--col': colIdx, '--total-cols': brackets.phases.length }"
                         >
-                            <div v-if="m.status === 'running'" class="live-badge">AO VIVO</div>
-                            <div class="bm-team" :class="getBracketTeamClass(m, 1)">
-                                <div class="bm-logo">
-                                    <img v-if="m.team1Logo" :src="m.team1Logo" :alt="m.team1Name" />
-                                    <span v-else>{{ getInitials(m.team1Name) }}</span>
+                            <div
+                                v-for="(m, matchIdx) in brackets.brackets[phase]"
+                                :key="m.id"
+                                class="bk-match-wrap"
+                                :class="{ 'has-next': colIdx < brackets.phases.length - 1 }"
+                            >
+                                <div
+                                    class="bk-match"
+                                    :class="{ 'is-live': m.status === 'running', 'is-done': m.status === 'finished' }"
+                                >
+                                    <div v-if="m.status === 'running'" class="bk-live-dot"></div>
+                                    <div class="bk-team" :class="getBracketTeamClass(m, 1)">
+                                        <div class="bk-logo">
+                                            <img v-if="m.team1Logo" :src="m.team1Logo" />
+                                            <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                        </div>
+                                        <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
+                                        <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
+                                    </div>
+                                    <div class="bk-divider"></div>
+                                    <div class="bk-team" :class="getBracketTeamClass(m, 2)">
+                                        <div class="bk-logo">
+                                            <img v-if="m.team2Logo" :src="m.team2Logo" />
+                                            <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                        </div>
+                                        <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
+                                        <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
+                                    </div>
+                                    <div class="bk-footer">
+                                        <span>MD{{ m.numberOfGames }}</span>
+                                        <span>{{ formatTime(m.scheduledAt) }}</span>
+                                    </div>
                                 </div>
-                                <span class="bm-name">{{ m.team1Name || 'TBA' }}</span>
-                                <span class="bm-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '' }}</span>
-                            </div>
-                            <div class="bm-divider"></div>
-                            <div class="bm-team" :class="getBracketTeamClass(m, 2)">
-                                <div class="bm-logo">
-                                    <img v-if="m.team2Logo" :src="m.team2Logo" :alt="m.team2Name" />
-                                    <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                <!-- Connector lines to next round -->
+                                <div v-if="colIdx < brackets.phases.length - 1" class="bk-connector">
+                                    <svg class="connector-svg" viewBox="0 0 40 100" preserveAspectRatio="none">
+                                        <path
+                                            d="M0,50 C20,50 20,50 40,50"
+                                            fill="none"
+                                            stroke="#2d3748"
+                                            stroke-width="1.5"
+                                        />
+                                    </svg>
                                 </div>
-                                <span class="bm-name">{{ m.team2Name || 'TBA' }}</span>
-                                <span class="bm-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '' }}</span>
-                            </div>
-                            <div class="bm-footer">
-                                <span>MD{{ m.numberOfGames }}</span>
-                                <span>{{ formatTime(m.scheduledAt) }}</span>
                             </div>
                         </div>
                     </div>
@@ -541,49 +566,156 @@ onMounted(load);
 .team-simple.winner .score-sm { color: #68d391; }
 .match-meta { display: flex; justify-content: space-between; font-size: 0.6875rem; color: #718096; margin-top: 0.5rem; }
 
-/* ─── Brackets ─── */
-.brackets-container { display: flex; flex-direction: column; gap: 2.5rem; }
-
-.phase-title {
-    font-size: 0.75rem; font-weight: 700; color: #a0aec0; text-transform: uppercase;
-    letter-spacing: 0.08em; margin: 0 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #2d3748;
+/* ─── Visual Bracket Tree ─── */
+.bracket-tree-wrapper {
+    overflow-x: auto;
+    padding-bottom: 1rem;
 }
 
-.bracket-matches {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.75rem;
+.bracket-tree {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    min-width: max-content;
 }
 
-.bracket-match {
-    position: relative; background: #1a202c; border: 1px solid #2d3748;
-    border-radius: 8px; overflow: hidden;
-}
-.bracket-match.is-live { border-color: #fc8181; box-shadow: 0 0 0 1px #9b2c2c; }
-
-.live-badge {
-    position: absolute; top: 6px; right: 8px; font-size: 0.5625rem; font-weight: 700;
-    color: #fc8181; background: #9b2c2c33; padding: 0.125rem 0.375rem;
-    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em;
+.bracket-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
 }
 
-.bm-team { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.875rem; font-size: 0.875rem; color: #cbd5e0; }
-.bm-team.winner { color: #ffffff; font-weight: 600; background: #ffffff08; }
-.bm-team.loser { color: #4a5568; }
-.bm-team.live { color: #fc8181; }
+.bracket-column-header {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 0.5rem 0.75rem 0.75rem;
+    border-bottom: 1px solid #1a202c;
+    margin-bottom: 0.5rem;
+}
 
-.bm-logo { width: 24px; height: 24px; border-radius: 3px; background: #2d3748; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-.bm-logo img { width: 100%; height: 100%; object-fit: contain; }
-.bm-logo span { font-size: 0.5625rem; font-weight: 700; color: #718096; }
+.bracket-column-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+}
 
-.bm-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bm-score { font-weight: 700; font-size: 1rem; min-width: 1.25rem; text-align: right; }
-.bm-team.winner .bm-score { color: #68d391; }
-.bm-team.loser .bm-score { color: #4a5568; }
+/* Each match + its connector line */
+.bk-match-wrap {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 0.5rem 0;
+}
 
-.bm-divider { height: 1px; background: #2d3748; }
+/* Connector on the right side of each match */
+.bk-connector {
+    flex-shrink: 0;
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
 
-.bm-footer { display: flex; justify-content: space-between; padding: 0.375rem 0.875rem; font-size: 0.625rem; color: #4a5568; border-top: 1px solid #2d3748; }
+.connector-svg {
+    width: 40px;
+    height: 80px;
+}
+
+.bk-match {
+    position: relative;
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    overflow: hidden;
+    flex: 1;
+    transition: border-color 0.15s;
+}
+
+.bk-match:hover { border-color: #4a5568; }
+.bk-match.is-live { border-color: #9b2c2c; box-shadow: 0 0 0 1px #9b2c2c44; }
+.bk-match.is-done { border-color: #2d3748; }
+
+.bk-live-dot {
+    position: absolute;
+    top: 6px; right: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fc8181;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.bk-team {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: #a0aec0;
+}
+
+.bk-team.winner {
+    color: #ffffff;
+    font-weight: 600;
+    background: rgba(255,255,255,0.04);
+}
+
+.bk-team.loser {
+    color: #4a5568;
+}
+
+.bk-team.live {
+    color: #fc8181;
+}
+
+.bk-logo {
+    width: 22px; height: 22px;
+    border-radius: 3px;
+    background: #2d3748;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+}
+
+.bk-logo img { width: 100%; height: 100%; object-fit: contain; }
+.bk-logo span { font-size: 0.5rem; font-weight: 700; color: #718096; }
+
+.bk-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bk-score {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    min-width: 1.25rem;
+    text-align: right;
+    color: #4a5568;
+}
+
+.bk-team.winner .bk-score { color: #68d391; }
+.bk-team.loser .bk-score { color: #4a5568; }
+
+.bk-divider { height: 1px; background: #2d3748; }
+
+.bk-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.5625rem;
+    color: #4a5568;
+    border-top: 1px solid #1a202c;
+}
 
 /* Empty */
 .empty-tournament { text-align: center; padding: 3rem 2rem; background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; }
@@ -618,6 +750,7 @@ onMounted(load);
     .header-right { width: 100%; }
     .quick-stats { justify-content: space-around; }
     .info-grid { grid-template-columns: 1fr; }
-    .bracket-matches { grid-template-columns: 1fr; }
+    .bracket-tree { gap: 0; }
+    .bracket-column { min-width: 200px; }
 }
 </style>
