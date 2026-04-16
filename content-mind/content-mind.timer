@@ -1,0 +1,13 @@
+[Unit]
+Description=ContentMind timer — run daily at 09:00 UTC
+Requires=content-mind.service
+
+[Timer]
+# Run every day at 09:00 UTC
+OnCalendar=*-*-* 09:00:00
+# On first boot/enable, run within 5 minutes if the last run was missed
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

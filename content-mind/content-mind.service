@@ -1,0 +1,15 @@
+[Unit]
+Description=ContentMind — ProPlay News autonomous content creation
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/content-mind
+EnvironmentFile=/root/content-mind/.env
+ExecStart=/root/content-mind/venv/bin/python content_mind.py
+StandardOutput=append:/var/log/content-mind.log
+StandardError=append:/var/log/content-mind.log
+
+[Install]
+WantedBy=multi-user.target
