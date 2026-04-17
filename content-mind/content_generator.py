@@ -36,28 +36,73 @@ def _slugify(text: str) -> str:
     return text[:80]
 
 
-def _build_prompt(trend: TrendData, game_slug: str) -> str:
-    reddit_section = ""
-    for i, post in enumerate(trend.reddit_posts[:5], 1):
-        reddit_section += f"{i}. [{post.subreddit}] {post.title} (score: {post.score})\n"
-        if post.selftext:
-            reddit_section += f"   {post.selftext[:200]}\n"
+def _parse_groq_json(raw: str, game_name: str) -> Optional[dict]:
+    """
+    Robustly parse the JSON envelope returned by Groq.
 
-    yt_section = ""
-    for i, v in enumerate(trend.yt_videos[:4], 1):
-        yt_section += f"{i}. {v.title} — {v.uploader} ({v.view_count:,} views)\n"
-        if v.description:
-            yt_section += f"   {v.description[:150]}\n"
+    Groq sometimes embeds the HTML content with literal newlines/tabs that
+    are invalid inside a JSON string. Strategy:
+      1. Direct parse (fast path, works when output is clean).
+      2. Extract the outermost {...} block and try again.
+      3. Field-by-field extraction via regex as last resort.
+    """
+    # Fast path
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # Strip control characters that are illegal inside JSON strings
+    # (keeps \n \t that are between keys, removes embedded bare ones)
+    cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Extract outermost {...}
+    match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    # Last resort: pull fields individually
+    def _extract(field: str) -> str:
+        m = re.search(rf'"{field}"\s*:\s*"(.*?)"(?=\s*[,}}])', cleaned, re.DOTALL)
+        return m.group(1).replace('\\"', '"') if m else ""
+
+    title = _extract("title")
+    content = _extract("content")
+    if title and content:
+        logger.warning("Used regex fallback for JSON parsing (%s)", game_name)
+        return {
+            "title": title,
+            "content": content,
+            "excerpt": _extract("excerpt"),
+            "meta_title": _extract("meta_title"),
+            "meta_description": _extract("meta_description"),
+            "meta_keywords": _extract("meta_keywords"),
+        }
+
+    logger.error("All JSON parse strategies failed for %s", game_name)
+    return None
+
+
+def _build_prompt(trend: TrendData, game_slug: str) -> str:
+    news_section = ""
+    for i, item in enumerate(trend.news_items[:8], 1):
+        news_section += f"{i}. [{item.source}] {item.title}\n"
+        if item.summary:
+            news_section += f"   {item.summary[:200]}\n"
 
     return f"""Você é um jornalista de games para o site ProPlay News (proplaynews.com.br), escrevendo em Português Brasileiro.
 
-Com base nas tendências desta semana para **{trend.game_name}**, escreva um artigo completo para o blog.
+Com base nas notícias e tendências desta semana para **{trend.game_name}**, escreva um artigo completo para o blog.
 
-## Tendências Reddit (esta semana):
-{reddit_section or "(sem dados)"}
-
-## Tendências YouTube (esta semana):
-{yt_section or "(sem dados)"}
+## Notícias e tendências recentes:
+{news_section or "(sem notícias específicas — escreva sobre o estado atual do jogo com base no seu conhecimento)"}
 
 ## Instruções do artigo:
 
@@ -114,20 +159,9 @@ def generate_article(trend: TrendData, game_slug: str) -> Optional[GeneratedArti
     raw = re.sub(r"^```(?:json)?\s*", "", raw)
     raw = re.sub(r"\s*```$", "", raw)
 
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        # Try to extract JSON from the response
-        match = re.search(r'\{.*\}', raw, re.DOTALL)
-        if match:
-            try:
-                data = json.loads(match.group())
-            except json.JSONDecodeError:
-                logger.error("Failed to parse Groq JSON for %s: %s", trend.game_name, exc)
-                return None
-        else:
-            logger.error("No JSON found in Groq response for %s", trend.game_name)
-            return None
+    data = _parse_groq_json(raw, trend.game_name)
+    if data is None:
+        return None
 
     title = data.get("title", f"Destaques da semana: {trend.game_name}")
     content = data.get("content", "")

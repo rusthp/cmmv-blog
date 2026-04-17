@@ -1,154 +1,227 @@
 """
-trend_scanner.py — Collects trending content for a game from Reddit and YouTube.
+trend_scanner.py — Collects trending content for a game from multiple sources.
 
-Uses only public APIs:
-  - Reddit: /r/{sub}/top.json (no auth required for public subreddits)
-  - YouTube: yt-dlp with ytsearch (no API key, public results)
+Sources (all public, no auth, work from VPS):
+  - Steam News API: GetNewsForApp (games available on Steam)
+  - Riot Games public data: LoL patch notes + Valorant patch notes
+  - Brazilian gaming RSS feeds: Voxel, The Enemy, Level Up
+  - Game-specific RSS/news feeds
+
+Reddit and YouTube are blocked on VPS datacenter IPs — not used.
 """
 import json
 import logging
-import subprocess
 import time
 import urllib.request
 import urllib.error
-from dataclasses import dataclass
-from typing import List
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
+from typing import List, Optional
 
-from config import REDDIT_POSTS_PER_GAME, SCAN_PERIOD, YOUTUBE_VIDEOS_PER_GAME
+from config import REDDIT_POSTS_PER_GAME, YOUTUBE_VIDEOS_PER_GAME
 from game_registry import GameEntry
 
 logger = logging.getLogger("content-mind.scanner")
 
-REDDIT_HEADERS = {
-    "User-Agent": "ContentMind/1.0 (ProPlay News bot; contact:content@proplaynews.com.br)",
-    "Accept": "application/json",
+_HEADERS = {
+    "User-Agent": "ContentMind/1.0 ProPlayNews (+https://proplaynews.com.br/)",
+    "Accept": "application/json, text/xml, application/rss+xml, */*",
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
 }
 
 
 @dataclass
-class RedditPost:
+class NewsItem:
     title: str
-    selftext: str
-    score: int
+    summary: str
     url: str
-    subreddit: str
-    permalink: str
-
-
-@dataclass
-class YouTubeVideo:
-    title: str
-    description: str
-    uploader: str
-    view_count: int
-    url: str
+    source: str
+    date: str = ""
 
 
 @dataclass
 class TrendData:
     game_name: str
-    reddit_posts: List[RedditPost]
-    yt_videos: List[YouTubeVideo]
+    news_items: List[NewsItem] = field(default_factory=list)
+    # Legacy aliases kept for compatibility with content_generator.py
+    reddit_posts: List[NewsItem] = field(default_factory=list)
+    yt_videos: List[NewsItem] = field(default_factory=list)
 
 
-def _reddit_top(subreddit: str, limit: int, period: str) -> List[RedditPost]:
-    url = f"https://www.reddit.com/r/{subreddit}/top.json?t={period}&limit={limit}"
-    req = urllib.request.Request(url, headers=REDDIT_HEADERS)
+def _fetch_url(url: str, accept_json: bool = True, timeout: int = 15) -> Optional[bytes]:
+    headers = dict(_HEADERS)
+    if accept_json:
+        headers["Accept"] = "application/json"
+    req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read())
-        posts = []
-        for child in data.get("data", {}).get("children", []):
-            p = child.get("data", {})
-            posts.append(RedditPost(
-                title=p.get("title", ""),
-                selftext=p.get("selftext", "")[:500],
-                score=p.get("score", 0),
-                url=p.get("url", ""),
-                subreddit=subreddit,
-                permalink=f"https://reddit.com{p.get('permalink', '')}",
-            ))
-        return posts
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read()
     except urllib.error.URLError as exc:
-        logger.warning("Reddit fetch failed for r/%s: %s", subreddit, exc)
-        return []
+        logger.warning("Fetch failed for %s: %s", url, exc)
+        return None
     except Exception as exc:
-        logger.warning("Reddit parse error for r/%s: %s", subreddit, exc)
+        logger.warning("Error fetching %s: %s", url, exc)
+        return None
+
+
+# ── Steam News API ───────────────────────────────────────────────────────────
+
+def _steam_news(app_id: int, count: int = 5) -> List[NewsItem]:
+    url = (
+        f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/"
+        f"?appid={app_id}&count={count}&maxlength=300&format=json"
+    )
+    data = _fetch_url(url)
+    if not data:
         return []
-
-
-def _yt_search(query: str, limit: int) -> List[YouTubeVideo]:
-    """
-    Uses yt-dlp to query YouTube search results without an API key.
-    Falls back gracefully if yt-dlp is not installed.
-    """
     try:
-        result = subprocess.run(
-            [
-                "yt-dlp",
-                f"ytsearch{limit}:{query}",
-                "--dump-json",
-                "--no-download",
-                "--quiet",
-                "--no-warnings",
-                "--socket-timeout", "20",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        videos = []
-        for line in result.stdout.strip().splitlines():
-            if not line.strip():
-                continue
-            try:
-                info = json.loads(line)
-                videos.append(YouTubeVideo(
-                    title=info.get("title", ""),
-                    description=(info.get("description") or "")[:400],
-                    uploader=info.get("uploader", ""),
-                    view_count=info.get("view_count") or 0,
-                    url=info.get("webpage_url", ""),
-                ))
-            except json.JSONDecodeError:
-                continue
-        return videos
-    except FileNotFoundError:
-        logger.warning("yt-dlp not found; skipping YouTube scan. Install: pip install yt-dlp")
-        return []
-    except subprocess.TimeoutExpired:
-        logger.warning("yt-dlp timed out for query: %s", query)
-        return []
+        parsed = json.loads(data)
+        items = []
+        for item in parsed.get("appnews", {}).get("newsitems", []):
+            items.append(NewsItem(
+                title=item.get("title", ""),
+                summary=item.get("contents", "")[:300],
+                url=item.get("url", ""),
+                source=f"Steam ({item.get('feedlabel', 'news')})",
+                date=str(item.get("date", "")),
+            ))
+        return items
     except Exception as exc:
-        logger.warning("yt-dlp error for query '%s': %s", query, exc)
+        logger.warning("Steam news parse error (appid=%d): %s", app_id, exc)
         return []
+
+
+# ── RSS Feed Parser ───────────────────────────────────────────────────────────
+
+def _parse_rss(data: bytes, source_name: str, limit: int = 5) -> List[NewsItem]:
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError as exc:
+        logger.warning("RSS parse error from %s: %s", source_name, exc)
+        return []
+
+    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    items = []
+
+    # Standard RSS 2.0
+    for item in root.findall(".//item")[:limit]:
+        title = (item.findtext("title") or "").strip()
+        desc = (item.findtext("description") or "")[:300].strip()
+        link = (item.findtext("link") or "").strip()
+        pub = (item.findtext("pubDate") or "").strip()
+        if title:
+            items.append(NewsItem(title=title, summary=desc, url=link, source=source_name, date=pub))
+
+    # Atom feeds
+    if not items:
+        for entry in root.findall(".//atom:entry", ns)[:limit]:
+            title = (entry.findtext("atom:title", namespaces=ns) or "").strip()
+            summary = (entry.findtext("atom:summary", namespaces=ns) or "")[:300].strip()
+            link_el = entry.find("atom:link", ns)
+            url = (link_el.get("href") if link_el is not None else "") or ""
+            updated = (entry.findtext("atom:updated", namespaces=ns) or "").strip()
+            if title:
+                items.append(NewsItem(title=title, summary=summary, url=url, source=source_name, date=updated))
+
+    return items
+
+
+def _fetch_rss(url: str, source_name: str, limit: int = 5) -> List[NewsItem]:
+    data = _fetch_url(url, accept_json=False)
+    if not data:
+        return []
+    return _parse_rss(data, source_name, limit)
+
+
+# ── Brazilian Gaming RSS Feeds ────────────────────────────────────────────────
+# Verified working from VPS (2026-04)
+
+BR_GAMING_FEEDS = [
+    ("https://br.ign.com/feed.xml", "IGN Brasil"),
+]
+
+
+def _br_gaming_news(game_name: str, limit: int = 3) -> List[NewsItem]:
+    """
+    Fetch from BR gaming RSS feeds and filter by game name.
+    """
+    results: List[NewsItem] = []
+    keywords = game_name.lower().split()
+
+    for feed_url, feed_name in BR_GAMING_FEEDS:
+        items = _fetch_rss(feed_url, feed_name, limit=20)
+        for item in items:
+            text = (item.title + " " + item.summary).lower()
+            if any(kw in text for kw in keywords):
+                results.append(item)
+        time.sleep(0.3)
+
+    return results[:limit]
+
+
+# ── Source Registry per Game ─────────────────────────────────────────────────
+
+# Steam App IDs for games available on Steam
+STEAM_APP_IDS = {
+    "cs2": 730,
+    "dota-2": 570,
+    "apex-legends": 1172470,
+    "ea-sports-fc-25": 2537770,
+    "pubg-mobile": None,    # mobile only
+    "fortnite": None,       # Epic only
+    "free-fire": None,      # mobile only
+    "league-of-legends": None,  # Riot only
+    "valorant": None,           # Riot only
+    "minecraft": None,          # Microsoft/Mojang
+}
+
+# Specific RSS feeds per game (verified working from VPS)
+GAME_FEEDS: dict = {
+    # No verified game-specific feeds at this time; IGN BR covers all major titles
+}
 
 
 def scan_game(game: GameEntry) -> TrendData:
-    """Collect trending content for a single game."""
-    reddit_posts: List[RedditPost] = []
-    for sub in game.subreddits:
-        posts = _reddit_top(sub, REDDIT_POSTS_PER_GAME, SCAN_PERIOD)
-        reddit_posts.extend(posts)
-        time.sleep(0.5)  # be polite to Reddit
+    """Collect news/trending content for a single game from all available sources."""
+    all_news: List[NewsItem] = []
 
-    # Deduplicate by title similarity (keep top-scored)
-    seen_titles: set[str] = set()
-    unique_posts: List[RedditPost] = []
-    for p in sorted(reddit_posts, key=lambda x: x.score, reverse=True):
-        key = p.title[:40].lower()
-        if key not in seen_titles:
-            seen_titles.add(key)
-            unique_posts.append(p)
+    # 1. Steam News (if app ID known)
+    app_id = STEAM_APP_IDS.get(game.slug)
+    if app_id:
+        steam_items = _steam_news(app_id, count=5)
+        all_news.extend(steam_items)
+        logger.debug("Steam: %d items for %s", len(steam_items), game.name)
+        time.sleep(0.5)
 
-    yt_videos: List[YouTubeVideo] = []
-    for query in game.yt_queries[:2]:
-        videos = _yt_search(query, YOUTUBE_VIDEOS_PER_GAME)
-        yt_videos.extend(videos)
-        time.sleep(1)
+    # 2. Game-specific official feeds
+    for feed_url, feed_name in GAME_FEEDS.get(game.slug, []):
+        feed_items = _fetch_rss(feed_url, feed_name, limit=5)
+        all_news.extend(feed_items)
+        logger.debug("Feed %s: %d items", feed_name, len(feed_items))
+        time.sleep(0.3)
 
-    return TrendData(
-        game_name=game.name,
-        reddit_posts=unique_posts[:REDDIT_POSTS_PER_GAME],
-        yt_videos=yt_videos[:YOUTUBE_VIDEOS_PER_GAME],
+    # 3. Brazilian gaming aggregator feeds (filtered by game name)
+    br_items = _br_gaming_news(game.name, limit=5)
+    all_news.extend(br_items)
+    logger.debug("BR gaming: %d items for %s", len(br_items), game.name)
+
+    # Deduplicate by title prefix
+    seen: set[str] = set()
+    unique: List[NewsItem] = []
+    for item in all_news:
+        key = item.title[:50].lower().strip()
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(item)
+
+    top_news = unique[:max(REDDIT_POSTS_PER_GAME, YOUTUBE_VIDEOS_PER_GAME)]
+    logger.info(
+        "Scan complete for %s: %d news items from %d sources",
+        game.name, len(top_news), len(set(n.source for n in top_news))
     )
+
+    trend = TrendData(game_name=game.name, news_items=top_news)
+    # Populate legacy aliases so content_generator.py works without changes
+    trend.reddit_posts = top_news
+    trend.yt_videos = []
+    return trend

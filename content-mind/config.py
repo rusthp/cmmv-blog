@@ -1,7 +1,18 @@
 """
 config.py — ContentMind configuration from environment variables.
+Auto-loads .env from the same directory as this file (no external deps).
 """
 import os
+from pathlib import Path
+
+# Load .env manually — avoids python-dotenv dependency
+_env_file = Path(__file__).parent / ".env"
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _, _val = _line.partition("=")
+            os.environ.setdefault(_key.strip(), _val.strip())
 
 # cmmv-blog API
 PROPLAY_API_URL = os.getenv("PROPLAY_API_URL", "http://localhost:5000")
