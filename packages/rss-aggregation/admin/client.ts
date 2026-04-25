@@ -12,8 +12,8 @@ export const useFeedClient = () => {
         insert: (data: any) => api.authRequest("feed/channels", "POST", data),
         update: (id: string, data: any) => api.authRequest(`feed/channels/${id}`, "PUT", data),
         delete: (id: string) => api.authRequest(`feed/channels/${id}`, "DELETE"),
-        processFeeds: () => api.authRequest("feed/channels/processFeeds", "GET"),
-        processFeed: (channelId: string) => api.authRequest(`feed/channels/processFeed/${channelId}`, "GET")
+        processFeeds: () => api.authRequest("feed/channel-actions/processFeeds", "GET"),
+        processFeed: (channelId: string) => api.authRequest(`feed/channel-actions/processFeed/${channelId}`, "GET")
     };
 
     const raw = {

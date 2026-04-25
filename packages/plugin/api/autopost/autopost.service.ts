@@ -425,7 +425,7 @@ Regras obrigatórias:
             const aiText = await this.generateAiSocialPost({ ...payload, url: postUrl }, 'facebook');
             message = aiText || this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
         } else {
-            message = this.formatPostMessage(payload, postFormat);
+            message = this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
         }
 
         const requestData: any = {
@@ -637,7 +637,7 @@ Regras obrigatórias:
             const aiText = await this.generateAiSocialPost({ ...payload, url: postUrl }, 'twitter');
             message = aiText || this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
         } else {
-            message = this.formatPostMessage(payload, postFormat);
+            message = this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
         }
 
         const oauth = {
@@ -851,11 +851,11 @@ Regras obrigatórias:
         if (!accessToken)
             throw new Error("LinkedIn configuration is incomplete. Access token is required.");
 
-        const message = this.formatPostMessage(payload, postFormat);
-
         let postUrl = payload.url;
         if (postUrl.includes('utm_source={network}'))
             postUrl = postUrl.replace('utm_source={network}', 'utm_source=linkedin');
+
+        const message = this.formatPostMessage({ ...payload, url: postUrl }, postFormat);
 
         try {
             // Resolve author URN via /v2/userinfo (works with both person and organization tokens)

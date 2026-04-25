@@ -12,7 +12,7 @@ import {
     ChannelsService
 } from "./channels.service";
 
-@Controller("feed/channels")
+@Controller("feed/channel-actions")
 export class ChannelsController {
     constructor(private readonly channelsService: ChannelsService){}
 

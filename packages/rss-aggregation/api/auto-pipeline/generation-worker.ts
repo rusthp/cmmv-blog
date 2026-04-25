@@ -143,9 +143,16 @@ export class GenerationWorker {
         const language = Config.get("blog.language");
         const maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
 
+        // Truncate content to ~2000 chars to stay within Groq TPM limits
+        // The prompt template + defaultPrompt alone is ~10k tokens, so content must be small
+        const MAX_CONTENT_CHARS = 2000;
         const contentToProcess = {
             title: raw.title,
-            content: raw.content,
+            content: raw.content
+                ? raw.content.length > MAX_CONTENT_CHARS
+                    ? raw.content.substring(0, MAX_CONTENT_CHARS) + '...[truncated]'
+                    : raw.content
+                : '',
             category: raw.category,
         };
 

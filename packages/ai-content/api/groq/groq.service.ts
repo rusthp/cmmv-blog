@@ -4,7 +4,7 @@ import { Service, Config } from "@cmmv/core";
 export class GroqService {
     async generateContent(prompt: string) : Promise<string> {
         const groqApiKey = Config.get("blog.groqApiKey");
-        const groqModel = Config.get("blog.groqModel", "DeepSeek-R1-Distill-Llama-70b");
+        const groqModel = Config.get("blog.groqModel", "llama-3.3-70b-versatile");
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',

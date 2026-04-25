@@ -91,17 +91,31 @@ Config.assign({
     },
 
     blog: {
-        autoPipelineEnabled: true,
-        autoPipelineRelevanceThreshold: 60,
-        autoPipelineMaxPostsPerCycle: 3,
-        autoPipelineBaseIntervalMinutes: 60,
-        autoPipelineMinIntervalMinutes: 20,
-        autoPipelineBacklogFactor: 5,
-        autoPipelineMaxConcurrentAI: 2,
-        autoPipelineMaxAttempts: 3,
-        autoPipelineDefaultAuthor: "",
-        autoPipelineDefaultCategories: [],
-        autoPipelinePromptId: "",
-        autoPipelineSiteName: "CMMV",
+        // AI provider — groq é gratuito e rápido, fallback para deepseek
+        aiService: process.env.AI_SERVICE || "groq",
+        groqApiKey: process.env.GROQ_API_KEY || "",
+        groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+        deepseekApiKey: process.env.DEEPSEEK_API_KEY || "",
+        geminiApiKey: process.env.GEMINI_API_KEY || "",
+        openaiApiKey: process.env.OPENAI_API_KEY || "",
+
+        // Pipeline
+        language: process.env.BLOG_LANGUAGE || "pt-BR",
+        autoPipelineEnabled: process.env.AUTO_PIPELINE_ENABLED !== "false",
+        autoPipelineSiteName: process.env.SITE_NAME || "ProPlay News",
+        autoPipelineDefaultAuthor: process.env.AUTO_PIPELINE_AUTHOR || "",
+        autoPipelineDefaultCategories: process.env.AUTO_PIPELINE_CATEGORIES
+            ? process.env.AUTO_PIPELINE_CATEGORIES.split(",").map(s => s.trim())
+            : [],
+        autoPipelinePromptId: process.env.AUTO_PIPELINE_PROMPT_ID || "",
+        autoPipelineRelevanceThreshold: Number(process.env.AUTO_PIPELINE_RELEVANCE_THRESHOLD) || 60,
+        autoPipelineMaxPostsPerCycle: Number(process.env.AUTO_PIPELINE_MAX_POSTS_PER_CYCLE) || 3,
+        autoPipelineBaseIntervalMinutes: Number(process.env.AUTO_PIPELINE_BASE_INTERVAL) || 60,
+        autoPipelineMinIntervalMinutes: Number(process.env.AUTO_PIPELINE_MIN_INTERVAL) || 20,
+        autoPipelineBacklogFactor: Number(process.env.AUTO_PIPELINE_BACKLOG_FACTOR) || 5,
+        autoPipelineMaxConcurrentAI: Number(process.env.AUTO_PIPELINE_MAX_CONCURRENT) || 2,
+        autoPipelineMaxAttempts: Number(process.env.AUTO_PIPELINE_MAX_ATTEMPTS) || 3,
+        autoPipelineScheduleStartHour: Number(process.env.AUTO_PIPELINE_START_HOUR) || 7,
+        autoPipelineScheduleEndHour: Number(process.env.AUTO_PIPELINE_END_HOUR) || 23,
     },
 });

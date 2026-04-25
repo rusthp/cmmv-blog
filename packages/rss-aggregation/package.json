@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/rss-aggregation",
-    "version": "0.1.232",
+    "version": "0.1.233",
     "description": "RSS Aggregation package for CMMV",
     "scripts": {
         "build": "tsup"
