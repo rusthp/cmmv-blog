@@ -174,7 +174,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(row, idx) in computeStandings(groupMatches)" :key="row.id" :class="getStandingsRowClass(idx, computeStandings(groupMatches).length)">
+                                <tr v-for="(row, idx) in computeStandings(groupMatches, teams)" :key="row.id" :class="getStandingsRowClass(idx, computeStandings(groupMatches, teams).length)">
                                     <td class="rank">{{ idx + 1 }}</td>
                                     <td class="team-cell">
                                         <div class="team-icon-sm">
@@ -260,8 +260,11 @@
                     <div class="cal-group-label">PRÓXIMAS PARTIDAS</div>
                     <div v-for="(dayGroup, day) in groupByDay(upcomingMatches.slice(0, 10))" :key="day" class="cal-day">
                         <div class="cal-day-header">&#128197; {{ day }}</div>
-                        <div v-for="m in dayGroup" :key="m.id" class="cal-match">
-                            <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
+                        <div v-for="m in dayGroup" :key="m.id" class="cal-match" :class="{ 'cal-match-live': m.status === 'running' }">
+                            <div class="cal-time" :class="{ 'cal-time-live': m.status === 'running' }">
+                                <span v-if="m.status === 'running'" class="live-badge">AO VIVO</span>
+                                <span v-else>{{ formatTimeOnly(m.scheduledAt) }}</span>
+                            </div>
                             <div class="cal-teams">
                                 <div class="cal-team">
                                     <div class="team-icon-sm">
@@ -410,7 +413,8 @@ const teams = computed(() => {
     if (!t) return [];
     return t.teams || (t.teamsJson ? JSON.parse(t.teamsJson) : []);
 });
-const upcomingMatches = computed(() => matches.value.filter(m => m.status === 'not_started'));
+const liveMatches = computed(() => matches.value.filter(m => m.status === 'running'));
+const upcomingMatches = computed(() => matches.value.filter(m => m.status === 'not_started' || m.status === 'running'));
 const finishedMatches = computed(() => matches.value.filter(m => m.status === 'finished'));
 const hasAnyMatches = computed(() => matches.value.length > 0);
 
@@ -628,12 +632,19 @@ function groupByDay(list: any[]): Record<string, any[]> {
     return result;
 }
 
-function computeStandings(phaseMatches: any[]): any[] {
+function computeStandings(phaseMatches: any[], allTeams: any[] = []): any[] {
     const teams: Record<string, any> = {};
+
+    // Seed with all known registered teams so they appear even without matches
+    for (const t of allTeams) {
+        const key = t.id || t.name;
+        if (key && !teams[key]) {
+            teams[key] = { id: key, name: t.name, logo: t.logoUrl || t.logo || '', points: 0, played: 0, wins: 0, draws: 0, losses: 0, roundDiff: 0 };
+        }
+    }
 
     for (const m of phaseMatches) {
         if (m.status !== 'finished') {
-            // Still register teams
             for (const [id, name, logo] of [[m.team1ExternalId, m.team1Name, m.team1Logo], [m.team2ExternalId, m.team2Name, m.team2Logo]]) {
                 if (id && !teams[id]) teams[id] = { id, name, logo, points: 0, played: 0, wins: 0, draws: 0, losses: 0, roundDiff: 0 };
             }
@@ -1053,6 +1064,15 @@ onMounted(load);
 .cal-match:last-child { border-bottom: none; }
 
 .cal-time { font-size: 0.75rem; color: #718096; font-weight: 600; text-align: center; }
+.cal-time-live { color: #fc8181; }
+.cal-match-live { border-left: 2px solid #e53e3e; background: rgba(229,62,62,0.04); }
+.live-badge {
+    display: inline-block; font-size: 0.5625rem; font-weight: 800;
+    color: #fff; background: #e53e3e; padding: 0.15rem 0.35rem;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em;
+    animation: live-pulse 1.5s ease-in-out infinite;
+}
+@keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
 
 .cal-teams {
     display: flex;

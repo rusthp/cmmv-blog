@@ -498,9 +498,11 @@ export class ChampionshipsService {
 
     const numberOfTeams = teams.length || t.participants_count || 0;
 
-    // Detect prize type: money vs qualification slot
-    const prizePool = t.prizepool || (
-      (t.name || t.serie?.name || '').toLowerCase().match(/slot|qualifier|vaga|berth|qualificat/)
+    // Inherit prize pool from serie/league if not set on tournament level
+    const rawPrize = t.prizepool || t.serie?.prizepool || t.league?.prizepool || '';
+    const nameForDetection = (t.name || t.serie?.name || t.serie?.full_name || '').toLowerCase();
+    const prizePool = rawPrize || (
+      nameForDetection.match(/slot|qualifier|vaga|berth|qualificat/)
         ? 'Vaga em torneio' : ''
     );
 
