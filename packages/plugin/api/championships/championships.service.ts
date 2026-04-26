@@ -37,10 +37,18 @@ export class ChampionshipsService {
 
   // ─── Cron Jobs ────────────────────────────────────────────────
 
-  @Cron('0 */6 * * *')
+  @Cron('0 */2 * * *')
   async cronSyncTournaments() {
     if (!this.apiToken) return;
     await this.syncTournaments();
+    await this.fixStaleTournamentStatuses();
+  }
+
+  @Cron('0 * * * *')
+  async cronSyncOngoingTournaments() {
+    if (!this.apiToken) return;
+    await this.syncOngoingTournamentMatches();
+    await this.fixStaleTournamentStatuses();
   }
 
   @Cron('*/15 * * * *')
@@ -63,10 +71,17 @@ export class ChampionshipsService {
 
     ChampionshipsService.log('[championships] Full sync starting...');
     stats.tournaments = await this.syncTournaments();
+    await this.fixStaleTournamentStatuses();
     stats.matches = await this.syncAllMatchesFromOngoing();
     stats.teams = await this.syncTeams();
     ChampionshipsService.log(`[championships] Sync done: ${JSON.stringify(stats)}`);
     return stats;
+  }
+
+  async syncStale(): Promise<{ fixed: number; matches: number }> {
+    const fixed = await this.fixStaleTournamentStatuses();
+    const matches = await this.syncOngoingTournamentMatches();
+    return { fixed, matches };
   }
 
   async getTournaments(status?: string, game?: string, region?: string): Promise<any[]> {
@@ -279,20 +294,27 @@ export class ChampionshipsService {
 
     for (const game of SUPPORTED_GAMES) {
       for (const endpoint of ['running', 'upcoming', 'past']) {
-        try {
-          const data = await this.pandascoreGet(
-            `/${game}/tournaments/${endpoint}?page[size]=50&sort=-begin_at`
-          );
-          if (!Array.isArray(data)) continue;
+        let page = 1;
+        while (true) {
+          try {
+            const data = await this.pandascoreGet(
+              `/${game}/tournaments/${endpoint}?page[size]=100&page[number]=${page}&sort=-begin_at`
+            );
+            if (!Array.isArray(data) || data.length === 0) break;
 
-          for (const t of data) {
-            await this.upsertTournament(t, endpoint, game);
-            total++;
+            for (const t of data) {
+              await this.upsertTournament(t, endpoint, game);
+              total++;
+            }
+
+            if (data.length < 100) break;
+            page++;
+          } catch (e: any) {
+            ChampionshipsService.warn(
+              `[championships] syncTournaments/${game}/${endpoint} page ${page}: ${e.message}`
+            );
+            break;
           }
-        } catch (e: any) {
-          ChampionshipsService.warn(
-            `[championships] syncTournaments/${game}/${endpoint}: ${e.message}`
-          );
         }
       }
     }
@@ -304,11 +326,10 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return 0;
 
-    // Sync matches for ongoing, upcoming, and recently finished tournaments
     const [ongoing, upcoming, finished] = await Promise.all([
-      Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '50' }),
-      Repository.findAll(EsportsTournamentEntity, { status: 'upcoming', limit: '30' }),
-      Repository.findAll(EsportsTournamentEntity, { status: 'finished', limit: '20' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '100' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'upcoming', limit: '50' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'finished', limit: '50' }),
     ]);
 
     const allTournaments = [
@@ -331,6 +352,77 @@ export class ChampionshipsService {
       } catch (e: any) {
         ChampionshipsService.warn(
           `[championships] syncMatches for ${t.slug} (${t.game}): ${e.message}`
+        );
+      }
+    }
+
+    return total;
+  }
+
+  private async fixStaleTournamentStatuses(): Promise<number> {
+    const { EsportsTournamentEntity } = this.getEntities();
+    if (!EsportsTournamentEntity) return 0;
+
+    const now = new Date().toISOString();
+    let fixed = 0;
+
+    const staleOngoing = await Repository.findAll(EsportsTournamentEntity, {
+      status: 'ongoing',
+      limit: '200',
+    });
+    for (const t of (staleOngoing?.data || []) as any[]) {
+      if (t.endDate && t.endDate < now) {
+        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'finished' });
+        fixed++;
+      }
+    }
+
+    const staleUpcoming = await Repository.findAll(EsportsTournamentEntity, {
+      status: 'upcoming',
+      limit: '200',
+    });
+    for (const t of (staleUpcoming?.data || []) as any[]) {
+      if (t.endDate && t.endDate < now) {
+        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'finished' });
+        fixed++;
+      } else if (t.startDate && t.startDate <= now && (!t.endDate || t.endDate >= now)) {
+        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'ongoing' });
+        fixed++;
+      }
+    }
+
+    if (fixed > 0) {
+      ChampionshipsService.log(`[championships] Fixed ${fixed} stale tournament statuses`);
+    }
+
+    return fixed;
+  }
+
+  private async syncOngoingTournamentMatches(): Promise<number> {
+    const { EsportsTournamentEntity } = this.getEntities();
+    if (!EsportsTournamentEntity) return 0;
+
+    const ongoing = await Repository.findAll(EsportsTournamentEntity, {
+      status: 'ongoing',
+      limit: '100',
+    });
+
+    const tournaments: any[] = ongoing?.data || [];
+    let total = 0;
+
+    for (const t of tournaments) {
+      try {
+        const data = await this.pandascoreGet(
+          `/${t.game}/tournaments/${t.externalId}/matches?page[size]=100`
+        );
+        if (!Array.isArray(data)) continue;
+        for (const m of data) {
+          await this.upsertMatch(m, t.game, t.slug);
+          total++;
+        }
+      } catch (e: any) {
+        ChampionshipsService.warn(
+          `[championships] syncOngoing ${t.slug} (${t.game}): ${e.message}`
         );
       }
     }

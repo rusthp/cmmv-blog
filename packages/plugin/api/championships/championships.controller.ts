@@ -133,6 +133,12 @@ export class ChampionshipsController {
     return { success: true, vlr: stats };
   }
 
+  @Get('sync-stale')
+  async syncStale() {
+    const stats = await this.service.syncStale();
+    return { success: true, ...stats };
+  }
+
   // ─── Sync ─────────────────────────────────────────────────────
 
   @Post('sync')
