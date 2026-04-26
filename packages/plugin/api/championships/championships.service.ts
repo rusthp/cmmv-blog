@@ -88,10 +88,28 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { updated: 0 };
 
-    const all = await Repository.findAll(EsportsTournamentEntity, { limit: '500' });
-    const entries = ((all?.data || []) as any[]).filter(
-      e => e.numberOfTeams === 0 && e.subTournamentsJson
-    );
+    // Fetch ongoing + upcoming separately to avoid limit gaps across 7k+ total entries
+    const [ongoing, upcoming] = await Promise.all([
+      Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '500' }),
+      Repository.findAll(EsportsTournamentEntity, { status: 'upcoming', limit: '500' }),
+    ]);
+
+    const allActive = [
+      ...((ongoing?.data || []) as any[]),
+      ...((upcoming?.data || []) as any[]),
+    ];
+
+    const entries = allActive.filter(e => {
+      if (e.numberOfTeams !== 0 && e.numberOfTeams !== null) return false;
+      const sub = e.subTournamentsJson;
+      // Must have actual sub-tournament ids (not empty array, not null/empty string)
+      try {
+        const parsed = JSON.parse(sub || '[]');
+        return Array.isArray(parsed) && parsed.length > 0;
+      } catch {
+        return false;
+      }
+    });
 
     let updated = 0;
     for (const entry of entries) {
