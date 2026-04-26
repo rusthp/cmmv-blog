@@ -84,6 +84,66 @@ export class ChampionshipsService {
     return { fixed, matches };
   }
 
+  async syncMissingTeams(): Promise<{ updated: number }> {
+    const { EsportsTournamentEntity } = this.getEntities();
+    if (!EsportsTournamentEntity) return { updated: 0 };
+
+    const all = await Repository.findAll(EsportsTournamentEntity, { limit: '500' });
+    const entries = ((all?.data || []) as any[]).filter(
+      e => e.numberOfTeams === 0 && e.subTournamentsJson
+    );
+
+    let updated = 0;
+    for (const entry of entries) {
+      const subTournaments: Array<{ id: string; slug: string; name: string }> = this.parseJson(
+        entry.subTournamentsJson
+      );
+      if (subTournaments.length === 0) continue;
+
+      const teamsMap: Record<string, any> = {};
+      const fetchLimit = Math.min(subTournaments.length, 3);
+
+      for (let i = 0; i < fetchLimit; i++) {
+        try {
+          const detail = await this.pandascoreGet(
+            `/${entry.game}/tournaments/${subTournaments[i].id}`
+          );
+          const detailTeams = (detail?.teams && detail.teams.length > 0)
+            ? detail.teams
+            : (detail?.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+          for (const team of detailTeams) {
+            if (!team?.id) continue;
+            teamsMap[String(team.id)] = {
+              id: String(team.id),
+              name: team.name,
+              acronym: team.acronym || '',
+              logoUrl: team.image_url || '',
+              location: team.location || '',
+            };
+          }
+          if (Object.keys(teamsMap).length > 0) break;
+        } catch (e: any) {
+          ChampionshipsService.warn(
+            `[championships] syncMissingTeams ${entry.game}/${subTournaments[i].id}: ${e.message}`
+          );
+        }
+      }
+
+      if (Object.keys(teamsMap).length > 0) {
+        const teams = Object.values(teamsMap);
+        await Repository.update(
+          EsportsTournamentEntity,
+          { id: entry.id },
+          { teamsJson: JSON.stringify(teams), numberOfTeams: teams.length }
+        );
+        updated++;
+      }
+    }
+
+    ChampionshipsService.log(`[championships] syncMissingTeams: updated ${updated}/${entries.length}`);
+    return { updated };
+  }
+
   async migrateToSeries(): Promise<{ deleted: number; synced: number; matches: number }> {
     const { EsportsTournamentEntity, EsportsMatchEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { deleted: 0, synced: 0, matches: 0 };
@@ -400,6 +460,36 @@ export class ChampionshipsService {
           logoUrl: team.image_url || '',
           location: team.location || '',
         };
+      }
+    }
+
+    // Fallback: bulk listing endpoints (e.g. /valorant/tournaments/upcoming) often return
+    // empty teams arrays. When that happens, fetch each sub-tournament individually to get
+    // the full participant list. Cap at 3 fetches — teams are identical across sub-tournaments.
+    if (Object.keys(teamsMap).length === 0 && subTournaments.length > 0) {
+      const fetchLimit = Math.min(subTournaments.length, 3);
+      for (let i = 0; i < fetchLimit; i++) {
+        try {
+          const detail = await this.pandascoreGet(`/${game}/tournaments/${subTournaments[i].id}`);
+          const detailTeams = (detail?.teams && detail.teams.length > 0)
+            ? detail.teams
+            : (detail?.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+          for (const team of detailTeams) {
+            if (!team?.id) continue;
+            teamsMap[String(team.id)] = {
+              id: String(team.id),
+              name: team.name,
+              acronym: team.acronym || '',
+              logoUrl: team.image_url || '',
+              location: team.location || '',
+            };
+          }
+          if (Object.keys(teamsMap).length > 0) break;
+        } catch (e: any) {
+          ChampionshipsService.warn(
+            `[championships] fetchTeams fallback ${game}/${subTournaments[i].id}: ${e.message}`
+          );
+        }
       }
     }
 

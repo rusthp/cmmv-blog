@@ -145,6 +145,12 @@ export class ChampionshipsController {
     return { success: true, ...stats };
   }
 
+  @Get('sync-missing-teams')
+  async syncMissingTeams() {
+    const stats = await this.service.syncMissingTeams();
+    return { success: true, ...stats };
+  }
+
   // ─── Sync ─────────────────────────────────────────────────────
 
   @Post('sync')
