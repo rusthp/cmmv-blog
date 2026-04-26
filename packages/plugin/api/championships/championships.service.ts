@@ -169,15 +169,21 @@ export class ChampionshipsService {
 
     ChampionshipsService.log('[championships] Migrating to serie-level entries...');
 
-    // Delete all old tournament-level entries (those without serie_ prefix)
-    const allEntries = await Repository.findAll(EsportsTournamentEntity, { limit: '2000' });
+    // Delete all old tournament-level entries (those without serie_ prefix) — paginate to cover all
     let deleted = 0;
-
-    for (const entry of (allEntries?.data || []) as any[]) {
-      if (!entry.externalId?.startsWith('serie_')) {
-        await Repository.delete(EsportsTournamentEntity, { id: entry.id });
-        deleted++;
+    let page = 1;
+    while (true) {
+      const batch = await Repository.findAll(EsportsTournamentEntity, { limit: '500', page: String(page) });
+      const rows: any[] = batch?.data || [];
+      if (rows.length === 0) break;
+      for (const entry of rows) {
+        if (!entry.externalId?.startsWith('serie_')) {
+          await Repository.delete(EsportsTournamentEntity, { id: entry.id });
+          deleted++;
+        }
       }
+      if (rows.length < 500) break;
+      page++;
     }
 
     // Delete all existing matches (will be re-synced under serie slugs)
