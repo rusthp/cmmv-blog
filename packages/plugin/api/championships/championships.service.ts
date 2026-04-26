@@ -552,10 +552,10 @@ export class ChampionshipsService {
     const serieId = t.serieExternalId;
 
     if (serieId) {
-      // Serie-based entry: fetch all matches across all sub-tournaments via series endpoint
+      // Serie-based entry: /series/{id}/matches has no game prefix in PandaScore API
       try {
         const data = await this.pandascoreGet(
-          `/${t.game}/series/${serieId}/matches?page[size]=100`
+          `/series/${serieId}/matches?page[size]=100`
         );
         if (Array.isArray(data)) {
           for (const m of data) {
