@@ -119,32 +119,33 @@ export class ChampionshipsService {
       if (subTournaments.length === 0) continue;
 
       const teamsMap: Record<string, any> = {};
-      const fetchLimit = Math.min(subTournaments.length, 3);
+      const serieId = entry.serieExternalId || entry.externalId.replace('serie_', '');
 
-      for (let i = 0; i < fetchLimit; i++) {
-        try {
-          const detail = await this.pandascoreGet(
-            `/${entry.game}/tournaments/${subTournaments[i].id}`
-          );
-          const detailTeams = (detail?.teams && detail.teams.length > 0)
-            ? detail.teams
-            : (detail?.expected_roster || []).map((r: any) => r.team).filter(Boolean);
-          for (const team of detailTeams) {
-            if (!team?.id) continue;
-            teamsMap[String(team.id)] = {
-              id: String(team.id),
-              name: team.name,
-              acronym: team.acronym || '',
-              logoUrl: team.image_url || '',
-              location: team.location || '',
-            };
+      try {
+        const allSubs = await this.pandascoreGet(
+          `/${entry.game}/tournaments?filter[serie_id]=${serieId}&page[size]=50`
+        );
+        if (Array.isArray(allSubs)) {
+          for (const sub of allSubs) {
+            const src = (sub.teams && sub.teams.length > 0)
+              ? sub.teams
+              : (sub.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+            for (const team of src) {
+              if (!team?.id) continue;
+              teamsMap[String(team.id)] = {
+                id: String(team.id),
+                name: team.name,
+                acronym: team.acronym || '',
+                logoUrl: team.image_url || '',
+                location: team.location || '',
+              };
+            }
           }
-          if (Object.keys(teamsMap).length > 0) break;
-        } catch (e: any) {
-          ChampionshipsService.warn(
-            `[championships] syncMissingTeams ${entry.game}/${subTournaments[i].id}: ${e.message}`
-          );
         }
+      } catch (e: any) {
+        ChampionshipsService.warn(
+          `[championships] syncMissingTeams ${entry.game}/${serieId}: ${e.message}`
+        );
       }
 
       if (Object.keys(teamsMap).length > 0) {
@@ -482,32 +483,34 @@ export class ChampionshipsService {
     }
 
     // Fallback: bulk listing endpoints (e.g. /valorant/tournaments/upcoming) often return
-    // empty teams arrays. When that happens, fetch each sub-tournament individually to get
-    // the full participant list. Cap at 3 fetches — teams are identical across sub-tournaments.
-    if (Object.keys(teamsMap).length === 0 && subTournaments.length > 0) {
-      const fetchLimit = Math.min(subTournaments.length, 3);
-      for (let i = 0; i < fetchLimit; i++) {
-        try {
-          const detail = await this.pandascoreGet(`/${game}/tournaments/${subTournaments[i].id}`);
-          const detailTeams = (detail?.teams && detail.teams.length > 0)
-            ? detail.teams
-            : (detail?.expected_roster || []).map((r: any) => r.team).filter(Boolean);
-          for (const team of detailTeams) {
-            if (!team?.id) continue;
-            teamsMap[String(team.id)] = {
-              id: String(team.id),
-              name: team.name,
-              acronym: team.acronym || '',
-              logoUrl: team.image_url || '',
-              location: team.location || '',
-            };
+    // empty teams arrays. Use filter[serie_id] to get ALL sub-tournaments for this serie
+    // including those in other status buckets (e.g. group stage is finished, playoffs upcoming).
+    if (Object.keys(teamsMap).length === 0) {
+      try {
+        const allSubs = await this.pandascoreGet(
+          `/${game}/tournaments?filter[serie_id]=${serieId}&page[size]=50`
+        );
+        if (Array.isArray(allSubs)) {
+          for (const sub of allSubs) {
+            const src = (sub.teams && sub.teams.length > 0)
+              ? sub.teams
+              : (sub.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+            for (const team of src) {
+              if (!team?.id) continue;
+              teamsMap[String(team.id)] = {
+                id: String(team.id),
+                name: team.name,
+                acronym: team.acronym || '',
+                logoUrl: team.image_url || '',
+                location: team.location || '',
+              };
+            }
           }
-          if (Object.keys(teamsMap).length > 0) break;
-        } catch (e: any) {
-          ChampionshipsService.warn(
-            `[championships] fetchTeams fallback ${game}/${subTournaments[i].id}: ${e.message}`
-          );
         }
+      } catch (e: any) {
+        ChampionshipsService.warn(
+          `[championships] fetchTeams by serie_id fallback ${game}/${serieId}: ${e.message}`
+        );
       }
     }
 
