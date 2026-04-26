@@ -139,6 +139,12 @@ export class ChampionshipsController {
     return { success: true, ...stats };
   }
 
+  @Get('migrate-to-series')
+  async migrateToSeries() {
+    const stats = await this.service.migrateToSeries();
+    return { success: true, ...stats };
+  }
+
   // ─── Sync ─────────────────────────────────────────────────────
 
   @Post('sync')

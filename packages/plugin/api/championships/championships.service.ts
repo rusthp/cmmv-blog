@@ -84,6 +84,42 @@ export class ChampionshipsService {
     return { fixed, matches };
   }
 
+  async migrateToSeries(): Promise<{ deleted: number; synced: number; matches: number }> {
+    const { EsportsTournamentEntity, EsportsMatchEntity } = this.getEntities();
+    if (!EsportsTournamentEntity) return { deleted: 0, synced: 0, matches: 0 };
+
+    ChampionshipsService.log('[championships] Migrating to serie-level entries...');
+
+    // Delete all old tournament-level entries (those without serie_ prefix)
+    const allEntries = await Repository.findAll(EsportsTournamentEntity, { limit: '2000' });
+    let deleted = 0;
+
+    for (const entry of (allEntries?.data || []) as any[]) {
+      if (!entry.externalId?.startsWith('serie_')) {
+        await Repository.delete(EsportsTournamentEntity, { id: entry.id });
+        deleted++;
+      }
+    }
+
+    // Delete all existing matches (will be re-synced under serie slugs)
+    if (EsportsMatchEntity) {
+      const allMatches = await Repository.findAll(EsportsMatchEntity, { limit: '5000' });
+      for (const m of (allMatches?.data || []) as any[]) {
+        await Repository.delete(EsportsMatchEntity, { id: m.id });
+      }
+    }
+
+    ChampionshipsService.log(`[championships] Deleted ${deleted} old tournament entries`);
+
+    // Re-sync everything at serie level
+    const synced = await this.syncTournaments();
+    await this.fixStaleTournamentStatuses();
+    const matches = await this.syncAllMatchesFromOngoing();
+
+    ChampionshipsService.log(`[championships] Migration done: ${synced} series, ${matches} matches`);
+    return { deleted, synced, matches };
+  }
+
   async getTournaments(status?: string, game?: string, region?: string): Promise<any[]> {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return [];
@@ -287,7 +323,7 @@ export class ChampionshipsService {
     return results?.data || [];
   }
 
-  // ─── Sync: Tournaments ────────────────────────────────────────
+  // ─── Sync: Series (replaces tournament-level sync) ───────────
 
   private async syncTournaments(): Promise<number> {
     let total = 0;
@@ -298,12 +334,12 @@ export class ChampionshipsService {
         while (true) {
           try {
             const data = await this.pandascoreGet(
-              `/${game}/tournaments/${endpoint}?page[size]=100&page[number]=${page}&sort=-begin_at`
+              `/${game}/series/${endpoint}?page[size]=100&page[number]=${page}&sort=-begin_at`
             );
             if (!Array.isArray(data) || data.length === 0) break;
 
-            for (const t of data) {
-              await this.upsertTournament(t, endpoint, game);
+            for (const s of data) {
+              await this.upsertSerie(s, endpoint, game);
               total++;
             }
 
@@ -311,7 +347,7 @@ export class ChampionshipsService {
             page++;
           } catch (e: any) {
             ChampionshipsService.warn(
-              `[championships] syncTournaments/${game}/${endpoint} page ${page}: ${e.message}`
+              `[championships] syncSeries/${game}/${endpoint} page ${page}: ${e.message}`
             );
             break;
           }
@@ -320,6 +356,110 @@ export class ChampionshipsService {
     }
 
     return total;
+  }
+
+  private async upsertSerie(s: any, endpointStatus: string, game: string): Promise<void> {
+    const { EsportsTournamentEntity } = this.getEntities();
+    if (!EsportsTournamentEntity) return;
+
+    const existing = await Repository.findOne(EsportsTournamentEntity, {
+      externalId: `serie_${s.id}`,
+    });
+
+    // Aggregate all teams from all sub-tournaments
+    const teamsMap: Record<string, any> = {};
+
+    const subTournaments: Array<{ id: string; slug: string; name: string }> = [];
+
+    for (const t of (s.tournaments || [])) {
+      subTournaments.push({ id: String(t.id), slug: t.slug || String(t.id), name: t.name || '' });
+
+      const teamsSource = (t.teams && t.teams.length > 0)
+        ? t.teams
+        : (t.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+
+      for (const team of teamsSource) {
+        if (!team?.id) continue;
+        teamsMap[String(team.id)] = {
+          id: String(team.id),
+          name: team.name,
+          acronym: team.acronym || '',
+          logoUrl: team.image_url || '',
+          location: team.location || '',
+        };
+      }
+    }
+
+    // Also check serie-level teams/expected_roster
+    const serieTeamsSource = (s.teams && s.teams.length > 0)
+      ? s.teams
+      : (s.expected_roster || []).map((r: any) => r.team).filter(Boolean);
+    for (const team of serieTeamsSource) {
+      if (!team?.id) continue;
+      teamsMap[String(team.id)] = {
+        id: String(team.id),
+        name: team.name,
+        acronym: team.acronym || '',
+        logoUrl: team.image_url || '',
+        location: team.location || '',
+      };
+    }
+
+    const teams = Object.values(teamsMap);
+    const numberOfTeams = teams.length || s.participants_count || 0;
+
+    const rawPrize = s.prizepool || s.league?.prizepool || '';
+    const nameForDetection = (s.full_name || s.name || '').toLowerCase();
+    const prizePool = rawPrize || (
+      nameForDetection.match(/slot|qualifier|vaga|berth|qualificat/)
+        ? 'Vaga em torneio' : ''
+    );
+
+    const isOnline = (s.tournaments || []).every((t: any) => t.type === 'online');
+    const location = s.country || s.region || '';
+    const region = s.region || '';
+
+    const statusMap: Record<string, string> = {
+      running: 'ongoing',
+      upcoming: 'upcoming',
+      past: 'finished',
+    };
+
+    const data = {
+      externalId: `serie_${s.id}`,
+      serieExternalId: String(s.id),
+      game,
+      name: s.full_name || s.name || '',
+      slug: s.slug || `serie-${s.id}`,
+      status: statusMap[endpointStatus] || 'upcoming',
+      startDate: s.begin_at || null,
+      endDate: s.end_at || null,
+      prizePool,
+      location,
+      online: isOnline,
+      tier: s.tier || '',
+      logoUrl: s.league?.image_url || '',
+      bannerUrl: s.league?.image_url || s.full_image_url || '',
+      leagueName: s.league?.name || '',
+      leagueLogo: s.league?.image_url || '',
+      serieName: s.full_name || s.name || '',
+      teamsJson: JSON.stringify(teams),
+      subTournamentsJson: JSON.stringify(subTournaments),
+      region,
+      numberOfTeams,
+      featured: s.tier === 's' || s.tier === 'a',
+    };
+
+    if (existing) {
+      await Repository.update(EsportsTournamentEntity, { id: (existing as any).id }, data);
+    } else {
+      const result = await Repository.insert(EsportsTournamentEntity, data);
+      if (!result.success) {
+        ChampionshipsService.warn(
+          `[championships] Failed to insert serie ${s.slug}: ${result.message}`
+        );
+      }
+    }
   }
 
   private async syncAllMatchesFromOngoing(): Promise<number> {
@@ -340,20 +480,7 @@ export class ChampionshipsService {
 
     let total = 0;
     for (const t of allTournaments) {
-      try {
-        const data = await this.pandascoreGet(
-          `/${t.game}/tournaments/${t.externalId}/matches?page[size]=100`
-        );
-        if (!Array.isArray(data)) continue;
-        for (const m of data) {
-          await this.upsertMatch(m, t.game, t.slug);
-          total++;
-        }
-      } catch (e: any) {
-        ChampionshipsService.warn(
-          `[championships] syncMatches for ${t.slug} (${t.game}): ${e.message}`
-        );
-      }
+      total += await this.syncMatchesForEntry(t);
     }
 
     return total;
@@ -411,19 +538,58 @@ export class ChampionshipsService {
     let total = 0;
 
     for (const t of tournaments) {
+      total += await this.syncMatchesForEntry(t);
+    }
+
+    return total;
+  }
+
+  // Unified match sync: uses /series/{id}/matches when serieExternalId is set,
+  // falls back to /tournaments/{id}/matches for legacy entries
+  private async syncMatchesForEntry(t: any): Promise<number> {
+    let total = 0;
+
+    const serieId = t.serieExternalId;
+
+    if (serieId) {
+      // Serie-based entry: fetch all matches across all sub-tournaments via series endpoint
       try {
         const data = await this.pandascoreGet(
-          `/${t.game}/tournaments/${t.externalId}/matches?page[size]=100`
+          `/${t.game}/series/${serieId}/matches?page[size]=100`
         );
-        if (!Array.isArray(data)) continue;
-        for (const m of data) {
-          await this.upsertMatch(m, t.game, t.slug);
-          total++;
+        if (Array.isArray(data)) {
+          for (const m of data) {
+            await this.upsertMatch(m, t.game, t.slug);
+            total++;
+          }
         }
       } catch (e: any) {
         ChampionshipsService.warn(
-          `[championships] syncOngoing ${t.slug} (${t.game}): ${e.message}`
+          `[championships] syncMatches serie ${t.slug} (${t.game}): ${e.message}`
         );
+      }
+    } else {
+      // Legacy tournament-level entry
+      const subTournaments: Array<{ id: string; slug: string }> = this.parseJson(t.subTournamentsJson || '[]');
+      const ids = subTournaments.length > 0
+        ? subTournaments.map(st => st.id)
+        : [t.externalId];
+
+      for (const tid of ids) {
+        try {
+          const data = await this.pandascoreGet(
+            `/${t.game}/tournaments/${tid}/matches?page[size]=100`
+          );
+          if (!Array.isArray(data)) continue;
+          for (const m of data) {
+            await this.upsertMatch(m, t.game, t.slug);
+            total++;
+          }
+        } catch (e: any) {
+          ChampionshipsService.warn(
+            `[championships] syncMatches tournament ${tid} (${t.game}): ${e.message}`
+          );
+        }
       }
     }
 

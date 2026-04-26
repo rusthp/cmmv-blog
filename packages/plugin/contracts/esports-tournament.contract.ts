@@ -69,6 +69,12 @@ export class EsportsTournamentContract extends AbstractContract {
     @ContractField({ protoType: 'string', nullable: true })
     teamsJson!: string; // JSON array of team objects
 
+    @ContractField({ protoType: 'string', nullable: true })
+    subTournamentsJson!: string; // JSON array of {id, slug, name} for PandaScore sub-tournaments
+
+    @ContractField({ protoType: 'string', nullable: true })
+    serieExternalId!: string; // PandaScore serie ID (used for match sync endpoint)
+
     @ContractField({ protoType: 'string', nullable: true, index: true })
     region!: string; // NA | EU | BR | SA | APAC | global
 
