@@ -323,34 +323,44 @@ export class ChampionshipsService {
     return results?.data || [];
   }
 
-  // ─── Sync: Series (replaces tournament-level sync) ───────────
+  // ─── Sync: Group tournaments by serie_id ─────────────────────
 
   private async syncTournaments(): Promise<number> {
     let total = 0;
 
     for (const game of SUPPORTED_GAMES) {
       for (const endpoint of ['running', 'upcoming', 'past']) {
+        // Collect all tournaments, group by serie_id
+        const serieMap = new Map<string, any[]>(); // serieId -> tournament[]
+
         let page = 1;
         while (true) {
           try {
             const data = await this.pandascoreGet(
-              `/${game}/series/${endpoint}?page[size]=100&page[number]=${page}&sort=-begin_at`
+              `/${game}/tournaments/${endpoint}?page[size]=100&page[number]=${page}&sort=-begin_at`
             );
             if (!Array.isArray(data) || data.length === 0) break;
 
-            for (const s of data) {
-              await this.upsertSerie(s, endpoint, game);
-              total++;
+            for (const t of data) {
+              const serieId = String(t.serie_id || t.serie?.id || t.id);
+              if (!serieMap.has(serieId)) serieMap.set(serieId, []);
+              serieMap.get(serieId)!.push(t);
             }
 
             if (data.length < 100) break;
             page++;
           } catch (e: any) {
             ChampionshipsService.warn(
-              `[championships] syncSeries/${game}/${endpoint} page ${page}: ${e.message}`
+              `[championships] syncTournaments/${game}/${endpoint} page ${page}: ${e.message}`
             );
             break;
           }
+        }
+
+        // Upsert one entry per serie, aggregating all sub-tournaments
+        for (const [, tournaments] of serieMap.entries()) {
+          await this.upsertSerie(tournaments, endpoint, game);
+          total++;
         }
       }
     }
@@ -358,20 +368,23 @@ export class ChampionshipsService {
     return total;
   }
 
-  private async upsertSerie(s: any, endpointStatus: string, game: string): Promise<void> {
+  // tournaments[] = all sub-tournaments sharing the same serie_id (already have teams from /tournaments endpoint)
+  private async upsertSerie(tournaments: any[], endpointStatus: string, game: string): Promise<void> {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return;
 
-    const existing = await Repository.findOne(EsportsTournamentEntity, {
-      externalId: `serie_${s.id}`,
-    });
+    const first = tournaments[0];
+    const serie = first.serie || {};
+    const serieId = String(first.serie_id || serie.id || first.id);
+    const externalId = `serie_${serieId}`;
 
-    // Aggregate all teams from all sub-tournaments
+    const existing = await Repository.findOne(EsportsTournamentEntity, { externalId });
+
+    // Aggregate teams from all sub-tournaments (tournaments endpoint includes teams)
     const teamsMap: Record<string, any> = {};
-
     const subTournaments: Array<{ id: string; slug: string; name: string }> = [];
 
-    for (const t of (s.tournaments || [])) {
+    for (const t of tournaments) {
       subTournaments.push({ id: String(t.id), slug: t.slug || String(t.id), name: t.name || '' });
 
       const teamsSource = (t.teams && t.teams.length > 0)
@@ -390,34 +403,26 @@ export class ChampionshipsService {
       }
     }
 
-    // Also check serie-level teams/expected_roster
-    const serieTeamsSource = (s.teams && s.teams.length > 0)
-      ? s.teams
-      : (s.expected_roster || []).map((r: any) => r.team).filter(Boolean);
-    for (const team of serieTeamsSource) {
-      if (!team?.id) continue;
-      teamsMap[String(team.id)] = {
-        id: String(team.id),
-        name: team.name,
-        acronym: team.acronym || '',
-        logoUrl: team.image_url || '',
-        location: team.location || '',
-      };
-    }
-
     const teams = Object.values(teamsMap);
-    const numberOfTeams = teams.length || s.participants_count || 0;
+    const numberOfTeams = teams.length || 0;
 
-    const rawPrize = s.prizepool || s.league?.prizepool || '';
-    const nameForDetection = (s.full_name || s.name || '').toLowerCase();
+    // Serie metadata from first tournament's serie field
+    const serieName = serie.full_name || serie.name || first.name || '';
+    const serieSlug = serie.slug || `serie-${serieId}`;
+    const startDate = tournaments.map(t => t.begin_at).filter(Boolean).sort()[0] || null;
+    const endDate = tournaments.map(t => t.end_at).filter(Boolean).sort().reverse()[0] || null;
+
+    const rawPrize = tournaments.map(t => t.prizepool).find(Boolean) || '';
     const prizePool = rawPrize || (
-      nameForDetection.match(/slot|qualifier|vaga|berth|qualificat/)
+      serieName.toLowerCase().match(/slot|qualifier|vaga|berth|qualificat/)
         ? 'Vaga em torneio' : ''
     );
 
-    const isOnline = (s.tournaments || []).every((t: any) => t.type === 'online');
-    const location = s.country || s.region || '';
-    const region = s.region || '';
+    const region = first.region || '';
+    const isOnline = tournaments.every(t => t.type === 'online');
+    const location = first.country || region || '';
+    const tier = first.tier || '';
+    const league = first.league || {};
 
     const statusMap: Record<string, string> = {
       running: 'ongoing',
@@ -426,28 +431,28 @@ export class ChampionshipsService {
     };
 
     const data = {
-      externalId: `serie_${s.id}`,
-      serieExternalId: String(s.id),
+      externalId,
+      serieExternalId: serieId,
       game,
-      name: s.full_name || s.name || '',
-      slug: s.slug || `serie-${s.id}`,
+      name: serieName,
+      slug: serieSlug,
       status: statusMap[endpointStatus] || 'upcoming',
-      startDate: s.begin_at || null,
-      endDate: s.end_at || null,
+      startDate,
+      endDate,
       prizePool,
       location,
       online: isOnline,
-      tier: s.tier || '',
-      logoUrl: s.league?.image_url || '',
-      bannerUrl: s.league?.image_url || s.full_image_url || '',
-      leagueName: s.league?.name || '',
-      leagueLogo: s.league?.image_url || '',
-      serieName: s.full_name || s.name || '',
+      tier,
+      logoUrl: league.image_url || '',
+      bannerUrl: league.image_url || '',
+      leagueName: league.name || '',
+      leagueLogo: league.image_url || '',
+      serieName,
       teamsJson: JSON.stringify(teams),
       subTournamentsJson: JSON.stringify(subTournaments),
       region,
       numberOfTeams,
-      featured: s.tier === 's' || s.tier === 'a',
+      featured: tier === 's' || tier === 'a',
     };
 
     if (existing) {
@@ -456,7 +461,7 @@ export class ChampionshipsService {
       const result = await Repository.insert(EsportsTournamentEntity, data);
       if (!result.success) {
         ChampionshipsService.warn(
-          `[championships] Failed to insert serie ${s.slug}: ${result.message}`
+          `[championships] Failed to insert serie ${serieSlug}: ${result.message}`
         );
       }
     }
