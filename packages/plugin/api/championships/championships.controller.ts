@@ -7,6 +7,7 @@ import { LolRankingsService } from './lol-rankings.service';
 import { Draft5Service } from './draft5.service';
 import { VlrService } from './vlr.service';
 import { ValorantRankingsService } from './valorant-rankings.service';
+import { LolGprService } from './lol-gpr.service';
 
 @Controller('esports')
 export class ChampionshipsController {
@@ -18,6 +19,7 @@ export class ChampionshipsController {
     private readonly draft5Service: Draft5Service,
     private readonly vlrService: VlrService,
     private readonly valorantRankingsService: ValorantRankingsService,
+    private readonly lolGprService: LolGprService,
   ) {}
 
   @Get('tournaments')
@@ -154,6 +156,12 @@ export class ChampionshipsController {
   async getLolLeagues() {
     const leagues = await this.lolRankingsService.getLeagues();
     return { data: leagues };
+  }
+
+  @Get('rankings/lol/gpr')
+  async getLolGpr() {
+    const data = await this.lolGprService.getGpr();
+    return { data, total: data.length };
   }
 
   @Get('rankings/lol/status')

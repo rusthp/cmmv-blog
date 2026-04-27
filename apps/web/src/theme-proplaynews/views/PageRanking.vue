@@ -346,17 +346,19 @@
         <!-- ─── LOL SECTION ─── -->
         <div v-if="activeGame === 'lol'" class="game-section">
             <div class="game-section-header">
-                <h2 class="game-section-title">Standings por Liga</h2>
-                <p class="game-section-sub">Classificação atual em cada liga regional</p>
+                <h2 class="game-section-title">Global Power Ranking</h2>
+                <p class="game-section-sub">Ranking de força entre todas as ligas · atualizado diariamente</p>
             </div>
+
+            <!-- League filter -->
             <div class="region-section">
                 <div class="region-tabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                     <button
-                        v-for="tab in lolLeagueTabs"
+                        v-for="tab in gprLeagueFilter"
                         :key="tab.value"
                         class="region-tab"
-                        :class="{ active: activeLolLeague === tab.value }"
-                        @click="setLolLeague(tab.value)"
+                        :class="{ active: activeGprLeague === tab.value }"
+                        @click="activeGprLeague = tab.value"
                         style="position:relative;display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 1.15rem;border-radius:10px;border:1px solid rgba(148,163,184,0.1);background:rgba(15,23,42,0.6);color:#64748b;font-weight:600;font-size:0.85rem;cursor:pointer;"
                     >
                         <span>{{ tab.flag }}</span>
@@ -365,18 +367,19 @@
                 </div>
             </div>
 
-            <div v-if="lolLoading" class="loading-state">
-                <div v-for="n in 10" :key="n" class="skeleton-row">
+            <div v-if="gprLoading" class="loading-state">
+                <div v-for="n in 12" :key="n" class="skeleton-row">
                     <div class="skeleton-pulse sk-rank"></div>
                     <div class="skeleton-pulse sk-team"></div>
+                    <div class="skeleton-pulse sk-roster"></div>
                     <div class="skeleton-pulse sk-points"></div>
                 </div>
             </div>
-            <div v-else-if="lolRankings.length === 0" class="empty-state">
+            <div v-else-if="filteredGpr.length === 0" class="empty-state">
                 <div class="empty-visual"><div class="empty-ring"><span class="empty-icon">⚔️</span></div></div>
-                <h3 class="empty-title">Dados em sincronização</h3>
-                <p class="empty-desc">Os standings serão carregados em breve.</p>
-                <button class="empty-retry" @click="loadLol(activeLolLeague)">🔄 Tentar novamente</button>
+                <h3 class="empty-title">Dados em carregamento</h3>
+                <p class="empty-desc">O GPR será carregado em breve.</p>
+                <button class="empty-retry" @click="loadGpr()">🔄 Tentar novamente</button>
             </div>
             <div v-else class="ranking-container">
                 <div class="table-wrapper">
@@ -385,44 +388,68 @@
                             <tr>
                                 <th class="col-rank">#</th>
                                 <th class="col-team">Time</th>
-                                <th style="width:60px;text-align:center;">V</th>
-                                <th style="width:60px;text-align:center;">D</th>
-                                <th style="width:80px;text-align:center;">% Vitórias</th>
+                                <th style="width:70px;text-align:center;font-size:0.68rem;">Liga</th>
+                                <th style="width:90px;text-align:center;font-size:0.68rem;">V/D</th>
+                                <th class="col-points" style="font-size:0.68rem;">Pontuação</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
-                                v-for="(entry, idx) in lolRankings"
-                                :key="entry.id || idx"
+                                v-for="(entry, idx) in filteredGpr"
+                                :key="entry.teamSlug"
                                 class="ranking-row"
-                                :class="idx === 0 ? 'row-champion' : idx < 3 ? 'row-podium' : idx < 6 ? 'row-qualified' : ''"
+                                :class="idx === 0 ? 'row-champion' : idx < 3 ? 'row-podium' : idx < 8 ? 'row-qualified' : ''"
                             >
+                                <!-- Rank -->
                                 <td class="col-rank">
-                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.25rem;">
-                                        <span v-if="entry.standing === 1">👑</span>
-                                        <span v-else-if="entry.standing === 2">🥈</span>
-                                        <span v-else-if="entry.standing === 3">🥉</span>
-                                        <span class="rank-number" :class="{ 'rank-top1': entry.standing === 1, 'rank-top3': entry.standing <= 3, 'rank-top8': entry.standing > 3 && entry.standing <= 6 }">{{ entry.standing }}</span>
+                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.3rem;">
+                                        <span v-if="entry.rank === 1">👑</span>
+                                        <span v-else-if="entry.rank === 2">🥈</span>
+                                        <span v-else-if="entry.rank === 3">🥉</span>
+                                        <span class="rank-number" :class="{ 'rank-top1': entry.rank === 1, 'rank-top3': entry.rank <= 3, 'rank-top8': entry.rank > 3 && entry.rank <= 8 }">{{ entry.rank }}</span>
+                                        <span v-if="entry.rankDelta > 0" style="font-size:0.6rem;color:#4ade80;font-weight:700;">▲{{ entry.rankDelta }}</span>
+                                        <span v-else-if="entry.rankDelta < 0" style="font-size:0.6rem;color:#f87171;font-weight:700;">▼{{ Math.abs(entry.rankDelta) }}</span>
                                     </div>
                                 </td>
+                                <!-- Team -->
                                 <td class="col-team">
                                     <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
                                         <div class="team-avatar" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
-                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" :alt="entry.teamName" loading="lazy" @error="entry.logoError = true" />
+                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" :alt="entry.teamName" loading="lazy" @error="(entry as any).logoError = true" style="width:100%;height:100%;object-fit:contain;" />
                                             <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
                                         </div>
-                                        <span class="team-name" style="font-weight:700;font-size:0.88rem;color:#e2e8f0;">
-                                            <span v-if="entry.teamCode" style="color:#64748b;font-size:0.75rem;margin-right:0.35rem;">{{ entry.teamCode }}</span>
-                                            {{ entry.teamName }}
-                                        </span>
+                                        <div style="min-width:0;">
+                                            <div style="font-weight:700;font-size:0.88rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" :class="{ 'team-elite': entry.rank <= 3 }">
+                                                <span v-if="entry.teamCode" style="color:#64748b;font-size:0.72rem;margin-right:0.3rem;">{{ entry.teamCode }}</span>
+                                                {{ entry.teamName }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td style="text-align:center;font-weight:700;color:#68d391;font-size:0.9rem;">{{ entry.wins }}</td>
-                                <td style="text-align:center;font-weight:700;color:#fc8181;font-size:0.9rem;">{{ entry.losses }}</td>
+                                <!-- League badge -->
                                 <td style="text-align:center;">
-                                    <span style="font-size:0.82rem;color:#94a3b8;font-weight:600;">
-                                        {{ entry.wins + entry.losses > 0 ? Math.round((entry.wins / (entry.wins + entry.losses)) * 100) : 0 }}%
+                                    <span style="font-size:0.68rem;font-weight:700;color:#a78bfa;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);padding:0.15rem 0.5rem;border-radius:4px;white-space:nowrap;">{{ entry.leagueName }}</span>
+                                </td>
+                                <!-- W/D -->
+                                <td style="text-align:center;">
+                                    <span style="font-size:0.82rem;font-weight:700;color:#68d391;">{{ entry.matchWins }}</span>
+                                    <span style="font-size:0.75rem;color:#475569;margin:0 0.2rem;">-</span>
+                                    <span style="font-size:0.82rem;font-weight:700;color:#fc8181;">{{ entry.matchLosses }}</span>
+                                    <span style="display:block;font-size:0.65rem;color:#475569;">
+                                        {{ entry.matchWins + entry.matchLosses > 0 ? Math.round(entry.matchWins / (entry.matchWins + entry.matchLosses) * 100) : 0 }}%
                                     </span>
+                                </td>
+                                <!-- GPR Score -->
+                                <td class="col-points">
+                                    <div class="points-cell" style="display:flex;align-items:center;gap:0.6rem;">
+                                        <div class="points-bar-track" style="flex:1;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
+                                            <div class="points-bar-fill"
+                                                :class="entry.rank <= 3 ? 'bar-gold' : entry.rank <= 8 ? 'bar-cyan' : 'bar-default'"
+                                                :style="{ width: gprRankings[0]?.gprScore ? Math.round((entry.gprScore / gprRankings[0].gprScore) * 100) + '%' : '0%' }">
+                                            </div>
+                                        </div>
+                                        <span class="points-value" :class="{ 'points-elite': entry.rank <= 3 }">{{ entry.gprScore.toLocaleString('pt-BR') }}</span>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -431,7 +458,7 @@
             </div>
             <div class="source-footer" style="margin-top:1rem;">
                 <span class="source-icon-emoji">ℹ️</span>
-                <span>Dados via <a href="https://lolesports.com" target="_blank" rel="noopener">LoL Esports API</a></span>
+                <span>Dados via <a href="https://lolesports.com/pt-BR/gpr/2026/current" target="_blank" rel="noopener">LoL Esports GPR</a> · atualizado em {{ gprUpdatedAt }}</span>
             </div>
         </div>
     </div>
@@ -486,8 +513,9 @@ const activeVctRegion = ref('americas');
 const vctRankings = ref<any[]>([]);
 const vctLoading = ref(false);
 
-// ─── LoL ──────────────────────────────────────────────────
-const lolLeagueTabs = [
+// ─── LoL GPR ──────────────────────────────────────────────
+const gprLeagueFilter = [
+    { label: 'Todas', value: 'all', flag: '🌍' },
     { label: 'LCK', value: 'lck', flag: '🇰🇷' },
     { label: 'LEC', value: 'lec', flag: '🇪🇺' },
     { label: 'LCS', value: 'lcs', flag: '🇺🇸' },
@@ -495,9 +523,15 @@ const lolLeagueTabs = [
     { label: 'CBLOL', value: 'cblol-brazil', flag: '🇧🇷' },
     { label: 'LCP', value: 'lcp', flag: '🌏' },
 ];
-const activeLolLeague = ref('lck');
-const lolRankings = ref<any[]>([]);
-const lolLoading = ref(false);
+const activeGprLeague = ref('all');
+const gprRankings = ref<any[]>([]);
+const gprLoading = ref(false);
+const gprUpdatedAt = ref('');
+
+const filteredGpr = computed(() => {
+    if (activeGprLeague.value === 'all') return gprRankings.value;
+    return gprRankings.value.filter(e => e.leagueSlug === activeGprLeague.value);
+});
 
 const majorSlots = computed(() => {
     switch (activeRegion.value) {
@@ -556,17 +590,12 @@ function setGame(game: string) {
     activeGame.value = game;
     if (game === 'cs2' && rankings.value.length === 0) load(activeRegion.value);
     if (game === 'valorant' && vctRankings.value.length === 0) loadVct(activeVctRegion.value);
-    if (game === 'lol' && lolRankings.value.length === 0) loadLol(activeLolLeague.value);
+    if (game === 'lol' && gprRankings.value.length === 0) loadGpr();
 }
 
 function setVctRegion(region: string) {
     activeVctRegion.value = region;
     loadVct(region);
-}
-
-function setLolLeague(league: string) {
-    activeLolLeague.value = league;
-    loadLol(league);
 }
 
 async function loadVct(region: string) {
@@ -586,20 +615,24 @@ async function loadVct(region: string) {
     }
 }
 
-async function loadLol(league: string) {
-    lolLoading.value = true;
+async function loadGpr() {
+    gprLoading.value = true;
     try {
         const url = isSSR
-            ? `${apiBase}/esports/rankings/lol?league=${league}&limit=20`
-            : `/api/esports/rankings/lol?league=${league}&limit=20`;
+            ? `${apiBase}/esports/rankings/lol/gpr`
+            : `/api/esports/rankings/lol/gpr`;
         const res = await fetch(url);
         const json = await res.json();
         const result = json.result || json;
-        lolRankings.value = result.data || [];
+        gprRankings.value = result.data || [];
+        if (gprRankings.value.length > 0) {
+            const d = new Date(gprRankings.value[0].updatedAt);
+            gprUpdatedAt.value = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
     } catch {
-        lolRankings.value = [];
+        gprRankings.value = [];
     } finally {
-        lolLoading.value = false;
+        gprLoading.value = false;
     }
 }
 
