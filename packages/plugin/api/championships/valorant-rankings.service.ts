@@ -187,7 +187,9 @@ export class ValorantRankingsService {
     }
 
     private parseRankingsTable(html: string, region: string): any[] {
-        // Fallback: look for wf-table rows
+        // Table-based format used by non-Americas regions (EMEA, Pacific, China)
+        // Each row contains <td class="rank-item-team"> and <td class="rank-item-rating mod-world">
+        // with data-sort-value attributes carrying the actual values
         const entries: any[] = [];
         const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
         let match: RegExpExecArray | null;
@@ -195,31 +197,26 @@ export class ValorantRankingsService {
 
         while ((match = rowRegex.exec(html)) !== null) {
             const row = match[1];
-            // Skip header rows
             if (row.includes('<th')) continue;
+            if (!row.includes('rank-item-team')) continue;
 
-            const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(m => {
-                const text = m[1].replace(/<[^>]+>/g, '').trim();
-                return text;
-            });
-
-            if (cells.length < 2) continue;
-
-            // cells[0] = rank, cells[1] = team, last numeric = points
-            const rankNum = parseInt(cells[0], 10);
-            if (isNaN(rankNum)) continue;
-
-            const teamName = cells[1]?.trim();
+            // Team name from data-sort-value on rank-item-team td (attribute order varies)
+            const teamTdMatch = row.match(/data-sort-value="([^"]+)"[^>]*class="[^"]*rank-item-team[^"]*"|class="[^"]*rank-item-team[^"]*"[^>]*data-sort-value="([^"]+)"/);
+            const teamName = (teamTdMatch?.[1] || teamTdMatch?.[2] || '').trim();
             if (!teamName) continue;
 
-            const pointsCell = cells.find(c => /^\d[\d,]*$/.test(c.replace(/\s/g, '')));
-            const points = pointsCell ? parseInt(pointsCell.replace(/,/g, ''), 10) : 0;
+            // Rating from data-sort-value on rank-item-rating td
+            const ratingTdMatch = row.match(/data-sort-value="(\d+)"[^>]*class="[^"]*rank-item-rating[^"]*"|class="[^"]*rank-item-rating[^"]*"[^>]*data-sort-value="(\d+)"/);
+            const points = ratingTdMatch ? parseInt(ratingTdMatch[1] || ratingTdMatch[2] || '0', 10) : 0;
 
-            // Logo from img in this row
-            const logoMatch = match[0].match(/src="([^"]+)"/);
-            const logoUrl = logoMatch ? (logoMatch[1].startsWith('http') ? logoMatch[1] : `${VLR_BASE}${logoMatch[1]}`) : '';
+            // Logo from img src
+            const logoMatch = row.match(/<img[^>]*src="([^"]+)"/);
+            const rawSrc = logoMatch?.[1] || '';
+            const logoUrl = rawSrc
+                ? (rawSrc.startsWith('http') ? rawSrc : `https:${rawSrc.startsWith('//') ? rawSrc : `//${rawSrc}`}`)
+                : '';
 
-            entries.push({ standing: rankNum || standing, teamName, teamCode: '', points, region, logoUrl });
+            entries.push({ standing, teamName, teamCode: '', points, region, logoUrl });
             standing++;
         }
 

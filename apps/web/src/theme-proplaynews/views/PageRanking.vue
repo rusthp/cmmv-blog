@@ -315,11 +315,11 @@
                                 <td class="col-team">
                                     <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
                                         <div class="team-avatar" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
-                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" :alt="entry.teamName" loading="lazy" @error="entry.logoError = true" />
+                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" alt="" loading="lazy" @error="entry.logoError = true" />
                                             <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
                                         </div>
                                         <span class="team-name" style="font-weight:700;font-size:0.88rem;color:#e2e8f0;">
-                                            <span v-if="entry.teamCode" style="color:#64748b;font-size:0.75rem;margin-right:0.35rem;">{{ entry.teamCode }}</span>
+                                            <span v-if="entry.teamCode && entry.teamCode !== entry.teamName" style="color:#64748b;font-size:0.75rem;margin-right:0.35rem;">{{ entry.teamCode }}</span>
                                             {{ entry.teamName }}
                                         </span>
                                     </div>
