@@ -62,104 +62,80 @@ export class LolGprService {
     }
 
     private parse(html: string): GprEntry[] {
-        const entries: GprEntry[] = [];
-        const seen = new Set<string>();
-
-        // Each TeamGPR block is anchored by "averageOpponentGPR"
-        // We scan all occurrences and extract the bounded block around each
+        // The page embeds GPR data in an Apollo SSR transport script tag as JSON.
+        // Extract all push() calls and find the one containing teamGPR array.
+        const marker = 'Symbol.for("ApolloSSRDataTransport")';
         let searchFrom = 0;
+
         while (true) {
-            const anchorIdx = html.indexOf('"averageOpponentGPR":', searchFrom);
-            if (anchorIdx === -1) break;
+            const markerIdx = html.indexOf(marker, searchFrom);
+            if (markerIdx === -1) break;
 
-            // Take a window of 4000 chars around the anchor to find all fields
-            const blockStart = Math.max(0, anchorIdx - 100);
-            const block = html.slice(blockStart, anchorIdx + 4000);
+            const pushStart = html.indexOf('{', markerIdx);
+            if (pushStart === -1) break;
 
-            const entry = this.parseBlock(block);
-            if (entry && !seen.has(entry.teamSlug)) {
-                seen.add(entry.teamSlug);
-                entries.push(entry);
-            }
+            const scriptEnd = html.indexOf('</script>', pushStart);
+            if (scriptEnd === -1) break;
 
-            searchFrom = anchorIdx + 20;
+            let jsonStr = html.slice(pushStart, scriptEnd).trimEnd();
+            if (jsonStr.endsWith(');')) jsonStr = jsonStr.slice(0, -2);
+            else if (jsonStr.endsWith(')')) jsonStr = jsonStr.slice(0, -1);
+
+            try {
+                const payload = JSON.parse(jsonStr);
+                const events: any[] = payload?.events ?? [];
+                for (const ev of events) {
+                    const teamGprList: any[] = ev?.value?.data?.teamGPR;
+                    if (Array.isArray(teamGprList) && teamGprList.length > 0) {
+                        return this.mapTeamGprList(teamGprList);
+                    }
+                }
+            } catch { /* malformed JSON block, try next */ }
+
+            searchFrom = markerIdx + marker.length;
         }
 
-        // Sort by rank ascending
+        return [];
+    }
+
+    private mapTeamGprList(teamGprList: any[]): GprEntry[] {
+        const entries: GprEntry[] = [];
+        for (const item of teamGprList) {
+            const entry = this.mapTeamGpr(item);
+            if (entry) entries.push(entry);
+        }
         entries.sort((a, b) => a.rank - b.rank);
         return entries;
     }
 
-    private parseBlock(block: string): GprEntry | null {
-        try {
-            // teamMatchRecord wins/losses
-            const matchRecord = block.match(/"teamMatchRecord":\{"__typename":"WinLoss","wins":(\d+),"losses":(\d+)\}/);
-            if (!matchRecord) return null;
-            const matchWins = parseInt(matchRecord[1]);
-            const matchLosses = parseInt(matchRecord[2]);
+    private mapTeamGpr(item: any): GprEntry | null {
+        const current = item?.currentTeamGPR;
+        const previous = item?.previousTeamGPR;
+        const team = item?.team;
+        const matchRec = item?.teamMatchRecord;
+        const gameRec = item?.teamGameRecord;
 
-            // teamGameRecord wins/losses
-            const gameRecord = block.match(/"teamGameRecord":\{"__typename":"WinLoss","wins":(\d+),"losses":(\d+)\}/);
-            const gameWins = gameRecord ? parseInt(gameRecord[1]) : 0;
-            const gameLosses = gameRecord ? parseInt(gameRecord[2]) : 0;
+        if (!current || !team?.code) return null;
 
-            // currentTeamGPR
-            const currentGpr = block.match(/"currentTeamGPR":\{"__typename":"GPR","gprScore":(\d+),"elo":\d+,"rank":(\d+),"dateCalculated":"([^"]+)"/);
-            if (!currentGpr) return null;
-            const gprScore = parseInt(currentGpr[1]);
-            const rank = parseInt(currentGpr[2]);
-            const updatedAt = currentGpr[3];
+        const rank: number = current.rank;
+        const prevRank: number = previous?.rank ?? rank;
 
-            // previousTeamGPR rank for delta
-            const prevGpr = block.match(/"previousTeamGPR":\{"__typename":"GPR","gprScore":\d+,"elo":\d+,"rank":(\d+)/);
-            const prevRank = prevGpr ? parseInt(prevGpr[1]) : rank;
-            const rankDelta = prevRank - rank; // positive = moved up
-
-            // Find the real team object — tournament standings embed minimal team entries
-            // with no "code" field. Real teams always have "code":"ABC" (uppercase letters/digits).
-            let teamBlockStart = -1;
-            let teamSearch = 0;
-            while (true) {
-                const idx = block.indexOf('"team":{"__typename":"Team"', teamSearch);
-                if (idx === -1) break;
-                const candidate = block.slice(idx, idx + 1200);
-                if (/"code":"[A-Z0-9]/.test(candidate)) {
-                    teamBlockStart = idx;
-                    break;
-                }
-                teamSearch = idx + 1;
-            }
-            if (teamBlockStart === -1) return null;
-            const teamBlock = block.slice(teamBlockStart, teamBlockStart + 1200);
-
-            const nameMatch = teamBlock.match(/"name":"([^"]+)"/);
-            const codeMatch = teamBlock.match(/"code":"([^"]+)"/);
-            const slugMatch = teamBlock.match(/"slug":"([^"]+)"/);
-            const imageMatch = teamBlock.match(/"image":"(http[^"]+\/teams\/[^"]+)"/);
-            const leagueNameMatch = teamBlock.match(/"homeLeague":\{[^}]*"name":"([^"]+)"/);
-            const leagueSlugMatch = teamBlock.match(/"homeLeague":\{[^}]*"slug":"([^"]+)"/);
-
-            if (!nameMatch || !codeMatch || !slugMatch) return null;
-
-            return {
-                rank,
-                rankDelta,
-                teamName: nameMatch[1],
-                teamCode: codeMatch?.[1] || '',
-                teamSlug: slugMatch[1],
-                logoUrl: imageMatch?.[1] || '',
-                leagueName: leagueNameMatch?.[1] || '',
-                leagueSlug: leagueSlugMatch?.[1] || '',
-                gprScore,
-                matchWins,
-                matchLosses,
-                gameWins,
-                gameLosses,
-                updatedAt,
-            };
-        } catch {
-            return null;
-        }
+        return {
+            rank,
+            rankDelta: prevRank - rank,
+            teamName: team.name ?? '',
+            teamCode: team.code ?? '',
+            teamSlug: team.slug ?? '',
+            logoUrl: team.image ?? '',
+            leagueName: team.homeLeague?.name ?? '',
+            leagueSlug: team.homeLeague?.slug ?? '',
+            gprScore: current.gprScore ?? 0,
+            matchWins: matchRec?.wins ?? 0,
+            matchLosses: matchRec?.losses ?? 0,
+            gameWins: gameRec?.wins ?? 0,
+            gameLosses: gameRec?.losses ?? 0,
+            updatedAt: current.dateCalculated ?? '',
+        };
     }
 
     private async httpGet(url: string): Promise<string | null> {
