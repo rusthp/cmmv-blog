@@ -420,7 +420,7 @@
                                         </div>
                                         <div style="min-width:0;">
                                             <div style="font-weight:700;font-size:0.88rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" :class="{ 'team-elite': entry.rank <= 3 }">
-                                                <span v-if="entry.teamCode" style="color:#64748b;font-size:0.72rem;margin-right:0.3rem;">{{ entry.teamCode }}</span>
+                                                <span v-if="entry.teamCode && entry.teamCode !== entry.teamName" style="color:#64748b;font-size:0.72rem;margin-right:0.3rem;">{{ entry.teamCode }}</span>
                                                 {{ entry.teamName }}
                                             </div>
                                         </div>
