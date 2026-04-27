@@ -683,15 +683,25 @@ const PLAYER_COUNTRY: Record<string, string> = {
     'zevy': 'BR', 'mazin': 'BR', 'chelo': 'BR', 'crisby': 'BR', 'tuyz': 'BR',
     'mwzera': 'BR', 'nbl': 'BR', 'shz': 'BR', 'dgzin': 'BR', 'fastdrawn': 'BR',
     'pax': 'BR', 'nqz': 'BR', 'raizen': 'BR', 'dav1de': 'BR', 'hnt': 'BR',
+    'vsm': 'BR', 'dumau': 'BR',
+    'FalleN': 'BR', 'KSCERATO': 'BR', 'yuurih': 'BR', 'soulfly': 'BR',
+    'biguzera': 'BR', 'piriajr': 'BR', 'snow': 'BR',
+    'arT': 'BR', 'latto': 'BR', 'n1ssim': 'BR', 'saadzin': 'BR',
+    'venomzera': 'BR', 'insani': 'BR', 'brnz4n': 'BR', 'kl1m': 'BR', 'LNZ': 'BR',
+    'felps': 'BR', 'HEN1': 'BR', 'JOTA': 'BR', 'NEKIZ': 'BR',
     // Denmark
     'device': 'DK', 'magisk': 'DK', 'blamef': 'DK', 'karrigan': 'DK',
     'br0': 'DK', 'jabbi': 'DK', 'stavn': 'DK', 'nicoodoz': 'DK', 'sjuush': 'DK',
     'farlig': 'DK', 'roej': 'DK', 'b1n0': 'DK', 'kyxsan': 'DK',
+    'HooXi': 'DK', 'ryu': 'DK', 'Staehr': 'DK', 'TeSeS': 'DK', 'blameF': 'DK',
+    'Snappi': 'DK', 'xfl0ud': 'DK', 'nilo': 'DK',
     // France
     'apoka': 'FR', 'shox': 'FR', 'kioresh': 'FR', 'xms': 'FR', 'bodyy': 'FR',
     'z3hr': 'FR', 'misutaaa': 'FR', 'r3salt': 'FR', 's1ren': 'FR', 'mezii': 'FR',
-    'flameZ': 'FR', 'afro': 'FR', 'vsm': 'FR', 'blix': 'FR', 'xertioN': 'FR',
-    'dumau': 'FR', 'penn': 'FR', 'nK': 'FR', 'hAdji': 'FR', 'woro2k': 'FR',
+    'flameZ': 'FR', 'afro': 'FR', 'blix': 'FR',
+    'apEX': 'FR', 'ZywOo': 'FR', 'MAJ3R': 'FR', 'Wicadia': 'FR', 'm0NESY': 'FR',
+    'Rainwaker': 'FR', 'Lucky': 'FR', 'Graviti': 'FR', 'Ex3rcice': 'FR', 'Maka': 'FR',
+    'penn': 'FR', 'nK': 'FR', 'hAdji': 'FR', 'woro2k': 'FR',
     'to1nou': 'FR', 'tex': 'FR', 'sixer': 'FR', 'eksem': 'FR', 's1N': 'FR',
     // Germany
     'syrsoN': 'DE', 'krimbo': 'DE', 'tiziaN': 'DE', 'prosus': 'DE', 'cmzn': 'DE',
@@ -707,16 +717,20 @@ const PLAYER_COUNTRY: Record<string, string> = {
     'friberg': 'SE', 'twist': 'SE', 'leX': 'SE', 's3pt3ri0n': 'SE', 'phzy': 'SE',
     'nicoo': 'SE', 'plopski': 'SE', 'headtr1ck': 'SE', 'zet': 'SE',
     'peppzor': 'SE', 'f1n': 'SE', 'n3z': 'SE',
+    'Brollan': 'SE', 'REZ': 'SE', 'JW': 'SE',
     // Russia
     'sh1ro': 'RU', 'ax1Le': 'RU', 'perfecto': 'RU', 'electroNic': 'RU', 'nafany': 'RU',
     'interz': 'RU', 'fame': 'RU', 'flamus': 'RU', 'jame': 'RU', 'buster': 'RU',
     'qikert': 'RU', 'zorte': 'RU', 'norwi': 'RU', 'forester': 'RU', 'zont1x': 'RU',
     'rmn': 'RU', 's1leNt': 'RU', 'chopper': 'RU', 's0me': 'RU', 'notineki': 'RU',
+    'donk': 'RU', 'tN1R': 'RU', 'BELCHONOKK': 'RU', 'xiELO': 'RU', 'zweih': 'RU',
+    'Boombl4': 'RU', 'FL4MUS': 'RU', 'Magnojez': 'RU', 'Qikert': 'RU',
     // Ukraine
     'b1t': 'UA', 'npl': 'UA', 'demho': 'UA', 'w0nderful': 'UA', 'ducha': 'UA',
     'kapacho': 'UA', 'anarkez': 'UA', 'kade0': 'UA', 'krizzeN': 'UA', 'kvik': 'UA',
     '777': 'UA', 'bondik': 'UA', 'kory': 'UA', 'kizZz': 'UA', 'shadiy': 'UA',
-    'sp3ktre': 'UA', 'magixx': 'UA', // Belarus
+    'sp3ktre': 'UA', 'magixx': 'UA', 'makazze': 'UA', 'iM': 'UZ',
+    // Belarus
     'prophecy': 'BY', 'g3nism': 'BY', 'v4lk': 'BY', // Kazakhstan
     'aff1N1ty': 'KZ', 'seized': 'KZ', // Serbia
     'hugo': 'RS', 'LETN1': 'RS', 's1NNer': 'RS', 'torres': 'RS', 'd0c': 'RS',
@@ -739,8 +753,9 @@ const PLAYER_COUNTRY: Record<string, string> = {
     // Turkey
     'woxic': 'TR', 'calm': 'TR', 'ruxic': 'TR', // Estonia
     // Australia
-    'liazz': 'AU', 'hazrd': 'AU', 'sico': 'AU', 'aliStair': 'AU',
+    'liazz': 'AU', 'Liazz': 'AU', 'hazrd': 'AU', 'sico': 'AU', 'aliStair': 'AU',
     'pan': 'AU', 'gratisfaction': 'AU', 'insight': 'AU',
+    'dexter': 'AU', 'TjP': 'AU', 'asap': 'AU',
     // New Zealand
     'nzDexter': 'NZ', // USA
     'stanislaw': 'US', 'shahZaM': 'US', 'autimatic': 'US', 'reltuC': 'US',
@@ -749,17 +764,20 @@ const PLAYER_COUNTRY: Record<string, string> = {
     // Canada
     'nafoo': 'CA', 'EZ': 'CA', 'FASHR': 'CA', // Argentina
     'dgt': 'AR', 'malbs': 'AR', 'bravinn': 'AR', 'jks': 'AR', 'rigo': 'AR', 'n1k3n': 'AR',
+    'meyern': 'AR', 'luchov': 'AR', 'max': 'AR', 'nacho': 'AR', 'tomaszin': 'AR',
+    'cass1n': 'AR', 'buda': 'AR', 'timo': 'AR', 'Luken': 'AR',
     // Chile
-    'kiNgg': 'CL', // Colombia
+    'kiNgg': 'CL', 'HUASOPEEK': 'CL', // Colombia
     'krii': 'CO', // Mongolia
     'bLaz1ng': 'MN', 'techno4k': 'MN', '910': 'MN', 'adik': 'MN', 'sk0R': 'MN',
-    'shine': 'MN', 'bodya': 'MN', 'pure': 'MN', // Japan
+    'shine': 'MN', 'bodya': 'MN', 'pure': 'MN',
+    'bLitz': 'MN', 'cobrazera': 'MN', 'mzinho': 'MN', 'Techno': 'MN', // Japan
     'Meiy': 'JP', 'StyuN': 'JP', 'Astar': 'JP', // China
     'advent': 'CN', 'qzr': 'CN', 'somebody': 'CN', 'danking': 'CN', 'summer': 'CN',
     'kaze': 'CN', 'tb': 'CN', 'mercury': 'CN', 'z4kr': 'CN',
     // Slovakia
     'oskar': 'SK', // Israel
-    'r1cky': 'IL', // Georgia
+    'r1cky': 'IL', 'xertioN': 'IL', 'Spinx': 'IL', // Georgia
     'hooch': 'GE', // Romania
     'h1gg3r': 'RO', // Israel
 };
@@ -782,6 +800,68 @@ function detectTeamNationalityFromRoster(roster: string): string | null {
     }
     return bestCode;
 }
+
+const TEAM_COUNTRY: Record<string, string> = {
+    // CS2
+    'vitality': 'FR', 'team vitality': 'FR',
+    'natus vincere': 'UA', 'navi': 'UA',
+    'parivision': 'RU',
+    'furia': 'BR', 'furia esports': 'BR',
+    'aurora': 'TR',
+    'falcons': 'SA',
+    'mouz': 'DE', 'mousesports': 'DE',
+    'the mongolz': 'MN', 'mongolz': 'MN',
+    'spirit': 'RU', 'team spirit': 'RU',
+    'astralis': 'DK',
+    'g2': 'ES', 'g2 esports': 'ES',
+    'fut': 'TR', 'fut esports': 'TR',
+    '9z': 'AR',
+    'pain': 'BR', 'pain gaming': 'BR',
+    'monte': 'UA',
+    'legacy': 'BR',
+    'gamerlegion': 'DE',
+    'big': 'DE',
+    'betboom': 'RU',
+    'b8': 'UA',
+    'heroic': 'DK',
+    'sinners': 'CZ',
+    'alliance': 'SE',
+    '3dmax': 'FR',
+    'm80': 'US',
+    'faze': 'US', 'faze clan': 'US',
+    'tyloo': 'CN',
+    'ninjas in pyjamas': 'SE', 'nip': 'SE',
+    'nrg': 'US',
+    'k27': 'RU',
+    'sharks': 'BR', 'sharks esports': 'BR',
+    'gentle mates': 'FR',
+    'nemiga': 'BY', 'nemiga gaming': 'BY',
+    'gaimin gladiators': 'BR',
+    'mibr': 'BR',
+    'illwill': 'DE',
+    '1win': 'RU',
+    'nemesis': 'FR',
+    'eyeballers': 'SE',
+    'liquid': 'US', 'team liquid': 'US',
+    '100 thieves': 'US',
+    'lynn vision': 'CN',
+    'bestia': 'AR',
+    'passion ua': 'UA',
+    '9ine': 'PL',
+    'thunder downunder': 'AU',
+    'cloud9': 'US',
+    'fnatic': 'SE',
+    'ence': 'FI',
+    'virtus.pro': 'PL', 'vp': 'PL',
+    'complexity': 'US', 'complexity gaming': 'US',
+    'saw': 'PT',
+    'fluxo': 'BR',
+    'imperial': 'BR', 'imperial esports': 'BR',
+    'pera esports': 'TR',
+    'ecstatic': 'DK',
+    'apogee': 'GB',
+    'nato': 'DK',
+};
 
 const KNOWN_LOGOS: Record<string, string> = {
     'vitality': 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Team_Vitality_logo.svg',
@@ -847,13 +927,15 @@ function countryCodeToFlag(countryCode: string): string {
     return codePoints.join('');
 }
 
-// Parse team country — first from detailsSlug (backend-set), fallback to roster detection
 function getTeamCountryCode(entry: any): string | null {
-    // Try detailsSlug prefix first (format: "CC/slug" set by backend)
+    // 1. detailsSlug prefix (format: "CC/slug" set by backend)
     const slug = entry.detailsSlug || '';
     const slugMatch = slug.match(/^([A-Z]{2})(?:\/.*)?$/i);
     if (slugMatch) return slugMatch[1];
-    // Fallback: detect from roster
+    // 2. Known team name lookup
+    const key = (entry.teamName || '').toLowerCase().trim();
+    if (TEAM_COUNTRY[key]) return TEAM_COUNTRY[key];
+    // 3. Detect from roster players
     return detectTeamNationalityFromRoster(entry.roster);
 }
 
