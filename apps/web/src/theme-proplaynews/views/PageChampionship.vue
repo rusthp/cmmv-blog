@@ -499,7 +499,12 @@ async function loadBrackets() {
         const res = await fetch(`/api/esports/tournaments/${slug.value}/brackets`);
         if (res.ok) {
             const data = await res.json();
-            brackets.value = data.result || data;
+            const raw = data.result || data;
+            brackets.value = {
+                phases: Array.isArray(raw.phases) ? raw.phases : [],
+                brackets: raw.brackets && typeof raw.brackets === 'object' ? raw.brackets : {},
+                hasPlayoffs: !!raw.hasPlayoffs,
+            };
             if (brackets.value.phases.length > 0 && !activePhase.value) {
                 activePhase.value = brackets.value.phases[0];
             }
