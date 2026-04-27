@@ -296,21 +296,21 @@
                         <div v-for="m in dayGroup" :key="m.id" class="cal-match">
                             <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
                             <div class="cal-teams">
-                                <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId }">
+                                <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId, 'cal-loser': m.winnerExternalId && m.winnerExternalId !== m.team1ExternalId }">
                                     <div class="team-icon-sm">
-                                        <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                        <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                        <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
+                                        <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                     </div>
                                     {{ m.team1Name || 'TBA' }}
                                 </div>
-                                <span class="cal-score done">{{ m.team1Score ?? 0 }}</span>
+                                <span class="cal-score" :class="{ win: m.winnerExternalId === m.team1ExternalId, loss: m.winnerExternalId && m.winnerExternalId !== m.team1ExternalId }">{{ m.team1Score ?? 0 }}</span>
                                 <span class="cal-format">MD{{ m.numberOfGames }}</span>
-                                <span class="cal-score done">{{ m.team2Score ?? 0 }}</span>
-                                <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId }">
+                                <span class="cal-score" :class="{ win: m.winnerExternalId === m.team2ExternalId, loss: m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">{{ m.team2Score ?? 0 }}</span>
+                                <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId, 'cal-loser': m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">
                                     {{ m.team2Name || 'TBA' }}
                                     <div class="team-icon-sm">
-                                        <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                        <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                        <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
+                                        <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -343,17 +343,17 @@
                     <div v-for="m in dayGroup" :key="m.id" class="cal-match">
                         <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
                         <div class="cal-teams">
-                            <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId && m.status === 'finished' }">
+                            <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId && m.status === 'finished', 'cal-loser': m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team1ExternalId }">
                                 <div class="team-icon-sm">
                                     <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
                                     <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                 </div>
                                 {{ m.team1Name || 'TBA' }}
                             </div>
-                            <span class="cal-score" :class="{ done: m.status === 'finished' }">{{ m.team1Score ?? 0 }}</span>
+                            <span class="cal-score" :class="{ win: m.status === 'finished' && m.winnerExternalId === m.team1ExternalId, loss: m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team1ExternalId }">{{ m.team1Score ?? 0 }}</span>
                             <span class="cal-format">MD{{ m.numberOfGames }}</span>
-                            <span class="cal-score" :class="{ done: m.status === 'finished' }">{{ m.team2Score ?? 0 }}</span>
-                            <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId && m.status === 'finished' }">
+                            <span class="cal-score" :class="{ win: m.status === 'finished' && m.winnerExternalId === m.team2ExternalId, loss: m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">{{ m.team2Score ?? 0 }}</span>
+                            <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId && m.status === 'finished', 'cal-loser': m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">
                                 {{ m.team2Name || 'TBA' }}
                                 <div class="team-icon-sm">
                                     <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
@@ -1084,22 +1084,43 @@ onMounted(load);
 .cal-teams {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.375rem;
+    justify-content: center;
 }
 
 .cal-team {
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    flex: 1;
+    width: 38%;
+    min-width: 0;
     font-size: 0.8125rem;
     color: #a0aec0;
     font-weight: 500;
     overflow: hidden;
     white-space: nowrap;
+    padding: 0.2rem 0.375rem;
+    border-radius: 4px;
+    transition: background 0.15s;
 }
-.cal-team.right { flex-direction: row-reverse; }
-.cal-winner { color: #e2e8f0; font-weight: 700; }
+.cal-team.right { flex-direction: row-reverse; justify-content: flex-start; }
+.cal-winner {
+    color: #e2e8f0;
+    font-weight: 700;
+    border-left: 3px solid rgba(104, 211, 145, 0.7);
+}
+.cal-team.right.cal-winner {
+    border-left: none;
+    border-right: 3px solid rgba(104, 211, 145, 0.7);
+}
+.cal-loser {
+    color: #718096;
+    border-left: 3px solid rgba(252, 129, 129, 0.45);
+}
+.cal-team.right.cal-loser {
+    border-left: none;
+    border-right: 3px solid rgba(252, 129, 129, 0.45);
+}
 
 .cal-score {
     font-weight: 700;
@@ -1107,8 +1128,18 @@ onMounted(load);
     color: #4a5568;
     min-width: 1.5rem;
     text-align: center;
+    border-radius: 4px;
+    padding: 0.1rem 0.25rem;
 }
 .cal-score.done { color: #e2e8f0; }
+.cal-score.win {
+    color: #68d391;
+    background: rgba(104, 211, 145, 0.12);
+}
+.cal-score.loss {
+    color: #fc8181;
+    background: rgba(252, 129, 129, 0.1);
+}
 
 .cal-format {
     font-size: 0.6875rem;
