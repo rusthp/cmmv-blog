@@ -251,7 +251,7 @@
                                     {{ m.team1Name || 'TBA' }}
                                 </div>
                                 <span class="cal-score">{{ m.team1Score ?? 0 }}</span>
-                                <span class="cal-format">MD{{ m.numberOfGames }}</span>
+                                <span class="cal-format" :class="`md${m.numberOfGames}`">MD{{ m.numberOfGames }}</span>
                                 <span class="cal-score">{{ m.team2Score ?? 0 }}</span>
                                 <div class="cal-team right">
                                     <div class="team-icon-sm">
@@ -281,7 +281,7 @@
                                     {{ m.team1Name || 'TBA' }}
                                 </div>
                                 <span class="cal-score" :class="{ win: m.winnerExternalId === m.team1ExternalId, loss: m.winnerExternalId && m.winnerExternalId !== m.team1ExternalId }">{{ m.team1Score ?? 0 }}</span>
-                                <span class="cal-format">MD{{ m.numberOfGames }}</span>
+                                <span class="cal-format" :class="`md${m.numberOfGames}`">MD{{ m.numberOfGames }}</span>
                                 <span class="cal-score" :class="{ win: m.winnerExternalId === m.team2ExternalId, loss: m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">{{ m.team2Score ?? 0 }}</span>
                                 <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId, 'cal-loser': m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">
                                     <div class="team-icon-sm">
@@ -1050,7 +1050,7 @@ onMounted(load);
     padding: 0.2rem 0.375rem;
     border-radius: 4px;
     transition: background 0.15s;
-    justify-content: flex-end;
+    justify-content: flex-start;
     flex-direction: row-reverse;
 }
 .cal-team.right { flex-direction: row; justify-content: flex-start; }
@@ -1093,14 +1093,19 @@ onMounted(load);
 
 .cal-format {
     font-size: 0.6875rem;
-    color: #4a5568;
+    font-weight: 700;
+    color: #718096;
     background: #1a202c;
     border: 1px solid #2d3748;
     padding: 0.125rem 0.4rem;
     border-radius: 3px;
     white-space: nowrap;
     flex-shrink: 0;
+    letter-spacing: 0.04em;
 }
+.cal-format.md1 { color: #f6ad55; border-color: rgba(246,173,85,0.35); background: rgba(246,173,85,0.08); }
+.cal-format.md3 { color: #63b3ed; border-color: rgba(99,179,237,0.35); background: rgba(99,179,237,0.08); }
+.cal-format.md5 { color: #9f7aea; border-color: rgba(159,122,234,0.35); background: rgba(159,122,234,0.08); }
 
 .cal-league {
     font-size: 0.6875rem; color: #718096;
