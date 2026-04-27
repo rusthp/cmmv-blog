@@ -337,10 +337,10 @@ export class RankingsService {
 
         RankingsService.log(`[rankings] parsed ${entries.length} entries for ${region} @ ${date}`);
 
-        // Clean old data for this region + snapshot
+        // Clean ALL old data for this region before inserting fresh snapshot
         try {
-            await Repository.deleteMany(entity, { region, snapshotDate: date });
-            RankingsService.log(`[rankings] cleaned old entries for ${region}/${date}`);
+            await Repository.deleteMany(entity, { region });
+            RankingsService.log(`[rankings] cleaned old entries for ${region}`);
         } catch (e: any) {
             RankingsService.warn(`[rankings] delete failed: ${e.message}`);
         }

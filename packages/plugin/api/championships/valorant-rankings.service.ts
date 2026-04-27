@@ -127,7 +127,7 @@ export class ValorantRankingsService {
 
         const today = this.todaySnapshot();
 
-        await Repository.deleteMany(entity, { region: key, snapshotDate: today }).catch(() => {});
+        await Repository.deleteMany(entity, { region: key }).catch(() => {});
 
         let inserted = 0;
         for (const entry of entries) {

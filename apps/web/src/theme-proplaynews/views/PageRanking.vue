@@ -513,9 +513,17 @@ const maxPoints = computed(() =>
     rankings.value.length > 0 ? rankings.value[0].points : 1
 );
 
-const displayedRankings = computed(() => 
-    rankings.value.slice(0, displayLimit.value)
-);
+const displayedRankings = computed(() => {
+    const seen = new Set<string>();
+    return rankings.value
+        .filter(entry => {
+            const key = `${entry.standing}-${entry.teamName}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .slice(0, displayLimit.value);
+});
 
 async function load(region: string) {
     loading.value = true;

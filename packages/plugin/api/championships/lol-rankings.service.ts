@@ -182,7 +182,7 @@ export class LolRankingsService {
         if (!entity) return 0;
 
         const today = this.todaySnapshot();
-        await Repository.deleteMany(entity, { league: leagueSlug, snapshotDate: today }).catch(() => {});
+        await Repository.deleteMany(entity, { league: leagueSlug }).catch(() => {});
 
         let inserted = 0;
         for (const entry of entries) {
