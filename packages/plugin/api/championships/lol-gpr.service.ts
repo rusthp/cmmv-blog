@@ -126,7 +126,7 @@ export class LolGprService {
             teamName: team.name ?? '',
             teamCode: team.code ?? '',
             teamSlug: team.slug ?? '',
-            logoUrl: team.image ?? '',
+            logoUrl: (team.image ?? '').replace(/^http:\/\//, 'https://'),
             leagueName: team.homeLeague?.name ?? '',
             leagueSlug: team.homeLeague?.slug ?? '',
             gprScore: current.gprScore ?? 0,
