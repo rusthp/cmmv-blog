@@ -332,20 +332,6 @@ function formatCardDate(startStr: string, endStr: string): string {
   return `${sStr} - ${eStr}`;
 }
 
-function handleImageError(e: Event) {
-  const img = e.target as HTMLImageElement;
-  const parent = img.closest('.card-banner') as HTMLElement | null;
-  if (parent) parent.classList.add('banner-broken');
-  img.style.display = 'none';
-}
-
-function handleLogoError(e: Event) {
-  const img = e.target as HTMLImageElement;
-  img.style.display = 'none';
-  const sib = img.nextElementSibling as HTMLElement | null;
-  if (sib) sib.style.display = '';
-}
-
 function getProgress(tournament: any): number {
   if (!tournament.startDate || !tournament.endDate) return 50;
   const start = new Date(tournament.startDate).getTime();
