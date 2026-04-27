@@ -133,7 +133,7 @@
           <div class="card-info">
             <div class="card-logo">
               <img v-if="t.logoUrl" :src="t.logoUrl" :alt="t.name" @error="handleLogoError" />
-              <div v-else class="logo-placeholder">
+              <div class="logo-placeholder" :style="t.logoUrl ? 'display:none' : ''">
                 {{ getInitials(t.name) }}
               </div>
             </div>
@@ -330,6 +330,20 @@ function formatCardDate(startStr: string, endStr: string): string {
   if (!e || s.getTime() === e.getTime()) return sStr;
   const eStr = e.toLocaleDateString('pt-BR', opts);
   return `${sStr} - ${eStr}`;
+}
+
+function handleImageError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  const parent = img.closest('.card-banner') as HTMLElement | null;
+  if (parent) parent.classList.add('banner-broken');
+  img.style.display = 'none';
+}
+
+function handleLogoError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  img.style.display = 'none';
+  const sib = img.nextElementSibling as HTMLElement | null;
+  if (sib) sib.style.display = '';
 }
 
 function getProgress(tournament: any): number {

@@ -28,8 +28,8 @@
         <div class="champ-header">
             <div class="header-left">
                 <div class="logo-box">
-                    <img v-if="tournament.logoUrl" :src="tournament.logoUrl" :alt="tournament.name" />
-                    <span v-else>{{ getInitials(tournament.name) }}</span>
+                    <img v-if="tournament.logoUrl" :src="tournament.logoUrl" :alt="tournament.name" @error="imgError" />
+                    <span :style="tournament.logoUrl ? 'display:none' : ''">{{ getInitials(tournament.name) }}</span>
                 </div>
                 <div class="title-area">
                     <div class="badges">
@@ -119,8 +119,8 @@
                                                 <div v-if="m.status === 'running'" class="bk-live-dot"></div>
                                                 <div class="bk-team" :class="getBracketTeamClass(m, 1)">
                                                     <div class="bk-logo">
-                                                        <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                                        <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                                        <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
+                                                        <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                                     </div>
                                                     <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
                                                     <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
@@ -128,8 +128,8 @@
                                                 <div class="bk-divider"></div>
                                                 <div class="bk-team" :class="getBracketTeamClass(m, 2)">
                                                     <div class="bk-logo">
-                                                        <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                                        <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                                        <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
+                                                        <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                                     </div>
                                                     <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
                                                     <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
@@ -178,8 +178,8 @@
                                     <td class="rank">{{ idx + 1 }}</td>
                                     <td class="team-cell">
                                         <div class="team-icon-sm">
-                                            <img v-if="row.logo" :src="row.logo" />
-                                            <span v-else>{{ getInitials(row.name) }}</span>
+                                            <img v-if="row.logo" :src="row.logo" @error="imgError" />
+                                            <span :style="row.logo ? 'display:none' : ''">{{ getInitials(row.name) }}</span>
                                         </div>
                                         {{ row.name }}
                                     </td>
@@ -207,8 +207,8 @@
                         <div class="mr-teams">
                             <div class="mr-team" :class="getTeamClassMatch(m, 1)">
                                 <div class="team-icon-sm">
-                                    <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                    <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                    <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
+                                    <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                 </div>
                                 <span>{{ m.team1Name || 'TBA' }}</span>
                                 <span class="mr-score">{{ m.team1Score ?? 0 }}</span>
@@ -218,8 +218,8 @@
                                 <span class="mr-score">{{ m.team2Score ?? 0 }}</span>
                                 <span>{{ m.team2Name || 'TBA' }}</span>
                                 <div class="team-icon-sm">
-                                    <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                    <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                    <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
+                                    <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -345,8 +345,8 @@
                         <div class="cal-teams">
                             <div class="cal-team" :class="{ 'cal-winner': m.winnerExternalId === m.team1ExternalId && m.status === 'finished' }">
                                 <div class="team-icon-sm">
-                                    <img v-if="m.team1Logo" :src="m.team1Logo" />
-                                    <span v-else>{{ getInitials(m.team1Name) }}</span>
+                                    <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
+                                    <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                 </div>
                                 {{ m.team1Name || 'TBA' }}
                             </div>
@@ -356,8 +356,8 @@
                             <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId && m.status === 'finished' }">
                                 {{ m.team2Name || 'TBA' }}
                                 <div class="team-icon-sm">
-                                    <img v-if="m.team2Logo" :src="m.team2Logo" />
-                                    <span v-else>{{ getInitials(m.team2Name) }}</span>
+                                    <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
+                                    <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -375,8 +375,8 @@
             <div v-else class="teams-grid-simple">
                 <div v-for="t in teams" :key="t.id" class="team-card-simple">
                     <div class="team-logo-sm">
-                        <img v-if="t.logoUrl" :src="t.logoUrl" />
-                        <span v-else>{{ getInitials(t.name) }}</span>
+                        <img v-if="t.logoUrl" :src="t.logoUrl" @error="imgError" />
+                        <span :style="t.logoUrl ? 'display:none' : ''">{{ getInitials(t.name) }}</span>
                     </div>
                     <span>{{ t.name }}</span>
                 </div>
@@ -404,6 +404,13 @@ const bracketsLoading = ref(false);
 const loadError = ref<string | null>(null);
 const activeTab = ref('overview');
 const activePhase = ref('');
+
+function imgError(e: Event) {
+    const img = e.target as HTMLImageElement;
+    img.style.display = 'none';
+    const sib = img.nextElementSibling as HTMLElement | null;
+    if (sib) sib.style.display = '';
+}
 
 const PLAYOFF_PHASES = ['qualifier', 'playoffs', 'quarter_final', 'semi_final', 'grand_final'];
 const PHASE_ORDER = ['qualifier', 'group_stage', 'quarter_final', 'semi_final', 'playoffs', 'grand_final'];
