@@ -524,7 +524,14 @@ export class ChampionshipsService {
     const numberOfTeams = teams.length || 0;
 
     // Serie metadata from first tournament's serie field
-    const serieName = serie.full_name || serie.name || first.name || '';
+    const leagueName = (first.league || {}).name || '';
+    const rawSerieName = serie.full_name || serie.name || first.name || '';
+    // When PandaScore serie has a generic name (Season N, Split N, Phase N, etc.)
+    // prefix with the league name so the display name is meaningful.
+    const GENERIC_SERIE = /^(season|split|phase|stage|week|cup)\s+\d/i;
+    const serieName = leagueName && GENERIC_SERIE.test(rawSerieName)
+      ? `${leagueName} ${rawSerieName}`
+      : rawSerieName || leagueName;
     const serieSlug = serie.slug || `serie-${serieId}`;
     const startDate = tournaments.map(t => t.begin_at).filter(Boolean).sort()[0] || null;
     const endDate = tournaments.map(t => t.end_at).filter(Boolean).sort().reverse()[0] || null;
