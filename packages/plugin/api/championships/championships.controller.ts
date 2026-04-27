@@ -3,8 +3,10 @@ import { Auth } from '@cmmv/auth';
 import { ChampionshipsService } from './championships.service';
 import { RankingsService } from './rankings.service';
 import { LolEsportsService } from './lolesports.service';
+import { LolRankingsService } from './lol-rankings.service';
 import { Draft5Service } from './draft5.service';
 import { VlrService } from './vlr.service';
+import { ValorantRankingsService } from './valorant-rankings.service';
 
 @Controller('esports')
 export class ChampionshipsController {
@@ -12,8 +14,10 @@ export class ChampionshipsController {
     private readonly service: ChampionshipsService,
     private readonly rankingsService: RankingsService,
     private readonly lolService: LolEsportsService,
+    private readonly lolRankingsService: LolRankingsService,
     private readonly draft5Service: Draft5Service,
     private readonly vlrService: VlrService,
+    private readonly valorantRankingsService: ValorantRankingsService,
   ) {}
 
   @Get('tournaments')
@@ -106,13 +110,72 @@ export class ChampionshipsController {
     return { success: true, stats };
   }
 
+  // ─── Valorant Rankings (VCT Circuit Points) ──────────────────
+
+  @Get('rankings/valorant')
+  async getValorantRankings(@Query('region') region?: string, @Query('limit') limit?: string) {
+    const data = await this.valorantRankingsService.getRankings(
+      region || 'americas',
+      parseInt(limit || '30')
+    );
+    return { data, total: data.length };
+  }
+
+  @Get('rankings/valorant/regions')
+  async getValorantRegions() {
+    const regions = await this.valorantRankingsService.getAvailableRegions();
+    return { data: regions };
+  }
+
+  @Get('rankings/valorant/status')
+  async getValorantRankingsStatus() {
+    return this.valorantRankingsService.getSyncStatus();
+  }
+
+  @Get('rankings/valorant/sync-now')
+  async syncValorantRankingsNow() {
+    const stats = await this.valorantRankingsService.syncAll();
+    return { success: true, stats };
+  }
+
+  // ─── LoL Rankings (League Standings) ─────────────────────────
+
+  @Get('rankings/lol')
+  async getLolRankings(@Query('league') league?: string, @Query('region') region?: string, @Query('limit') limit?: string) {
+    if (league) {
+      const data = await this.lolRankingsService.getRankings(league, parseInt(limit || '20'));
+      return { data, total: data.length };
+    }
+    const byLeague = await this.lolRankingsService.getRankingsByRegion(region || 'global', parseInt(limit || '20'));
+    return { data: byLeague };
+  }
+
+  @Get('rankings/lol/leagues')
+  async getLolLeagues() {
+    const leagues = await this.lolRankingsService.getLeagues();
+    return { data: leagues };
+  }
+
+  @Get('rankings/lol/status')
+  async getLolRankingsStatus() {
+    return this.lolRankingsService.getSyncStatus();
+  }
+
+  @Get('rankings/lol/sync-now')
+  async syncLolRankingsNow() {
+    const stats = await this.lolRankingsService.syncAll();
+    return { success: true, stats };
+  }
+
   @Get('sync-now')
   async syncNow() {
-    const [pandaStats, rankingStats] = await Promise.all([
+    const [pandaStats, rankingStats, valorantStats, lolStats] = await Promise.all([
       this.service.syncAll(),
       this.rankingsService.syncAll(),
+      this.valorantRankingsService.syncAll(),
+      this.lolRankingsService.syncAll(),
     ]);
-    return { success: true, pandascore: pandaStats, rankings: rankingStats };
+    return { success: true, pandascore: pandaStats, rankings: rankingStats, valorant: valorantStats, lol: lolStats };
   }
 
   @Get('sync-lol')

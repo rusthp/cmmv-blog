@@ -9,6 +9,8 @@ export * from './esports-tournament.contract';
 export * from './esports-match.contract';
 export * from './esports-team.contract';
 export * from './cs2-ranking.contract';
+export * from './valorant-ranking.contract';
+export * from './lol-ranking.contract';
 
 // Whitelabel
 export * from './whitelabel.contract';
