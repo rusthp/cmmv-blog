@@ -55,7 +55,7 @@
                         <span class="stat-label">Premiação</span>
                         <span class="stat-value" :class="getPrizeStatClass(tournament.prizePool)">
                             <span class="prize-icon-stat">{{ getPrizeIcon(tournament.prizePool) }}</span>
-                            {{ tournament.prizePool }}
+                            {{ formatPrizePool(tournament.prizePool) }}
                         </span>
                     </div>
                     <div class="stat">
@@ -210,7 +210,7 @@
                 <div class="section-title">INFORMAÇÕES</div>
                 <div v-if="tournament.prizePool" class="info-row">
                     <span class="info-label-sm">Premiação:</span>
-                    <span class="info-val-prize">{{ getPrizeIcon(tournament.prizePool) }} {{ tournament.prizePool }}</span>
+                    <span class="info-val-prize">{{ getPrizeIcon(tournament.prizePool) }} {{ formatPrizePool(tournament.prizePool) }}</span>
                 </div>
                 <div class="section-title mt">DATAS</div>
                 <div class="info-dates">
@@ -254,11 +254,11 @@
                                 <span class="cal-format">MD{{ m.numberOfGames }}</span>
                                 <span class="cal-score">{{ m.team2Score ?? 0 }}</span>
                                 <div class="cal-team right">
-                                    {{ m.team2Name || 'TBA' }}
                                     <div class="team-icon-sm">
                                         <img v-if="m.team2Logo" :src="m.team2Logo" />
                                         <span v-else>{{ getInitials(m.team2Name) }}</span>
                                     </div>
+                                    {{ m.team2Name || 'TBA' }}
                                 </div>
                             </div>
                             <div class="cal-league">{{ tournament.leagueName || tournament.name }}</div>
@@ -284,11 +284,11 @@
                                 <span class="cal-format">MD{{ m.numberOfGames }}</span>
                                 <span class="cal-score" :class="{ win: m.winnerExternalId === m.team2ExternalId, loss: m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">{{ m.team2Score ?? 0 }}</span>
                                 <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId, 'cal-loser': m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">
-                                    {{ m.team2Name || 'TBA' }}
                                     <div class="team-icon-sm">
                                         <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
                                         <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                     </div>
+                                    {{ m.team2Name || 'TBA' }}
                                 </div>
                             </div>
                             <div class="cal-league">{{ tournament.leagueName || tournament.name }}</div>
@@ -331,11 +331,11 @@
                             <span class="cal-format">MD{{ m.numberOfGames }}</span>
                             <span class="cal-score" :class="{ win: m.status === 'finished' && m.winnerExternalId === m.team2ExternalId, loss: m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">{{ m.team2Score ?? 0 }}</span>
                             <div class="cal-team right" :class="{ 'cal-winner': m.winnerExternalId === m.team2ExternalId && m.status === 'finished', 'cal-loser': m.status === 'finished' && m.winnerExternalId && m.winnerExternalId !== m.team2ExternalId }">
-                                {{ m.team2Name || 'TBA' }}
                                 <div class="team-icon-sm">
                                     <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
                                     <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
                                 </div>
+                                {{ m.team2Name || 'TBA' }}
                             </div>
                         </div>
                         <div class="cal-phase">{{ formatPhase(m.phase) }}</div>
@@ -450,6 +450,10 @@ async function load() {
         tournament.value = tResult;
         matches.value = mResult;
 
+        // Update browser tab title
+        const pageTitle = tResult.name ? `${tResult.name} | ProPlay News` : 'ProPlay News';
+        document.title = pageTitle;
+
         // Load brackets in background (non-blocking)
         loadBrackets();
 
@@ -542,6 +546,31 @@ function formatFullDate(dateStr?: string): string {
 function getRegionLabel(region: string): string {
     const map: Record<string, string> = { NA: 'America do Norte', EU: 'Europa', BR: 'Brasil', SA: 'America do Sul', APAC: 'Asia-Pacifico', global: 'Global' };
     return map[region] || region || '—';
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    'united states dollar': '$', 'us dollar': '$', 'usd': '$',
+    'euro': '€', 'eur': '€',
+    'real brasileiro': 'R$', 'brl': 'R$', 'real': 'R$',
+    'british pound': '£', 'gbp': '£',
+};
+
+function formatPrizePool(raw: string): string {
+    if (!raw) return '';
+    const lower = raw.toLowerCase();
+    if (lower.includes('slot') || lower.includes('berth') || lower.includes('vaga')) {
+        const num = raw.match(/\d+/)?.[0] || '';
+        const label = num ? `${num} Vaga${parseInt(num) > 1 ? 's' : ''}` : 'Vaga';
+        return label;
+    }
+    const m = raw.match(/[\d,]+(\.\d+)?/);
+    if (m) {
+        const amt = parseFloat(m[0].replace(/,/g, ''));
+        const txt = raw.replace(m[0], '').trim().toLowerCase();
+        const sym = Object.entries(CURRENCY_SYMBOLS).find(([k]) => txt.includes(k))?.[1] || '';
+        if (sym && !isNaN(amt)) return `${sym}${amt.toLocaleString('pt-BR')}`;
+    }
+    return raw;
 }
 
 function getPrizeIcon(prizePool: string): string {
@@ -1022,7 +1051,7 @@ onMounted(load);
     border-radius: 4px;
     transition: background 0.15s;
 }
-.cal-team.right { flex-direction: row-reverse; justify-content: flex-start; }
+.cal-team.right { flex-direction: row; justify-content: flex-start; }
 .cal-winner {
     color: #e2e8f0;
     font-weight: 700;
