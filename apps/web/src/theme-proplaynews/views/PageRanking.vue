@@ -707,9 +707,9 @@ const PLAYER_COUNTRY: Record<string, string> = {
     'woxic': 'TR', 'calm': 'TR', 'ruxic': 'TR', // Estonia
     // Australia
     'liazz': 'AU', 'hazrd': 'AU', 'sico': 'AU', 'aliStair': 'AU',
-    'pan': 'AU', 'dexter': 'AU', 'gratisfaction': 'AU', 'insight': 'AU',
+    'pan': 'AU', 'gratisfaction': 'AU', 'insight': 'AU',
     // New Zealand
-    'dexter': 'NZ', // USA
+    'nzDexter': 'NZ', // USA
     'stanislaw': 'US', 'shahZaM': 'US', 'autimatic': 'US', 'reltuC': 'US',
     'Brehze': 'US', 'oSee': 'US', 'viz': 'US', 'crashies': 'US',
     'Foxy': 'US', 'leaf': 'US', 'daps': 'US', 'marved': 'US',
@@ -729,8 +729,6 @@ const PLAYER_COUNTRY: Record<string, string> = {
     'r1cky': 'IL', // Georgia
     'hooch': 'GE', // Romania
     'h1gg3r': 'RO', // Israel
-    // Australia
-    'insight': 'AU',
 };
 
 function detectTeamNationalityFromRoster(roster: string): string | null {

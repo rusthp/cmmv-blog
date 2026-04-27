@@ -1,6 +1,6 @@
 {
     "name": "@repo/eslint-config",
-    "version": "0.0.265",
+    "version": "0.0.266",
     "main": "index.js",
     "license": "MIT",
     "dependencies": {
