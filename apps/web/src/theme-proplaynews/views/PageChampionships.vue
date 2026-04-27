@@ -34,6 +34,7 @@
 
     <!-- TIER FILTER -->
     <div class="tier-nav">
+      <span class="tier-nav-label">TIER</span>
       <button
         v-for="t in tiers"
         :key="t.value"
@@ -512,74 +513,97 @@ onMounted(() => {
 /* Tier Navigation */
 .tier-nav {
   display: flex;
-  gap: 0.375rem;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+}
+
+.tier-nav-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #4a5568;
+  letter-spacing: 0.1em;
+  margin-right: 0.25rem;
+  text-transform: uppercase;
 }
 
 .tier-tab {
   padding: 0.3rem 0.875rem;
   border-radius: 6px;
   background: transparent;
-  color: #718096;
   font-weight: 700;
   font-size: 0.8125rem;
-  border: 1px solid #2d3748;
   cursor: pointer;
   transition: all 0.15s ease;
   letter-spacing: 0.05em;
 }
 
-.tier-tab:hover {
-  color: #e2e8f0;
-  border-color: #4a5568;
-}
-
 /* Todos */
+.tier-tab.tier-all {
+  color: #a0aec0;
+  border: 1px solid #4a5568;
+}
+.tier-tab.tier-all:hover { color: #e2e8f0; border-color: #718096; }
 .tier-tab.tier-all.active {
   background: #2d3748;
-  border-color: #4a5568;
+  border-color: #718096;
   color: #e2e8f0;
 }
 
 /* Tier S — gold */
-.tier-tab.tier-s { border-color: #744210; color: #ecc94b; }
+.tier-tab.tier-s {
+  border: 1px solid rgba(236, 201, 75, 0.5);
+  color: #ecc94b;
+}
 .tier-tab.tier-s:hover, .tier-tab.tier-s.active {
   background: rgba(236, 201, 75, 0.15);
   border-color: #ecc94b;
-  color: #ecc94b;
+  box-shadow: 0 0 8px rgba(236, 201, 75, 0.3);
 }
 
 /* Tier A — purple */
-.tier-tab.tier-a { border-color: #44337a; color: #b794f4; }
+.tier-tab.tier-a {
+  border: 1px solid rgba(183, 148, 244, 0.5);
+  color: #b794f4;
+}
 .tier-tab.tier-a:hover, .tier-tab.tier-a.active {
   background: rgba(183, 148, 244, 0.15);
   border-color: #b794f4;
-  color: #b794f4;
+  box-shadow: 0 0 8px rgba(183, 148, 244, 0.3);
 }
 
 /* Tier B — blue */
-.tier-tab.tier-b { border-color: #2a4365; color: #63b3ed; }
+.tier-tab.tier-b {
+  border: 1px solid rgba(99, 179, 237, 0.5);
+  color: #63b3ed;
+}
 .tier-tab.tier-b:hover, .tier-tab.tier-b.active {
   background: rgba(99, 179, 237, 0.15);
   border-color: #63b3ed;
-  color: #63b3ed;
+  box-shadow: 0 0 8px rgba(99, 179, 237, 0.3);
 }
 
 /* Tier C — green */
-.tier-tab.tier-c { border-color: #276749; color: #68d391; }
+.tier-tab.tier-c {
+  border: 1px solid rgba(104, 211, 145, 0.5);
+  color: #68d391;
+}
 .tier-tab.tier-c:hover, .tier-tab.tier-c.active {
   background: rgba(104, 211, 145, 0.15);
   border-color: #68d391;
-  color: #68d391;
+  box-shadow: 0 0 8px rgba(104, 211, 145, 0.3);
 }
 
 /* Tier D — grey */
-.tier-tab.tier-d { border-color: #2d3748; color: #718096; }
+.tier-tab.tier-d {
+  border: 1px solid #4a5568;
+  color: #a0aec0;
+}
 .tier-tab.tier-d:hover, .tier-tab.tier-d.active {
   background: rgba(113, 128, 150, 0.15);
   border-color: #718096;
-  color: #a0aec0;
+  color: #cbd5e0;
 }
 
 /* Content Area */
@@ -832,6 +856,8 @@ onMounted(() => {
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 0.5rem;
 }
 
@@ -879,8 +905,9 @@ onMounted(() => {
 .card-bottom-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .card-prize {
