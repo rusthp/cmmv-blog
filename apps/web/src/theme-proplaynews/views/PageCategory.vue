@@ -150,7 +150,7 @@ const data = ref<any>(route.params.id ?
     await blogAPI.categories.getBySlug(route.params.slug as string));
 
 category.value = data.value.category;
-posts.value = data.value.posts?.data || [];
+posts.value = dedup(data.value.posts?.data || []);
 pagination.value = data.value.posts?.pagination;
 
 hasMorePosts.value = posts.value.length < (data.value.posts?.count || 0);
@@ -181,6 +181,16 @@ const headData = ref({
 
 useHead(headData);
 
+function dedup(list: any[]): any[] {
+    const seen = new Set<string>();
+    return list.filter(p => {
+        const key = p.slug || p.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 const loadMorePosts = async () => {
     if (loadingMore.value || !hasMorePosts.value) return;
 
@@ -193,7 +203,7 @@ const loadMorePosts = async () => {
             await blogAPI.categories.getBySlug(route.params.slug as string, posts.value.length);
 
         if (response && response.posts && response.posts.data && response.posts.data.length > 0) {
-            posts.value = [...posts.value, ...response.posts.data];
+            posts.value = dedup([...posts.value, ...response.posts.data]);
             hasMorePosts.value = posts.value.length < (response.posts.count || 0);
         } else {
             hasMorePosts.value = false;
