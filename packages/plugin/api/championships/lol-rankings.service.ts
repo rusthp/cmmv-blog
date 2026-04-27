@@ -145,23 +145,28 @@ export class LolRankingsService {
             game: 'lol',
             status: 'ongoing',
             leagueName,
-            limit: 1,
+            limit: 10,
             sortBy: 'startDate',
             sort: 'DESC',
         });
         if (ongoing?.data?.length) {
-            tournament = ongoing.data[0];
+            // Prefer numeric Riot IDs over PandaScore serie_ IDs
+            tournament = ongoing.data.find((t: any) => /^\d+$/.test(t.externalId))
+                ?? ongoing.data[0];
         }
 
         if (!tournament) {
             const recent = await Repository.findAll(tournamentEntity, {
                 game: 'lol',
                 leagueName,
-                limit: 1,
+                limit: 10,
                 sortBy: 'startDate',
                 sort: 'DESC',
             });
-            tournament = recent?.data?.[0];
+            if (recent?.data?.length) {
+                tournament = recent.data.find((t: any) => /^\d+$/.test(t.externalId))
+                    ?? recent.data[0];
+            }
         }
 
         if (!tournament?.externalId) {

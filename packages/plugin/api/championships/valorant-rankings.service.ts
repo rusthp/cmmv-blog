@@ -141,25 +141,15 @@ export class ValorantRankingsService {
     }
 
     private parseRankingsHtml(html: string, region: string): Omit<any, 'snapshotDate'>[] {
+        // Split on outer rank-item containers (class="rank-item wf-card ...")
+        const blocks = html.split(/<div[^>]*class="rank-item wf-card[^"]*"[^>]*>/);
         const entries: any[] = [];
 
-        // Each ranking row: <div class="rank-item">...</div>
-        // Contains rank number, team name, team code, logo img, circuit points
-        const rowRegex = /<div[^>]*class="[^"]*rank-item[^"]*"[^>]*>([\s\S]*?)(?=<div[^>]*class="[^"]*rank-item|<\/div>\s*<\/div>\s*<\/div>\s*$)/g;
-
-        let match: RegExpExecArray | null;
-        let standing = 1;
-
-        while ((match = rowRegex.exec(html)) !== null) {
-            const block = match[1];
-            const parsed = this.parseRankRow(block, standing, region);
-            if (parsed) {
-                entries.push(parsed);
-                standing++;
-            }
+        for (let i = 1; i < blocks.length; i++) {
+            const parsed = this.parseRankRow(blocks[i], i, region);
+            if (parsed) entries.push(parsed);
         }
 
-        // Fallback: try table row pattern if no rank-item found
         if (entries.length === 0) {
             return this.parseRankingsTable(html, region);
         }
@@ -168,27 +158,30 @@ export class ValorantRankingsService {
     }
 
     private parseRankRow(block: string, standing: number, region: string): any | null {
-        // Standing number
-        const rankMatch = block.match(/class="[^"]*rank-item-rank[^"]*"[^>]*>\s*(\d+)\s*</);
+        // Standing: <div class="rank-item-rank-num">1</div>
+        const rankMatch = block.match(/class="rank-item-rank-num"[^>]*>\s*(\d+)\s*</);
         if (rankMatch) standing = parseInt(rankMatch[1], 10);
 
-        // Team name
-        const nameMatch = block.match(/class="[^"]*rank-item-team-name[^"]*"[^>]*>\s*([^<\n]+?)\s*</);
-        if (!nameMatch) return null;
-        const teamName = nameMatch[1].trim();
+        // Team code: data-sort-value on <a class="rank-item-team ...">
+        const teamLinkMatch = block.match(/<a[^>]*data-sort-value="([^"]+)"[^>]*class="[^"]*rank-item-team[^"]*"/);
+        const teamCode = teamLinkMatch?.[1]?.trim() || '';
+
+        // Team name: first text node inside .ge-text, before any child element
+        const geTextMatch = block.match(/class="ge-text"[^>]*>\s*([^<\n]+?)\s*(?:<|\n)/);
+        if (!geTextMatch) return null;
+        const teamName = geTextMatch[1].trim();
         if (!teamName || teamName === '#' || teamName === 'Team') return null;
 
-        // Team code/tag
-        const codeMatch = block.match(/class="[^"]*rank-item-team-tag[^"]*"[^>]*>\s*([^<\n]+?)\s*</);
-        const teamCode = codeMatch?.[1]?.trim() || '';
+        // Circuit points: data-sort-value on <div class="rank-item-rating">
+        const pointsMatch = block.match(/<div[^>]*data-sort-value="(\d+)"[^>]*class="rank-item-rating"/);
+        const points = pointsMatch ? parseInt(pointsMatch[1], 10) : 0;
 
-        // Circuit points
-        const pointsMatch = block.match(/class="[^"]*rank-item-rating[^"]*"[^>]*>\s*([\d,]+)\s*</);
-        const points = pointsMatch ? parseInt(pointsMatch[1].replace(/,/g, ''), 10) : 0;
-
-        // Logo
-        const logoMatch = block.match(/src="([^"]+)"\s*alt="[^"]*"\s*class="[^"]*rank-item-team-logo/);
-        const logoUrl = logoMatch ? (logoMatch[1].startsWith('http') ? logoMatch[1] : `${VLR_BASE}${logoMatch[1]}`) : '';
+        // Logo: first <img src> inside the team link block
+        const logoMatch = block.match(/<img\s+src="([^"]+)"/);
+        const rawSrc = logoMatch?.[1] || '';
+        const logoUrl = rawSrc
+            ? (rawSrc.startsWith('http') ? rawSrc : `https:${rawSrc.startsWith('//') ? rawSrc : `//${rawSrc}`}`)
+            : '';
 
         return { standing, teamName, teamCode, points, region, logoUrl };
     }
