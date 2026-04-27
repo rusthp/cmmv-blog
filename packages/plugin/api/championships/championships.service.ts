@@ -366,29 +366,29 @@ export class ChampionshipsService {
 
     const matches: any[] = results?.data || [];
 
-    // Phase display order
-    const PHASE_ORDER = [
-      'qualifier',
-      'group_stage',
-      'quarter_final',
-      'semi_final',
-      'playoffs',
-      'grand_final',
-    ];
-
-    // Group matches by phase
+    // Group matches by phase; track earliest scheduledAt per phase for ordering
     const grouped: Record<string, any[]> = {};
+    const phaseEarliest: Record<string, string> = {};
     for (const m of matches) {
       const phase = m.phase || 'group_stage';
       if (!grouped[phase]) grouped[phase] = [];
       grouped[phase].push(m);
+      const t = m.scheduledAt || m.beginAt || '';
+      if (t && (!phaseEarliest[phase] || t < phaseEarliest[phase])) {
+        phaseEarliest[phase] = t;
+      }
     }
 
-    // Sort phases by display order
+    // Sort phases by the earliest scheduled match in each phase so the bracket
+    // columns reflect actual tournament progression regardless of PandaScore's
+    // phase naming conventions (e.g. "playoffs" as a play-in before QF).
     const phases = Object.keys(grouped).sort((a, b) => {
-      const ia = PHASE_ORDER.indexOf(a);
-      const ib = PHASE_ORDER.indexOf(b);
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      const ta = phaseEarliest[a] || '';
+      const tb = phaseEarliest[b] || '';
+      if (ta && tb) return ta < tb ? -1 : ta > tb ? 1 : 0;
+      if (ta) return -1;
+      if (tb) return 1;
+      return 0;
     });
 
     const playoffPhases = ['quarter_final', 'semi_final', 'playoffs', 'grand_final'];

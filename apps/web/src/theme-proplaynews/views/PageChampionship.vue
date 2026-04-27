@@ -412,8 +412,7 @@ function imgError(e: Event) {
     if (sib) sib.style.display = '';
 }
 
-const PLAYOFF_PHASES = ['qualifier', 'playoffs', 'quarter_final', 'semi_final', 'grand_final'];
-const PHASE_ORDER = ['qualifier', 'group_stage', 'quarter_final', 'semi_final', 'playoffs', 'grand_final'];
+const GROUP_PHASES = ['group_stage'];
 
 const teams = computed(() => {
     const t = tournament.value;
@@ -425,9 +424,9 @@ const upcomingMatches = computed(() => matches.value.filter(m => m.status === 'n
 const finishedMatches = computed(() => matches.value.filter(m => m.status === 'finished'));
 const hasAnyMatches = computed(() => matches.value.length > 0);
 
+// Preserve the date-ordered sequence returned by the API; exclude group stage (shown separately)
 const playoffPhases = computed(() =>
-    brackets.value.phases.filter(p => PLAYOFF_PHASES.includes(p))
-        .sort((a, b) => PHASE_ORDER.indexOf(a) - PHASE_ORDER.indexOf(b))
+    brackets.value.phases.filter(p => !GROUP_PHASES.includes(p))
 );
 
 const groupedByGroup = computed(() => {
@@ -606,7 +605,7 @@ function getBracketTeamClass(match: any, teamNumber: number): string {
 }
 
 function isPlayoffPhase(phase: string): boolean {
-    return PLAYOFF_PHASES.includes(phase);
+    return !GROUP_PHASES.includes(phase);
 }
 
 function formatDateLong(dateStr?: string): string {
