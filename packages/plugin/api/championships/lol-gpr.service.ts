@@ -115,9 +115,22 @@ export class LolGprService {
             const prevRank = prevGpr ? parseInt(prevGpr[1]) : rank;
             const rankDelta = prevRank - rank; // positive = moved up
 
-            // team object — field order varies, extract each field individually
-            const teamBlock = block.slice(block.indexOf('"team":'));
-            if (!teamBlock) return null;
+            // Find the real team object — tournament standings embed minimal team entries
+            // with no "code" field. Real teams always have "code":"ABC" (uppercase letters/digits).
+            let teamBlockStart = -1;
+            let teamSearch = 0;
+            while (true) {
+                const idx = block.indexOf('"team":{"__typename":"Team"', teamSearch);
+                if (idx === -1) break;
+                const candidate = block.slice(idx, idx + 1200);
+                if (/"code":"[A-Z0-9]/.test(candidate)) {
+                    teamBlockStart = idx;
+                    break;
+                }
+                teamSearch = idx + 1;
+            }
+            if (teamBlockStart === -1) return null;
+            const teamBlock = block.slice(teamBlockStart, teamBlockStart + 1200);
 
             const nameMatch = teamBlock.match(/"name":"([^"]+)"/);
             const codeMatch = teamBlock.match(/"code":"([^"]+)"/);
@@ -126,7 +139,7 @@ export class LolGprService {
             const leagueNameMatch = teamBlock.match(/"homeLeague":\{[^}]*"name":"([^"]+)"/);
             const leagueSlugMatch = teamBlock.match(/"homeLeague":\{[^}]*"slug":"([^"]+)"/);
 
-            if (!nameMatch || !slugMatch) return null;
+            if (!nameMatch || !codeMatch || !slugMatch) return null;
 
             return {
                 rank,
