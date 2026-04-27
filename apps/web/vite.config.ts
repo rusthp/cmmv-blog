@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
         build: {
             minify: 'terser',
             outDir: 'dist',
+            cssCodeSplit: false,
             rollupOptions: {
                 input: {
                     index: path.resolve(__dirname, 'index.html'),
