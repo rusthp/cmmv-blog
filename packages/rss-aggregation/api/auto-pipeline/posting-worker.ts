@@ -285,7 +285,26 @@ export class PostingWorker {
                         visibility: 'public',
                     };
 
-                    const post: any = await Repository.insert(PostsEntity, postData);
+                    let post: any;
+                    try {
+                        post = await Repository.insert(PostsEntity, postData);
+                    } catch (insertErr: any) {
+                        const msg = String(insertErr?.message || insertErr);
+                        if (msg.includes('UNIQUE') || msg.includes('unique') || msg.includes('duplicate')) {
+                            PostingWorker.logger.log(
+                                `[pipeline][WARN] DB UNIQUE violation on insert for "${raw.title}" — concurrent worker won the race. Marking DONE.`
+                            );
+                            PostingWorker.processingTitles.delete(normalizedTitle);
+                            const existing = await Repository.findOne(PostsEntity, { title: raw.title });
+                            await Repository.updateOne(
+                                FeedRawEntity,
+                                Repository.queryBuilder({ id: raw.id }),
+                                { pipelineState: PIPELINE_STATE.DONE, postRef: existing?.id ?? null }
+                            );
+                            continue;
+                        }
+                        throw insertErr;
+                    }
 
                     if (post && post.data) {
                         await Repository.insert(MetaEntity, {
