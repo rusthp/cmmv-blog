@@ -74,7 +74,7 @@
         </div>
 
         <!-- Loading -->
-        <div v-if="loading" class="loading-state">
+        <div v-if="activeGame === 'cs2' && loading" class="loading-state">
             <div class="skeleton-header">
                 <div class="skeleton-pulse sk-rank"></div>
                 <div class="skeleton-pulse sk-team"></div>
@@ -90,7 +90,7 @@
         </div>
 
         <!-- Empty -->
-        <div v-else-if="rankings.length === 0" class="empty-state">
+        <div v-else-if="activeGame === 'cs2' && rankings.length === 0" class="empty-state">
             <div class="empty-visual">
                 <div class="empty-ring">
                     <span class="empty-icon">⭐</span>
@@ -106,7 +106,7 @@
         </div>
 
         <!-- Ranking Table -->
-        <div v-else class="ranking-container">
+        <div v-else-if="activeGame === 'cs2'" class="ranking-container">
             <!-- Major Qualification Line Legend -->
             <div class="legend-bar" style="display:flex;gap:1.5rem;padding:0.75rem 1rem;margin-bottom:0.75rem;border-radius:10px;background:rgba(15,23,42,0.5);border:1px solid rgba(148,163,184,0.06);">
                 <div class="legend-item" style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;color:#64748b;font-weight:500;">

@@ -771,17 +771,18 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 70%;
-  max-height: 70%;
+  width: 60%;
+  max-height: 60%;
   object-fit: contain;
-  opacity: 0.2;
-  filter: blur(1px);
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
 }
 
 .banner-with-logo .game-label {
   position: relative;
   z-index: 1;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  opacity: 0;
 }
 
 .banner-placeholder {
