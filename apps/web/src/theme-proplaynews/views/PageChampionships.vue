@@ -156,7 +156,7 @@
             <div class="card-bottom-row">
               <div v-if="t.prizePool" class="card-prize" :class="getPrizeClass(t.prizePool)">
                 <span class="prize-icon">{{ getPrizeIcon(t.prizePool) }}</span>
-                {{ t.prizePool }}
+                {{ formatPrizePool(t.prizePool) }}
               </div>
               <div v-if="getTeamCount(t) > 0" class="card-teams">
                 {{ getTeamCount(t) }} times
@@ -300,6 +300,49 @@ function setRegion(value: string) {
 }
 function setTier(value: string) {
   activeTier.value = value;
+}
+
+function formatPrizePool(raw: string): string {
+  if (!raw) return '';
+  const lower = raw.toLowerCase();
+  if (lower.includes('vaga') || lower.includes('slot') || lower.includes('berth')) return raw;
+
+  const CURRENCY_MAP: Record<string, string> = {
+    'united states dollar': 'USD', 'us dollar': 'USD', 'usd': 'USD',
+    'euro': 'EUR', 'eur': 'EUR',
+    'real': 'BRL', 'brl': 'BRL', 'reais': 'BRL',
+    'british pound': 'GBP', 'gbp': 'GBP',
+    'korean won': 'KRW', 'krw': 'KRW',
+    'chinese yuan': 'CNY', 'cny': 'CNY', 'rmb': 'CNY',
+  };
+
+  const SYMBOLS: Record<string, string> = {
+    USD: '$', EUR: '€', BRL: 'R$', GBP: '£', KRW: '₩', CNY: '¥',
+  };
+
+  let currency = 'USD';
+  let cleaned = raw;
+
+  for (const [name, code] of Object.entries(CURRENCY_MAP)) {
+    if (lower.includes(name)) {
+      currency = code;
+      cleaned = raw.replace(new RegExp(name, 'gi'), '').trim();
+      break;
+    }
+  }
+
+  const numStr = cleaned.replace(/[^0-9.]/g, '');
+  const num = parseFloat(numStr);
+  if (isNaN(num)) return raw;
+
+  const symbol = SYMBOLS[currency] || currency + ' ';
+  const formatted = num >= 1_000_000
+    ? `${symbol}${(num / 1_000_000).toFixed(1)}M`
+    : num >= 1_000
+    ? `${symbol}${(num / 1_000).toFixed(0)}K`
+    : `${symbol}${num}`;
+
+  return formatted;
 }
 
 function getPrizeClass(prizePool: string): string {
