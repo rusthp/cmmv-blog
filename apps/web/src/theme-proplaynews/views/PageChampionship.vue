@@ -95,63 +95,40 @@
                     >{{ formatPhase(ph) }}</button>
                 </div>
 
-                <!-- Bracket view for playoff phases -->
-                <div v-if="isPlayoffPhase(activePhase)" class="bracket-area">
-                    <div class="bracket-section-label">{{ formatPhase(activePhase).toUpperCase() }}</div>
-                    <div class="bracket-tree-wrapper">
-                        <div class="bracket-tree">
-                            <!-- For phase-based bracket, show sub-phases as columns -->
-                            <template v-if="brackets.phases.length > 0">
-                                <div
-                                    v-for="(phase, colIdx) in playoffPhases"
-                                    :key="phase"
-                                    class="bracket-column"
-                                >
-                                    <div class="bracket-col-label">{{ formatPhase(phase) }}</div>
-                                    <div class="bracket-col-body" :style="bracketColStyle(colIdx, playoffPhases.length)">
-                                        <div
-                                            v-for="(m, mIdx) in (brackets.brackets[phase] || [])"
-                                            :key="m.id"
-                                            class="bk-slot"
-                                            :style="bracketSlotStyle(mIdx, brackets.brackets[phase]?.length || 1, colIdx)"
-                                        >
-                                            <div class="bk-match" :class="{ 'is-live': m.status === 'running', 'is-done': m.status === 'finished' }">
-                                                <div v-if="m.status === 'running'" class="bk-live-dot"></div>
-                                                <div class="bk-team" :class="getBracketTeamClass(m, 1)">
-                                                    <div class="bk-logo">
-                                                        <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
-                                                        <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
-                                                    </div>
-                                                    <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
-                                                    <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
-                                                </div>
-                                                <div class="bk-divider"></div>
-                                                <div class="bk-team" :class="getBracketTeamClass(m, 2)">
-                                                    <div class="bk-logo">
-                                                        <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
-                                                        <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
-                                                    </div>
-                                                    <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
-                                                    <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
-                                                </div>
-                                                <div class="bk-footer">
-                                                    <span>MD{{ m.numberOfGames }}</span>
-                                                    <span>{{ formatTime(m.scheduledAt) }}</span>
-                                                </div>
-                                            </div>
-                                            <!-- SVG connector to next column -->
-                                            <svg v-if="colIdx < playoffPhases.length - 1" class="bk-connector-svg" :viewBox="`0 0 48 ${bracketConnectorHeight(mIdx, brackets.brackets[phase]?.length || 1)}`" preserveAspectRatio="none">
-                                                <path
-                                                    :d="bracketConnectorPath(mIdx, brackets.brackets[phase]?.length || 1)"
-                                                    fill="none"
-                                                    stroke="#3a4a5c"
-                                                    stroke-width="1.5"
-                                                />
-                                            </svg>
-                                        </div>
-                                    </div>
+                <!-- Bracket phases: show match cards for the active phase only -->
+                <div v-if="isPlayoffPhase(activePhase)" class="bracket-phase-view">
+                    <div class="bk-matches-grid">
+                        <div
+                            v-for="m in (brackets.brackets[activePhase] || [])"
+                            :key="m.id"
+                            class="bk-match"
+                            :class="{ 'is-live': m.status === 'running', 'is-done': m.status === 'finished' }"
+                        >
+                            <div v-if="m.status === 'running'" class="bk-live-dot"></div>
+                            <div class="bk-team" :class="getBracketTeamClass(m, 1)">
+                                <div class="bk-logo">
+                                    <img v-if="m.team1Logo" :src="m.team1Logo" @error="imgError" />
+                                    <span :style="m.team1Logo ? 'display:none' : ''">{{ getInitials(m.team1Name) }}</span>
                                 </div>
-                            </template>
+                                <span class="bk-name">{{ m.team1Name || 'TBA' }}</span>
+                                <span class="bk-score">{{ m.status !== 'not_started' ? (m.team1Score ?? 0) : '—' }}</span>
+                            </div>
+                            <div class="bk-divider"></div>
+                            <div class="bk-team" :class="getBracketTeamClass(m, 2)">
+                                <div class="bk-logo">
+                                    <img v-if="m.team2Logo" :src="m.team2Logo" @error="imgError" />
+                                    <span :style="m.team2Logo ? 'display:none' : ''">{{ getInitials(m.team2Name) }}</span>
+                                </div>
+                                <span class="bk-name">{{ m.team2Name || 'TBA' }}</span>
+                                <span class="bk-score">{{ m.status !== 'not_started' ? (m.team2Score ?? 0) : '—' }}</span>
+                            </div>
+                            <div class="bk-footer">
+                                <span>MD{{ m.numberOfGames }}</span>
+                                <span>{{ formatTime(m.scheduledAt) }}</span>
+                            </div>
+                        </div>
+                        <div v-if="!(brackets.brackets[activePhase] || []).length" class="empty-phase">
+                            <p>Partidas em breve</p>
                         </div>
                     </div>
                 </div>
@@ -696,23 +673,6 @@ function getStandingsRowClass(idx: number, total: number): string {
     return '';
 }
 
-// Bracket layout helpers
-function bracketColStyle(colIdx: number, totalCols: number) {
-    return {};
-}
-
-function bracketSlotStyle(matchIdx: number, totalMatches: number, colIdx: number) {
-    return {};
-}
-
-function bracketConnectorHeight(matchIdx: number, totalMatches: number): number {
-    return 80;
-}
-
-function bracketConnectorPath(matchIdx: number, totalMatches: number): string {
-    return 'M0,40 C24,40 24,40 48,40';
-}
-
 onMounted(load);
 </script>
 
@@ -838,60 +798,21 @@ onMounted(load);
 .phase-tab:hover { color: #e2e8f0; }
 .phase-tab.active { color: #3182ce; border-bottom-color: #3182ce; }
 
-/* Bracket section label */
-.bracket-section-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #718096;
-    text-transform: uppercase;
-    padding: 0.75rem 1.25rem 0.5rem;
-    letter-spacing: 0.06em;
-}
+/* ─── BRACKET PHASE VIEW ─── */
+.bracket-phase-view { padding: 0.75rem 0.75rem 1.25rem; }
 
-/* ─── BRACKET TREE ─── */
-.bracket-area { padding: 0 0.75rem 1.25rem; }
-
-.bracket-tree-wrapper {
-    overflow-x: auto;
-}
-
-.bracket-tree {
-    display: flex;
-    align-items: flex-start;
-    min-width: max-content;
-    gap: 0;
-}
-
-.bracket-column {
-    display: flex;
-    flex-direction: column;
-    min-width: 220px;
-}
-
-.bracket-col-label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: #4a5568;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    text-align: center;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.bracket-col-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    flex: 1;
+.bk-matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 0.75rem;
-    padding: 0.5rem 0;
 }
 
-.bk-slot {
-    display: flex;
-    align-items: center;
-    position: relative;
+.empty-phase {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: #4a5568;
+    font-size: 0.875rem;
 }
 
 .bk-match {
@@ -939,12 +860,6 @@ onMounted(load);
 .bk-team.winner .bk-score { color: #68d391; }
 .bk-divider { height: 1px; background: #2d3748; }
 .bk-footer { display: flex; justify-content: space-between; padding: 0.25rem 0.75rem; font-size: 0.5625rem; color: #4a5568; border-top: 1px solid #1a202c; }
-
-.bk-connector-svg {
-    width: 48px;
-    height: 80px;
-    flex-shrink: 0;
-}
 
 /* ─── STANDINGS TABLE ─── */
 .groups-area {
