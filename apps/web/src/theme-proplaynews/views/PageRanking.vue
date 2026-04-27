@@ -402,13 +402,16 @@
                             >
                                 <!-- Rank -->
                                 <td class="col-rank">
-                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.3rem;">
-                                        <span v-if="entry.rank === 1">👑</span>
-                                        <span v-else-if="entry.rank === 2">🥈</span>
-                                        <span v-else-if="entry.rank === 3">🥉</span>
-                                        <span class="rank-number" :class="{ 'rank-top1': entry.rank === 1, 'rank-top3': entry.rank <= 3, 'rank-top8': entry.rank > 3 && entry.rank <= 8 }">{{ entry.rank }}</span>
-                                        <span v-if="entry.rankDelta > 0" style="font-size:0.6rem;color:#4ade80;font-weight:700;">▲{{ entry.rankDelta }}</span>
-                                        <span v-else-if="entry.rankDelta < 0" style="font-size:0.6rem;color:#f87171;font-weight:700;">▼{{ Math.abs(entry.rankDelta) }}</span>
+                                    <div class="rank-cell" style="display:flex;flex-direction:column;align-items:center;gap:0.15rem;">
+                                        <div style="display:flex;align-items:center;gap:0.3rem;">
+                                            <span v-if="idx === 0">👑</span>
+                                            <span v-else-if="idx === 1">🥈</span>
+                                            <span v-else-if="idx === 2">🥉</span>
+                                            <span class="rank-number" :class="{ 'rank-top1': idx === 0, 'rank-top3': idx < 3, 'rank-top8': idx >= 3 && idx < 8 }">{{ idx + 1 }}</span>
+                                            <span v-if="entry.rankDelta > 0" style="font-size:0.6rem;color:#4ade80;font-weight:700;">▲{{ entry.rankDelta }}</span>
+                                            <span v-else-if="entry.rankDelta < 0" style="font-size:0.6rem;color:#f87171;font-weight:700;">▼{{ Math.abs(entry.rankDelta) }}</span>
+                                        </div>
+                                        <span v-if="activeGprLeague !== 'all'" style="font-size:0.6rem;color:#475569;font-weight:500;">#{{ entry.rank }} global</span>
                                     </div>
                                 </td>
                                 <!-- Team -->
@@ -419,7 +422,7 @@
                                             <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
                                         </div>
                                         <div style="min-width:0;">
-                                            <div style="font-weight:700;font-size:0.88rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" :class="{ 'team-elite': entry.rank <= 3 }">
+                                            <div style="font-weight:700;font-size:0.88rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" :class="{ 'team-elite': idx < 3 }">
                                                 <span v-if="entry.teamCode && entry.teamCode !== entry.teamName" style="color:#64748b;font-size:0.72rem;margin-right:0.3rem;">{{ entry.teamCode }}</span>
                                                 {{ entry.teamName }}
                                             </div>
@@ -444,11 +447,11 @@
                                     <div class="points-cell" style="display:flex;align-items:center;gap:0.6rem;">
                                         <div class="points-bar-track" style="flex:1;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
                                             <div class="points-bar-fill"
-                                                :class="entry.rank <= 3 ? 'bar-gold' : entry.rank <= 8 ? 'bar-cyan' : 'bar-default'"
-                                                :style="{ width: gprRankings[0]?.gprScore ? Math.round((entry.gprScore / gprRankings[0].gprScore) * 100) + '%' : '0%' }">
+                                                :class="idx < 3 ? 'bar-gold' : idx < 8 ? 'bar-cyan' : 'bar-default'"
+                                                :style="{ width: filteredGpr[0]?.gprScore ? Math.round((entry.gprScore / filteredGpr[0].gprScore) * 100) + '%' : '0%' }">
                                             </div>
                                         </div>
-                                        <span class="points-value" :class="{ 'points-elite': entry.rank <= 3 }">{{ entry.gprScore.toLocaleString('pt-BR') }}</span>
+                                        <span class="points-value" :class="{ 'points-elite': idx < 3 }">{{ entry.gprScore.toLocaleString('pt-BR') }}</span>
                                     </div>
                                 </td>
                             </tr>
