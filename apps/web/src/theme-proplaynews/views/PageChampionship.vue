@@ -208,6 +208,10 @@
             <!-- INFORMAÇÕES side block (always visible) -->
             <div class="info-card">
                 <div class="section-title">INFORMAÇÕES</div>
+                <div v-if="tournament.game" class="info-row">
+                    <span class="info-label-sm">Jogo:</span>
+                    <span class="info-val-game">{{ getGameLabel(tournament.game) }}</span>
+                </div>
                 <div v-if="tournament.prizePool" class="info-row">
                     <span class="info-label-sm">Premiação:</span>
                     <span class="info-val-prize">{{ getPrizeIcon(tournament.prizePool) }} {{ formatPrizePool(tournament.prizePool) }}</span>
@@ -315,7 +319,7 @@
                 <p>Nenhuma partida registrada ainda.</p>
             </div>
             <div v-else>
-                <div v-for="(dayGroup, day) in groupByDay(matches)" :key="day" class="cal-day">
+                <div v-for="(dayGroup, day) in groupByDay(matches, true)" :key="day" class="cal-day">
                     <div class="cal-day-header">&#128197; {{ day }}</div>
                     <div v-for="m in dayGroup" :key="m.id" class="cal-match">
                         <div class="cal-time">{{ formatTimeOnly(m.scheduledAt) }}</div>
@@ -627,12 +631,13 @@ function formatTimeOnly(dateStr?: string): string {
     return `${h}:${m}`;
 }
 
-function groupByDay(list: any[]): Record<string, any[]> {
+function groupByDay(list: any[], desc = false): Record<string, any[]> {
     const result: Record<string, any[]> = {};
     const sorted = [...list].sort((a, b) => {
-        if (!a.scheduledAt) return 1;
-        if (!b.scheduledAt) return -1;
-        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+        if (!a.scheduledAt) return desc ? -1 : 1;
+        if (!b.scheduledAt) return desc ? 1 : -1;
+        const diff = new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+        return desc ? -diff : diff;
     });
     for (const m of sorted) {
         if (!m.scheduledAt) {
@@ -647,6 +652,18 @@ function groupByDay(list: any[]): Record<string, any[]> {
         result[key].push(m);
     }
     return result;
+}
+
+function getGameLabel(game: string): string {
+    const map: Record<string, string> = {
+        cs2: 'Counter-Strike 2', csgo: 'CS:GO', 'cs-go': 'CS:GO',
+        valorant: 'Valorant', lol: 'League of Legends',
+        dota2: 'Dota 2', dota: 'Dota 2',
+        rl: 'Rocket League', 'rocket-league': 'Rocket League',
+        r6: 'Rainbow Six Siege', 'rainbow-6': 'Rainbow Six Siege',
+        cod: 'Call of Duty', overwatch: 'Overwatch', pubg: 'PUBG',
+    };
+    return map[game?.toLowerCase()] || game || '';
 }
 
 function computeStandings(phaseMatches: any[], allTeams: any[] = []): any[] {
@@ -984,6 +1001,7 @@ onMounted(load);
 /* ─── INFO CARD ─── */
 .info-row { padding: 0.5rem 0; font-size: 0.875rem; }
 .info-label-sm { font-size: 0.6875rem; color: #718096; font-weight: 700; text-transform: uppercase; }
+.info-val-game { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; display: block; margin-top: 0.25rem; }
 .info-val-prize { font-size: 0.9375rem; font-weight: 700; color: #ecc94b; display: block; margin-top: 0.25rem; }
 .info-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 0.5rem 0; }
 .info-date { font-size: 0.875rem; font-weight: 600; color: #3182ce; margin-top: 0.25rem; }
