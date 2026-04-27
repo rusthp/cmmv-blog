@@ -1040,7 +1040,7 @@ onMounted(load);
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    width: 38%;
+    flex: 1;
     min-width: 0;
     font-size: 0.8125rem;
     color: #a0aec0;
@@ -1050,24 +1050,26 @@ onMounted(load);
     padding: 0.2rem 0.375rem;
     border-radius: 4px;
     transition: background 0.15s;
+    justify-content: flex-end;
+    flex-direction: row-reverse;
 }
 .cal-team.right { flex-direction: row; justify-content: flex-start; }
 .cal-winner {
     color: #e2e8f0;
     font-weight: 700;
-    border-left: 3px solid rgba(104, 211, 145, 0.7);
+    border-right: 3px solid rgba(104, 211, 145, 0.7);
 }
 .cal-team.right.cal-winner {
-    border-left: none;
-    border-right: 3px solid rgba(104, 211, 145, 0.7);
+    border-right: none;
+    border-left: 3px solid rgba(104, 211, 145, 0.7);
 }
 .cal-loser {
     color: #718096;
-    border-left: 3px solid rgba(252, 129, 129, 0.45);
+    border-right: 3px solid rgba(252, 129, 129, 0.45);
 }
 .cal-team.right.cal-loser {
-    border-left: none;
-    border-right: 3px solid rgba(252, 129, 129, 0.45);
+    border-right: none;
+    border-left: 3px solid rgba(252, 129, 129, 0.45);
 }
 
 .cal-score {
