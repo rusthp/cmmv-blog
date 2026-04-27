@@ -145,27 +145,27 @@ export class LolRankingsService {
             game: 'lol',
             status: 'ongoing',
             leagueName,
-            limit: 10,
-            sortBy: 'startDate',
-            sort: 'DESC',
+            limit: 50,
         });
         if (ongoing?.data?.length) {
+            const sorted = [...ongoing.data].sort((a: any, b: any) =>
+                new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
+            );
             // Prefer numeric Riot IDs over PandaScore serie_ IDs
-            tournament = ongoing.data.find((t: any) => /^\d+$/.test(t.externalId))
-                ?? ongoing.data[0];
+            tournament = sorted.find((t: any) => /^\d+$/.test(t.externalId)) ?? sorted[0];
         }
 
         if (!tournament) {
             const recent = await Repository.findAll(tournamentEntity, {
                 game: 'lol',
                 leagueName,
-                limit: 10,
-                sortBy: 'startDate',
-                sort: 'DESC',
+                limit: 50,
             });
             if (recent?.data?.length) {
-                tournament = recent.data.find((t: any) => /^\d+$/.test(t.externalId))
-                    ?? recent.data[0];
+                const sorted = [...recent.data].sort((a: any, b: any) =>
+                    new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
+                );
+                tournament = sorted.find((t: any) => /^\d+$/.test(t.externalId)) ?? sorted[0];
             }
         }
 
