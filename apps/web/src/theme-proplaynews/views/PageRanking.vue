@@ -1,7 +1,21 @@
 <template>
     <div class="ranking-page">
-        <!-- Hero Header -->
-        <div class="ranking-hero">
+        <!-- Game Selector -->
+        <div class="game-selector">
+            <button
+                v-for="g in gameTabs"
+                :key="g.value"
+                class="game-tab"
+                :class="{ active: activeGame === g.value }"
+                @click="setGame(g.value)"
+            >
+                <span class="game-icon">{{ g.icon }}</span>
+                <span>{{ g.label }}</span>
+            </button>
+        </div>
+
+        <!-- Hero Header (CS2 only) -->
+        <div v-if="activeGame === 'cs2'" class="ranking-hero">
             <div class="hero-glow"></div>
             <div class="hero-content">
                 <div class="hero-badge">
@@ -41,8 +55,8 @@
             </div>
         </div>
 
-        <!-- Region Tabs -->
-        <div class="region-section">
+        <!-- Region Tabs (CS2) -->
+        <div v-if="activeGame === 'cs2'" class="region-section">
             <div class="region-tabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                 <button
                     v-for="tab in regionTabs"
@@ -227,7 +241,7 @@
         </div>
 
         <!-- Source -->
-        <div class="source-footer">
+        <div v-if="activeGame === 'cs2'" class="source-footer">
             <span class="source-icon-emoji">ℹ️</span>
             <span>
                 Dados oficiais da Valve Software via
@@ -237,6 +251,189 @@
                 · Top {{ majorSlots }} se classificam para o Major
             </span>
         </div>
+
+        <!-- ─── VALORANT SECTION ─── -->
+        <div v-if="activeGame === 'valorant'" class="game-section">
+            <div class="game-section-header">
+                <h2 class="game-section-title">VCT Circuit Points</h2>
+                <p class="game-section-sub">Pontos acumulados para classificação aos Internationals</p>
+            </div>
+            <div class="region-section">
+                <div class="region-tabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                    <button
+                        v-for="tab in vctRegionTabs"
+                        :key="tab.value"
+                        class="region-tab"
+                        :class="{ active: activeVctRegion === tab.value }"
+                        @click="setVctRegion(tab.value)"
+                        style="position:relative;display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 1.15rem;border-radius:10px;border:1px solid rgba(148,163,184,0.1);background:rgba(15,23,42,0.6);color:#64748b;font-weight:600;font-size:0.85rem;cursor:pointer;"
+                    >
+                        <span>{{ tab.flag }}</span>
+                        <span>{{ tab.label }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="vctLoading" class="loading-state">
+                <div v-for="n in 10" :key="n" class="skeleton-row">
+                    <div class="skeleton-pulse sk-rank"></div>
+                    <div class="skeleton-pulse sk-team"></div>
+                    <div class="skeleton-pulse sk-points"></div>
+                </div>
+            </div>
+            <div v-else-if="vctRankings.length === 0" class="empty-state">
+                <div class="empty-visual"><div class="empty-ring"><span class="empty-icon">🎯</span></div></div>
+                <h3 class="empty-title">Dados em sincronização</h3>
+                <p class="empty-desc">Os circuit points serão carregados em breve.</p>
+                <button class="empty-retry" @click="loadVct(activeVctRegion)">🔄 Tentar novamente</button>
+            </div>
+            <div v-else class="ranking-container">
+                <div class="table-wrapper">
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th class="col-team">Time</th>
+                                <th class="col-points">Circuit Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(entry, idx) in vctRankings"
+                                :key="entry.id || idx"
+                                class="ranking-row"
+                                :class="idx < 3 ? (idx === 0 ? 'row-champion' : 'row-podium') : idx < 7 ? 'row-qualified' : ''"
+                            >
+                                <td class="col-rank">
+                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.25rem;">
+                                        <span v-if="entry.standing === 1">👑</span>
+                                        <span v-else-if="entry.standing === 2">🥈</span>
+                                        <span v-else-if="entry.standing === 3">🥉</span>
+                                        <span class="rank-number" :class="{ 'rank-top1': entry.standing === 1, 'rank-top3': entry.standing <= 3, 'rank-top8': entry.standing > 3 && entry.standing <= 7 }">{{ entry.standing }}</span>
+                                    </div>
+                                </td>
+                                <td class="col-team">
+                                    <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
+                                        <div class="team-avatar" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
+                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" :alt="entry.teamName" loading="lazy" @error="entry.logoError = true" />
+                                            <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
+                                        </div>
+                                        <span class="team-name" style="font-weight:700;font-size:0.88rem;color:#e2e8f0;">
+                                            <span v-if="entry.teamCode" style="color:#64748b;font-size:0.75rem;margin-right:0.35rem;">{{ entry.teamCode }}</span>
+                                            {{ entry.teamName }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="col-points">
+                                    <div class="points-cell" style="display:flex;align-items:center;gap:0.6rem;">
+                                        <div class="points-bar-track" style="flex:1;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
+                                            <div class="points-bar-fill" :class="idx < 3 ? 'bar-gold' : idx < 7 ? 'bar-green' : 'bar-default'" :style="{ width: vctRankings[0]?.points ? Math.round((entry.points / vctRankings[0].points) * 100) + '%' : '0%' }"></div>
+                                        </div>
+                                        <span class="points-value" :class="{ 'points-elite': entry.standing <= 3 }">{{ entry.points.toLocaleString('pt-BR') }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="source-footer" style="margin-top:1rem;">
+                <span class="source-icon-emoji">ℹ️</span>
+                <span>Dados via <a href="https://www.vlr.gg/rankings" target="_blank" rel="noopener">vlr.gg</a> · Top 7 por região classificam para os Internationals</span>
+            </div>
+        </div>
+
+        <!-- ─── LOL SECTION ─── -->
+        <div v-if="activeGame === 'lol'" class="game-section">
+            <div class="game-section-header">
+                <h2 class="game-section-title">Standings por Liga</h2>
+                <p class="game-section-sub">Classificação atual em cada liga regional</p>
+            </div>
+            <div class="region-section">
+                <div class="region-tabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                    <button
+                        v-for="tab in lolLeagueTabs"
+                        :key="tab.value"
+                        class="region-tab"
+                        :class="{ active: activeLolLeague === tab.value }"
+                        @click="setLolLeague(tab.value)"
+                        style="position:relative;display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 1.15rem;border-radius:10px;border:1px solid rgba(148,163,184,0.1);background:rgba(15,23,42,0.6);color:#64748b;font-weight:600;font-size:0.85rem;cursor:pointer;"
+                    >
+                        <span>{{ tab.flag }}</span>
+                        <span>{{ tab.label }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="lolLoading" class="loading-state">
+                <div v-for="n in 10" :key="n" class="skeleton-row">
+                    <div class="skeleton-pulse sk-rank"></div>
+                    <div class="skeleton-pulse sk-team"></div>
+                    <div class="skeleton-pulse sk-points"></div>
+                </div>
+            </div>
+            <div v-else-if="lolRankings.length === 0" class="empty-state">
+                <div class="empty-visual"><div class="empty-ring"><span class="empty-icon">⚔️</span></div></div>
+                <h3 class="empty-title">Dados em sincronização</h3>
+                <p class="empty-desc">Os standings serão carregados em breve.</p>
+                <button class="empty-retry" @click="loadLol(activeLolLeague)">🔄 Tentar novamente</button>
+            </div>
+            <div v-else class="ranking-container">
+                <div class="table-wrapper">
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th class="col-team">Time</th>
+                                <th style="width:60px;text-align:center;">V</th>
+                                <th style="width:60px;text-align:center;">D</th>
+                                <th style="width:80px;text-align:center;">% Vitórias</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(entry, idx) in lolRankings"
+                                :key="entry.id || idx"
+                                class="ranking-row"
+                                :class="idx === 0 ? 'row-champion' : idx < 3 ? 'row-podium' : idx < 6 ? 'row-qualified' : ''"
+                            >
+                                <td class="col-rank">
+                                    <div class="rank-cell" style="display:flex;align-items:center;gap:0.25rem;">
+                                        <span v-if="entry.standing === 1">👑</span>
+                                        <span v-else-if="entry.standing === 2">🥈</span>
+                                        <span v-else-if="entry.standing === 3">🥉</span>
+                                        <span class="rank-number" :class="{ 'rank-top1': entry.standing === 1, 'rank-top3': entry.standing <= 3, 'rank-top8': entry.standing > 3 && entry.standing <= 6 }">{{ entry.standing }}</span>
+                                    </div>
+                                </td>
+                                <td class="col-team">
+                                    <div class="team-cell" style="display:flex;align-items:center;gap:0.65rem;">
+                                        <div class="team-avatar" style="width:32px;height:32px;border-radius:8px;background:rgba(100,116,139,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(148,163,184,0.08);overflow:hidden;">
+                                            <img v-if="entry.logoUrl && !entry.logoError" :src="entry.logoUrl" :alt="entry.teamName" loading="lazy" @error="entry.logoError = true" />
+                                            <span v-else class="avatar-initials">{{ getInitials(entry.teamName) }}</span>
+                                        </div>
+                                        <span class="team-name" style="font-weight:700;font-size:0.88rem;color:#e2e8f0;">
+                                            <span v-if="entry.teamCode" style="color:#64748b;font-size:0.75rem;margin-right:0.35rem;">{{ entry.teamCode }}</span>
+                                            {{ entry.teamName }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td style="text-align:center;font-weight:700;color:#68d391;font-size:0.9rem;">{{ entry.wins }}</td>
+                                <td style="text-align:center;font-weight:700;color:#fc8181;font-size:0.9rem;">{{ entry.losses }}</td>
+                                <td style="text-align:center;">
+                                    <span style="font-size:0.82rem;color:#94a3b8;font-weight:600;">
+                                        {{ entry.wins + entry.losses > 0 ? Math.round((entry.wins / (entry.wins + entry.losses)) * 100) : 0 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="source-footer" style="margin-top:1rem;">
+                <span class="source-icon-emoji">ℹ️</span>
+                <span>Dados via <a href="https://lolesports.com" target="_blank" rel="noopener">LoL Esports API</a></span>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -244,13 +441,27 @@
 import { ref, computed, onMounted, onServerPrefetch } from 'vue';
 import { useHead } from '@unhead/vue';
 
-useHead({ title: 'Ranking Mundial CS2 — ProPlay News' });
-
 const isSSR = import.meta.env.SSR;
 const apiBase = isSSR
     ? (import.meta.env.VITE_API_URL || 'http://localhost:5000')
     : '';
 
+// ─── Game tabs ────────────────────────────────────────────
+const gameTabs = [
+    { label: 'CS2', value: 'cs2', icon: '🔫' },
+    { label: 'Valorant', value: 'valorant', icon: '🎯' },
+    { label: 'League of Legends', value: 'lol', icon: '⚔️' },
+];
+const activeGame = ref('cs2');
+
+const gameTitle = computed(() => {
+    if (activeGame.value === 'valorant') return 'Ranking Valorant — ProPlay News';
+    if (activeGame.value === 'lol') return 'Ranking League of Legends — ProPlay News';
+    return 'Ranking Mundial CS2 — ProPlay News';
+});
+useHead({ title: gameTitle });
+
+// ─── CS2 ──────────────────────────────────────────────────
 const regionTabs = [
     { label: 'Global', value: 'global', flag: '🌍' },
     { label: 'Américas', value: 'americas', flag: '🌎' },
@@ -263,6 +474,30 @@ const rankings = ref<any[]>([]);
 const displayLimit = ref(50);
 const snapshotDate = ref('');
 const loading = ref(!import.meta.env.SSR);
+
+// ─── Valorant ─────────────────────────────────────────────
+const vctRegionTabs = [
+    { label: 'Américas', value: 'americas', flag: '🌎' },
+    { label: 'EMEA', value: 'emea', flag: '🌍' },
+    { label: 'Pacific', value: 'pacific', flag: '🌏' },
+    { label: 'China', value: 'china', flag: '🇨🇳' },
+];
+const activeVctRegion = ref('americas');
+const vctRankings = ref<any[]>([]);
+const vctLoading = ref(false);
+
+// ─── LoL ──────────────────────────────────────────────────
+const lolLeagueTabs = [
+    { label: 'LCK', value: 'lck', flag: '🇰🇷' },
+    { label: 'LEC', value: 'lec', flag: '🇪🇺' },
+    { label: 'LCS', value: 'lcs', flag: '🇺🇸' },
+    { label: 'LPL', value: 'lpl', flag: '🇨🇳' },
+    { label: 'CBLOL', value: 'cblol-brazil', flag: '🇧🇷' },
+    { label: 'LCP', value: 'lcp', flag: '🌏' },
+];
+const activeLolLeague = ref('lck');
+const lolRankings = ref<any[]>([]);
+const lolLoading = ref(false);
 
 const majorSlots = computed(() => {
     switch (activeRegion.value) {
@@ -307,6 +542,57 @@ async function load(region: string) {
 function setRegion(region: string) {
     activeRegion.value = region;
     load(region);
+}
+
+function setGame(game: string) {
+    activeGame.value = game;
+    if (game === 'cs2' && rankings.value.length === 0) load(activeRegion.value);
+    if (game === 'valorant' && vctRankings.value.length === 0) loadVct(activeVctRegion.value);
+    if (game === 'lol' && lolRankings.value.length === 0) loadLol(activeLolLeague.value);
+}
+
+function setVctRegion(region: string) {
+    activeVctRegion.value = region;
+    loadVct(region);
+}
+
+function setLolLeague(league: string) {
+    activeLolLeague.value = league;
+    loadLol(league);
+}
+
+async function loadVct(region: string) {
+    vctLoading.value = true;
+    try {
+        const url = isSSR
+            ? `${apiBase}/esports/rankings/valorant?region=${region}&limit=30`
+            : `/api/esports/rankings/valorant?region=${region}&limit=30`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const result = json.result || json;
+        vctRankings.value = result.data || [];
+    } catch {
+        vctRankings.value = [];
+    } finally {
+        vctLoading.value = false;
+    }
+}
+
+async function loadLol(league: string) {
+    lolLoading.value = true;
+    try {
+        const url = isSSR
+            ? `${apiBase}/esports/rankings/lol?league=${league}&limit=20`
+            : `/api/esports/rankings/lol?league=${league}&limit=20`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const result = json.result || json;
+        lolRankings.value = result.data || [];
+    } catch {
+        lolRankings.value = [];
+    } finally {
+        lolLoading.value = false;
+    }
 }
 
 function parsePlayers(roster: string): string[] {
@@ -559,6 +845,42 @@ onMounted(() => {
     margin: 0 auto;
     padding: 0 1rem 3rem;
 }
+
+/* ─── Game Selector ────────────────────────────────── */
+.game-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.game-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    border: 1px solid rgba(148,163,184,0.12);
+    background: rgba(15,23,42,0.5);
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.game-tab:hover { color: #94a3b8; border-color: rgba(139,92,246,0.3); }
+.game-tab.active {
+    background: rgba(139,92,246,0.1);
+    border-color: rgba(139,92,246,0.45);
+    color: #c4b5fd;
+}
+.game-icon { font-size: 1rem; }
+
+/* ─── Game Section ─────────────────────────────────── */
+.game-section { }
+.game-section-header { margin-bottom: 1.25rem; }
+.game-section-title { font-size: 1.5rem; font-weight: 800; color: #f1f5f9; margin: 0 0 0.3rem; }
+.game-section-sub { font-size: 0.875rem; color: #64748b; margin: 0; }
 
 /* ─── Hero Header ──────────────────────────────────── */
 .ranking-hero {

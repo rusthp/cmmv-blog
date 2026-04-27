@@ -367,7 +367,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onServerPrefetch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -380,7 +380,9 @@ const brackets = ref<{ phases: string[]; brackets: Record<string, any[]>; hasPla
     brackets: {},
     hasPlayoffs: false,
 });
-const loading = ref(true);
+const isSSR = import.meta.env.SSR;
+const apiBase = isSSR ? (import.meta.env.VITE_API_URL || 'http://localhost:5000') : '';
+const loading = ref(!import.meta.env.SSR);
 const bracketsLoading = ref(false);
 const loadError = ref<string | null>(null);
 const activeTab = ref('overview');
@@ -432,9 +434,10 @@ async function load() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+        const base = isSSR ? `${apiBase}/esports` : '/api/esports';
         const [tRes, mRes] = await Promise.all([
-            fetch(`/api/esports/tournaments/${slug.value}`, { signal: controller.signal }),
-            fetch(`/api/esports/tournaments/${slug.value}/matches`, { signal: controller.signal }),
+            fetch(`${base}/tournaments/${slug.value}`, { signal: controller.signal }),
+            fetch(`${base}/tournaments/${slug.value}/matches`, { signal: controller.signal }),
         ]);
 
         clearTimeout(timeoutId);
@@ -719,7 +722,14 @@ function getStandingsRowClass(idx: number, total: number): string {
     return '';
 }
 
-onMounted(load);
+onServerPrefetch(async () => {
+    await load();
+});
+
+onMounted(() => {
+    if (!tournament.value) load();
+    else loading.value = false;
+});
 </script>
 
 <style scoped>

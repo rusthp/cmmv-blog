@@ -156,10 +156,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onServerPrefetch, watch } from 'vue';
 import { useHead } from '@unhead/vue';
 
 useHead({ title: 'Campeonatos — ProPlay News' });
+
+const isSSR = import.meta.env.SSR;
+const apiBase = isSSR ? (import.meta.env.VITE_API_URL || 'http://localhost:5000') : '';
 
 const games = [
   { label: 'Todos', value: 'all' },
@@ -191,7 +194,7 @@ const activeStatus = ref('all');
 const activeRegion = ref('all');
 
 const tournaments = ref<any[]>([]);
-const loading = ref(true);
+const loading = ref(!import.meta.env.SSR);
 
 // Status counts - fetched from backend
 const statusCounts = ref({ all: 0, ongoing: 0, upcoming: 0, finished: 0 });
@@ -218,7 +221,8 @@ async function load() {
     if (activeRegion.value !== 'all') params.append('region', activeRegion.value);
     params.append('limit', '200');
 
-    const url = `/api/esports/tournaments?${params.toString()}`;
+    const base = isSSR ? `${apiBase}/esports` : '/api/esports';
+    const url = `${base}/tournaments?${params.toString()}`;
 
     const res = await fetch(url);
     const json = await res.json();
@@ -242,8 +246,8 @@ async function updateAllStatusCounts() {
     if (activeRegion.value !== 'all') countParams.append('region', activeRegion.value);
     const countQuery = countParams.toString() ? `?${countParams.toString()}` : '';
 
-    // Fetch all counts from the optimized endpoint in a single request
-    const res = await fetch(`/api/esports/tournaments/counts${countQuery}`);
+    const base = isSSR ? `${apiBase}/esports` : '/api/esports';
+    const res = await fetch(`${base}/tournaments/counts${countQuery}`);
     const json = await res.json();
 
     const counts = json.result || json;
@@ -378,7 +382,14 @@ function handleLogoError(e: Event) {
   }
 }
 
-onMounted(load);
+onServerPrefetch(async () => {
+  await load();
+});
+
+onMounted(() => {
+  if (tournaments.value.length === 0) load();
+  else loading.value = false;
+});
 </script>
 
 <style scoped>
