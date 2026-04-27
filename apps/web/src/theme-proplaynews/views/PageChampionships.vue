@@ -455,6 +455,7 @@ onMounted(() => {
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .game-tab {
@@ -486,6 +487,7 @@ onMounted(() => {
   gap: 0.375rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .region-tab {
@@ -518,6 +520,7 @@ onMounted(() => {
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .tier-nav-label {
@@ -622,6 +625,7 @@ onMounted(() => {
 .status-tabs {
   display: flex;
   gap: 2rem;
+  justify-content: center;
 }
 
 .status-tab {
