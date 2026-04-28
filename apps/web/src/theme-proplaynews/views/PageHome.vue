@@ -507,7 +507,14 @@ const settings = computed<Record<string, any>>(() => {
     return blogSettings;
 });
 const categories = ref<any[]>(categoriesStore.getCategories || []);
-const posts = ref<any[]>(postsStore.getPosts || []);
+const rawSSRPosts: any[] = postsStore.getPosts || [];
+const ssrSeen = new Set<string>();
+const posts = ref<any[]>(rawSSRPosts.filter((p: any) => {
+    const key = p.slug || p.id;
+    if (ssrSeen.has(key)) return false;
+    ssrSeen.add(key);
+    return true;
+}));
 const popularPosts = ref<any[]>(mostAccessedStore.getMostAccessedPosts || []);
 const loading = ref(true);
 const loadingMore = ref(false);
@@ -715,7 +722,14 @@ const loadPosts = async () => {
         );
 
         if (response) {
-            posts.value = Array.isArray(response) ? response : (response.posts || []);
+            const raw = Array.isArray(response) ? response : (response.posts || []);
+            const seen = new Set<string>();
+            posts.value = raw.filter((p: any) => {
+                const key = p.slug || p.id;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
             const totalCount = Array.isArray(response) ? 0 : (response.count || 0);
 
             hasMorePosts.value = totalCount > 0
@@ -755,7 +769,9 @@ const loadMorePosts = async () => {
 
         if (newPostsRaw.length > 0) {
             const newPosts = newPostsRaw.filter((newPost: any) =>
-                !posts.value.some((existingPost: any) => existingPost.id === newPost.id)
+                !posts.value.some((existingPost: any) =>
+                    existingPost.id === newPost.id || existingPost.slug === newPost.slug
+                )
             );
 
             if (newPosts.length > 0) {
