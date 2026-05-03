@@ -53,6 +53,17 @@ export class PostingWorker {
 
             for (const raw of generatedItems.data) {
                 try {
+                    // Fast-path: if FeedRaw already has a postRef, it was linked in a previous cycle
+                    if (raw.postRef) {
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: raw.id }),
+                            { pipelineState: PIPELINE_STATE.DONE }
+                        );
+                        PostingWorker.logger.log(`[pipeline][WARN] Item ${raw.id} already has postRef=${raw.postRef}, marking DONE.`);
+                        continue;
+                    }
+
                     const locked = await this.transitionState(
                         raw.id,
                         PIPELINE_STATE.GENERATED,
@@ -592,9 +603,23 @@ export class PostingWorker {
             .trim();
     }
 
+    private titleToWordSet(normalizedTitle: string): Set<string> {
+        const STOP_WORDS = new Set([
+            'a', 'o', 'e', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas',
+            'um', 'uma', 'para', 'por', 'com', 'que', 'se', 'ao', 'aos',
+            'the', 'an', 'and', 'or', 'for', 'to', 'of', 'in', 'on', 'at',
+            'is', 'are', 'was', 'be', 'by', 'as', 'it', 'its', 'with', 'from',
+        ]);
+        return new Set(
+            normalizedTitle
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+        );
+    }
+
     /**
      * Finds a duplicate post by normalized title similarity.
-     * Checks recent posts (last 200) for exact normalized match.
+     * Checks recent posts (last 500) for exact normalized match and Jaccard similarity.
      */
     private async findDuplicatePost(PostsEntity: any, title: string): Promise<any | null> {
         if (!title) return null;
@@ -607,7 +632,7 @@ export class PostingWorker {
 
         // Second: check recent posts for normalized title match
         const recentPosts = await Repository.findAll(PostsEntity, {
-            limit: 200,
+            limit: 500,
             sortBy: 'createdAt',
             sort: 'DESC',
         });
@@ -616,6 +641,19 @@ export class PostingWorker {
             for (const post of recentPosts.data) {
                 if (this.normalizeTitle(post.title || '') === normalizedInput) {
                     return post;
+                }
+            }
+
+            // Third: Jaccard similarity check (catches same-story different-wording)
+            const JACCARD_THRESHOLD = 0.70;
+            const inputWords = this.titleToWordSet(normalizedInput);
+            if (inputWords.size >= 3) {
+                for (const post of recentPosts.data) {
+                    const postWords = this.titleToWordSet(this.normalizeTitle(post.title || ''));
+                    if (postWords.size < 3) continue;
+                    const intersection = new Set([...inputWords].filter(w => postWords.has(w)));
+                    const union = new Set([...inputWords, ...postWords]);
+                    if (intersection.size / union.size >= JACCARD_THRESHOLD) return post;
                 }
             }
         }

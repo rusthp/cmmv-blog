@@ -5,9 +5,12 @@ import {
     Application
 } from "@cmmv/core";
 
+import { Repository } from "@cmmv/repository";
+
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
 
+import { PIPELINE_STATE } from "./pipeline-constants";
 import { ClassificationWorker } from "./classification-worker";
 import { KeywordEngineWorker } from "./keyword-engine";
 import { KeywordSuggestionsWorker } from "./keyword-suggestions.worker";
@@ -131,6 +134,16 @@ export class AutoPipelineService {
         }
     }
 
+    @Cron("*/30 * * * *")
+    async recoverStuckItemsCron() {
+        try {
+            if (!AutoPipelineService.isEnabled()) return;
+            await this.recoverStuckItems();
+        } catch (err) {
+            console.error('[pipeline] recoverStuckItemsCron error:', err);
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════
     // PUBLIC API (for controller / manual triggers)
     // ═══════════════════════════════════════════════════════════
@@ -165,5 +178,58 @@ export class AutoPipelineService {
      */
     async validateAndResolveImage(url: string, title: string, channelReferer?: string): Promise<string> {
         return AutoPipelineService.imagePipelineInstance.validateAndResolveImage(url, title, channelReferer);
+    }
+
+    private async recoverStuckItems(): Promise<void> {
+        try {
+            const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+            const staleThresholdMs = 30 * 60 * 1000; // 30 minutes
+            const staleDate = new Date(Date.now() - staleThresholdMs);
+
+            // Items stuck in POSTING → reset to GENERATED
+            const stuckPosting = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.POSTING,
+                limit: 50,
+                sortBy: 'updatedAt',
+                sort: 'ASC',
+            });
+
+            if (stuckPosting?.data?.length) {
+                for (const item of stuckPosting.data) {
+                    const updatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
+                    if (!updatedAt || updatedAt > staleDate) continue;
+                    // Only reset if no postRef — if postRef exists, mark DONE
+                    if (item.postRef) {
+                        await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.DONE });
+                        AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in POSTING with postRef → DONE`);
+                    } else {
+                        await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.GENERATED, aiAttempts: 0 });
+                        AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in POSTING >30min → reset to GENERATED`);
+                    }
+                }
+            }
+
+            // Items stuck in GENERATING → reset to KEYWORD_DONE (or CLASSIFIED as fallback)
+            const stuckGenerating = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.GENERATING,
+                limit: 50,
+                sortBy: 'updatedAt',
+                sort: 'ASC',
+            });
+
+            if (stuckGenerating?.data?.length) {
+                for (const item of stuckGenerating.data) {
+                    const updatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
+                    if (!updatedAt || updatedAt > staleDate) continue;
+                    const resetState = item.pipelineState === PIPELINE_STATE.GENERATING
+                        ? PIPELINE_STATE.KEYWORD_DONE
+                        : PIPELINE_STATE.CLASSIFIED;
+                    await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: resetState, aiAttempts: 0 });
+                    AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in GENERATING >30min → reset to ${resetState}`);
+                }
+            }
+        } catch (err: any) {
+            AutoPipelineService.logger.error(`[pipeline][recovery] recoverStuckItems error: ${err.message}`);
+        }
     }
 }

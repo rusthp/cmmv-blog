@@ -407,29 +407,50 @@ export class ChannelsService {
      */
     private async isSimilarTitleInRecentFeed(FeedRawEntity: any, title: string, pubDate: Date): Promise<boolean> {
         try {
-            const windowStart = new Date(pubDate.getTime() - 48 * 60 * 60 * 1000);
-            const SIMILARITY_THRESHOLD = 0.55;
+            const windowStart = new Date(pubDate.getTime() - 72 * 60 * 60 * 1000);
+            const SIMILARITY_THRESHOLD = 0.70;
 
             const recentItems = await Repository.findAll(FeedRawEntity, {
-                limit: 300,
+                limit: 500,
                 sortBy: 'createdAt',
                 sort: 'DESC',
             });
 
-            if (!recentItems?.data?.length) return false;
-
             const inputWords = this.titleToWordSet(title);
             if (inputWords.size < 3) return false; // Too short to compare reliably
 
-            for (const item of recentItems.data) {
-                if (!item.title) continue;
-                if (item.createdAt && new Date(item.createdAt) < windowStart) continue;
+            if (recentItems?.data?.length) {
+                for (const item of recentItems.data) {
+                    if (!item.title) continue;
+                    if (item.createdAt && new Date(item.createdAt) < windowStart) continue;
 
-                const existingWords = this.titleToWordSet(item.title);
-                if (existingWords.size < 3) continue;
+                    const existingWords = this.titleToWordSet(item.title);
+                    if (existingWords.size < 3) continue;
 
-                const score = this.jaccardSimilarity(inputWords, existingWords);
-                if (score >= SIMILARITY_THRESHOLD) return true;
+                    const score = this.jaccardSimilarity(inputWords, existingWords);
+                    if (score >= SIMILARITY_THRESHOLD) return true;
+                }
+            }
+
+            // Also check against recently published posts
+            try {
+                const PostsEntity = Repository.getEntity("PostsEntity");
+                const recentPosts = await Repository.findAll(PostsEntity, {
+                    limit: 200,
+                    sortBy: 'createdAt',
+                    sort: 'DESC',
+                });
+                if (recentPosts?.data?.length) {
+                    for (const post of recentPosts.data) {
+                        if (!post.title) continue;
+                        const postWords = this.titleToWordSet(post.title);
+                        if (postWords.size < 3) continue;
+                        const score = this.jaccardSimilarity(inputWords, postWords);
+                        if (score >= SIMILARITY_THRESHOLD) return true;
+                    }
+                }
+            } catch {
+                // Never block on error
             }
 
             return false;
