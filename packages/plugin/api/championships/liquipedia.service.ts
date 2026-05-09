@@ -167,9 +167,9 @@ export class LiquipediaService {
         const tierMatch = row.match(/href="\/[^/]+\/([SA])-Tier_Tournaments"/i);
         const tier = tierMatch ? tierMatch[1].toLowerCase() : 'b';
 
-        // Logo URL
-        const logoMatch = row.match(/class="league-icon-small-image lightmode"[\s\S]*?src="([^"]+)"/);
-        const logoUrl = logoMatch ? `https://liquipedia.net${logoMatch[1]}` : '';
+        // Logo URL — stored via /liquipedia-images/ proxy to avoid Liquipedia hotlink block
+        const logoMatch = row.match(/class="league-icon-small-image[\s\S]*?src="([^"]+)"/);
+        const logoUrl = logoMatch ? `/liquipedia-images${logoMatch[1].replace('/commons/images', '')}` : '';
 
         const externalId = `liq_${slug}`;
 
