@@ -412,8 +412,12 @@ export class LiquipediaService {
         }
 
         if (existing) {
-            const merged = mergeTournaments(existing as TournamentData, incoming, 'liquipedia');
-            await Repository.update(entity, { id: (existing as any).id }, merged);
+            // Same-source re-sync: overwrite directly (no trust check needed)
+            // Cross-source merge: use trust hierarchy to avoid clobbering higher-quality data
+            const update = (existing as any).dataSource === 'liquipedia'
+                ? incoming
+                : mergeTournaments(existing as TournamentData, incoming, 'liquipedia');
+            await Repository.update(entity, { id: (existing as any).id }, update);
         } else {
             await Repository.insert(entity, incoming);
         }
