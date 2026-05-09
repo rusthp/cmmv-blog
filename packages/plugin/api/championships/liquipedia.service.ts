@@ -18,6 +18,10 @@ const MONTHS: Record<string, string> = {
     January: '01', February: '02', March: '03', April: '04',
     May: '05', June: '06', July: '07', August: '08',
     September: '09', October: '10', November: '11', December: '12',
+    // Abbreviated forms used in Liquipedia HTML tables
+    Jan: '01', Feb: '02', Mar: '03', Apr: '04',
+    Jun: '06', Jul: '07', Aug: '08',
+    Sep: '09', Oct: '10', Nov: '11', Dec: '12',
 };
 
 const SUPPORTED_GAMES = ['csgo', 'dota2', 'lol', 'valorant'];
@@ -143,8 +147,8 @@ export class LiquipediaService {
         // Slug: normalize page path
         const slug = pagePath.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-        // Dates: "May 09–17, 2026" or "May 09 – June 02, 2026"
-        const dateCell = row.match(/data-nowrap="">((?:January|February|March|April|May|June|July|August|September|October|November|December)\s[\s\S]*?(?:January|February|March|April|May|June|July|August|September|October|November|December)?[\s\S]*?\d{4})</);
+        // Dates: "Apr 29 – May 03, 2026" or "May 09–17, 2026" or "Dec 28, 2025 – Jan 04, 2026"
+        const dateCell = row.match(/data-nowrap="">([A-Z][a-z]{2,8}\s[\s\S]*?\d{4})</);
         const { startDate, endDate } = dateCell ? this.parseDateRange(dateCell[1]) : { startDate: null, endDate: null };
 
         // Prize pool
@@ -376,7 +380,9 @@ export class LiquipediaService {
         const data: any = await res.json();
         if (data.error) throw new Error(`Liquipedia API error: ${data.error.info || JSON.stringify(data.error)}`);
 
-        return data.parse?.text?.['*'] || '';
+        const html = data.parse?.text?.['*'] || '';
+        // Liquipedia encodes underscores in CSS class names as &#95; — decode before parsing
+        return html.replace(/&#95;/g, '_');
     }
 
     private sleep(ms: number): Promise<void> {
