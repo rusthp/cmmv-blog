@@ -412,9 +412,10 @@ export class LiquipediaService {
         }
 
         if (existing) {
-            // Same-source re-sync: overwrite directly (no trust check needed)
-            // Cross-source merge: use trust hierarchy to avoid clobbering higher-quality data
-            const update = (existing as any).dataSource === 'liquipedia'
+            // Same-source re-sync: overwrite directly (no trust check needed).
+            // Detect by externalId prefix since dataSource column may not be in entity schema yet.
+            const isSameSource = String((existing as any).externalId || '').startsWith('liq_');
+            const update = isSameSource
                 ? incoming
                 : mergeTournaments(existing as TournamentData, incoming, 'liquipedia');
             await Repository.update(entity, { id: (existing as any).id }, update);
