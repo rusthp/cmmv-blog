@@ -21,6 +21,12 @@ export class EsportsTournamentContract extends AbstractContract {
     @ContractField({ protoType: 'string', nullable: false, index: true })
     externalId!: string;
 
+    @ContractField({ protoType: 'string', nullable: true })
+    externalIds!: string; // JSON: [{source: string, id: string}]
+
+    @ContractField({ protoType: 'string', nullable: true, index: true, defaultValue: 'pandascore' })
+    dataSource!: string; // pandascore | liquipedia | hltv | draft5 | vlr
+
     @ContractField({ protoType: 'string', nullable: false, index: true, defaultValue: 'csgo' })
     game!: string;
 

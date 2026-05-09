@@ -15,11 +15,13 @@ import { Draft5Service } from './draft5.service';
 import { VlrService } from './vlr.service';
 import { ValorantRankingsService } from './valorant-rankings.service';
 import { LolGprService } from './lol-gpr.service';
+import { LiquipediaService } from './liquipedia.service';
+import { HltvService } from './hltv.service';
 import { ChampionshipsController } from './championships.controller';
 
 export const ChampionshipsModule = new Module('blog_championships', {
     controllers: [ChampionshipsController],
-    providers: [ChampionshipsService, RankingsService, LolEsportsService, LolRankingsService, Draft5Service, VlrService, ValorantRankingsService, LolGprService],
+    providers: [ChampionshipsService, RankingsService, LolEsportsService, LolRankingsService, Draft5Service, VlrService, ValorantRankingsService, LolGprService, LiquipediaService, HltvService],
     contracts: [
         EsportsTournamentContract,
         EsportsMatchContract,

@@ -1,6 +1,6 @@
 import { Service, Logger, Config, Cron } from '@cmmv/core';
-
 import { Repository } from '@cmmv/repository';
+import { mergeExternalIds } from './tournament-merger.utils';
 
 const PANDASCORE_BASE = 'https://api.pandascore.co';
 
@@ -463,7 +463,14 @@ export class ChampionshipsService {
     const serieId = String(first.serie_id || serie.id || first.id);
     const externalId = `serie_${serieId}`;
 
-    const existing = await Repository.findOne(EsportsTournamentEntity, { externalId });
+    let existing: any = await Repository.findOne(EsportsTournamentEntity, { externalId });
+
+    // Cross-source merge: find Liquipedia/HLTV record by slug if PandaScore record not found
+    if (!existing) {
+      const serieSlugPreview = serie.slug || `serie-${serieId}`;
+      const slugFallback = await Repository.findOne(EsportsTournamentEntity, { slug: serieSlugPreview } as any);
+      if (slugFallback) existing = slugFallback;
+    }
 
     // Aggregate teams from all sub-tournaments (tournaments endpoint includes teams)
     const teamsMap: Record<string, any> = {};
@@ -554,8 +561,16 @@ export class ChampionshipsService {
       past: 'finished',
     };
 
+    const newExternalIdEntry = { source: 'pandascore', id: externalId };
+    const mergedExternalIds = mergeExternalIds(
+      existing ? (existing as any).externalIds : null,
+      newExternalIdEntry
+    );
+
     const data = {
       externalId,
+      externalIds: JSON.stringify(mergedExternalIds),
+      dataSource: 'pandascore',
       serieExternalId: serieId,
       game,
       name: serieName,

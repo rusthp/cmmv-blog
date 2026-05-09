@@ -8,6 +8,8 @@ import { Draft5Service } from './draft5.service';
 import { VlrService } from './vlr.service';
 import { ValorantRankingsService } from './valorant-rankings.service';
 import { LolGprService } from './lol-gpr.service';
+import { LiquipediaService } from './liquipedia.service';
+import { HltvService } from './hltv.service';
 
 @Controller('esports')
 export class ChampionshipsController {
@@ -20,6 +22,8 @@ export class ChampionshipsController {
     private readonly vlrService: VlrService,
     private readonly valorantRankingsService: ValorantRankingsService,
     private readonly lolGprService: LolGprService,
+    private readonly liquipediaService: LiquipediaService,
+    private readonly hltvService: HltvService,
   ) {}
 
   @Get('tournaments')
@@ -202,6 +206,32 @@ export class ChampionshipsController {
   async syncVlr() {
     const stats = await this.vlrService.syncAll();
     return { success: true, vlr: stats };
+  }
+
+  @Get('sync-liquipedia')
+  async syncLiquipedia(@Query('game') game?: string) {
+    if (game) {
+      const count = await this.liquipediaService.syncTournaments(game);
+      return { success: true, game, upserted: count };
+    }
+    const results: Record<string, number> = {};
+    for (const g of ['csgo', 'dota2', 'lol', 'valorant']) {
+      results[g] = await this.liquipediaService.syncTournaments(g);
+    }
+    return { success: true, results };
+  }
+
+  @Get('sync-liquipedia-matches')
+  async syncLiquipediaMatches(@Query('slug') slug: string, @Query('game') game?: string) {
+    if (!slug) return { error: 'slug is required' };
+    const count = await this.liquipediaService.syncMatches(slug, game || 'csgo');
+    return { success: true, slug, matches: count };
+  }
+
+  @Get('sync-hltv')
+  async syncHltv() {
+    const stats = await this.hltvService.syncFromRss();
+    return { success: true, hltv: stats };
   }
 
   @Get('sync-stale')
