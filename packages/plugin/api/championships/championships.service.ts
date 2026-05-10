@@ -254,9 +254,11 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { data: [], total: 0 };
 
-    // Fetch broadly (no status filter in DB query) so recalcStatus can correct stale values.
-    // Limit must exceed total tournament count (~1000) so no records are silently omitted.
-    const queries: any = { limit: '5000' };
+    // Use DB status filter when a specific status is requested.
+    // DB statuses are kept accurate by the paginated fixStaleTournamentStatuses() cron.
+    // recalcStatus is applied as a boundary-case safety net after the DB query.
+    const queries: any = { limit: '1000' };
+    if (status && status !== 'all') queries.status = status;
     if (game && game !== 'all') queries.game = game;
     if (region && region !== 'all') queries.region = region;
 
@@ -268,13 +270,12 @@ export class ChampionshipsService {
       teams: this.parseJson(t.teamsJson),
     }));
 
-    // Apply status filter AFTER recalculation
+    // Re-filter after recalcStatus in case boundary records shifted status
     const filtered = status && status !== 'all'
       ? tournaments.filter((t: any) => t.status === status)
       : tournaments;
 
     const sorted = filtered.sort((a: any, b: any) => {
-      // Featured first, then by startDate descending
       if (a.featured && !b.featured) return -1;
       if (!a.featured && b.featured) return 1;
       const da = a.startDate || '9999';
@@ -295,20 +296,26 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { all: 0, ongoing: 0, upcoming: 0, finished: 0 };
 
-    const baseFilter: any = { limit: '1000' };
+    // Query each status separately to stay well within the 1000-record repo hard cap.
+    // Ongoing/upcoming counts are exact; finished is capped at 1000 (acceptable for display).
+    const baseFilter: any = {};
     if (game && game !== 'all') baseFilter.game = game;
     if (region && region !== 'all') baseFilter.region = region;
 
-    const results = await Repository.findAll(EsportsTournamentEntity, baseFilter);
-    const all = results?.data || [];
+    const [ongoingRes, upcomingRes, finishedRes] = await Promise.all([
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'ongoing', limit: '500' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'upcoming', limit: '1000' }),
+      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'finished', limit: '1000' }),
+    ]);
 
-    const counts = { all: 0, ongoing: 0, upcoming: 0, finished: 0 };
-    counts.all = all.length;
-    for (const t of all) {
-      const s = this.recalcStatus(t) as keyof typeof counts;
-      if (s in counts) counts[s]++;
-    }
-    return counts;
+    const countAfterRecalc = (res: any, targetStatus: string) =>
+      ((res?.data || []) as any[]).filter((t: any) => this.recalcStatus(t) === targetStatus).length;
+
+    const ongoing = countAfterRecalc(ongoingRes, 'ongoing');
+    const upcoming = countAfterRecalc(upcomingRes, 'upcoming');
+    const finished = countAfterRecalc(finishedRes, 'finished');
+
+    return { all: ongoing + upcoming + finished, ongoing, upcoming, finished };
   }
 
   async getTournamentBySlug(slug: string): Promise<any | null> {
@@ -651,32 +658,30 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return 0;
 
-    const now = new Date().toISOString();
     let fixed = 0;
+    let page = 1;
+    const PAGE = 1000; // @cmmv/repository hard cap per query
 
-    const staleOngoing = await Repository.findAll(EsportsTournamentEntity, {
-      status: 'ongoing',
-      limit: '200',
-    });
-    for (const t of (staleOngoing?.data || []) as any[]) {
-      if (t.endDate && t.endDate < now) {
-        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'finished' });
-        fixed++;
-      }
-    }
+    // Paginate through ALL tournaments and write corrected status back to DB.
+    // This covers the full 7000+ record set that per-status queries would miss.
+    while (true) {
+      const results = await Repository.findAll(EsportsTournamentEntity, {
+        limit: String(PAGE),
+        page: String(page),
+      });
+      const rows: any[] = results?.data || [];
+      if (rows.length === 0) break;
 
-    const staleUpcoming = await Repository.findAll(EsportsTournamentEntity, {
-      status: 'upcoming',
-      limit: '200',
-    });
-    for (const t of (staleUpcoming?.data || []) as any[]) {
-      if (t.endDate && t.endDate < now) {
-        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'finished' });
-        fixed++;
-      } else if (t.startDate && t.startDate <= now && (!t.endDate || t.endDate >= now)) {
-        await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: 'ongoing' });
-        fixed++;
+      for (const t of rows) {
+        const correct = this.recalcStatus(t);
+        if (correct !== t.status) {
+          await Repository.update(EsportsTournamentEntity, { id: t.id }, { status: correct });
+          fixed++;
+        }
       }
+
+      if (rows.length < PAGE) break;
+      page++;
     }
 
     if (fixed > 0) {
