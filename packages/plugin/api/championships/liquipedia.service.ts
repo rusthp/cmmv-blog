@@ -167,7 +167,80 @@ export class LiquipediaService {
             }
         }
 
+        // Derive team list from match participants + page HTML, update tournament teamsJson
+        if (EsportsTournamentEntity && matches.length > 0) {
+            try {
+                const record = await Repository.findOne(EsportsTournamentEntity, { slug: tournamentSlug } as any);
+                if (record) {
+                    const existingTeams: any[] = JSON.parse((record as any).teamsJson || '[]');
+                    const derivedTeams = this.deriveTeamsFromMatches(matches);
+                    const pageTeams = this.parseTeamsFromPage(html, wiki);
+                    const merged = this.mergeTeamLists(existingTeams, derivedTeams, pageTeams);
+                    if (merged.length > existingTeams.length || (merged.length > 0 && existingTeams.length === 0)) {
+                        await Repository.update(EsportsTournamentEntity, { id: (record as any).id }, {
+                            teamsJson: JSON.stringify(merged),
+                            numberOfTeams: merged.length,
+                        });
+                        LiquipediaService.log(`[liquipedia] Updated teamsJson for ${tournamentSlug}: ${merged.length} teams`);
+                    }
+                }
+            } catch (e: any) {
+                LiquipediaService.warn(`[liquipedia] Failed to update teamsJson for ${tournamentSlug}: ${e.message}`);
+            }
+        }
+
         return upserted;
+    }
+
+    private deriveTeamsFromMatches(matches: any[]): any[] {
+        const seen = new Map<string, any>();
+        for (const m of matches) {
+            if (m.team1ExternalId && m.team1Name && m.team1Name !== 'TBD' && m.team1Name !== 'TBA') {
+                seen.set(m.team1ExternalId, { id: m.team1ExternalId, name: m.team1Name, logoUrl: m.team1Logo || '', slug: m.team1ExternalId });
+            }
+            if (m.team2ExternalId && m.team2Name && m.team2Name !== 'TBD' && m.team2Name !== 'TBA') {
+                seen.set(m.team2ExternalId, { id: m.team2ExternalId, name: m.team2Name, logoUrl: m.team2Logo || '', slug: m.team2ExternalId });
+            }
+        }
+        return Array.from(seen.values());
+    }
+
+    private parseTeamsFromPage(html: string, wiki: string): any[] {
+        const teams: any[] = [];
+        // Liquipedia teamcard block: <div class="teamcard">...<a href="/wiki/TEAM_NAME">NAME</a>...<img src="...">
+        const teamcardRegex = /<div[^>]*class="[^"]*teamcard[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g;
+        let m: RegExpExecArray | null;
+        while ((m = teamcardRegex.exec(html)) !== null) {
+            const block = m[1];
+            const nameMatch = block.match(/href="\/[^/]+\/([^"#]+)"[^>]*>\s*([^<]+)\s*<\/a>/);
+            const imgMatch = block.match(/src="(\/commons\/images[^"]+)"/);
+            if (!nameMatch) continue;
+            const slug = nameMatch[1].replace(/&amp;/g, '&').trim();
+            const name = nameMatch[2].trim();
+            if (!name || name.length < 2) continue;
+            const id = `liq_${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+            const rawImg = imgMatch ? imgMatch[1].replace('/commons/images', '') : '';
+            const logoUrl = rawImg ? `/liquipedia-images${rawImg}` : '';
+            teams.push({ id, name, logoUrl, slug });
+        }
+        return teams;
+    }
+
+    private mergeTeamLists(...lists: any[][]): any[] {
+        const seen = new Map<string, any>();
+        for (const list of lists) {
+            for (const t of list) {
+                if (!t.id || !t.name) continue;
+                const existing = seen.get(t.id);
+                if (!existing) {
+                    seen.set(t.id, t);
+                } else if (!existing.logoUrl && t.logoUrl) {
+                    // fill missing logo from richer source
+                    seen.set(t.id, { ...existing, logoUrl: t.logoUrl });
+                }
+            }
+        }
+        return Array.from(seen.values());
     }
 
     // ─── Parsing ─────────────────────────────────────────────────
