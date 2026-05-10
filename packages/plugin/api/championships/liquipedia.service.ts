@@ -171,8 +171,10 @@ export class LiquipediaService {
         const logoMatch = row.match(/class="league-icon-small-image[\s\S]*?src="([^"]+)"/);
         const rawPath = logoMatch ? logoMatch[1].replace('/commons/images', '') : '';
         const logoUrl = rawPath ? `/liquipedia-images${rawPath}` : '';
-        // Banner uses 300px-wide version so it looks decent at card cover height (160px)
-        const bannerUrl = rawPath ? `/liquipedia-images${rawPath.replace(/\/\d+px-/, '/300px-')}` : '';
+        // Banner uses full-size original image (not thumbnail); thumbnails beyond pre-generated
+        // sizes return 404. Full image confirmed 1850×1590 px, suitable for card cover.
+        const fullPath = rawPath ? rawPath.replace('/thumb/', '/').replace(/\/\d+px-[^/]+$/, '') : '';
+        const bannerUrl = fullPath ? `/liquipedia-images${fullPath}` : '';
 
         const externalId = `liq_${slug}`;
 
