@@ -329,20 +329,30 @@ export class LiquipediaService {
             startDate = this.parseDate(parts[0], year);
             endDate = startDate;
         } else if (parts.length === 2) {
-            const endPart = parts[1].trim();
-            endDate = this.parseDate(endPart, year);
-
-            // If start part has no month, inherit from end
             const startPart = parts[0].trim();
-            if (/^\d{1,2}$/.test(startPart)) {
-                const endDateObj = endDate ? new Date(endDate) : null;
-                if (endDateObj) {
-                    const mm = String(endDateObj.getMonth() + 1).padStart(2, '0');
-                    const yr = String(endDateObj.getFullYear());
-                    startDate = `${yr}-${mm}-${startPart.padStart(2, '0')}`;
+            const endPart = parts[1].trim();
+
+            endDate = this.parseDate(endPart, year);
+            startDate = /^\d{1,2}$/.test(startPart) ? null : this.parseDate(startPart, year);
+
+            // "May 09–17, 2026": endPart "17, 2026" has no month → inherit from start
+            if (!endDate && /^\d{1,2}[,\s]+\d{4}$/.test(endPart)) {
+                if (!startDate) startDate = this.parseDate(startPart, year);
+                if (startDate) {
+                    const startObj = new Date(startDate);
+                    const mm = String(startObj.getMonth() + 1).padStart(2, '0');
+                    const dayMatch = endPart.match(/^\d{1,2}/);
+                    if (dayMatch) endDate = `${year}-${mm}-${dayMatch[0].padStart(2, '0')}`;
                 }
-            } else {
-                startDate = this.parseDate(startPart, year);
+            }
+
+            // "09–17, 2026" or just a day: start has no month → inherit from end
+            if (!startDate && /^\d{1,2}$/.test(startPart)) {
+                const endObj = endDate ? new Date(endDate) : null;
+                if (endObj) {
+                    const mm = String(endObj.getMonth() + 1).padStart(2, '0');
+                    startDate = `${endObj.getFullYear()}-${mm}-${startPart.padStart(2, '0')}`;
+                }
             }
         }
 

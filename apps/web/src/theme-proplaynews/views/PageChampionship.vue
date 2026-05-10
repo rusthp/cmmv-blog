@@ -457,9 +457,11 @@ async function load() {
         tournament.value = tResult;
         matches.value = mResult;
 
-        // Update browser tab title
-        const pageTitle = tResult.name ? `${tResult.name} | ProPlay News` : 'ProPlay News';
-        document.title = pageTitle;
+        // Update browser tab title (client-only — document not available in SSR)
+        if (!isSSR) {
+            const pageTitle = tResult.name ? `${tResult.name} | ProPlay News` : 'ProPlay News';
+            document.title = pageTitle;
+        }
 
         // Load brackets in background (non-blocking)
         loadBrackets();
