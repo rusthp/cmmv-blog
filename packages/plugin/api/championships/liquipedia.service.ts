@@ -86,11 +86,26 @@ export class LiquipediaService {
 
         LiquipediaService.log(`[liquipedia] Syncing matches for ${tournamentSlug}`);
 
+        // tournamentSlug is the blog slug (e.g. "pgl-2026-astana").
+        // Derive the Liquipedia page path from the stored externalIds JSON.
+        const { EsportsTournamentEntity } = this.getEntities();
+        let liquipediaPath: string = tournamentSlug;
+        if (EsportsTournamentEntity) {
+            try {
+                const t = await Repository.findOne(EsportsTournamentEntity, { slug: tournamentSlug } as any);
+                if (t) {
+                    const ids: Array<{ source: string; id: string }> = JSON.parse((t as any).externalIds || '[]');
+                    const liq = ids.find(e => e.source === 'liquipedia');
+                    if (liq?.id) liquipediaPath = liq.id;
+                }
+            } catch {}
+        }
+
         let html: string;
         try {
-            html = await this.fetchWikiPage(wiki, tournamentSlug);
+            html = await this.fetchWikiPage(wiki, liquipediaPath);
         } catch (e: any) {
-            LiquipediaService.warn(`[liquipedia] Failed to fetch tournament page ${tournamentSlug}: ${e.message}`);
+            LiquipediaService.warn(`[liquipedia] Failed to fetch tournament page ${liquipediaPath}: ${e.message}`);
             return 0;
         }
 
@@ -427,19 +442,14 @@ export class LiquipediaService {
         }
 
         if (existing) {
-            // Same-source re-sync: overwrite directly (no trust check needed).
-            // Detect by externalId prefix since dataSource column may not be in entity schema yet.
-            const isSameSource = String((existing as any).externalId || '').startsWith('liq_');
-            const merged = isSameSource
+            const isSameSource = (existing as any).dataSource === 'liquipedia'
+                || String((existing as any).externalId || '').startsWith('liq_');
+            const update = isSameSource
                 ? incoming
                 : mergeTournaments(existing as TournamentData, incoming, 'liquipedia');
-            // Strip fields not in the entity schema to prevent TypeORM EntityPropertyNotFoundError
-            const { externalIds: _ei, dataSource: _ds, ...update } = merged as any;
             await Repository.update(entity, { id: (existing as any).id }, update);
         } else {
-            // Strip schema-only fields before insert too
-            const { externalIds: _ei, dataSource: _ds, ...insertData } = incoming as any;
-            await Repository.insert(entity, insertData);
+            await Repository.insert(entity, incoming);
         }
     }
 
