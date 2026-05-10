@@ -46,6 +46,43 @@ export class LiquipediaService {
         }
     }
 
+    @Cron('30 */2 * * *')
+    async cronSyncMatches() {
+        LiquipediaService.log('[liquipedia] Starting scheduled match sync...');
+        const { EsportsTournamentEntity } = this.getEntities();
+        if (!EsportsTournamentEntity) return;
+
+        let tournaments: any[] = [];
+        try {
+            const result = await Repository.findAll(EsportsTournamentEntity, { limit: '200' });
+            const raw: any[] = result?.data || (Array.isArray(result) ? result : []);
+            tournaments = raw.filter((t: any) => t.status === 'ongoing' || t.status === 'upcoming');
+        } catch {
+            tournaments = [];
+        }
+
+        // Filter to tournaments with a liquipedia externalId
+        const liquipediaTournaments = tournaments.filter((t: any) => {
+            try {
+                const ids: Array<{ source: string; id: string }> = JSON.parse(t.externalIds || '[]');
+                return ids.some(e => e.source === 'liquipedia');
+            } catch {
+                return false;
+            }
+        });
+
+        LiquipediaService.log(`[liquipedia] Match sync: ${liquipediaTournaments.length} active Liquipedia tournaments`);
+
+        for (const t of liquipediaTournaments) {
+            try {
+                await this.syncMatches(t.slug, t.game);
+                await this.sleep(REQUEST_DELAY_MS * 2);
+            } catch (e: any) {
+                LiquipediaService.warn(`[liquipedia] Match sync failed for ${t.slug}: ${e.message}`);
+            }
+        }
+    }
+
     async syncTournaments(game: string): Promise<number> {
         const wiki = GAME_WIKI[game];
         if (!wiki) return 0;
