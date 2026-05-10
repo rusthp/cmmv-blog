@@ -228,6 +228,24 @@ export class ChampionshipsService {
     });
   }
 
+  // Recalculate tournament status from stored dates at query-time.
+  // This corrects stale status values (e.g. Dec-2025 tournaments stuck as "ongoing").
+  private recalcStatus(t: any): string {
+    const today = new Date().toISOString().slice(0, 10);
+    if (t.startDate && t.endDate) {
+      if (today > t.endDate) return 'finished';
+      if (today >= t.startDate) return 'ongoing';
+      return 'upcoming';
+    }
+    if (t.startDate && !t.endDate) {
+      // No end date: finished if started > 60 days ago, otherwise ongoing/upcoming
+      const startMs = new Date(t.startDate).getTime();
+      if (Date.now() > startMs + 60 * 86_400_000) return 'finished';
+      return today >= t.startDate ? 'ongoing' : 'upcoming';
+    }
+    return t.status;
+  }
+
   async getTournamentsWithCount(
     status?: string,
     game?: string,
@@ -236,8 +254,8 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { data: [], total: 0 };
 
-    const queries: any = { limit: '200' };
-    if (status && status !== 'all') queries.status = status;
+    // Fetch broadly (no status filter in DB query) so recalcStatus can correct stale values
+    const queries: any = { limit: '500' };
     if (game && game !== 'all') queries.game = game;
     if (region && region !== 'all') queries.region = region;
 
@@ -245,10 +263,19 @@ export class ChampionshipsService {
 
     const tournaments = (results?.data || []).map((t: any) => ({
       ...t,
+      status: this.recalcStatus(t),
       teams: this.parseJson(t.teamsJson),
     }));
 
-    const sorted = tournaments.sort((a: any, b: any) => {
+    // Apply status filter AFTER recalculation
+    const filtered = status && status !== 'all'
+      ? tournaments.filter((t: any) => t.status === status)
+      : tournaments;
+
+    const sorted = filtered.sort((a: any, b: any) => {
+      // Featured first, then by startDate descending
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
       const da = a.startDate || '9999';
       const db = b.startDate || '9999';
       return db > da ? 1 : db < da ? -1 : 0;
@@ -256,7 +283,7 @@ export class ChampionshipsService {
 
     return {
       data: sorted,
-      total: results?.count || tournaments.length,
+      total: filtered.length,
     };
   }
 
@@ -267,31 +294,20 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { all: 0, ongoing: 0, upcoming: 0, finished: 0 };
 
-    const baseFilter: any = {};
+    const baseFilter: any = { limit: '1000' };
     if (game && game !== 'all') baseFilter.game = game;
     if (region && region !== 'all') baseFilter.region = region;
 
-    const [allResults, ongoingResults, upcomingResults, finishedResults] = await Promise.all([
-      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, limit: '1000' }),
-      Repository.findAll(EsportsTournamentEntity, { ...baseFilter, status: 'ongoing', limit: '1000' }),
-      Repository.findAll(EsportsTournamentEntity, {
-        ...baseFilter,
-        status: 'upcoming',
-        limit: '1000',
-      }),
-      Repository.findAll(EsportsTournamentEntity, {
-        ...baseFilter,
-        status: 'finished',
-        limit: '1000',
-      }),
-    ]);
+    const results = await Repository.findAll(EsportsTournamentEntity, baseFilter);
+    const all = results?.data || [];
 
-    return {
-      all: (allResults?.data || []).length,
-      ongoing: (ongoingResults?.data || []).length,
-      upcoming: (upcomingResults?.data || []).length,
-      finished: (finishedResults?.data || []).length,
-    };
+    const counts = { all: 0, ongoing: 0, upcoming: 0, finished: 0 };
+    counts.all = all.length;
+    for (const t of all) {
+      const s = this.recalcStatus(t) as keyof typeof counts;
+      if (s in counts) counts[s]++;
+    }
+    return counts;
   }
 
   async getTournamentBySlug(slug: string): Promise<any | null> {

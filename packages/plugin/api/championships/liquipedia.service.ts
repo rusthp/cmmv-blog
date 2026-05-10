@@ -296,10 +296,12 @@ export class LiquipediaService {
         const logoMatch = row.match(/class="league-icon-small-image[\s\S]*?src="([^"]+)"/);
         const rawPath = logoMatch ? logoMatch[1].replace('/commons/images', '') : '';
         const logoUrl = rawPath ? `/liquipedia-images${rawPath}` : '';
-        // Banner uses full-size original image (not thumbnail); thumbnails beyond pre-generated
-        // sizes return 404. Full image confirmed 1850×1590 px, suitable for card cover.
-        const fullPath = rawPath ? rawPath.replace('/thumb/', '/').replace(/\/\d+px-[^/]+$/, '') : '';
-        const bannerUrl = fullPath ? `/liquipedia-images${fullPath}` : '';
+        // Banner: use a 200px pre-generated thumbnail. The portal HTML contains 50px thumbs;
+        // replacing the size prefix requests a larger pre-cached variant from Liquipedia's CDN.
+        // Full-size original paths (without /thumb/) return 403/404 when proxied — Liquipedia
+        // only serves them to same-origin requests.
+        const bannerPath = rawPath ? rawPath.replace(/\/\d+px-/, '/200px-') : '';
+        const bannerUrl = bannerPath ? `/liquipedia-images${bannerPath}` : '';
 
         const externalId = `liq_${slug}`;
 
