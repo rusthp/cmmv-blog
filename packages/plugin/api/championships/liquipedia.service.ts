@@ -430,12 +430,16 @@ export class LiquipediaService {
             // Same-source re-sync: overwrite directly (no trust check needed).
             // Detect by externalId prefix since dataSource column may not be in entity schema yet.
             const isSameSource = String((existing as any).externalId || '').startsWith('liq_');
-            const update = isSameSource
+            const merged = isSameSource
                 ? incoming
                 : mergeTournaments(existing as TournamentData, incoming, 'liquipedia');
+            // Strip fields not in the entity schema to prevent TypeORM EntityPropertyNotFoundError
+            const { externalIds: _ei, dataSource: _ds, ...update } = merged as any;
             await Repository.update(entity, { id: (existing as any).id }, update);
         } else {
-            await Repository.insert(entity, incoming);
+            // Strip schema-only fields before insert too
+            const { externalIds: _ei, dataSource: _ds, ...insertData } = incoming as any;
+            await Repository.insert(entity, insertData);
         }
     }
 
