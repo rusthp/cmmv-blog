@@ -254,8 +254,9 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return { data: [], total: 0 };
 
-    // Fetch broadly (no status filter in DB query) so recalcStatus can correct stale values
-    const queries: any = { limit: '500' };
+    // Fetch broadly (no status filter in DB query) so recalcStatus can correct stale values.
+    // Limit must exceed total tournament count (~1000) so no records are silently omitted.
+    const queries: any = { limit: '5000' };
     if (game && game !== 'all') queries.game = game;
     if (region && region !== 'all') queries.region = region;
 
