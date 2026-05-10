@@ -537,19 +537,29 @@ function formatPhase(phase?: string): string {
     return map[phase || ''] || phase || '';
 }
 
+// Parse date strings without timezone offset. ISO date-only strings ("2026-05-09") are
+// treated as UTC midnight by the Date constructor, which shifts the day in negative-offset
+// timezones (e.g. BRT = UTC-3 shows May 8 instead of May 9). Appending "T00:00:00" forces
+// local-midnight parsing so the displayed date matches the stored date.
+function parseLocalDate(dateStr: string): Date {
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+        ? new Date(dateStr + 'T00:00:00')
+        : new Date(dateStr);
+}
+
 function formatDate(dateStr?: string): string {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    return parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
 function formatTime(dateStr?: string): string {
     if (!dateStr) return 'TBD';
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatFullDate(dateStr?: string): string {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function getRegionLabel(region: string): string {
@@ -625,7 +635,7 @@ function isPlayoffPhase(phase: string): boolean {
 
 function formatDateLong(dateStr?: string): string {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    return parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 function formatTimeOnly(dateStr?: string): string {
@@ -661,7 +671,7 @@ function groupByDay(list: any[], desc = false): Record<string, any[]> {
 
 function getGameLabel(game: string): string {
     const map: Record<string, string> = {
-        cs2: 'Counter-Strike 2', csgo: 'CS:GO', 'cs-go': 'CS:GO',
+        cs2: 'Counter-Strike 2', csgo: 'Counter-Strike 2', 'cs-go': 'Counter-Strike 2',
         valorant: 'Valorant', lol: 'League of Legends',
         dota2: 'Dota 2', dota: 'Dota 2',
         rl: 'Rocket League', 'rocket-league': 'Rocket League',
