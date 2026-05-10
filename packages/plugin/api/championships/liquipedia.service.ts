@@ -169,7 +169,10 @@ export class LiquipediaService {
 
         // Logo URL — stored via /liquipedia-images/ proxy to avoid Liquipedia hotlink block
         const logoMatch = row.match(/class="league-icon-small-image[\s\S]*?src="([^"]+)"/);
-        const logoUrl = logoMatch ? `/liquipedia-images${logoMatch[1].replace('/commons/images', '')}` : '';
+        const rawPath = logoMatch ? logoMatch[1].replace('/commons/images', '') : '';
+        const logoUrl = rawPath ? `/liquipedia-images${rawPath}` : '';
+        // Banner uses 300px-wide version so it looks decent at card cover height (160px)
+        const bannerUrl = rawPath ? `/liquipedia-images${rawPath.replace(/\/\d+px-/, '/300px-')}` : '';
 
         const externalId = `liq_${slug}`;
 
@@ -198,7 +201,7 @@ export class LiquipediaService {
             online: false,
             tier,
             logoUrl,
-            bannerUrl: logoUrl,
+            bannerUrl,
             leagueName: '',
             serieName: name,
             numberOfTeams,
