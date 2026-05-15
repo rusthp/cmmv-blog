@@ -90,5 +90,13 @@ export class AnalyticsController {
     async getDashboard(){
         return await this.analyticsService.getDashboardData();
     }
+
+    @Get("top-pages")
+    @ContentType("application/json")
+    @Raw()
+    @Auth("analytics:get")
+    async getTopPages(){
+        return await this.analyticsService.getTopPages(10);
+    }
 }
 

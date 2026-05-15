@@ -14,6 +14,37 @@ import {
     MediasService
 } from "../medias/medias.service";
 
+const BOT_PATH_PATTERNS = [
+    /wlwmanifest/i,
+    /xmlrpc/i,
+    /wp-admin/i,
+    /wp-login/i,
+    /wp-includes/i,
+    /wp-content/i,
+    /\/server-status/i,
+    /swagger/i,
+    /security\.txt/i,
+    /phpmyadmin/i,
+    /adminer/i,
+    /autodiscover/i,
+    /\.php$/i,
+    /\.env$/i,
+    /\.git/i,
+    /\.sql$/i,
+    /\.sh$/i,
+    /\.cgi$/i,
+    /\.asp(x)?$/i,
+    /\.cfm$/i,
+    /\/\.well-known/i,
+    /web\.config$/i,
+    /config\.json$/i,
+    /\.xml$/i,
+];
+
+function isBotPath(path: string): boolean {
+    return BOT_PATH_PATTERNS.some(pattern => pattern.test(path));
+}
+
 @Service("blog_analytics")
 export class AnalyticsService {
     constructor(private readonly mediasService: MediasService) {
@@ -109,6 +140,9 @@ export class AnalyticsService {
      * @param access
      */
     async registryAccess(access: IAnalyticsAccess) {
+        if (!access.path || isBotPath(access.path))
+            return;
+
         const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
         const PostsEntity = Repository.getEntity("PostsEntity");
 
@@ -416,5 +450,40 @@ export class AnalyticsService {
      */
     async manualCleanup() {
         return await this.cleanupOldAnalyticsAccess();
+    }
+
+    /**
+     * Get the top N most accessed paths in the last 30 days, excluding bot/scanner paths.
+     */
+    async getTopPages(limit: number = 10) {
+        const AnalyticsAccessEntity = Repository.getEntity("AnalyticsAccessEntity");
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const cutoffTime = thirtyDaysAgo.getTime();
+
+        const result = await Repository.findAll(AnalyticsAccessEntity, {
+            startTime: MoreThanOrEqual(cutoffTime),
+            limit: 100000,
+        }, [], {
+            select: ["path"]
+        });
+
+        if (!result || !result.data || result.data.length === 0)
+            return [];
+
+        const pathCounts: Record<string, number> = {};
+
+        for (const record of result.data) {
+            if (!record.path || isBotPath(record.path))
+                continue;
+
+            pathCounts[record.path] = (pathCounts[record.path] || 0) + 1;
+        }
+
+        return Object.entries(pathCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit)
+            .map(([path, views]) => ({ path, views }));
     }
 }

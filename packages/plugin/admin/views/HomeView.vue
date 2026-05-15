@@ -106,6 +106,34 @@
 
             <div class="bg-neutral-800 rounded-lg shadow-md">
                 <div class="p-6 border-b border-neutral-700">
+                    <h3 class="text-lg font-medium text-white">Páginas Mais Acessadas</h3>
+                    <p class="text-sm text-neutral-400 mt-1">Top 10 rotas com mais visualizações nos últimos 30 dias</p>
+                </div>
+                <div class="p-6">
+                    <div v-if="topPages.length > 0" class="space-y-3">
+                        <div v-for="(page, index) in topPages" :key="page.path" class="flex items-center gap-3">
+                            <span class="text-neutral-500 text-sm w-5 text-right flex-shrink-0">{{ index + 1 }}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm text-neutral-300 truncate max-w-xs" :title="page.path">{{ page.path }}</span>
+                                    <span class="text-sm font-medium text-white ml-2 flex-shrink-0">{{ formatNumber(page.views) }}</span>
+                                </div>
+                                <div class="h-2 bg-neutral-700 rounded-full overflow-hidden">
+                                    <div
+                                        class="h-full rounded-full"
+                                        :class="index === 0 ? 'bg-blue-500' : index < 3 ? 'bg-blue-400' : 'bg-blue-300'"
+                                        :style="{ width: Math.round((page.views / topPages[0].views) * 100) + '%' }"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-8 text-neutral-500 text-sm">Sem dados de acesso por página nos últimos 30 dias.</div>
+                </div>
+            </div>
+
+            <div class="bg-neutral-800 rounded-lg shadow-md">
+                <div class="p-6 border-b border-neutral-700">
                     <h3 class="text-lg font-medium text-white">Most Popular Posts This Week</h3>
                 </div>
                 <div class="p-6">
@@ -192,6 +220,7 @@ const summary = ref({
 
 const popularPosts = ref([]);
 const pendingComments = ref([]);
+const topPages = ref([]);
 
 const createTrafficChart = () => {
     if (!trafficChart.value) return;
@@ -495,6 +524,14 @@ onMounted(async () => {
 
         if (postsData)
             popularPosts.value = postsData;
+
+        try {
+            const pagesData = await analytics.getTopPages();
+            if (Array.isArray(pagesData))
+                topPages.value = pagesData;
+        } catch (error) {
+            console.error('Error fetching top pages:', error);
+        }
 
         createTrafficChart();
     } catch (error) {

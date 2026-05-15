@@ -112,6 +112,7 @@ export const useAdminClient = () => {
         getSummary: () => api.authRootRequest('analytics/summary', 'GET').then((res: any) => res.data),
         getPostsMostAccessed: () => api.authRootRequest('analytics/posts-most-accessed', 'GET'),
         getDashboard: () => api.authRootRequest('analytics/dashboard', 'GET'),
+        getTopPages: () => api.authRootRequest('analytics/top-pages', 'GET'),
     };
 
     const comments = {
