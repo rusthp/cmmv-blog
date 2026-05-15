@@ -34,6 +34,7 @@ export class BackupController {
     }
 
     @Get("backup/download")
+    @Auth({ rootOnly: true })
     async downloadBackup(@Query("filename") filename: string, @Res() response) {
         response.res.writeHead(200, {
             'Content-Type': 'application/gzip',

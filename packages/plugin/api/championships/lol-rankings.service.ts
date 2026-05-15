@@ -2,7 +2,7 @@ import { Service, Logger, Cron } from '@cmmv/core';
 import { Repository } from '@cmmv/repository';
 
 const LOL_API_BASE = 'https://esports-api.lolesports.com/persisted/gw';
-const LOL_API_KEY = '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z';
+const LOL_API_KEY = process.env.LOL_API_KEY ?? '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z';
 const INITIAL_SYNC_DELAY_MS = 25_000;
 
 const TRACKED_LEAGUES = [
