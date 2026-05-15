@@ -1,6 +1,8 @@
 import { Service, Logger, Config, Cron } from '@cmmv/core';
 import { Repository } from '@cmmv/repository';
 import { mergeExternalIds } from './tournament-merger.utils';
+import { LiquipediaService } from './liquipedia.service';
+import { HltvService } from './hltv.service';
 
 const PANDASCORE_BASE = 'https://api.pandascore.co';
 
@@ -9,6 +11,11 @@ const SUPPORTED_GAMES = ['csgo', 'dota2', 'valorant', 'r6siege', 'lol'];
 @Service('blog_championships')
 export class ChampionshipsService {
   private static readonly logger = new Logger('ChampionshipsService');
+
+  constructor(
+    private readonly liquipediaService?: LiquipediaService,
+    private readonly hltvService?: HltvService,
+  ) {}
 
   static warn(msg: string) {
     try {
@@ -71,8 +78,32 @@ export class ChampionshipsService {
 
     ChampionshipsService.log('[championships] Full sync starting...');
     stats.tournaments = await this.syncTournaments();
+
+    // Multi-source enrichment: Liquipedia (CS2/Dota2/LoL/Valorant) and HLTV (CS2).
+    // Each source upserts via the merge layer (tournament-merger.utils) so PandaScore
+    // data is preserved and only empty fields get filled (coverage rule).
+    if (this.liquipediaService) {
+      try {
+        for (const game of ['csgo', 'dota2', 'lol', 'valorant']) {
+          const added = await this.liquipediaService.syncTournaments(game);
+          stats.tournaments += added;
+        }
+      } catch (e: any) {
+        ChampionshipsService.warn(`[championships] Liquipedia sync failed: ${e.message}`);
+      }
+    }
+    if (this.hltvService) {
+      try {
+        const hltvStats = await this.hltvService.syncFromRss();
+        stats.tournaments += hltvStats.tournaments;
+        stats.matches += hltvStats.matches;
+      } catch (e: any) {
+        ChampionshipsService.warn(`[championships] HLTV sync failed: ${e.message}`);
+      }
+    }
+
     await this.fixStaleTournamentStatuses();
-    stats.matches = await this.syncAllMatchesFromOngoing();
+    stats.matches += await this.syncAllMatchesFromOngoing();
     stats.teams = await this.syncTeams();
     ChampionshipsService.log(`[championships] Sync done: ${JSON.stringify(stats)}`);
     return stats;
