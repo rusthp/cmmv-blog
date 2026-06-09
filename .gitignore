@@ -435,3 +435,38 @@ ads.txt
 data
 .cursor
 .husky
+
+# Rulebook - ignore runtime data, keep specs and tasks
+/.rulebook/*
+!/.rulebook/specs/
+!/.rulebook/tasks/
+!/.rulebook/tasks/**/*.md
+!/.rulebook/rulebook.json
+
+# Patterns added by @hivellm/rulebook
+# Added at: 2026-05-16T20:53:46.222Z
+
+# Secrets — never commit
+*-service-account*.json
+proplay-news-*.json
+*.serviceaccount.json
+.mcp.json
+
+*.swo
+*.swp
+*.tsbuildinfo
+*.tsbuildinfo.*
+.cache/
+.tsc/
+.vscode/
+Thumbs.db
+build/
+dist/
+logs/
+temp/
+tmp/
+
+CLAUDE.local.md
+.rulebook/backup/
+.rulebook/handoff/_pending.md
+.rulebook/handoff/.urgent
