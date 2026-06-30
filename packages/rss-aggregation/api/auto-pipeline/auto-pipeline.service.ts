@@ -186,6 +186,30 @@ export class AutoPipelineService {
             const staleThresholdMs = 30 * 60 * 1000; // 30 minutes
             const staleDate = new Date(Date.now() - staleThresholdMs);
 
+            // Items stuck in CLASSIFYING → reset to PENDING
+            const stuckClassifying = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.CLASSIFYING,
+                limit: 100,
+                sortBy: 'updatedAt',
+                sort: 'ASC',
+            });
+
+            if (stuckClassifying?.data?.length) {
+                const maxAttempts = Config.get<number>('blog.autoPipelineMaxAttempts', 3);
+                for (const item of stuckClassifying.data) {
+                    const updatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
+                    if (!updatedAt || updatedAt > staleDate) continue;
+                    const attempts = (item.aiAttempts || 0) + 1;
+                    if (attempts >= maxAttempts) {
+                        await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.FAILED, aiAttempts: attempts });
+                        AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in CLASSIFYING >30min, max attempts → FAILED`);
+                    } else {
+                        await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.PENDING, aiAttempts: attempts });
+                        AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in CLASSIFYING >30min → reset to PENDING (attempt ${attempts}/${maxAttempts})`);
+                    }
+                }
+            }
+
             // Items stuck in POSTING → reset to GENERATED
             const stuckPosting = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.POSTING,

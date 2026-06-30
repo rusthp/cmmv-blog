@@ -21,10 +21,13 @@ export class ClassificationWorker {
 
         ClassificationWorker.isRunning = true;
 
+        let lockedItems: any[] = [];
+        let maxAttempts = 3;
+
         try {
             const classifyPrompt = Config.get("blog.classifyPrompt");
             const FeedRawEntity = Repository.getEntity("FeedRawEntity");
-            const maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
+            maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
             const threshold = Config.get<number>("blog.autoPipelineRelevanceThreshold", 70);
 
             ClassificationWorker.logger.log("[pipeline] classifyWorker: Starting classification cycle");
@@ -48,7 +51,8 @@ export class ClassificationWorker {
 
             // Lock all items to 'classifying' state
             for (const item of rawItems) {
-                await this.transitionState(item.id, PIPELINE_STATE.PENDING, PIPELINE_STATE.CLASSIFYING);
+                const locked = await this.transitionState(item.id, PIPELINE_STATE.PENDING, PIPELINE_STATE.CLASSIFYING);
+                if (locked) lockedItems.push(item);
             }
 
             const itemsForAI = rawItems.map((item: any) => ({
@@ -151,6 +155,9 @@ export class ClassificationWorker {
             ClassificationWorker.logger.error(
                 `[pipeline] classifyWorker: Unexpected error: ${error instanceof Error ? error.message : String(error)}`
             );
+            for (const item of lockedItems) {
+                try { await this.handleFailure(item.id, PIPELINE_STATE.CLASSIFYING, `Crash: ${error instanceof Error ? error.message : String(error)}`, maxAttempts); } catch {}
+            }
         } finally {
             ClassificationWorker.isRunning = false;
         }
