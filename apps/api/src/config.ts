@@ -91,8 +91,8 @@ Config.assign({
     },
 
     blog: {
-        // AI provider — groq é gratuito e rápido, fallback para deepseek
-        aiService: process.env.AI_SERVICE || "groq",
+        // AI provider — deepseek é principal (créditos ativos), fallback automático para groq/gemini
+        aiService: process.env.AI_SERVICE || "deepseek",
         groqApiKey: process.env.GROQ_API_KEY || "",
         groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
         deepseekApiKey: process.env.DEEPSEEK_API_KEY || "",

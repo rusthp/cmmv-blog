@@ -15,20 +15,44 @@ export class AIContentService {
         private readonly deepseekService: DeepSeekService
     ) {}
 
-    async generateContent(prompt: string) {
-        const aiService = Config.get("blog.aiService", "gemini");
+    private static readonly fallbackOrder = ["deepseek", "groq", "gemini"];
 
+    async generateContent(prompt: string): Promise<string> {
+        const aiService = Config.get("blog.aiService", "deepseek");
+
+        const order = [aiService, ...AIContentService.fallbackOrder.filter(name => name !== aiService)];
+        const chain = order
+            .map(name => ({ name, service: this.resolveService(name) }))
+            .filter((entry): entry is { name: string; service: { generateContent(prompt: string): Promise<string> } } => entry.service !== null);
+
+        let lastError: unknown;
+
+        for (const { name, service } of chain) {
+            try {
+                return await service.generateContent(prompt);
+            } catch (error) {
+                lastError = error;
+                console.error(`[AIContentService] ${name} failed, trying next provider:`, error instanceof Error ? error.message : error);
+            }
+        }
+
+        throw new Error(`All AI providers failed to generate content: ${lastError instanceof Error ? lastError.message : lastError}`);
+    }
+
+    private resolveService(aiService: string) {
         switch(aiService) {
             case "gemini":
-                return this.geminiService.generateContent(prompt);
+                return this.geminiService;
             case "chatgpt":
-                return this.chatgptService.generateContent(prompt);
+                return this.chatgptService;
             case "grok":
-                return this.grokService.generateContent(prompt);
+                return this.grokService;
             case "groq":
-                return this.groqService.generateContent(prompt);
+                return this.groqService;
             case "deepseek":
-                return this.deepseekService.generateContent(prompt);
+                return this.deepseekService;
+            default:
+                return null;
         }
     }
 }
