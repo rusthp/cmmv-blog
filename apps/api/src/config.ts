@@ -28,12 +28,16 @@ Config.assign({
         database: "./database.sqlite",
         synchronize: true,
         logging: process.env.NODE_ENV === 'development' ? ['error'] : false,
+        // TypeORM's sqlite driver only recognizes these as top-level DataSource
+        // options (see typeorm/driver/sqlite/SqliteDriver.js) — nesting them under
+        // `extra` is silently ignored, which is why WAL was never actually enabled.
+        // Enable WAL mode for better concurrency (allows reads during writes)
+        enableWAL: true,
+        // Wait up to 5s for a write lock instead of throwing SQLITE_BUSY immediately
+        busyTimeout: 5000,
         // SQLite performance optimizations
         // These will be applied when the database connection is established
         extra: {
-            // Enable WAL mode for better concurrency (allows reads during writes)
-            // Set via PRAGMA journal_mode=WAL when connection opens
-            enableWAL: true,
             // Cache size: 64MB (negative value means KB, so -64000 = 64MB)
             cacheSize: -64000,
             // Use memory for temporary storage (faster than disk)

@@ -1594,6 +1594,10 @@ export class PostsPublicService {
                     }
                 }
 
+                // Rewrite "Leia também: <título>" cross-references into internal links
+                // when a local post with a matching title already exists.
+                parsedContent.content = await this.resolveInternalCrossReferences(parsedContent.content);
+
                 const sourceAttribution = `
 <p class="source-attribution mt-4 text-sm text-gray-500 italic">
     <strong>Com informações do:</strong> <a href="${url}" target="_blank" rel="noindex nofollow noopener">${new URL(url).hostname}</a>
@@ -1622,6 +1626,91 @@ export class PostsPublicService {
             this.logger.error(`Error in generatePostFromUrl: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
         }
+    }
+
+    /**
+     * Detects Portuguese "read also" cross-reference paragraphs (e.g. "Leia também: <título>")
+     * in generated content and, when a local post with a matching title already exists, rewrites
+     * the referenced title into an internal link (/noticias/{id}/{slug}). References that cannot be
+     * resolved to an existing post are left untouched.
+     *
+     * @param {string} content - The HTML content of the generated post
+     * @returns {Promise<string>}
+     */
+    private async resolveInternalCrossReferences(content: string): Promise<string> {
+        if (!content || content.indexOf('<') === -1)
+            return content;
+
+        const referencePrefix = /^\s*(leia\s+também|leia\s+tambem|leia\s+mais|veja\s+também|veja\s+tambem|confira\s+também|confira\s+tambem|saiba\s+mais)\s*:?\s*(.+?)\s*$/i;
+        const paragraphRegex = /<p\b[^>]*>([\s\S]*?)<\/p>/gi;
+
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        let candidates: any[] | null = null;
+
+        const paragraphMatches = [...content.matchAll(paragraphRegex)];
+
+        for (const paragraph of paragraphMatches) {
+            const fullBlock = paragraph[0];
+            const innerHtml = paragraph[1];
+
+            const plainText = innerHtml
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const prefixMatch = plainText.match(referencePrefix);
+            if (!prefixMatch)
+                continue;
+
+            const prefixLabel = prefixMatch[1].trim();
+            const refTitle = prefixMatch[2]
+                .replace(/\s*\(https?:\/\/[^)]+\)\s*$/i, '')
+                .trim();
+
+            if (!refTitle || refTitle.length < 8)
+                continue;
+
+            const refSlug = slugify(refTitle);
+            if (!refSlug)
+                continue;
+
+            let target: any = await Repository.findOne(PostsEntity, Repository.queryBuilder({
+                slug: refSlug,
+                type: "post"
+            }), { select: ["id", "slug", "title"] });
+
+            // Fuzzy fallback: normalized-title similarity against recent posts.
+            // Only applied for sufficiently long references to avoid false positives.
+            if (!target && refSlug.length >= 15) {
+                if (candidates === null) {
+                    const recent = await Repository.findAll(PostsEntity, {
+                        type: "post",
+                        status: "published",
+                        limit: 500
+                    }, [], { select: ["id", "slug", "title"] });
+                    candidates = (recent && recent.data) ? recent.data : [];
+                }
+
+                const pool: any[] = candidates || [];
+                target = pool.find((p: any) => {
+                    const pSlug = p.slug || slugify(p.title || '');
+                    if (!pSlug || pSlug.length < 15)
+                        return false;
+                    return pSlug === refSlug || pSlug.startsWith(refSlug) || refSlug.startsWith(pSlug);
+                }) || null;
+            }
+
+            if (!target || !target.id || !target.slug)
+                continue;
+
+            const href = `/noticias/${target.id}/${target.slug}`;
+            const rebuilt = `<p class="internal-reference">${prefixLabel}: <a href="${href}">${refTitle}</a></p>`;
+            content = content.replace(fullBlock, rebuilt);
+        }
+
+        return content;
     }
 
     /**

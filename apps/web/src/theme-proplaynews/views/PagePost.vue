@@ -1,7 +1,7 @@
 <template>
     <div class="w-full relative bg-neutral-100">
         <div class="w-full max-w-[1200px] mx-auto px-4">
-            <div v-if="!post" class="bg-white rounded-lg p-6">
+            <div v-if="!post?.id" class="bg-white rounded-lg p-6">
                 <div class="text-center">
                     <h1 class="text-2xl font-bold text-neutral-800 mb-4">Post não encontrado</h1>
                     <p class="text-neutral-600">O post que você está procurando não existe ou está indisponível.</p>
@@ -746,6 +746,15 @@ function escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Apply a transform only to text nodes, never to HTML tags (attributes, href, etc.)
+function transformTextNodes(html: string, transform: (segment: string) => string): string {
+    return html.replace(/<[^>]+>|[^<]+/g, (token) => {
+        // Leave HTML tags (including their attributes such as href) untouched
+        if (token.startsWith('<')) return token;
+        return transform(token);
+    });
+}
+
 function applyEsportsFormatting(html: string): string {
     // Only process text nodes inside <p> and <li> — avoid breaking HTML tags
     // We use a tag-aware split strategy
@@ -759,26 +768,31 @@ function applyEsportsFormatting(html: string): string {
             return match;
         }
 
-        // Apply bold keywords first
-        BOLD_KEYWORDS.forEach(kw => {
-            const rx = new RegExp(`\\b(${escapeRegex(kw)})\\b`, 'g');
-            text = text.replace(rx, '<strong class="kw-bold">$1</strong>');
-        });
-
-        // Apply team names
-        KNOWN_TEAMS.forEach(team => {
-            const rx = new RegExp(`(?<![\\w#@])${escapeRegex(team)}(?![\\w])`, 'g');
-            text = text.replace(rx, (m) => {
-                // Don't double-wrap if already inside a tag
-                if (text.slice(Math.max(0, text.indexOf(m) - 30), text.indexOf(m)).includes('<em')) return m;
-                return `<em class="team-name">${m}</em>`;
+        // Apply bold keywords first (text nodes only)
+        text = transformTextNodes(text, (segment) => {
+            BOLD_KEYWORDS.forEach(kw => {
+                const rx = new RegExp(`\\b(${escapeRegex(kw)})\\b`, 'g');
+                segment = segment.replace(rx, '<strong class="kw-bold">$1</strong>');
             });
+            return segment;
         });
 
-        // Apply player names (italic)
-        KNOWN_PLAYERS.forEach(player => {
-            const rx = new RegExp(`(?<![\\w#@])${escapeRegex(player)}(?![\\w])`, 'g');
-            text = text.replace(rx, `<em class="player-name">${player}</em>`);
+        // Apply team names (text nodes only — never inside href/attributes)
+        text = transformTextNodes(text, (segment) => {
+            KNOWN_TEAMS.forEach(team => {
+                const rx = new RegExp(`(?<![\\w#@])${escapeRegex(team)}(?![\\w])`, 'g');
+                segment = segment.replace(rx, '<em class="team-name">$&</em>');
+            });
+            return segment;
+        });
+
+        // Apply player names (italic, text nodes only)
+        text = transformTextNodes(text, (segment) => {
+            KNOWN_PLAYERS.forEach(player => {
+                const rx = new RegExp(`(?<![\\w#@])${escapeRegex(player)}(?![\\w])`, 'g');
+                segment = segment.replace(rx, `<em class="player-name">${player}</em>`);
+            });
+            return segment;
         });
 
         return openTag + text + closeTag;
@@ -980,7 +994,7 @@ const headData = computed(() => ({
     link: [
         { rel: 'canonical', href: pageUrl.value },
     ],
-    script: isSSR ? [
+    script: (isSSR && post.value?.id) ? [
         {
             type: 'application/ld+json',
             innerHTML: JSON.stringify(vue3.createLdJSON('post', post.value, settings.value))

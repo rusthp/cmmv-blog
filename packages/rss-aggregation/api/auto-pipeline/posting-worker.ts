@@ -819,9 +819,20 @@ export class PostingWorker {
 
             if (!recent?.data?.length) return null;
 
+            // Count how many recent posts already share each image, so the
+            // fallback doesn't keep piling the same photo onto more and more
+            // unrelated posts.
+            const imageUsageCount = new Map<string, number>();
+            for (const post of recent.data) {
+                if (!post.featureImage) continue;
+                imageUsageCount.set(post.featureImage, (imageUsageCount.get(post.featureImage) || 0) + 1);
+            }
+
             const now = Date.now();
             let bestImage: string | null = null;
             let bestScore = -Infinity;
+            let bestFallbackImage: string | null = null;
+            let bestFallbackScore = -Infinity;
 
             for (const post of recent.data) {
                 if (!post.featureImage) continue;
@@ -853,13 +864,21 @@ export class PostingWorker {
                 const ageDays = Math.min(Math.floor(ageMs / 86_400_000), 30);
                 score -= ageDays;
 
-                if (score > bestScore) {
+                // Track the best match overall as a last-resort fallback...
+                if (score > bestFallbackScore) {
+                    bestFallbackScore = score;
+                    bestFallbackImage = post.featureImage;
+                }
+
+                // ...but prefer the best match whose image isn't already shared
+                // by another post, to avoid the same photo spreading further.
+                if ((imageUsageCount.get(post.featureImage) || 0) <= 1 && score > bestScore) {
                     bestScore = score;
                     bestImage = post.featureImage;
                 }
             }
 
-            return bestImage;
+            return bestImage ?? bestFallbackImage;
         } catch {
             return null;
         }

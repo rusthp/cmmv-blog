@@ -202,9 +202,9 @@ export class ChampionshipsService {
 
     // Delete all old tournament-level entries (those without serie_ prefix) — paginate to cover all
     let deleted = 0;
-    let page = 1;
+    let offset = 0;
     while (true) {
-      const batch = await Repository.findAll(EsportsTournamentEntity, { limit: '500', page: String(page) });
+      const batch = await Repository.findAll(EsportsTournamentEntity, { limit: '500', offset: String(offset) });
       const rows: any[] = batch?.data || [];
       if (rows.length === 0) break;
       for (const entry of rows) {
@@ -214,7 +214,7 @@ export class ChampionshipsService {
         }
       }
       if (rows.length < 500) break;
-      page++;
+      offset += 500;
     }
 
     // Delete all existing matches (will be re-synced under serie slugs)
@@ -690,7 +690,7 @@ export class ChampionshipsService {
     if (!EsportsTournamentEntity) return 0;
 
     let fixed = 0;
-    let page = 1;
+    let offset = 0;
     const PAGE = 1000; // @cmmv/repository hard cap per query
 
     // Paginate through ALL tournaments and write corrected status back to DB.
@@ -698,7 +698,7 @@ export class ChampionshipsService {
     while (true) {
       const results = await Repository.findAll(EsportsTournamentEntity, {
         limit: String(PAGE),
-        page: String(page),
+        offset: String(offset),
       });
       const rows: any[] = results?.data || [];
       if (rows.length === 0) break;
@@ -712,7 +712,7 @@ export class ChampionshipsService {
       }
 
       if (rows.length < PAGE) break;
-      page++;
+      offset += PAGE;
     }
 
     if (fixed > 0) {
@@ -742,11 +742,25 @@ export class ChampionshipsService {
   }
 
   // Unified match sync: uses /series/{id}/matches when serieExternalId is set,
-  // falls back to /tournaments/{id}/matches for legacy entries
+  // routes Liquipedia-sourced entries to the Liquipedia match sync (they have no
+  // PandaScore id at all), and falls back to /tournaments/{id}/matches for legacy
+  // PandaScore-sourced entries.
   private async syncMatchesForEntry(t: any): Promise<number> {
     let total = 0;
 
     const serieId = t.serieExternalId;
+
+    if (!serieId && String(t.externalId || '').startsWith('liq_')) {
+      if (!this.liquipediaService) return 0;
+      try {
+        total += await this.liquipediaService.syncMatches(t.slug, t.game);
+      } catch (e: any) {
+        ChampionshipsService.warn(
+          `[championships] syncMatches liquipedia ${t.slug} (${t.game}): ${e.message}`
+        );
+      }
+      return total;
+    }
 
     if (serieId) {
       // Serie-based entry: /series/{id}/matches has no game prefix in PandaScore API
