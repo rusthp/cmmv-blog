@@ -514,6 +514,16 @@ export class ChannelsService {
     }
 
     /**
+     * Some feeds (e.g. thespike.gg) emit raw `&` in text content without escaping it
+     * to `&amp;`. That's invalid XML and aborts the strict sax parser for the whole
+     * document over a single bad item. Escape only ampersands that aren't already
+     * part of a recognized entity reference, leaving valid entities untouched.
+     */
+    private static sanitizeXmlEntities(xml: string): string {
+        return xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
+    }
+
+    /**
      * Get the feed from the RSS URL
      * @param rss - The RSS URL
      * @returns The parsed feed JSON
@@ -549,6 +559,7 @@ export class ChannelsService {
             }
 
             const xml = await response.text();
+            const sanitizedXml = ChannelsService.sanitizeXmlEntities(xml);
 
             const parser = new xml2js.Parser({
                 explicitArray: false,
@@ -559,7 +570,7 @@ export class ChannelsService {
             });
 
             return new Promise<RssFeed>((resolve, reject) => {
-                parser.parseString(xml, (err, result) => {
+                parser.parseString(sanitizedXml, (err, result) => {
                     if (err) {
                         reject(err);
                     } else {
@@ -663,7 +674,9 @@ export class ChannelsService {
                 return { rss: { channel: { item: [] } } } as any;
             }
 
-            const cleanXml = xml.substring(contentStart).replace(/<\/html>[\s\S]*$/, '').trim();
+            const cleanXml = ChannelsService.sanitizeXmlEntities(
+                xml.substring(contentStart).replace(/<\/html>[\s\S]*$/, '').trim()
+            );
 
             const parser = new xml2js.Parser({
                 explicitArray: false, normalize: true,
