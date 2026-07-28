@@ -21,13 +21,48 @@ export class ClassificationWorker {
 
         ClassificationWorker.isRunning = true;
 
+        let lockedItems: any[] = [];
+        let maxAttempts = 3;
+
         try {
             const classifyPrompt = Config.get("blog.classifyPrompt");
             const FeedRawEntity = Repository.getEntity("FeedRawEntity");
-            const maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
+            maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
             const threshold = Config.get<number>("blog.autoPipelineRelevanceThreshold", 70);
 
             ClassificationWorker.logger.log("[pipeline] classifyWorker: Starting classification cycle");
+
+            // Auto-reject items older than yesterday to keep only recent news
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 1);
+            cutoffDate.setHours(0, 0, 0, 0);
+
+            const allPendingResponse = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.PENDING,
+                rejected: false,
+                postRef: IsNull(),
+                limit: 500,
+                sortBy: "pubDate",
+                sort: "DESC"
+            });
+
+            if (allPendingResponse?.data) {
+                const staleItems = allPendingResponse.data.filter((item: any) => {
+                    const pub = item.pubDate ? new Date(item.pubDate) : null;
+                    return pub && pub < cutoffDate;
+                });
+
+                if (staleItems.length > 0) {
+                    ClassificationWorker.logger.log(`[pipeline] classifyWorker: Auto-rejecting ${staleItems.length} items older than ${cutoffDate.toISOString().split("T")[0]}`);
+                    for (const item of staleItems) {
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: item.id }),
+                            { pipelineState: PIPELINE_STATE.REJECTED, rejected: true }
+                        );
+                    }
+                }
+            }
 
             const rawItemsResponse = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.PENDING,
@@ -48,7 +83,8 @@ export class ClassificationWorker {
 
             // Lock all items to 'classifying' state
             for (const item of rawItems) {
-                await this.transitionState(item.id, PIPELINE_STATE.PENDING, PIPELINE_STATE.CLASSIFYING);
+                const locked = await this.transitionState(item.id, PIPELINE_STATE.PENDING, PIPELINE_STATE.CLASSIFYING);
+                if (locked) lockedItems.push(item);
             }
 
             const itemsForAI = rawItems.map((item: any) => ({
@@ -151,6 +187,9 @@ export class ClassificationWorker {
             ClassificationWorker.logger.error(
                 `[pipeline] classifyWorker: Unexpected error: ${error instanceof Error ? error.message : String(error)}`
             );
+            for (const item of lockedItems) {
+                try { await this.handleFailure(item.id, PIPELINE_STATE.CLASSIFYING, `Crash: ${error instanceof Error ? error.message : String(error)}`, maxAttempts); } catch {}
+            }
         } finally {
             ClassificationWorker.isRunning = false;
         }

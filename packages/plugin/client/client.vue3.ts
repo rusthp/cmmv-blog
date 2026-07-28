@@ -456,6 +456,16 @@ export const useBlog = () => {
 };
 
 /**
+ * @description Safely convert a date-like value to an ISO string, falling back to now() when invalid
+ * @param {any} value - The date value to convert
+ * @returns {string} The ISO date string
+ */
+const safeISODate = (value: any): string => {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+};
+
+/**
  * @description Create the LD+JSON for the page
  * @param {string} type - The type of the page
  * @param {any} data - The data of the page
@@ -466,27 +476,28 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
     switch (type) {
         case "post":
             let authorLinks = [];
+            const authorData = (data.authors && data.authors.find((a: any) => a.user === data.author)) || (data.authors && data.authors[0]) || {};
 
-            if (data.author.facebook)
-                authorLinks.push(`https://www.facebook.com/${data.author.facebook}`);
+            if (authorData.facebook)
+                authorLinks.push(`https://www.facebook.com/${authorData.facebook}`);
 
-            if (data.author.twitter)
-                authorLinks.push(`https://twitter.com/${data.author.twitter}`);
+            if (authorData.twitter)
+                authorLinks.push(`https://twitter.com/${authorData.twitter}`);
 
-            if (data.author.linkedin)
-                authorLinks.push(`https://www.linkedin.com/in/${data.author.linkedin}`);
+            if (authorData.linkedin)
+                authorLinks.push(`https://www.linkedin.com/in/${authorData.linkedin}`);
 
-            if (data.author.instagram)
-                authorLinks.push(`https://www.instagram.com/${data.author.instagram}`);
+            if (authorData.instagram)
+                authorLinks.push(`https://www.instagram.com/${authorData.instagram}`);
 
-            if (data.author.youtube)
-                authorLinks.push(`https://www.youtube.com/${data.author.youtube}`);
+            if (authorData.youtube)
+                authorLinks.push(`https://www.youtube.com/${authorData.youtube}`);
 
-            if (data.author.github)
-                authorLinks.push(`https://github.com/${data.author.github}`);
+            if (authorData.github)
+                authorLinks.push(`https://github.com/${authorData.github}`);
 
-            if (data.author.website)
-                authorLinks.push(data.author.website);
+            if (authorData.website)
+                authorLinks.push(authorData.website);
 
             return {
                 "@context": "https://schema.org",
@@ -497,12 +508,12 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                             "Organization"
                         ],
                         "@id": `${getEnv('VITE_WEBSITE_URL')}/#person`,
-                        "name": data.author.name,
+                        "name": authorData.name,
                         "logo": {
                             "@type": "ImageObject",
                             "@id": `${getEnv('VITE_WEBSITE_URL')}/#logo`,
                             "url": settings['blog.image'] || settings['blog.defaultFeaturedImage'],
-                            "caption": data.author.name,
+                            "caption": authorData.name,
                             "inLanguage": settings['blog.language'],
                             "width": "1440",
                             "height": "1440"
@@ -511,7 +522,7 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                             "@type": "ImageObject",
                             "@id": `${getEnv('VITE_WEBSITE_URL')}/#logo`,
                             "url": settings['blog.logo'],
-                            "caption": data.author.name,
+                            "caption": authorData.name,
                             "inLanguage": settings['blog.language'],
                             "width": "1440",
                             "height": "1440"
@@ -541,11 +552,11 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                         "url": `${getEnv('VITE_WEBSITE_URL')}/post/${data.slug}`,
                         "name": data.title,
                         "datePublished": data.status === 'published' ?
-                            new Date(data.publishedAt).toISOString() :
-                            new Date(data.updatedAt).toISOString(),
+                            safeISODate(data.publishedAt) :
+                            safeISODate(data.updatedAt),
                         "dateModified": data.status === 'published' ?
-                            new Date(data.publishedAt).toISOString() :
-                            new Date(data.updatedAt).toISOString(),
+                            safeISODate(data.publishedAt) :
+                            safeISODate(data.updatedAt),
                         "isPartOf": {
                             "@id": `${getEnv('VITE_WEBSITE_URL')}/#website`
                         },
@@ -556,14 +567,14 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                     },
                     {
                         "@type": "Person",
-                        "@id": `${getEnv('VITE_WEBSITE_URL')}/author/${data.author.slug}`,
-                        "name": data.author.name,
-                        "url": `${getEnv('VITE_WEBSITE_URL')}/author/${data.author.slug}`,
+                        "@id": `${getEnv('VITE_WEBSITE_URL')}/author/${authorData.slug}`,
+                        "name": authorData.name,
+                        "url": `${getEnv('VITE_WEBSITE_URL')}/author/${authorData.slug}`,
                         "image": {
                             "@type": "ImageObject",
-                            "@id": data.author.avatar,
-                            "url": data.author.avatar,
-                            "caption": data.author.name,
+                            "@id": authorData.image,
+                            "url": authorData.image,
+                            "caption": authorData.name,
                             "inLanguage": settings['blog.language']
                         },
                         "sameAs": authorLinks
@@ -574,14 +585,14 @@ export const createLdJSON = (type: string, data: any, settings: any) => {
                         "keywords": data.tags.map((tag: any) => tag.name).join(', ').toLowerCase(),
                         "description": data.excerpt,
                         "datePublished": data.status === 'published' ?
-                            new Date(data.publishedAt).toISOString() :
-                            new Date(data.updatedAt).toISOString(),
+                            safeISODate(data.publishedAt) :
+                            safeISODate(data.updatedAt),
                         "dateModified": data.status === 'published' ?
-                            new Date(data.publishedAt).toISOString() :
-                            new Date(data.updatedAt).toISOString(),
+                            safeISODate(data.publishedAt) :
+                            safeISODate(data.updatedAt),
                         "author": {
                             "@type": "Person",
-                            "@id": `${getEnv('VITE_WEBSITE_URL')}/author/${data.author.slug}`
+                            "@id": `${getEnv('VITE_WEBSITE_URL')}/author/${authorData.slug}`
                         },
                         "publisher": {
                             "@id": `${getEnv('VITE_WEBSITE_URL')}/#person`

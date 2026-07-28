@@ -16,6 +16,7 @@ export function createRouter() {
                     { path: '/preview/:id', component: () => import('./views/PagePost.vue') },
                     { path: '/preview-page/:id', component: () => import('./views/PagePage.vue') },
                     { path: '/post/:slug', component: () => import('./views/PagePost.vue') },
+                    { path: '/noticias/:id/:slug', component: () => import('./views/PagePost.vue') },
                     { path: '/tag/:slug', component: () => import('./views/PageTag.vue') },
                     { path: '/author/:slug', component: () => import('./views/PageAuthor.vue') },
                     { path: '/contato', component: () => import('./views/ContactPage.vue') },

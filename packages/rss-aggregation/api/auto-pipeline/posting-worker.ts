@@ -378,7 +378,8 @@ export class PostingWorker {
         const minInterval = Config.get<number>("blog.autoPipelineMinIntervalMinutes", 20);
         const factor = Config.get<number>("blog.autoPipelineBacklogFactor", 5);
         const startHour = Config.get<number>("blog.autoPipelineScheduleStartHour", 7);
-        const endHour = Config.get<number>("blog.autoPipelineScheduleEndHour", 1);
+        const endHour = Config.get<number>("blog.autoPipelineScheduleEndHour", 23);
+        const maxAheadHours = Config.get<number>("blog.autoPipelineMaxScheduleAheadHours", 24);
         const safetyWindow = 5 * 60 * 1000;
 
         const adaptiveMinutes = Math.max(baseInterval - backlogCount * factor, minInterval);
@@ -403,16 +404,22 @@ export class PostingWorker {
                 ? lastScheduled.data[0].autoPublishAt
                 : new Date(lastScheduled.data[0].autoPublishAt).getTime();
 
-            nextTime = Math.max(lastTime + intervalMs, Date.now() + safetyWindow);
+            const maxAheadMs = Date.now() + maxAheadHours * 60 * 60 * 1000;
+            nextTime = Math.min(Math.max(lastTime + intervalMs, Date.now() + safetyWindow), maxAheadMs);
         } else {
             nextTime = Date.now() + safetyWindow;
         }
 
-        // Blackout period check
+        // Blackout period check (handles overnight ranges, e.g. 23h-7h)
         const date = new Date(nextTime);
         const hour = date.getHours();
-        if (hour >= endHour && hour < startHour) {
+        const inBlackout = startHour <= endHour
+            ? hour >= endHour || hour < startHour
+            : hour >= endHour && hour < startHour;
+
+        if (inBlackout) {
             date.setHours(startHour, 0, 0, 0);
+            if (date.getTime() <= nextTime) date.setDate(date.getDate() + 1);
             nextTime = date.getTime();
             PostingWorker.logger.log(
                 `[pipeline] scheduling: hit blackout period (${endHour}h-${startHour}h), moved to ${date.toISOString()}`
@@ -812,9 +819,20 @@ export class PostingWorker {
 
             if (!recent?.data?.length) return null;
 
+            // Count how many recent posts already share each image, so the
+            // fallback doesn't keep piling the same photo onto more and more
+            // unrelated posts.
+            const imageUsageCount = new Map<string, number>();
+            for (const post of recent.data) {
+                if (!post.featureImage) continue;
+                imageUsageCount.set(post.featureImage, (imageUsageCount.get(post.featureImage) || 0) + 1);
+            }
+
             const now = Date.now();
             let bestImage: string | null = null;
             let bestScore = -Infinity;
+            let bestFallbackImage: string | null = null;
+            let bestFallbackScore = -Infinity;
 
             for (const post of recent.data) {
                 if (!post.featureImage) continue;
@@ -846,13 +864,21 @@ export class PostingWorker {
                 const ageDays = Math.min(Math.floor(ageMs / 86_400_000), 30);
                 score -= ageDays;
 
-                if (score > bestScore) {
+                // Track the best match overall as a last-resort fallback...
+                if (score > bestFallbackScore) {
+                    bestFallbackScore = score;
+                    bestFallbackImage = post.featureImage;
+                }
+
+                // ...but prefer the best match whose image isn't already shared
+                // by another post, to avoid the same photo spreading further.
+                if ((imageUsageCount.get(post.featureImage) || 0) <= 1 && score > bestScore) {
                     bestScore = score;
                     bestImage = post.featureImage;
                 }
             }
 
-            return bestImage;
+            return bestImage ?? bestFallbackImage;
         } catch {
             return null;
         }
