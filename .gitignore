@@ -435,6 +435,9 @@ ads.txt
 data
 .cursor
 .husky
+.qwen/
+debug.txt
+*.backup-*
 
 # Rulebook - ignore runtime data, keep specs and tasks
 /.rulebook/*
