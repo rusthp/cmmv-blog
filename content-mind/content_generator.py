@@ -99,21 +99,33 @@ def _build_prompt(trend: TrendData, game_slug: str) -> str:
 
     return f"""Você é um jornalista de games para o site ProPlay News (proplaynews.com.br), escrevendo em Português Brasileiro.
 
-Com base nas notícias e tendências desta semana para **{trend.game_name}**, escreva um artigo completo para o blog.
+Com base EXCLUSIVAMENTE nas notícias reais abaixo para **{trend.game_name}**, escreva um artigo completo para o blog.
 
-## Notícias e tendências recentes:
-{news_section or "(sem notícias específicas — escreva sobre o estado atual do jogo com base no seu conhecimento)"}
+## Notícias e tendências recentes (única fonte de fatos permitida):
+{news_section or "(nenhuma notícia real encontrada nesta rodada)"}
+
+## REGRA MAIS IMPORTANTE — NÃO INVENTE FATOS:
+- Use SOMENTE as informações fornecidas acima. Não invente posts de Reddit, vídeos de YouTube,
+  comentários de comunidade, citações, estatísticas ou eventos que não estejam explicitamente
+  nas notícias listadas. Não existe dado de Reddit ou YouTube disponível — não escreva seções
+  que finjam ter essa origem.
+- Se as notícias acima forem poucas ou genéricas, escreva um artigo mais curto e honesto em vez
+  de preencher com detalhes fabricados. É melhor um artigo verdadeiro e simples do que um artigo
+  longo com informação inventada.
+- Se não houver nenhuma notícia real (seção vazia acima), escreva um texto claramente genérico/
+  atemporal sobre o jogo (curiosidades, guia, contexto geral) e NÃO alegue que é uma cobertura
+  "desta semana" ou cite eventos, patches ou resultados específicos que você não tem confirmados.
 
 ## Instruções do artigo:
 
-1. **Título**: criativo, atraente, em português, máximo 80 caracteres
-2. **Conteúdo HTML**: artigo completo com pelo menos 600 palavras usando tags HTML (h2, h3, p, ul, li, strong, em)
-   - Introdução que contextualiza as tendências da semana
-   - Seção sobre destaques da comunidade (baseado no Reddit)
-   - Seção sobre conteúdo em vídeo (baseado no YouTube)
-   - Análise/opinião sobre o cenário atual do jogo
+1. **Título**: criativo, atraente, em português, máximo 80 caracteres — refletindo o conteúdo real acima
+2. **Conteúdo HTML**: artigo usando tags HTML (h2, h3, p, ul, li, strong, em), tamanho proporcional
+   à quantidade de informação real disponível (não infle com conteúdo inventado)
+   - Introdução que contextualiza as notícias reais listadas
+   - Seção detalhando os fatos das notícias (times, resultados, atualizações — só o que foi informado)
+   - Análise/opinião sobre o cenário atual do jogo, deixando claro quando é opinião e não fato
    - Conclusão com call-to-action para os leitores
-3. **Excerpt**: resumo de 1-2 frases (máximo 160 caracteres)
+3. **Excerpt**: resumo de 1-2 frases (máximo 160 caracteres), baseado nos fatos reais
 4. **Meta**: para SEO
 
 Retorne **exclusivamente** um JSON válido com esta estrutura:
@@ -126,6 +138,9 @@ Retorne **exclusivamente** um JSON válido com esta estrutura:
   "meta_keywords": "string (5-8 palavras-chave separadas por vírgula)"
 }}
 
+IMPORTANTE sobre o formato: retorne um JSON válido em UMA ÚNICA LINHA (sem quebras de linha
+literais dentro dos valores). Onde o HTML do campo "content" precisar de quebra de linha,
+use o caractere de escape \\n, nunca uma quebra de linha real dentro da string.
 Não inclua markdown fora do JSON. Não use ```json```. Retorne apenas o JSON."""
 
 

@@ -136,12 +136,12 @@ def _fetch_rss(url: str, source_name: str, limit: int = 5) -> List[NewsItem]:
 # ── General Gaming Aggregator Feeds ──────────────────────────────────────────
 # No dedicated feed exists for every game (Riot/Epic/Garena don't publish RSS),
 # so these broad aggregators are filtered by game-name keywords instead.
-# Verified working (2026-07):
+# Verified reachable FROM THE VM's IP (2026-07) — dotesports.com and esports.gg
+# also looked fine from a residential IP but return 403 from this datacenter IP,
+# so they're deliberately left out here.
 BR_GAMING_FEEDS = [
     ("https://br.ign.com/feed.xml", "IGN Brasil"),
-    ("https://dotesports.com/feed", "Dot Esports"),
     ("https://www.dexerto.com/feed", "Dexerto"),
-    ("https://esports.gg/feed/", "Esports.gg"),
     ("https://www.pcgamesn.com/feed", "PCGamesN"),
 ]
 
