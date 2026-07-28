@@ -518,6 +518,9 @@ export class PostsPublicService {
                 PostsEntity, Repository.queryBuilder({ id: data.post.id }), data.post
             );
 
+            if(!post)
+                throw new Error(`Failed to update post ${data.post.id}`);
+
             if(post){
                 await Repository.updateOne(MetaEntity, {
                     post: data.post.id
@@ -566,6 +569,9 @@ export class PostsPublicService {
             // --- End Parent Category Inheritance Logic for new posts ---
 
             const post: any = await Repository.insert(PostsEntity, data.post);
+
+            if(!post || !post.success)
+                throw new Error(`Failed to insert post: ${post?.message || 'unknown error'}`);
 
             if(post){
                 data.meta.post = post.data.id;
