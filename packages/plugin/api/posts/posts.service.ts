@@ -1237,6 +1237,19 @@ export class PostsPublicService {
 
             result.reprocessed++;
 
+            // deepCheck confirmed the own-hosted file itself is gone. getImageUrl trusts
+            // the own-domain match and returns it as-is without re-verifying (see its
+            // "Own-served image" short-circuit), so calling processImageIfNeeded here
+            // would just hand back the same dead URL — and there's no original external
+            // source left to re-download from. Clear it directly instead.
+            if (isOwnHosted) {
+                await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id: post.id }), {
+                    featureImage: null
+                });
+                result.cleared++;
+                continue;
+            }
+
             const resolved = await this.processImageIfNeeded(
                 post.featureImage,
                 imageSettings.format,
