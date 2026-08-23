@@ -24,7 +24,7 @@ _token_acquired_at: float = 0.0
 TOKEN_TTL = 3600 * 6  # treat token as valid for 6h (refresh proactively)
 
 
-def _api(method: str, path: str, body: Optional[dict] = None, token: Optional[str] = None) -> dict:
+def _api(method: str, path: str, body: Optional[dict] = None, token: Optional[str] = None, timeout: int = 20) -> dict:
     url = f"{PROPLAY_API_URL}{path}"
     data = json.dumps(body).encode() if body else None
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -32,7 +32,7 @@ def _api(method: str, path: str, body: Optional[dict] = None, token: Optional[st
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as exc:
         body_text = exc.read().decode(errors="replace")
@@ -58,7 +58,10 @@ def _get_token() -> str:
     logger.info("Authenticating with cmmv-blog as '%s'...", PROPLAY_USERNAME)
     result = _api("POST", "/auth/login", {"username": PROPLAY_USERNAME, "password": PROPLAY_PASSWORD})
 
-    token = result.get("token") or result.get("accessToken") or result.get("access_token")
+    # cmmv-blog wraps the payload as {"status", "result": {"token", "refreshToken"}}
+    # rather than returning the token at the top level.
+    inner = result.get("result", result)
+    token = inner.get("token") or inner.get("accessToken") or inner.get("access_token")
     if not token:
         raise RuntimeError(f"Login failed — no token in response: {result}")
 
@@ -113,8 +116,12 @@ def publish_draft(
     }
 
     logger.info("Publishing draft: '%s'", article.title)
-    result = _api("POST", "/blog/posts", post_payload, token=token)
-    logger.info("Draft created — id: %s", result.get("id") or result.get("_id") or "?")
+    # Observed taking up to ~75s server-side (content moderation checks run
+    # synchronously) — a short client timeout caused false-negative failures
+    # even though the draft was actually created (verified against the DB).
+    result = _api("POST", "/blog/posts", post_payload, token=token, timeout=120)
+    inner = result.get("result", result)
+    logger.info("Draft created — id: %s", inner.get("id") or inner.get("_id") or "?")
     return result
 
 
@@ -132,7 +139,8 @@ def publish_game_content(game: GameEntry, article: GeneratedArticle) -> PublishR
     """Publish article for a game, return result with success/error info."""
     try:
         response = publish_draft(article, game)
-        post_id = str(response.get("id") or response.get("_id") or "")
+        inner = response.get("result", response)
+        post_id = str(inner.get("id") or inner.get("_id") or "")
         return PublishResult(
             game_slug=game.slug,
             game_name=game.name,

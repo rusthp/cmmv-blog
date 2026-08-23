@@ -4577,7 +4577,7 @@ const settings = ref({
     defaultFeaturedImage: "",
 
     // AI Integration
-    aiService: "gemini",
+    aiService: "deepseek",
     geminiApiKey: "",
     openaiApiKey: "",
     grokApiKey: "",

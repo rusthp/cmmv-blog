@@ -209,4 +209,10 @@ export class PostsController {
         await this.postsPublicService.recalculateCategories();
         return { message: "Category post counts recalculation initiated." };
     }
+
+    @Post("posts/actions/repair-broken-images", { exclude: true })
+    @Auth("post:insert")
+    async repairBrokenFeatureImages(@Body() body: { deepCheck?: boolean }) {
+        return await this.postsPublicService.repairBrokenFeatureImages(!!body?.deepCheck);
+    }
 }

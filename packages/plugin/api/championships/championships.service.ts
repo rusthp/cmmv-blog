@@ -920,11 +920,6 @@ export class ChampionshipsService {
     } else {
       const result = await Repository.insert(EsportsTournamentEntity, data);
       if (!result.success) {
-        const fs = require('fs');
-        fs.appendFileSync(
-          'debug.txt',
-          `[championships] Failed to insert tournament ${t.slug}: ${result.message}\n`
-        );
         ChampionshipsService.warn(
           `[championships] Failed to insert tournament ${t.slug}: ${result.message}`
         );

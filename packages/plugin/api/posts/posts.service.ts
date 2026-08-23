@@ -1182,6 +1182,94 @@ export class PostsPublicService {
     }
 
     /**
+     * Repair job for previously-published posts whose featureImage was stored as a raw
+     * external URL (bypassed download/re-hosting due to the processImageIfNeeded bug) or
+     * whose locally-hosted image file no longer resolves. Reprocesses each one through
+     * processImageIfNeeded so it gets downloaded and re-hosted, or cleared to null when it
+     * truly cannot be recovered — a null featureImage makes the frontend hide the image
+     * block entirely instead of rendering a broken-image icon.
+     * @param {boolean} deepCheck - also HEAD-check already-local images to catch files that
+     *        were deleted from storage after being published (slower: one HTTP request per post)
+     * @returns {Promise<{ total: number, reprocessed: number, fixed: number, cleared: number, unchanged: number }>}
+     */
+    async repairBrokenFeatureImages(deepCheck: boolean = false) {
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const blogUrl = (Config.get<string>("blog.url") || "").replace(/\/$/, "");
+        const imageSettings = this.getDefaultImageSettings();
+
+        const posts = await Repository.findAll(PostsEntity, {
+            limit: 10000,
+            deleted: false
+        }, [], {
+            select: ["id", "featureImage", "title"]
+        });
+
+        const result = { total: 0, reprocessed: 0, fixed: 0, cleared: 0, unchanged: 0 };
+
+        if (!posts) return result;
+
+        for (const post of posts.data) {
+            if (!post.featureImage) continue;
+
+            result.total++;
+
+            const isOwnHosted = post.featureImage.includes('/images/') ||
+                (!!blogUrl && post.featureImage.startsWith(blogUrl));
+
+            let needsRepair = !isOwnHosted;
+
+            if (isOwnHosted && deepCheck) {
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 8000);
+                    const head = await fetch(post.featureImage, { method: 'HEAD', signal: controller.signal });
+                    clearTimeout(timer);
+                    needsRepair = !head.ok;
+                } catch {
+                    needsRepair = true;
+                }
+            }
+
+            if (!needsRepair) {
+                result.unchanged++;
+                continue;
+            }
+
+            result.reprocessed++;
+
+            const resolved = await this.processImageIfNeeded(
+                post.featureImage,
+                imageSettings.format,
+                imageSettings.width,
+                imageSettings.height,
+                imageSettings.quality,
+                post.title || "",
+                post.title || ""
+            );
+
+            if (resolved && resolved !== post.featureImage) {
+                await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id: post.id }), {
+                    featureImage: resolved
+                });
+                result.fixed++;
+            } else if (!resolved) {
+                await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id: post.id }), {
+                    featureImage: null
+                });
+                result.cleared++;
+            } else {
+                result.unchanged++;
+            }
+        }
+
+        this.logger.log(
+            `[repairBrokenFeatureImages] total=${result.total} reprocessed=${result.reprocessed} fixed=${result.fixed} cleared=${result.cleared} unchanged=${result.unchanged}`
+        );
+
+        return result;
+    }
+
+    /**
      * Delete a post
      * @param {string} id - The id of the post
      * @returns {Promise<any>}
@@ -1898,19 +1986,20 @@ export class PostsPublicService {
     ): Promise<string | null | undefined> {
         if (!imageData) return imageData;
 
-        // Se a imagem já for uma URL, verificar se precisa corrigir o domínio
-        if (imageData.startsWith('http')) {
-            // Corrigir URLs com localhost apontando para imagens locais
-            if (imageData.includes('/images/') && imageData.includes('localhost')) {
-                const blogUrl = Config.get<string>("blog.url");
-                if (blogUrl && !blogUrl.includes('localhost')) {
-                    const imagePath = imageData.replace(/^https?:\/\/[^/]+/, '');
-                    return `${blogUrl.replace(/\/$/, '')}${imagePath}`;
-                }
+        // Corrigir URLs com localhost apontando para imagens locais
+        if (imageData.startsWith('http') && imageData.includes('/images/') && imageData.includes('localhost')) {
+            const blogUrl = Config.get<string>("blog.url");
+            if (blogUrl && !blogUrl.includes('localhost')) {
+                const imagePath = imageData.replace(/^https?:\/\/[^/]+/, '');
+                return `${blogUrl.replace(/\/$/, '')}${imagePath}`;
             }
-            return imageData;
         }
 
+        // NÃO tratar toda URL http como "já pronta" — imagens externas (og:image de outro
+        // site, thumbnail de RSS, etc.) precisam ser baixadas e re-hospedadas por nós, senão
+        // ficam sujeitas a hotlink-block/CDN externo cair e viram ícone de imagem quebrada no
+        // frontend. mediasService.getImageUrl já retorna a própria URL sem reprocessar quando
+        // a imagem já é hospedada por nós (domínio próprio ou path /images/).
         return await this.mediasService.getImageUrl(
             imageData,
             format,

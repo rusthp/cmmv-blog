@@ -1,176 +1,90 @@
-# CLAUDE.md — cmmv-blog
+<!-- RULEBOOK:START v5.3.0 — DO NOT EDIT BY HAND. Regenerated on `rulebook update`.
+     Put project-specific content in AGENTS.override.md or CLAUDE.local.md.
+     Anything outside the RULEBOOK:START/END sentinels is preserved across updates. -->
 
-@.claude/COMPACT_CONTEXT.md
+# CLAUDE.md
 
-Guia de contexto para Claude Code (claude.ai/code) neste repositório.
+This project is managed by [@hivehub/rulebook](https://github.com/hivellm/rulebook).
+The authoritative rules come from the imports below. Claude Code loads all of them
+automatically at session start (see [Anthropic memory docs](https://code.claude.com/docs/en/memory#claude-md-imports)).
 
-## Visão Geral
+## Project identity & live state
+<!-- @.rulebook/STATE.md (skipped — target file not present) -->
 
-**cmmv-blog** é uma plataforma de blog/CMS completa baseada no framework [CMMV](https://cmmv.io).
-Monorepo gerenciado com **pnpm workspaces** + **Turborepo**.
+## Core standards (team-shared, versioned)
+@AGENTS.md
 
-**Stack principal**: TypeScript · Vue 3 · Vite · SQLite · CMMV Framework
+## Project-specific overrides (user-owned, survives `rulebook update`)
+@AGENTS.override.md
 
----
+## Session scratchpad (human notes)
+<!-- @.rulebook/PLANS.md (skipped — target file not present) -->
 
-## Estrutura do Monorepo
+## Critical rules (highest precedence — apply on every turn)
 
-```
-apps/
-  api/          → Servidor CMMV (Node.js) — entrada: src/main.ts
-  web/          → SSR Vue3 (Vite) — entrada: server.ts
-  admin/        → SPA Vue3 (Vite) — painel administrativo
+1. **Read `AGENTS.md` and `AGENTS.override.md`** before making changes. These contain project-specific conventions that override generic guidance.
+2. **Never revert or discard uncommitted work** — fix forward. Treat the working tree as sacred; investigate before destructive operations.
+3. **Edit files sequentially**, not in parallel. When a task touches 3+ files, decompose into 1–2 file sub-tasks.
+4. **Run `check`/type-check before `test`** — diagnostic-first. Cheap diagnostics catch issues that expensive test suites miss or take longer to surface.
+5. **If a fix fails twice, escalate** — stop, research, or open a team. Do not retry the same approach a third time.
+6. **Prefer MCP tools** (`mcp__rulebook__*` and project-specific MCP servers) over shell commands when the equivalent tool exists.
+7. **Capture learnings**: at the end of significant work, save patterns and anti-patterns to `.rulebook/knowledge/` and insights to `.rulebook/learnings/`.
+8. **Never archive a task** without docs updated, tests written, and tests passing — the task tail enforces this structurally.
 
-packages/
-  plugin/       → Pacote principal @cmmv/blog — toda a lógica de negócio
-  newsletter/   → @cmmv/newsletter — campanhas e assinantes
-  ai-content/   → @cmmv/ai-content — geração de conteúdo com IA
-  rss-aggregation/ → @cmmv/rss-aggregation — coleta de feeds RSS
-  yt-aggregation/  → @cmmv/yt-aggregation — coleta de vídeos do YouTube
-  access-control/  → @cmmv/access-control — controle de acesso por papel
-  affiliate/    → @cmmv/affiliate — sistema de afiliados
-  odds/         → @cmmv/odds — odds/apostas esportivas
-  eslint-config/   → configuração ESLint compartilhada
-  typescript-config/ → tsconfig base compartilhado
-```
+## Delegation & parallelism (highest precedence — apply on every turn)
 
----
+**Default behavior: delegate, don't do it yourself. Parallelize, don't serialize. Create new agents/skills when the gap is real.**
 
-## packages/plugin — Módulos da API
+1. **Delegate by default.** If a step matches an agent in the delegation table, dispatch it via `Agent` instead of doing it inline. Implementation → `implementer` (sonnet). Research / read-only exploration → `researcher` (haiku). Tests → `tester`. Docs → `docs-writer` (haiku). Architecture / cross-cutting → `architect` (opus). Reserve the main conversation for orchestration + decisions.
+2. **Parallelize independent work.** When a turn requires multiple independent investigations or edits, dispatch every independent piece in **a single message with multiple `Agent` tool-use blocks**. Sequential `Agent` calls are a smell — every time you catch yourself writing "first X, then Y", check whether the two halves are independent.
+3. **Use Teams for multi-specialist work.** Anything that needs ≥2 background agents to coordinate MUST go through a Team (`TeamCreate` + `team_name` on dispatch). Standalone background `Agent` calls without `team_name` are blocked by the enforcement hook.
+4. **Create skills + agents when the gap is real.** If you write the same multi-step instructions twice in one session, lift it into a skill (`templates/skills/<category>/<name>/SKILL.md`). If a class of work repeats across projects, create an agent definition under `.claude/agents/`. Default to creating, not improvising.
+5. **Foreground vs background.** Use foreground `Agent` when you need the result to inform your next step. Use background only with `team_name` so messages can flow.
 
-Cada módulo em `packages/plugin/api/<modulo>/` segue o padrão:
-- `<modulo>.module.ts` — registro do módulo CMMV
-- `<modulo>.service.ts` — lógica de negócio e queries
-- `<modulo>.controller.ts` — rotas HTTP
-- `<modulo>.interface.ts` — tipos TypeScript
+## Editing discipline (Karpathy-inspired)
 
-| Módulo | Responsabilidade |
-|--------|-----------------|
-| `posts` | Artigos/posts do blog |
-| `categories` | Categorias dos posts |
-| `authors` | Perfis de autores |
-| `comments` | Comentários e likes |
-| `medias` | Upload e gestão de mídia |
-| `themes` | Temas customizáveis |
-| `analytics` | Métricas de acesso |
-| `settings` | Configurações globais |
-| `members` | Membros/assinantes |
-| `notifications` | Notificações push |
-| `shorturl` | Encurtador de URL |
-| `redirects` | Redirecionamentos |
-| `sitemap` | Geração de sitemap |
-| `feed` | RSS/Atom feed |
-| `images` | Processamento de imagens (sharp) |
-| `cdn` | Integração CDN |
-| `storage` | Armazenamento de arquivos |
-| `indexing` | Indexação de conteúdo |
-| `autopost` | Publicação automática |
-| `backup` | Backup de dados |
-| `whitelabel` | Multi-tenant / white label |
-| `accounts` | Gestão de contas |
-| `profile` | Perfil de usuário |
-| `prompts` | Prompts para IA |
-| `imports` | Importação de conteúdo |
-| `health` | Health check da API |
-| `logs` | Logs de sistema |
+Behavioral guidelines that reduce common LLM coding mistakes. Adapted from [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills), grounded in [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876).
 
-### Contratos (packages/plugin/contracts/)
+1. **Think before coding.** State assumptions explicitly. If multiple interpretations exist, present them — don't pick silently. If a simpler approach exists, say so. If something is unclear, stop and ask. Don't hide confusion.
+2. **Simplicity first.** Minimum code that solves the problem. No features beyond what was asked, no abstractions for single-use code, no "flexibility" that wasn't requested, no error handling for impossible scenarios. If you write 200 lines and 50 would do, rewrite.
+3. **Surgical changes.** Touch only what you must. Don't "improve" adjacent code, comments, or formatting. Don't refactor things that aren't broken. Match existing style. If you notice unrelated dead code, mention it — don't delete it. Every changed line must trace directly to the user's request.
+4. **Goal-driven execution.** Define verifiable success criteria upfront. "Add validation" → "write tests for invalid inputs, then make them pass." For multi-step tasks, state a brief plan: `[step] → verify: [check]`. Strong criteria let you loop independently; weak criteria require constant clarification.
 
-Definem os schemas TypeScript compartilhados entre API, admin e web:
-- `posts.contract.ts` — estrutura de posts
-- `categories.contract.ts` — categorias
-- `comments.contract.ts` — comentários
-- `themes.contract.ts` — temas
-- `medias.contract.ts` — mídias
-- `member.contract.ts` — membros
-- `whitelabel.contract.ts` — configuração white label
-- *(e demais contratos)*
+## Persistent memory
 
-### Admin (packages/plugin/admin/)
+This project uses the Rulebook MCP server for persistent memory across sessions.
 
-Componentes Vue 3 do painel admin — `api.ts` e componentes em `views/`.
+- **Start of session**: `rulebook_memory_search` for relevant prior context.
+- **During work**: `rulebook_memory_save` for decisions, bugs, discoveries, user preferences.
+- **End of session**: `rulebook_session_end` to write a session summary.
 
-### Client (packages/plugin/client/)
+Memory is auto-captured for tool interactions (task create/update/archive, skill enable/disable). Manual saves are required for everything else worth remembering.
 
-Lógica Vue 3 para o frontend público — composables, router, layouts, views.
+## Knowledge base
 
----
+Before implementing anything non-trivial:
 
-## apps/api — Servidor
+- `rulebook_knowledge_list` — check existing patterns and anti-patterns.
+- `rulebook_learn_list` — review past learnings.
+- `rulebook_decision_list` — review architectural decisions.
 
-**Framework**: CMMV com adaptador HTTP padrão + SQLite via `@cmmv/repository`.
+After implementing, capture at least one entry per task:
 
-Módulos registrados em `src/main.ts`:
-`BlogModule`, `AuthModule`, `AccessControlModule`, `RSSAggregationModule`,
-`YTAggregationModule`, `AIContentModule`, `AffiliateModule`, `OddsModule`, `NewsletterModule`
+- `rulebook_knowledge_add` for reusable patterns or anti-patterns to avoid.
+- `rulebook_learn_capture` for implementation insights that don't belong in code comments.
+- `rulebook_decision_create` for significant architectural choices.
 
-Configurações em `src/config.ts` — lidas de variáveis de ambiente.
+## Task workflow
 
----
+**MANDATORY: ALWAYS use the Rulebook MCP tools for task management.** Never create task directories or files manually — use `rulebook_task_create`, `rulebook_task_update`, `rulebook_task_archive`, `rulebook_task_list`, `rulebook_task_show`, `rulebook_task_validate`. These tools enforce naming conventions, mandatory tail items, phase structure, and metadata that manual file creation skips.
 
-## apps/web — Frontend SSR
+1. `rulebook_task_list` to see pending work.
+2. `rulebook_task_create` to create new tasks — **never `mkdir` + `Write` manually**.
+3. Pick the **first unchecked item from the lowest-numbered phase** — never reorder.
+4. Read the task's `proposal.md` and `tasks.md` before touching code.
+5. Implement step by step. Run lint + type-check after each significant change.
+6. `rulebook_task_update` to change task status as you progress.
+7. Mark items `[x]` in `tasks.md` as you finish them.
+8. The mandatory tail (docs + tests + verify) is **not optional** — `rulebook_task_archive` will refuse to close the task otherwise.
 
-**Stack**: Vue 3 + Vite SSR + Tailwind CSS v4 + `@unhead/vue`
-Entrada do servidor: `server.ts`
-Configuração Vite: `vite.config.ts` (client) e `vite.config.server.ts` (SSR)
-
----
-
-## apps/admin — Painel Admin
-
-**Stack**: Vue 3 + Vite SPA + Tailwind CSS v4 + TipTap (editor rich text)
-Usa `vue-router` para navegação entre seções.
-
----
-
-## Comandos Principais
-
-```bash
-pnpm install              # Instalar dependências (sempre usar pnpm, NUNCA npm)
-pnpm run dev              # Subir todos os apps em modo dev (turbo)
-pnpm run build            # Build completo
-
-# Por app individual:
-cd apps/api && pnpm dev
-cd apps/web && pnpm dev
-cd apps/admin && pnpm dev
-```
-
-> **Importante**: O projeto roda em **WSL (Linux)** mas o código está em Windows (`B:\cmmv-blog`).
-> Sempre usar `pnpm install` (não npm) para instalar os binários corretos para Linux.
-
----
-
-## Convenções de Código
-
-- **Linguagem**: TypeScript strict em todo o projeto
-- **Módulos CMMV**: cada feature tem `.module.ts`, `.service.ts`, `.controller.ts`
-- **Contratos**: schemas em `packages/plugin/contracts/` — compartilhados entre apps
-- **Serviços**: toda lógica de banco fica nos `*.service.ts`
-- **Sem ORM externo**: usa `@cmmv/repository` com SQLite direto
-- **Temas**: sistema de temas customizáveis via banco de dados
-
----
-
-## Variáveis de Ambiente Importantes
-
-Definidas em `.env` na raiz de `apps/api/`:
-- `DATABASE_PATH` — caminho do SQLite
-- `JWT_SECRET` — chave JWT
-- `STORAGE_*` — configuração de storage
-- `AI_*` — chave de API para geração de conteúdo
-
----
-
-## Onde Encontrar o Quê
-
-| O que procuro | Onde está |
-|---------------|-----------|
-| Lógica de posts | `packages/plugin/api/posts/posts.service.ts` |
-| Rotas da API | `packages/plugin/api/*/**.controller.ts` |
-| Schemas/Tipos | `packages/plugin/contracts/*.contract.ts` |
-| Componentes admin | `packages/plugin/admin/` + `apps/admin/src/` |
-| Páginas do blog | `apps/web/src/` + `packages/plugin/client/views/` |
-| Configuração do servidor | `apps/api/src/config.ts` |
-| Processamento de imagens | `packages/plugin/api/images/` |
-| Temas | `packages/plugin/api/themes/` |
+<!-- RULEBOOK:END -->

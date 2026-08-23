@@ -133,26 +133,37 @@ def _fetch_rss(url: str, source_name: str, limit: int = 5) -> List[NewsItem]:
     return _parse_rss(data, source_name, limit)
 
 
-# ── Brazilian Gaming RSS Feeds ────────────────────────────────────────────────
-# Verified working from VPS (2026-04)
-
+# ── General Gaming Aggregator Feeds ──────────────────────────────────────────
+# No dedicated feed exists for every game (Riot/Epic/Garena don't publish RSS),
+# so these broad aggregators are filtered by game-name keywords instead.
+# Verified reachable FROM THE VM's IP (2026-07) — dotesports.com and esports.gg
+# also looked fine from a residential IP but return 403 from this datacenter IP,
+# so they're deliberately left out here.
 BR_GAMING_FEEDS = [
     ("https://br.ign.com/feed.xml", "IGN Brasil"),
+    ("https://www.dexerto.com/feed", "Dexerto"),
+    ("https://www.pcgamesn.com/feed", "PCGamesN"),
 ]
+
+# Stopwords stripped from game names before keyword-matching an article —
+# without this, "League of Legends" would match any article containing "of".
+_KEYWORD_STOPWORDS = {"of", "the", "a", "an", "2", "25"}
 
 
 def _br_gaming_news(game_name: str, limit: int = 3) -> List[NewsItem]:
     """
-    Fetch from BR gaming RSS feeds and filter by game name.
+    Fetch from general gaming RSS aggregators and filter by game name.
     """
     results: List[NewsItem] = []
-    keywords = game_name.lower().split()
+    keywords = [kw for kw in game_name.lower().split() if kw not in _KEYWORD_STOPWORDS]
 
     for feed_url, feed_name in BR_GAMING_FEEDS:
         items = _fetch_rss(feed_url, feed_name, limit=20)
         for item in items:
             text = (item.title + " " + item.summary).lower()
-            if any(kw in text for kw in keywords):
+            # Require ALL significant keywords present — a lone "league" or
+            # "legends" matches too much unrelated content on general feeds.
+            if keywords and all(kw in text for kw in keywords):
                 results.append(item)
         time.sleep(0.3)
 
@@ -166,7 +177,7 @@ STEAM_APP_IDS = {
     "cs2": 730,
     "dota-2": 570,
     "apex-legends": 1172470,
-    "ea-sports-fc-25": 2537770,
+    "ea-sports-fc-25": 2669320,
     "pubg-mobile": None,    # mobile only
     "fortnite": None,       # Epic only
     "free-fire": None,      # mobile only
@@ -175,9 +186,11 @@ STEAM_APP_IDS = {
     "minecraft": None,          # Microsoft/Mojang
 }
 
-# Specific RSS feeds per game (verified working from VPS)
+# Specific RSS feeds per game (verified working)
 GAME_FEEDS: dict = {
-    # No verified game-specific feeds at this time; IGN BR covers all major titles
+    # vlr.gg is a dedicated Valorant esports feed — no keyword filtering needed,
+    # every item is already on-topic.
+    "valorant": [("https://www.vlr.gg/rss", "VLR.gg")],
 }
 
 

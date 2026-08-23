@@ -210,7 +210,7 @@ export class AutoPipelineService {
                 }
             }
 
-                        // Items stuck in POSTING → reset to GENERATED
+            // Items stuck in POSTING → reset to GENERATED
             const stuckPosting = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.POSTING,
                 limit: 50,

@@ -60,5 +60,68 @@
       "Bash(grep -A 10 -B 5 script.*src.*comments /b/cmmv-blog/apps/web/src/theme-*/views/PagePost.vue)",
       "Bash(grep -A 30 \"script:\" /b/cmmv-blog/apps/web/src/theme-*/views/PagePost.vue)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/on-compact-reinject.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/resume-from-handoff.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/terse-activate.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/check-context-and-handoff.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/terse-mode-tracker.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash B:/cmmv-blog/.claude/hooks/enforce-pre-tool.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }

@@ -80,11 +80,19 @@ def process_game(game: GameEntry) -> PublishResult:
 
     logger.info("[1/3] Scanning trends...")
     trend = scan_game(game)
-    logger.info(
-        "  Reddit posts: %d | YouTube videos: %d",
-        len(trend.reddit_posts),
-        len(trend.yt_videos),
-    )
+    logger.info("  Real news items found: %d", len(trend.news_items))
+
+    if not trend.news_items:
+        logger.warning(
+            "No real news found for %s — skipping to avoid publishing a fully "
+            "fabricated article with no factual grounding.", game.name
+        )
+        return PublishResult(
+            game_slug=game.slug,
+            game_name=game.name,
+            success=False,
+            error="No real news items found — skipped (would require inventing content)",
+        )
 
     logger.info("[2/3] Generating article...")
     article = generate_article(trend, game.slug)
