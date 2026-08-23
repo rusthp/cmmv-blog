@@ -139,18 +139,22 @@ export class MediasService extends AbstractService {
 
                 clearTimeout(timer);
 
-                if (!response.ok) return image;
+                // On any download/validation failure, return null instead of the raw external
+                // URL — persisting the original URL as if it were "processed" left dead/hotlink-
+                // blocked links stored as featureImage, which then render as a broken image icon
+                // on the frontend forever. Returning null lets callers omit the image instead.
+                if (!response.ok) return null;
 
                 const contentType = (response.headers.get('content-type') || '').split(';')[0].trim();
-                if (!contentType.startsWith('image/')) return image;
+                if (!contentType.startsWith('image/')) return null;
 
                 const buffer = Buffer.from(await response.arrayBuffer());
-                if (buffer.length < 1000 || buffer.length > 5 * 1024 * 1024) return image;
+                if (buffer.length < 1000 || buffer.length > 5 * 1024 * 1024) return null;
 
                 const base64Image = `data:${contentType};base64,${buffer.toString('base64')}`;
-                return await this.getImageUrl(base64Image, format, width, height, quality, alt, caption) ?? image;
+                return await this.getImageUrl(base64Image, format, width, height, quality, alt, caption);
             } catch {
-                return image;
+                return null;
             }
         }
 
