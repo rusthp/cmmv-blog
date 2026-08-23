@@ -32,6 +32,38 @@ export class ClassificationWorker {
 
             ClassificationWorker.logger.log("[pipeline] classifyWorker: Starting classification cycle");
 
+            // Auto-reject items older than yesterday to keep only recent news
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 1);
+            cutoffDate.setHours(0, 0, 0, 0);
+
+            const allPendingResponse = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.PENDING,
+                rejected: false,
+                postRef: IsNull(),
+                limit: 500,
+                sortBy: "pubDate",
+                sort: "DESC"
+            });
+
+            if (allPendingResponse?.data) {
+                const staleItems = allPendingResponse.data.filter((item: any) => {
+                    const pub = item.pubDate ? new Date(item.pubDate) : null;
+                    return pub && pub < cutoffDate;
+                });
+
+                if (staleItems.length > 0) {
+                    ClassificationWorker.logger.log(`[pipeline] classifyWorker: Auto-rejecting ${staleItems.length} items older than ${cutoffDate.toISOString().split("T")[0]}`);
+                    for (const item of staleItems) {
+                        await Repository.updateOne(
+                            FeedRawEntity,
+                            Repository.queryBuilder({ id: item.id }),
+                            { pipelineState: PIPELINE_STATE.REJECTED, rejected: true }
+                        );
+                    }
+                }
+            }
+
             const rawItemsResponse = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.PENDING,
                 rejected: false,

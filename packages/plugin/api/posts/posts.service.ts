@@ -1754,6 +1754,41 @@ export class PostsPublicService {
         const PostsEntity = Repository.getEntity("PostsEntity");
         let candidates: any[] | null = null;
 
+        // Word-set similarity (Dice coefficient) between two slugs. Titles for the
+        // same real-world story are frequently reworded/reordered by independent AI
+        // generations (e.g. "Radar: X drop responde" vs "Drop Radar: X"), so a naive
+        // slug-prefix check misses obvious matches — this doesn't.
+        const slugWords = (s: string): Set<string> =>
+            new Set(s.split('-').filter(w => w.length > 2));
+
+        const similarity = (a: Set<string>, b: Set<string>): number => {
+            if (a.size === 0 || b.size === 0) return 0;
+            let overlap = 0;
+            for (const w of a) if (b.has(w)) overlap++;
+            return (2 * overlap) / (a.size + b.size);
+        };
+
+        const SIMILARITY_THRESHOLD = 0.5;
+
+        // Source-scraping converts <a href="url">text</a> into "text (url)" (see
+        // channels.service.ts), and the content-generation prompt is instructed to
+        // turn link-like text back into real <a> tags — so an unresolved reference
+        // can still carry a live outbound link to the original source/competitor
+        // site. Strip any such link down to plain text rather than leave it clickable.
+        const ownDomain = (() => {
+            try { return new URL(Config.get<string>("blog.url", "")).hostname; }
+            catch { return ''; }
+        })();
+
+        const stripExternalLinks = (html: string): string =>
+            html.replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, (full, href, text) => {
+                try {
+                    const linkHost = new URL(href, `https://${ownDomain || 'localhost'}`).hostname;
+                    if (ownDomain && linkHost === ownDomain) return full;
+                } catch { /* relative or malformed URL — treat as internal, leave as-is */ }
+                return text;
+            });
+
         const paragraphMatches = [...content.matchAll(paragraphRegex)];
 
         for (const paragraph of paragraphMatches) {
@@ -1788,7 +1823,7 @@ export class PostsPublicService {
                 type: "post"
             }), { select: ["id", "slug", "title"] });
 
-            // Fuzzy fallback: normalized-title similarity against recent posts.
+            // Fuzzy fallback: word-overlap similarity against recent posts.
             // Only applied for sufficiently long references to avoid false positives.
             if (!target && refSlug.length >= 15) {
                 if (candidates === null) {
@@ -1801,16 +1836,33 @@ export class PostsPublicService {
                 }
 
                 const pool: any[] = candidates || [];
-                target = pool.find((p: any) => {
+                const refWords = slugWords(refSlug);
+                let bestScore = 0;
+                let best: any = null;
+
+                for (const p of pool) {
                     const pSlug = p.slug || slugify(p.title || '');
                     if (!pSlug || pSlug.length < 15)
-                        return false;
-                    return pSlug === refSlug || pSlug.startsWith(refSlug) || refSlug.startsWith(pSlug);
-                }) || null;
+                        continue;
+                    const score = similarity(refWords, slugWords(pSlug));
+                    if (score > bestScore) {
+                        bestScore = score;
+                        best = p;
+                    }
+                }
+
+                if (best && bestScore >= SIMILARITY_THRESHOLD)
+                    target = best;
             }
 
-            if (!target || !target.id || !target.slug)
+            if (!target || !target.id || !target.slug) {
+                // No internal match — make sure we don't leave a live link to the
+                // original source/competitor site sitting in the published article.
+                const sanitized = stripExternalLinks(fullBlock);
+                if (sanitized !== fullBlock)
+                    content = content.replace(fullBlock, sanitized);
                 continue;
+            }
 
             const href = `/noticias/${target.id}/${target.slug}`;
             const rebuilt = `<p class="internal-reference">${prefixLabel}: <a href="${href}">${refTitle}</a></p>`;
