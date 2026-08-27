@@ -97,10 +97,18 @@ def _parse_groq_json(raw: str, game_name: str) -> Optional[dict]:
         except json.JSONDecodeError:
             pass
 
-    # Last resort: pull fields individually
+    # Last resort: pull fields individually. Regex extraction grabs the raw
+    # substring as-is — it does NOT perform JSON string unescaping the way
+    # json.loads would, so \n / \t / \\ sequences the model wrote as valid
+    # JSON escapes (per the prompt's own instructions) must be unescaped here
+    # manually, or they show up as literal backslash-n text on the page.
     def _extract(field: str) -> str:
         m = re.search(rf'"{field}"\s*:\s*"(.*?)"(?=\s*[,}}])', cleaned, re.DOTALL)
-        return m.group(1).replace('\\"', '"') if m else ""
+        if not m:
+            return ""
+        value = m.group(1)
+        value = value.replace('\\n', '\n').replace('\\t', ' ').replace('\\"', '"').replace('\\\\', '\\')
+        return value
 
     title = _extract("title")
     content = _extract("content")
