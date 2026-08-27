@@ -156,12 +156,18 @@ Com base EXCLUSIVAMENTE nas notícias reais abaixo para **{trend.game_name}**, e
 ## Instruções do artigo:
 
 1. **Título**: criativo, atraente, em português, máximo 80 caracteres — refletindo o conteúdo real acima
-2. **Conteúdo HTML**: artigo usando tags HTML (h2, h3, p, ul, li, strong, em), tamanho proporcional
-   à quantidade de informação real disponível (não infle com conteúdo inventado)
-   - Introdução que contextualiza as notícias reais listadas
-   - Seção detalhando os fatos das notícias (times, resultados, atualizações — só o que foi informado)
-   - Análise/opinião sobre o cenário atual do jogo, deixando claro quando é opinião e não fato
-   - Conclusão com call-to-action para os leitores
+2. **Conteúdo HTML**: artigo usando tags HTML (h2, p, strong, em — use h3/ul/li só se realmente ajudar,
+   não por padrão), tamanho proporcional à quantidade de informação real disponível (não infle com
+   conteúdo inventado)
+   - ESTRUTURA: NÃO fragmente o artigo em muitos `<h2>` pequenos, um por notícia/fato isolado — isso lê
+     como lista de tópicos gerada por IA, não como matéria jornalística. Agrupe as notícias relacionadas
+     em **no máximo 2 ou 3 seções temáticas** (ex: "o que aconteceu" + "o que vem por aí", ou uma única
+     seção corrida se as notícias forem poucas/conectadas), cada uma com 2-4 parágrafos bem desenvolvidos
+     que conectam os fatos entre si (causa/consequência, comparação, contexto) — não um parágrafo curto
+     e solto por notícia.
+   - Comece com um parágrafo de abertura (sem h2) que já entrega o essencial, como uma lide de notícia.
+   - Feche com um parágrafo de análise/opinião natural (dentro de uma das seções, não precisa de h2
+     "Conclusão" dedicado) — deixando claro quando é opinião e não fato, com um gancho pro leitor.
 3. **Excerpt**: resumo de 1-2 frases (máximo 160 caracteres), baseado nos fatos reais
 4. **Meta**: para SEO
 
