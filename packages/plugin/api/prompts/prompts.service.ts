@@ -16,8 +16,12 @@ export class PromptsServiceTools {
                - Be specific: include game name, patch number, date, player name, or event name when relevant
                - Examples for eSports: "CS2 April 2026 Update: Full Mirage Changes Explained" not "CS2 Gets New Update"
                - Examples for eSports: "LOUD vs FURIA VCT 2026: Match Results and Stats" not "LOUD Wins Match"
-               - When a title states a match score, phrase it as a win/victory ("vence por 2-0", "wins 2-0"), never as
-                 "aplica 2-0" / "applies 2-0" — the natural sports-journalism verb is "to win by", not "to apply".
+               - When a title states a match score, vary the verb naturally instead of repeating the same one every time
+                 — never "aplica 2-0" / "applies 2-0" (not natural sports-journalism phrasing). Rotate between options like:
+                 "vence por 2-0" / "wins 2-0", "derrota [team] por 2-0" / "defeats [team] 2-0", "bate [team] por 2-0",
+                 "supera [team] e vence" / "leva a melhor sobre [team]", "vira sobre [team] e avança" (when it was a comeback),
+                 "estreia com vitória sobre [team]" (for a debut match), "sofre virada e perde para [team]" / "cai diante de
+                 [team]" (when reporting a loss). Pick whichever fits the actual context (comeback, debut, elimination, etc.).
             3. Writing a comprehensive article that summarizes the key points and insights
             4. Adding context, background information, and your own analysis to enhance the content
             5. Preserving important links to sources and reference pages, but adding rel="noindex nofollow" attributes to all links
