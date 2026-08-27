@@ -21,7 +21,7 @@ PROPLAY_PASSWORD = os.getenv("PROPLAY_PASSWORD", "")
 
 # AI
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # Scanning
 REDDIT_POSTS_PER_GAME = int(os.getenv("REDDIT_POSTS_PER_GAME", "5"))
