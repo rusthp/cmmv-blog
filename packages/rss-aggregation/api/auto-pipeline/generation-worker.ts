@@ -7,6 +7,8 @@ import { checkRankingFacts } from "./ranking-fact-check";
 import { AIContentService } from "@cmmv/ai-content";
 //@ts-ignore
 import { PromptsServiceTools } from "@cmmv/blog/prompts/prompts.service";
+//@ts-ignore
+import { PostsPublicService } from "@cmmv/blog/posts/posts.service";
 
 /**
  * Worker responsible for generating AI content from classified feed items.
@@ -331,6 +333,18 @@ export class GenerationWorker {
             }
         } catch (continuationError) {
             this.pipelineLog(raw.id, `continuation failed (non-fatal): ${continuationError}`);
+        }
+
+        // Rewrite "Leia também: <título>" style cross-references into internal links when a
+        // matching local post exists, and strip the link (keep the text) when it doesn't — the
+        // source article's original HTML can carry a live outbound link to the competitor site
+        // that scraped/wrote it, which the generation prompt is instructed to preserve as a real
+        // <a> tag otherwise.
+        try {
+            const postsPublicService: any = Application.resolveProvider(PostsPublicService);
+            parsedContent.content = await postsPublicService.resolveInternalCrossReferences(parsedContent.content);
+        } catch (crossRefError) {
+            this.pipelineLog(raw.id, `cross-reference resolution failed (non-fatal): ${crossRefError}`);
         }
 
         // Validate and trim SEO fields

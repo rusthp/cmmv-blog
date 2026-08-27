@@ -1744,7 +1744,7 @@ export class PostsPublicService {
      * @param {string} content - The HTML content of the generated post
      * @returns {Promise<string>}
      */
-    private async resolveInternalCrossReferences(content: string): Promise<string> {
+    async resolveInternalCrossReferences(content: string): Promise<string> {
         if (!content || content.indexOf('<') === -1)
             return content;
 
