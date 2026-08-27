@@ -289,6 +289,7 @@ export class PostingWorker {
                         metaTitle,
                         metaDescription,
                         metaKeywords: tags.join(', '),
+                        sourceFeedRaw: raw.id,
                         publishedAt: null,
                         autoPublishAt: publishAt,
                         pushNotification: false,

@@ -168,6 +168,13 @@ export class PostsContract extends AbstractContract {
     metaKeywords?: string;
 
     @ContractField({
+        protoType: 'string',
+        nullable: true,
+        index: true
+    })
+    sourceFeedRaw?: string;
+
+    @ContractField({
         protoType: 'datetime',
         nullable: true,
         index: true
