@@ -14,6 +14,14 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from config import PROPLAY_API_URL, PROPLAY_USERNAME, PROPLAY_PASSWORD
+
+# Author user id for ContentMind's original articles — "Allyson Freitas Mancilha"
+# profile (packages/plugin/api/authors), distinct from the "ProPlay" pseudo-author
+# used by the RSS-rewrite pipeline. Original content gets a real byline since a
+# person is choosing to put their name on it; aggregated/rewritten content stays
+# under the brand name. See PostsEntity.author — links to UserEntity.id, not the
+# author profile's own id.
+CONTENTMIND_AUTHOR_USER_ID = "eb3869ab-3a65-4be7-ba62-b9734e34b4ae"
 from content_generator import GeneratedArticle
 from game_registry import GameEntry
 
@@ -148,8 +156,8 @@ def publish_draft(
             "status": status,
             "visibility": "public",
             "type": "post",
-            "author": "",
-            "authors": [],
+            "author": CONTENTMIND_AUTHOR_USER_ID,
+            "authors": [CONTENTMIND_AUTHOR_USER_ID],
             "metaTitle": article.meta_title,
             "metaDescription": article.meta_description,
             "metaKeywords": article.meta_keywords,
