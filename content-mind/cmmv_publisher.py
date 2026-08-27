@@ -97,7 +97,7 @@ def _get_next_publish_time(token: str) -> int:
             token=token,
         )
         inner = result.get("result", result)
-        posts = inner.get("data", inner) if isinstance(inner, dict) else inner
+        posts = inner.get("posts", []) if isinstance(inner, dict) else (inner or [])
         if not posts:
             return fallback
 
