@@ -105,8 +105,9 @@ def process_game(game: GameEntry) -> PublishResult:
             error="Article generation returned None",
         )
     logger.info("  Title: %s (%d chars)", article.title, len(article.content))
+    logger.info("  Feature image: %s", article.feature_image or "(none found)")
 
-    logger.info("[3/3] Publishing draft to ProPlay News...")
+    logger.info("[3/3] Publishing to ProPlay News...")
     result = publish_game_content(game, article)
     if result.success:
         logger.info("  Published: id=%s", result.post_id)

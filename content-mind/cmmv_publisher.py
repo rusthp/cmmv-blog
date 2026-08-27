@@ -71,18 +71,67 @@ def _get_token() -> str:
     return _token
 
 
+BASE_INTERVAL_MINUTES = 60  # mirrors packages/rss-aggregation blog.autoPipelineBaseIntervalMinutes default
+SAFETY_WINDOW_MS = 5 * 60 * 1000
+
+
+def _get_next_publish_time(token: str) -> int:
+    """
+    Queue this article after the most recently scheduled 'cron' post (from ANY
+    source — RSS pipeline or ContentMind), mirroring the spirit of
+    posting-worker.ts's adaptive scheduler so ContentMind doesn't double-book a
+    publish slot the main pipeline already claimed. Simplified: no backlog/
+    blackout-hour logic — this pipeline only publishes up to a few articles a
+    day, so a fixed interval after the last slot is enough.
+    """
+    now_ms = int(time.time() * 1000)
+    fallback = now_ms + SAFETY_WINDOW_MS
+
+    try:
+        # sortBy is restricted server-side to a fixed allow-list that doesn't
+        # include autoPublishAt, so sort by createdAt and take the max
+        # autoPublishAt among recent cron posts instead.
+        result = _api(
+            "GET",
+            "/blog/posts/admin?status=cron&sortBy=createdAt&sort=DESC&limit=20",
+            token=token,
+        )
+        inner = result.get("result", result)
+        posts = inner.get("data", inner) if isinstance(inner, dict) else inner
+        if not posts:
+            return fallback
+
+        latest = 0
+        for p in posts:
+            at = p.get("autoPublishAt")
+            if at is None:
+                continue
+            at_ms = at if isinstance(at, (int, float)) else 0
+            if at_ms > latest:
+                latest = at_ms
+
+        if latest <= 0:
+            return fallback
+
+        interval_ms = BASE_INTERVAL_MINUTES * 60 * 1000
+        return max(latest + interval_ms, now_ms + SAFETY_WINDOW_MS)
+    except Exception as exc:
+        logger.warning("Could not compute adaptive publish time, using fallback: %s", exc)
+        return fallback
+
+
 def publish_draft(
     article: GeneratedArticle,
     game: GameEntry,
-    status: str = "draft",
+    status: str = "cron",
 ) -> dict:
     """
-    Create a draft post in cmmv-blog.
+    Create a post in cmmv-blog, scheduled for automatic publish by default.
 
     Args:
         article: Generated article content.
         game: Game entry (for tags/categories).
-        status: "draft" or "cron" (scheduled). Default: "draft".
+        status: "cron" (scheduled, default) or "draft" (requires manual publish).
 
     Returns:
         API response dict.
@@ -104,6 +153,8 @@ def publish_draft(
             "metaTitle": article.meta_title,
             "metaDescription": article.meta_description,
             "metaKeywords": article.meta_keywords,
+            "featureImage": article.feature_image or None,
+            "featureImageAlt": article.title if article.feature_image else None,
             "featured": False,
             "pushNotification": False,
         },
@@ -115,13 +166,20 @@ def publish_draft(
         },
     }
 
-    logger.info("Publishing draft: '%s'", article.title)
+    if status == "cron":
+        post_payload["post"]["autoPublishAt"] = _get_next_publish_time(token)
+
+    logger.info("Publishing (%s): '%s'", status, article.title)
     # Observed taking up to ~75s server-side (content moderation checks run
     # synchronously) — a short client timeout caused false-negative failures
     # even though the draft was actually created (verified against the DB).
     result = _api("POST", "/blog/posts", post_payload, token=token, timeout=120)
     inner = result.get("result", result)
-    logger.info("Draft created — id: %s", inner.get("id") or inner.get("_id") or "?")
+    post_id = inner.get("id") or inner.get("_id") or "?"
+    if status == "cron":
+        logger.info("Scheduled — id: %s, autoPublishAt: %s", post_id, post_payload["post"]["autoPublishAt"])
+    else:
+        logger.info("Draft created — id: %s", post_id)
     return result
 
 

@@ -11,6 +11,7 @@ Reddit and YouTube are blocked on VPS datacenter IPs — not used.
 """
 import json
 import logging
+import re
 import time
 import urllib.request
 import urllib.error
@@ -37,6 +38,7 @@ class NewsItem:
     url: str
     source: str
     date: str = ""
+    image_url: str = ""
 
 
 @dataclass
@@ -64,6 +66,50 @@ def _fetch_url(url: str, accept_json: bool = True, timeout: int = 15) -> Optiona
         return None
 
 
+_IMAGE_EXT_RE = re.compile(r'\.(?:jpe?g|png|webp|gif)(?:\?[^\s\]"\'<>]*)?$', re.IGNORECASE)
+
+
+def _steam_contents_image(contents: str) -> str:
+    """Steam news 'contents' is BBCode-ish text that often embeds [img]url[/img]
+    or a raw image URL. Best-effort extraction, not guaranteed to find one."""
+    m = re.search(r'\[img\](https?://[^\[\]]+)\[/img\]', contents, re.IGNORECASE)
+    if m:
+        return m.group(1)
+    m = re.search(r'https?://\S+', contents)
+    if m and _IMAGE_EXT_RE.search(m.group(0)):
+        return m.group(0)
+    return ""
+
+
+def fetch_og_image(page_url: str) -> str:
+    """
+    Fallback when a source has no image of its own: fetch the article page and
+    extract its og:image / twitter:image meta tag. Used sparingly (only for the
+    handful of news items actually picked as the article's feature image
+    candidate), never for every scanned item.
+    """
+    if not page_url:
+        return ""
+    data = _fetch_url(page_url, accept_json=False, timeout=10)
+    if not data:
+        return ""
+    try:
+        html = data.decode("utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+    for pattern in (
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+    ):
+        m = re.search(pattern, html, re.IGNORECASE)
+        if m:
+            return m.group(1)
+    return ""
+
+
 # ── Steam News API ───────────────────────────────────────────────────────────
 
 def _steam_news(app_id: int, count: int = 5) -> List[NewsItem]:
@@ -78,12 +124,14 @@ def _steam_news(app_id: int, count: int = 5) -> List[NewsItem]:
         parsed = json.loads(data)
         items = []
         for item in parsed.get("appnews", {}).get("newsitems", []):
+            contents = item.get("contents", "")
             items.append(NewsItem(
                 title=item.get("title", ""),
-                summary=item.get("contents", "")[:300],
+                summary=contents[:300],
                 url=item.get("url", ""),
                 source=f"Steam ({item.get('feedlabel', 'news')})",
                 date=str(item.get("date", "")),
+                image_url=_steam_contents_image(contents),
             ))
         return items
     except Exception as exc:
@@ -100,8 +148,31 @@ def _parse_rss(data: bytes, source_name: str, limit: int = 5) -> List[NewsItem]:
         logger.warning("RSS parse error from %s: %s", source_name, exc)
         return []
 
-    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    ns = {
+        "atom": "http://www.w3.org/2005/Atom",
+        "media": "http://search.yahoo.com/mrss/",
+    }
     items = []
+
+    def _item_image(item_el) -> str:
+        # <enclosure url="..." type="image/...">
+        enclosure = item_el.find("enclosure")
+        if enclosure is not None:
+            enc_type = enclosure.get("type", "")
+            enc_url = enclosure.get("url", "")
+            if enc_url and (not enc_type or enc_type.startswith("image/")):
+                return enc_url
+        # Media RSS: <media:thumbnail url="..."/> or <media:content url="..." medium="image"/>
+        thumb = item_el.find("media:thumbnail", ns)
+        if thumb is not None and thumb.get("url"):
+            return thumb.get("url")
+        media_content = item_el.find("media:content", ns)
+        if media_content is not None and media_content.get("url"):
+            medium = media_content.get("medium", "")
+            mtype = media_content.get("type", "")
+            if medium == "image" or mtype.startswith("image/") or not (medium or mtype):
+                return media_content.get("url")
+        return ""
 
     # Standard RSS 2.0
     for item in root.findall(".//item")[:limit]:
@@ -109,8 +180,9 @@ def _parse_rss(data: bytes, source_name: str, limit: int = 5) -> List[NewsItem]:
         desc = (item.findtext("description") or "")[:300].strip()
         link = (item.findtext("link") or "").strip()
         pub = (item.findtext("pubDate") or "").strip()
+        image_url = _item_image(item)
         if title:
-            items.append(NewsItem(title=title, summary=desc, url=link, source=source_name, date=pub))
+            items.append(NewsItem(title=title, summary=desc, url=link, source=source_name, date=pub, image_url=image_url))
 
     # Atom feeds
     if not items:
@@ -120,8 +192,9 @@ def _parse_rss(data: bytes, source_name: str, limit: int = 5) -> List[NewsItem]:
             link_el = entry.find("atom:link", ns)
             url = (link_el.get("href") if link_el is not None else "") or ""
             updated = (entry.findtext("atom:updated", namespaces=ns) or "").strip()
+            image_url = _item_image(entry)
             if title:
-                items.append(NewsItem(title=title, summary=summary, url=url, source=source_name, date=updated))
+                items.append(NewsItem(title=title, summary=summary, url=url, source=source_name, date=updated, image_url=image_url))
 
     return items
 

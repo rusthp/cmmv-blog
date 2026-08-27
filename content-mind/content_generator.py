@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from config import GROQ_API_KEY, GROQ_MODEL
-from trend_scanner import TrendData
+from trend_scanner import TrendData, fetch_og_image
 
 logger = logging.getLogger("content-mind.generator")
 
@@ -26,6 +26,35 @@ class GeneratedArticle:
     meta_title: str
     meta_description: str
     meta_keywords: str
+    feature_image: str = ""
+
+
+# How many of the top news items to try the og:image fallback on before
+# giving up — capped so a run with no RSS/Steam images doesn't hammer several
+# source sites with extra requests.
+_OG_IMAGE_FALLBACK_ATTEMPTS = 3
+
+
+def _pick_feature_image(trend: TrendData) -> str:
+    # Prefer an image the scanner already found for free (RSS enclosure/media,
+    # Steam contents) — no extra network request needed.
+    for item in trend.news_items:
+        if item.image_url:
+            return item.image_url
+
+    # Fall back to scraping og:image from a few candidate source pages.
+    attempts = 0
+    for item in trend.news_items:
+        if not item.url:
+            continue
+        attempts += 1
+        if attempts > _OG_IMAGE_FALLBACK_ATTEMPTS:
+            break
+        image = fetch_og_image(item.url)
+        if image:
+            return image
+
+    return ""
 
 
 def _slugify(text: str) -> str:
@@ -197,4 +226,5 @@ def generate_article(trend: TrendData, game_slug: str) -> Optional[GeneratedArti
         meta_title=meta_title,
         meta_description=meta_description,
         meta_keywords=meta_keywords,
+        feature_image=_pick_feature_image(trend),
     )
