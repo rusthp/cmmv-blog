@@ -10,6 +10,7 @@ export const PIPELINE_STATE = {
     KEYWORD_DONE: 'keyword_done',
     GENERATING: 'generating',
     GENERATED: 'generated',
+    NEEDS_REVIEW: 'needs_review',
     POSTING: 'posting',
     DONE: 'done',
     FAILED: 'failed',

@@ -228,4 +228,20 @@ export class FeedRawContract extends AbstractContract {
         defaultValue: 0,
     })
     seoScore?: number;
+
+    // ── Fact-check flags populated by GenerationWorker (ranking-fact-check) ──
+
+    @ContractField({
+        protoType: 'boolean',
+        nullable: true,
+        index: true,
+        defaultValue: false,
+    })
+    factCheckFlag?: boolean;
+
+    @ContractField({
+        protoType: 'text',
+        nullable: true,
+    })
+    factCheckNotes?: string;
 }

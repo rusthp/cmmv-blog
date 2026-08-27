@@ -503,6 +503,13 @@ export class RawService {
         if (data.featureImage)
             updateData.featureImage = data.featureImage;
 
+        // Manual "approve anyway" action from the admin Raw Feed view: releases an item
+        // flagged by the ranking fact-check back into the normal auto-publish flow.
+        if (data.pipelineState === 'generated' && raw?.pipelineState === 'needs_review') {
+            updateData.pipelineState = 'generated';
+            updateData.factCheckFlag = false;
+        }
+
         if (!raw)
             throw new Error(`Raw feed item with ID ${id} not found`);
 

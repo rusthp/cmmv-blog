@@ -202,6 +202,13 @@
                                         </svg>
                                         Published
                                     </span>
+                                    <span v-if="item.factCheckFlag" :title="item.factCheckNotes"
+                                        class="bg-amber-900 text-amber-200 px-2 py-0.5 rounded text-xs flex items-center cursor-help">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        Ranking a verificar
+                                    </span>
                                     <span v-if="typeof item.relevance === 'number'"
                                         :class="getRelevanceClass(item.relevance)"
                                         class="px-2 py-0.5 rounded text-xs flex items-center">
@@ -220,6 +227,12 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
                                 </a>
+                                <button v-if="item.factCheckFlag && !item.postRef" @click="approveFactCheck(item)"
+                                    class="text-amber-400 hover:text-amber-300" title="Aprovar mesmo assim e liberar para publicação">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </button>
                                 <button v-if="!item.postRef" @click="rejectItem(item)" class="text-red-400 hover:text-red-300" title="Reject this item">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1183,6 +1196,8 @@ interface FeedItem {
     suggestedTags?: string[];
     suggestedCategories?: string[];
     relevance?: number;
+    factCheckFlag?: boolean;
+    factCheckNotes?: string;
 }
 
 interface Category {
@@ -2024,6 +2039,21 @@ const confirmCleanByChannel = async (): Promise<void> => {
         showNotification('error', err instanceof Error ? err.message : 'Failed to clean raw items by channel');
     } finally {
         cleanChannelLoading.value = false;
+    }
+};
+
+const approveFactCheck = async (item: FeedItem): Promise<void> => {
+    try {
+        await feedClient.raw.updateRaw(item.id, {
+            pipelineState: 'generated',
+            factCheckFlag: false,
+        });
+
+        showNotification('success', 'Item approved — released for publishing');
+        await refreshData();
+    } catch (err: unknown) {
+        console.error('Failed to approve flagged feed item:', err);
+        showNotification('error', err instanceof Error ? err.message : 'Failed to approve flagged feed item');
     }
 };
 

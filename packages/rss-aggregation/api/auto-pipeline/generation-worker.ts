@@ -1,6 +1,7 @@
 import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 import { PIPELINE_STATE, GeneratedContent } from "./pipeline-constants";
+import { checkRankingFacts } from "./ranking-fact-check";
 
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
@@ -85,12 +86,23 @@ export class GenerationWorker {
                         const result = await this.generateContentForRaw(raw, promptId);
 
                         if (result) {
+                            const factCheck = await checkRankingFacts({
+                                title: result.title || '',
+                                content: result.content || '',
+                                category: raw.category || '',
+                            }).catch((err) => {
+                                this.pipelineLog(raw.id, `ranking fact-check crashed (non-fatal, publishing normally): ${err}`);
+                                return { flagged: false } as const;
+                            });
+
                             const updatePayload: Record<string, any> = {
-                                pipelineState: PIPELINE_STATE.GENERATED,
+                                pipelineState: factCheck.flagged ? PIPELINE_STATE.NEEDS_REVIEW : PIPELINE_STATE.GENERATED,
                                 title: result.title,
                                 content: result.content,
                                 suggestedTags: result.tags || [],
                                 suggestedCategories: result.categories || [],
+                                factCheckFlag: factCheck.flagged,
+                                factCheckNotes: factCheck.notes || null,
                             };
 
                             if (result.metaTitle) updatePayload.seoMetaTitle = result.metaTitle;
@@ -103,7 +115,11 @@ export class GenerationWorker {
                                 updatePayload
                             );
 
-                            this.pipelineLog(raw.id, `generated: title="${result.title?.substring(0, 50)}..."`);
+                            if (factCheck.flagged) {
+                                this.pipelineLog(raw.id, `FLAGGED for review — ranking mismatch: ${factCheck.notes}`);
+                            } else {
+                                this.pipelineLog(raw.id, `generated: title="${result.title?.substring(0, 50)}..."`);
+                            }
                         } else {
                             await this.handleFailure(raw.id, PIPELINE_STATE.GENERATING, "AI returned no content", maxAttempts);
                         }
