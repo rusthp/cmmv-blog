@@ -148,6 +148,10 @@ export class PromptsServiceTools {
             - Avoid overly perfect structures that sound AI-generated
             - Sometimes digress briefly before returning to the main point
             - Add occasional expressions of emotion ("I was surprised to learn that..." or "It's frustrating when...")
+
+            FACTUAL GUARDRAIL: all of the human-like flourishes above (opinions, anecdotes, humor, digressions) must stay
+            about tone and framing only. NEVER let them introduce a new concrete fact — a match score, tournament standing,
+            ranking position, prize amount, date, or result — that isn't already present in the source content being rewritten.
         `;
 
     /**

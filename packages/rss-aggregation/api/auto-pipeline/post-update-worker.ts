@@ -133,12 +133,22 @@ Melhore este artigo para subir no Google para a keyword: "${targetKeyword}"
 
 REGRAS:
 - Mantenha o contexto e fatos originais
-- Melhore o titulo para incluir a keyword naturalmente
+- Melhore o titulo para incluir o TEMA da keyword naturalmente
 - Adicione a keyword no primeiro paragrafo
 - Melhore os subtitulos (h2) para variacoes da keyword
-- NAO invente fatos novos — apenas reorganize e enriqueca
+- NAO invente ou altere fatos: placares, resultados de partida, colocacao/ranking de time ou jogador, premiacao ou datas
+  DEVEM vir exatamente do artigo atual abaixo. Se um numero ou resultado nao estiver no texto original, NAO o inclua —
+  apenas reorganize e enriqueca o que ja existe, nunca "complete" um dado que falta.
 - NAO adicione conclusao
 - O artigo deve parecer escrito por um jornalista de eSports
+
+REGRAS DE TITULO (campo "title" e "metaTitle"):
+- A keyword acima e uma query de busca do Google (minuscula, sem pontuacao) — e metadado interno, NUNCA cole
+  o texto dela literalmente como titulo.
+- O titulo deve ser uma manchete jornalistica completa: primeira letra maiuscula (e nomes proprios), pontuacao
+  correta, sem cortes no meio da frase.
+  Exemplo BOM: "aNdu Deixa a BC.Game e Vira Free Agent no Cenario de CS2"
+  Exemplo RUIM: "andu bc.game saida free agent"
 
 Artigo atual:
 Titulo: ${post.title}
@@ -186,8 +196,19 @@ Retorne APENAS JSON valido, sem texto extra:
             needsSeoUpdate: false,
         };
 
-        if (updated.title && updated.title.length >= 3) {
-            updateData.title = updated.title.substring(0, 100);
+        // Guard against the model echoing the raw lowercase GSC keyword as the title
+        // (e.g. "andu bc.game saida free agent") instead of writing a real headline.
+        const looksLikeRawKeyword = updated.title
+            && updated.title.length > 10
+            && updated.title === updated.title.toLowerCase()
+            && !/[.!?]/.test(updated.title);
+
+        if (updated.title && updated.title.length >= 3 && !looksLikeRawKeyword) {
+            const cut = updated.title.substring(0, 100);
+            const lastSpace = cut.lastIndexOf(' ');
+            updateData.title = cut.length < updated.title.length && lastSpace > 60
+                ? cut.substring(0, lastSpace)
+                : cut;
         }
 
         if (updated.content && updated.content.length > 50) {

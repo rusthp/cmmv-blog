@@ -134,9 +134,9 @@
                                         <div class="flex items-center mb-4">
                                             <!-- Author Avatar -->
                                             <div
-                                                class="w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow">
-                                                                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name"
-                                    class="w-full h-full object-cover imgix-lazy" width="64" height="64" icon-size="sm" />
+                                                class="w-16 h-16 rounded-full overflow-hidden mr-4 flex-shrink-0 border-2 border-white shadow bg-white">
+                                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name"
+                                                    class="w-full h-full imgix-lazy" object-fit="contain" width="64" height="64" icon-size="sm" />
                                                 <div v-else
                                                     class="w-full h-full flex items-center justify-center bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold text-lg">
                                                     {{ authorInitials }}
@@ -719,6 +719,7 @@ const KNOWN_TEAMS = [
     'Sentinels','NRG','Optic','OpTic','TSM','Team SoloMid','TL','NV','Team Envy','Complexity',
     'Heroic','HEET','Monte','Apeks','forZe','Spirit','Virtus.pro','VP','Eternal Fire','Falcons',
     'Legacy','Sharks','ODDIK','RED Canids','RED','Corinthians','Flamengo',
+    'BC.Game','BC Game','Solid','9z','9INE','Wildcard','M80','Nemiga','B8',
 ];
 
 // Known esports players — wrapped in <em class="player-name">
@@ -731,6 +732,9 @@ const KNOWN_PLAYERS = [
     'Simple','Electronic','Hobbit','Perfecto','B1T','Jame','qikert','Yekindar',
     'Insani','insani','HEN1','LUCAS1','trk','Guerri','fnx','felps','ableJ',
     'Stewie2k','autimatic','RUSH','mixwell','Xeppa','DiegoL','soulcas','Alfajer',
+    'aNdu','tomaszin','skullz','honda','drop','saffee','m0NESY','jottAAA','YEKINDAR',
+    'w0nderful','frozen','FL1T','iM','Aleksib','donk','magixx',
+    'chopin','farlig','xertioN','jL','JUTdz','MAJ3R','biguzera','lux','snow',
 ];
 
 // Esports-specific bold keywords
@@ -1366,21 +1370,30 @@ const sidebarLeftAdContainer = ref(null);
 <style scoped>
 /* ─── Esports Typography ─── */
 .post-content :deep(.player-name) {
-    font-style: italic;
-    font-weight: 600;
-    color: #1a56db;
+    font-style: normal;
+    font-weight: 700;
+    color: #6d28d9;
+    background: rgba(109, 40, 217, 0.08);
+    padding: 0.05em 0.4em;
+    border-radius: 4px;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .post-content :deep(.team-name) {
-    font-style: italic;
+    font-style: normal;
     font-weight: 700;
-    color: #111827;
+    color: #92400e;
+    background: rgba(255, 204, 0, 0.2);
+    padding: 0.05em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
 .post-content :deep(.kw-bold) {
     font-weight: 700;
     color: #111827;
+    background: none;
 }
 
 /* ─── Content images ─── */

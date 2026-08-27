@@ -162,8 +162,9 @@ export class GenerationWorker {
             KEYWORD VARIATIONS: ${(raw.seoKeywordVariations || []).join(', ')}
             SEO SCORE: ${raw.seoScore ?? 50}/100 (lower = easier to rank — this is a ${(raw.seoScore ?? 50) < 40 ? 'high-opportunity, low-competition' : 'competitive'} keyword)
 
-            IMPORTANT: Build this article around the target keyword above. Use it naturally in the title, first paragraph, and subheadings.
-            The metaTitle MUST start with or include: "${raw.seoMainKeyword}"`
+            IMPORTANT: Build this article around the target keyword above. Use its meaning/topic naturally in the title, first paragraph, and subheadings.
+            The metaTitle MUST include the same topic as: "${raw.seoMainKeyword}", but NEVER copy that lowercase keyword string verbatim —
+            rewrite it as a properly capitalized, punctuated phrase.`
             : '';
 
         // ── Pass 1: Generate initial content ──
@@ -180,6 +181,14 @@ export class GenerationWorker {
             "Finally," or any language that suggests the article is ending.
 
             - ONLY use images that exist in the original post - DO NOT create or generate new images that don't exist
+
+            FACTUAL ACCURACY (critical for an eSports news site):
+            - NEVER invent or alter match scores, tournament standings/rankings, placements, prize amounts, dates, or player/team
+              attributions. Every factual claim (who won, what position a team holds, what the score was) must come directly from
+              the source content below — do not extrapolate, guess, or "fill in" numbers that aren't stated.
+            - If the source content is ambiguous or incomplete about a specific stat, omit that detail rather than inventing one.
+            - Analysis, context, and opinion may be added, but never disguised as a new fact (result, ranking, score) not present
+              in the source.
 
             Here is the content to transform:
 
@@ -200,8 +209,14 @@ export class GenerationWorker {
               "slug": "url-friendly-slug-with-primary-keyword-in-kebab-case-max-60-chars"
             }
 
+            TITLE RULES (applies to "title" and "metaTitle"):
+            - Write a proper news headline: correct capitalization (title case or sentence case per ${language} convention), full punctuation, no trailing ellipsis.
+            - NEVER output the raw SEO keyword string as-is — it is lowercase internal metadata, not headline copy.
+            - Never truncate mid-word; keep it a complete, readable sentence/phrase.
+            - Example GOOD: "CS2: Nova Atualização de Abril Traz Mudanças no Mirage". Example BAD: "cs2 atualização abril 2026 mirage".
+
             SEO RULES for metaTitle, metaDescription, and slug:
-            - metaTitle: Include the primary long-tail keyword near the start. Max 60 chars. No brand suffix. Be specific (e.g., "CS2 April 2026 Update: Mirage Changes and Recoil Fix" not "CS2 Update").
+            - metaTitle: Include the primary long-tail keyword's topic near the start, properly capitalized and punctuated. Max 60 chars. No brand suffix. Be specific (e.g., "CS2 April 2026 Update: Mirage Changes and Recoil Fix" not "cs2 update").
             - metaDescription: 120-155 chars. Include primary keyword naturally. End with a benefit or call-to-action ("Learn what changed", "See the full patch notes", "Find out who moved").
             - slug: lowercase, hyphens only, primary keyword first, max 60 chars, no stopwords (the, a, an, in, of, for). Example: "cs2-april-2026-update-mirage-changes" not "the-latest-cs2-update-from-valve".`;
 
@@ -223,7 +238,9 @@ export class GenerationWorker {
         const parsedContent = JSON.parse(jsonContent);
 
         if (parsedContent.title && parsedContent.title.length > 100) {
-            parsedContent.title = parsedContent.title.substring(0, 97) + '...';
+            const cut = parsedContent.title.substring(0, 97);
+            const lastSpace = cut.lastIndexOf(' ');
+            parsedContent.title = (lastSpace > 60 ? cut.substring(0, lastSpace) : cut) + '...';
         }
 
         // ── Pass 2: Generate continuation ──
@@ -249,6 +266,10 @@ export class GenerationWorker {
 
             Please continue from where this left off, adding depth, details, and value. Make it feel like a natural extension.
             Your continuation should be at least as long as the original text.
+
+            FACTUAL ACCURACY: DO NOT introduce any new match score, tournament standing/ranking, placement, date, or result that
+            was not already stated in the content above. You may add context, analysis, or background about the games/teams/players
+            mentioned, but never a new concrete stat or outcome — if you're not certain it's already in the text, leave it out.
 
             IMPORTANT: DO NOT write any conclusion or summary paragraph. The article should feel unfinished and open-ended.
             It should not wrap up the discussion or provide closing thoughts. Avoid phrases like "In conclusion," "To summarize,"

@@ -88,6 +88,8 @@ RULES:
 - mainKeyword: 3-5 words, long-tail, specific. Include game name + event/patch/player/date when available.
   GOOD: "cs2 atualização abril 2026 mirage", "loud furia vct 2026 resultado"
   BAD: "cs2 update", "notícias esports"
+  NOTE: mainKeyword is internal SEO metadata for search-intent targeting only. It is lowercase and unpunctuated
+  on purpose for keyword-matching — it must NEVER be copied verbatim into a visible article title or headline.
 - variations: 3 alternative keyword phrasings of the mainKeyword (different word order, synonyms, search intent)
 - seoScore: 0-100. Lower = easier to rank. Estimate based on how niche/specific the keyword is.
   - 0-30: very specific (player name + match + date) → easy to rank

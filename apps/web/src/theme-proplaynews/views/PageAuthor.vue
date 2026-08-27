@@ -20,7 +20,7 @@
                     <div class="p-6 pt-20 md:p-8 md:pt-20 md:pb-6 items-center justify-center">
                         <div class="absolute left-1/2 -translate-x-1/2 -top-16 flex items-center justify-center">
                             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
-                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="128" height="128" icon-size="lg" />
+                                <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full imgix-lazy" object-fit="contain" width="128" height="128" icon-size="lg" />
                                 <div v-else class="w-full h-full flex items-center justify-center bg-[#ffcc00] text-[#333333] text-3xl font-bold">
                                     {{ authorInitials }}
                                 </div>
@@ -99,8 +99,8 @@
                              class="bg-white rounded-lg overflow-hidden border border-neutral-100 transition-shadow">
 
                             <div class="flex items-center p-4 border-b border-neutral-100">
-                                <div class="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 mr-3">
-                                    <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full object-cover imgix-lazy" width="40" height="40" icon-size="sm" />
+                                <div class="w-10 h-10 rounded-full overflow-hidden bg-white mr-3">
+                                    <OptimizedImage v-if="author.image" :src="author.image" :alt="author.name" class="w-full h-full imgix-lazy" object-fit="contain" width="40" height="40" icon-size="sm" />
                                     <div v-else class="w-full h-full flex items-center justify-center bg-[#ffcc00] text-[#333333] font-bold text-sm">
                                         {{ authorInitials }}
                                     </div>
