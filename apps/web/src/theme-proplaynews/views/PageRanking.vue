@@ -29,10 +29,12 @@
                         <span class="title-accent">CS2</span>
                     </h1>
                     <p class="hero-subtitle">
-                        Standings oficiais da Valve para o próximo Major
+                        Standings oficiais da Valve rumo ao
+                        <a href="https://liquipedia.net/counterstrike/PGL/2026/Singapore" target="_blank" rel="noopener" class="next-major-link">PGL Major Singapore 2026</a>
+                        <span class="next-major-date">(25 Nov – 13 Dez 2026)</span>
                         <span v-if="snapshotDate" class="snapshot-pill">
                             📅
-                            {{ formatSnapshotDate(snapshotDate) }}
+                            Atualizado em {{ formatSnapshotDate(snapshotDate) }}
                         </span>
                     </p>
                 </div>
@@ -1151,6 +1153,22 @@ onMounted(() => {
     border-radius: 100px;
     font-size: 0.78rem;
     font-weight: 600;
+}
+
+.next-major-link {
+    color: #e2e8f0;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+}
+
+.next-major-link:hover {
+    border-bottom-color: #e2e8f0;
+}
+
+.next-major-date {
+    color: #64748b;
+    font-size: 0.82rem;
 }
 
 .icon-calendar {
