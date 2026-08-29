@@ -538,12 +538,16 @@ const filteredGpr = computed(() => {
     return gprRankings.value.filter(e => e.leagueSlug === activeGprLeague.value);
 });
 
+// PGL Major Singapore 2026 regional slot distribution (18 Europe / 9 Americas /
+// 5 Asia = 32 total). Europe picked up a slot from Americas after Stage 1
+// (17→18), and Asia lost its Stage 3 direct invite after 9z beat The MongolZ
+// at IEM Cologne — these shift again each cycle, so re-verify before reusing.
 const majorSlots = computed(() => {
     switch (activeRegion.value) {
-        case 'europe': return 14;
-        case 'americas': return 7;
-        case 'asia': return 3;
-        case 'global': return 24;
+        case 'europe': return 18;
+        case 'americas': return 9;
+        case 'asia': return 5;
+        case 'global': return 32;
         default: return 16;
     }
 });
