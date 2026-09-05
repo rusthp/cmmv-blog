@@ -6,10 +6,11 @@ Each invocation processes GAMES_PER_RUN games from the registry,
 rotating so all games are covered over time.
 
 Usage:
-  python content_mind.py              # process next batch of games
-  python content_mind.py --game lol   # process a specific game slug
-  python content_mind.py --all        # process all games (slow, use sparingly)
-  python content_mind.py --list       # list registered games
+  python content_mind.py                # process next batch of games + open topics
+  python content_mind.py --game lol     # process a specific game slug
+  python content_mind.py --all          # process all games (slow, use sparingly)
+  python content_mind.py --open-topics 2  # only process N open (non-game) trending topics
+  python content_mind.py --list         # list registered games
 """
 import argparse
 import json
@@ -20,10 +21,12 @@ import time
 from pathlib import Path
 from typing import List
 
-from config import GAMES_PER_RUN
+from config import GAMES_PER_RUN, OPEN_TOPICS_PER_RUN
 from game_registry import GAMES, GameEntry, get_game, get_all_slugs
-from trend_scanner import scan_game
+from trend_scanner import scan_game, TrendData
+from topic_scanner import scan_open_topics, OpenTopic
 from content_generator import generate_article
+from article_validator import validate_article
 from cmmv_publisher import publish_game_content, PublishResult
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -127,18 +130,78 @@ def run_batch(games: List[GameEntry]) -> List[PublishResult]:
     return results
 
 
+def process_open_topic(topic: OpenTopic) -> PublishResult:
+    """
+    Same 3-step flow as process_game, but for a topic outside game_registry
+    (streamer news, viral gaming culture, rumors) and with an extra
+    validation gate before publish — these topics have no human review, so
+    article_validator is what stands between a bad generation and a live
+    post.
+    """
+    logger.info("━━ Processing open topic: %s (%d source(s)) ━━", topic.name, topic.source_count)
+    slug = topic.slug_hint.replace("|", "-")[:60] or "topico"
+    trend = TrendData(game_name=topic.name, news_items=topic.items)
+
+    logger.info("[1/3] Generating article...")
+    article = generate_article(trend, slug)
+    if not article:
+        return PublishResult(game_slug=slug, game_name=topic.name, success=False, error="Article generation returned None")
+    logger.info("  Title: %s (%d chars)", article.title, len(article.content))
+
+    logger.info("[2/3] Validating (fact-check + safety gate)...")
+    validation = validate_article(article, trend)
+    if not validation.is_valid:
+        logger.warning("  Blocked by validator: %s", validation.reason)
+        return PublishResult(game_slug=slug, game_name=topic.name, success=False, error=f"Validation failed: {validation.reason}")
+    logger.info("  Validation passed.")
+
+    logger.info("[3/3] Publishing to ProPlay News...")
+    synthetic_game = GameEntry(
+        name=topic.name, slug=slug, subreddits=[], yt_queries=[],
+        tags=["cultura-gamer", "viral"], categories=[],
+    )
+    result = publish_game_content(synthetic_game, article)
+    if result.success:
+        logger.info("  Published: id=%s", result.post_id)
+    else:
+        logger.error("  Publish failed: %s", result.error)
+    return result
+
+
+def run_open_topics_batch(limit: int) -> List[PublishResult]:
+    topics = scan_open_topics(limit=limit)
+    results = []
+    for i, topic in enumerate(topics):
+        results.append(process_open_topic(topic))
+        if i < len(topics) - 1:
+            time.sleep(3)
+    return results
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ContentMind — ProPlay News auto-content")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--game", metavar="SLUG", help="Process a single game by slug")
     group.add_argument("--all", action="store_true", help="Process all registered games")
     group.add_argument("--list", action="store_true", help="List all registered game slugs")
+    group.add_argument("--open-topics", type=int, metavar="N", help="Only process N open (non-game) trending topics")
     args = parser.parse_args()
 
     if args.list:
         for g in GAMES:
             print(f"  {g.slug:30s}  {g.name}")
         return
+
+    if args.open_topics is not None:
+        logger.info("ContentMind starting — open-topics only, up to %d", args.open_topics)
+        results = run_open_topics_batch(args.open_topics)
+        successes = sum(1 for r in results if r.success)
+        failures = len(results) - successes
+        logger.info("━━ Done: %d/%d succeeded ━━", successes, len(results))
+        for r in results:
+            status = "✓" if r.success else "✗"
+            logger.info("  %s %s — %s", status, r.game_name, r.title or r.error or "")
+        sys.exit(1 if failures > 0 else 0)
 
     if args.game:
         game = get_game(args.game)
@@ -160,6 +223,15 @@ def main() -> None:
     # Advance state for round-robin (only for automatic batch runs)
     if start_idx is not None:
         _advance_state(start_idx, len(games_to_run), results)
+
+    # Default automatic runs also cover open (non-game) trending topics —
+    # this is where streamer drama / viral gaming-culture stories like the
+    # "Kai Cenat morreu?" rumor get picked up, since they don't belong to
+    # any entry in game_registry.
+    if start_idx is not None and OPEN_TOPICS_PER_RUN > 0:
+        logger.info("Scanning %d open topic(s)...", OPEN_TOPICS_PER_RUN)
+        open_results = run_open_topics_batch(OPEN_TOPICS_PER_RUN)
+        results = results + open_results
 
     # Summary
     successes = sum(1 for r in results if r.success)

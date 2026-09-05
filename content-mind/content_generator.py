@@ -11,7 +11,7 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Optional
 
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import GROQ_API_KEY, GROQ_MODEL, PEXELS_API_KEY
 from trend_scanner import TrendData, fetch_og_image
 
 logger = logging.getLogger("content-mind.generator")
@@ -35,6 +35,30 @@ class GeneratedArticle:
 _OG_IMAGE_FALLBACK_ATTEMPTS = 3
 
 
+def _pexels_image(query: str) -> str:
+    """
+    Last-resort feature image: a royalty-free stock photo matching the topic,
+    used only when no source (RSS enclosure/Steam/og:image) provided one —
+    keeps every published article from ending up with no feature image at all.
+    """
+    if not PEXELS_API_KEY or not query:
+        return ""
+    import urllib.parse
+    import urllib.request
+
+    url = f"https://api.pexels.com/v1/search?query={urllib.parse.quote(query)}&per_page=1"
+    req = urllib.request.Request(url, headers={"Authorization": PEXELS_API_KEY})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        photos = data.get("photos", [])
+        if photos:
+            return photos[0].get("src", {}).get("large", "")
+    except Exception as exc:
+        logger.warning("Pexels image fallback failed for %r: %s", query, exc)
+    return ""
+
+
 def _pick_feature_image(trend: TrendData) -> str:
     # Prefer an image the scanner already found for free (RSS enclosure/media,
     # Steam contents) — no extra network request needed.
@@ -54,7 +78,9 @@ def _pick_feature_image(trend: TrendData) -> str:
         if image:
             return image
 
-    return ""
+    # Nothing from any source — try a generic stock photo for the topic
+    # itself rather than publishing with no feature image.
+    return _pexels_image(trend.game_name)
 
 
 def _slugify(text: str) -> str:

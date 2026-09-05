@@ -23,6 +23,12 @@ PROPLAY_PASSWORD = os.getenv("PROPLAY_PASSWORD", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
+# Images — last-resort stock photo when no source (RSS/Steam/og:image) has one
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
+
+# Open-topic discovery (streamers, viral gaming culture — outside game_registry)
+OPEN_TOPICS_PER_RUN = int(os.getenv("OPEN_TOPICS_PER_RUN", "1"))
+
 # Scanning
 REDDIT_POSTS_PER_GAME = int(os.getenv("REDDIT_POSTS_PER_GAME", "5"))
 YOUTUBE_VIDEOS_PER_GAME = int(os.getenv("YOUTUBE_VIDEOS_PER_GAME", "5"))

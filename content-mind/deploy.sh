@@ -12,6 +12,8 @@ scp -r \
     config.py \
     game_registry.py \
     trend_scanner.py \
+    topic_scanner.py \
+    article_validator.py \
     content_generator.py \
     cmmv_publisher.py \
     requirements.txt \
