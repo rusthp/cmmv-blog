@@ -1192,6 +1192,66 @@ export class PostsPublicService {
      *        were deleted from storage after being published (slower: one HTTP request per post)
      * @returns {Promise<{ total: number, reprocessed: number, fixed: number, cleared: number, unchanged: number }>}
      */
+    /**
+     * Bulk-replaces the featureImage of specific posts with a given replacement
+     * URL, downloading and re-hosting it the same way any other feature image
+     * is processed (so hotlink-protected sources like hltv.org still work).
+     *
+     * Built for one-off remediation of posts whose image was mismatched by the
+     * rss-aggregation image cache (see image-pipeline.ts cross-topic reuse
+     * guard) — each entry supplies the replacement image URL itself rather
+     * than this method trying to re-derive one.
+     * @param {{id: string, newImage: string}[]} entries - post id + replacement image URL pairs
+     * @returns {Promise<{ total: number, fixed: number, failed: number, errors: {id: string, error: string}[] }>}
+     */
+    async fixMismatchedImages(entries: { id: string; newImage: string }[]) {
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const imageSettings = this.getDefaultImageSettings();
+        const result = { total: entries.length, fixed: 0, failed: 0, errors: [] as { id: string; error: string }[] };
+
+        for (const entry of entries) {
+            try {
+                const post = await Repository.findOne(PostsEntity, { id: entry.id });
+                if (!post) {
+                    result.failed++;
+                    result.errors.push({ id: entry.id, error: 'Post not found' });
+                    continue;
+                }
+
+                const resolved = await this.processImageIfNeeded(
+                    entry.newImage,
+                    imageSettings.format,
+                    imageSettings.width,
+                    imageSettings.height,
+                    imageSettings.quality,
+                    post.title || "",
+                    post.title || ""
+                );
+
+                if (!resolved) {
+                    result.failed++;
+                    result.errors.push({ id: entry.id, error: 'processImageIfNeeded returned empty' });
+                    continue;
+                }
+
+                await Repository.updateOne(PostsEntity, Repository.queryBuilder({ id: entry.id }), {
+                    featureImage: resolved,
+                    featureImageAlt: post.title || null,
+                });
+                result.fixed++;
+            } catch (err: any) {
+                result.failed++;
+                result.errors.push({ id: entry.id, error: err?.message || String(err) });
+            }
+        }
+
+        this.logger.log(
+            `[fixMismatchedImages] total=${result.total} fixed=${result.fixed} failed=${result.failed}`
+        );
+
+        return result;
+    }
+
     async repairBrokenFeatureImages(deepCheck: boolean = false) {
         const PostsEntity = Repository.getEntity("PostsEntity");
         const blogUrl = (Config.get<string>("blog.url") || "").replace(/\/$/, "");

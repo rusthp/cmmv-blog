@@ -215,4 +215,10 @@ export class PostsController {
     async repairBrokenFeatureImages(@Body() body: { deepCheck?: boolean }) {
         return await this.postsPublicService.repairBrokenFeatureImages(!!body?.deepCheck);
     }
+
+    @Post("posts/actions/fix-mismatched-images", { exclude: true })
+    @Auth("post:insert")
+    async fixMismatchedImages(@Body() body: { entries: { id: string; newImage: string }[] }) {
+        return await this.postsPublicService.fixMismatchedImages(body?.entries || []);
+    }
 }
