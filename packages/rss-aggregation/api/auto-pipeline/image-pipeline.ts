@@ -195,9 +195,27 @@ export class ImagePipelineWorker {
                         mimeType: contentType,
                         fileSize: totalBytes,
                         hash,
+                        keywords: this.keywordsToString(title),
                         lastUsedAt: new Date(),
                     });
                 } else {
+                    const existingKeywords = this.parseKeywordString(existingHash.keywords);
+                    const newKeywords = this.extractKeywords(title);
+                    const sameTopic = existingKeywords.size === 0 || this.hasKeywordOverlap(newKeywords, existingKeywords);
+
+                    if (!sameTopic) {
+                        // Same image bytes already cached for an unrelated article
+                        // (e.g. a source site's generic ad/sponsor banner reused as
+                        // og:image across unconnected stories) — refuse to reuse it
+                        // here so the caller falls through to the next fallback tier
+                        // (content image / screenshot) instead of publishing a
+                        // mismatched picture.
+                        ImagePipelineWorker.logger.log(
+                            `[pipeline][IMG] Cross-topic reuse blocked: hash=${hash.slice(0, 12)} previously cached for a different topic than "${title}"`
+                        );
+                        throw new Error('Image already associated with an unrelated topic (cross-topic reuse guard)');
+                    }
+
                     await Repository.update(
                         ImageCacheEntity,
                         { id: existingHash.id },
@@ -289,6 +307,52 @@ export class ImagePipelineWorker {
 
     hashBuffer(buffer: Buffer): string {
         return crypto.createHash('sha256').update(buffer).digest('hex');
+    }
+
+    // ─── Cross-topic image reuse guard ──────────────────────────
+    // The image cache dedups by content hash (same bytes = same cache row),
+    // which is correct for genuinely reused assets (a game's official key
+    // art posted by multiple outlets). But some sources serve the SAME
+    // generic/sponsor image as og:image for otherwise unrelated articles
+    // (e.g. a site-wide ad banner) — without this guard, the second
+    // unrelated article would silently inherit that first article's image.
+    // `keywords` on the cache row lets us tell "same real asset, different
+    // article about the same thing" apart from "same bytes, unrelated topic".
+
+    private static readonly _KEYWORD_STOPWORDS = new Set([
+        'para', 'seus', 'suas', 'esta', 'este', 'essa', 'esse', 'pelo', 'pela',
+        'como', 'mais', 'sera', 'apos', 'vai', 'vem', 'diz', 'sobre', 'quando',
+        'tambem', 'depois', 'antes', 'onde', 'porque', 'com', 'uma', 'que',
+        'with', 'will', 'back', 'says', 'over', 'whether', 'like', 'could',
+        'here', 'make', 'fall', 'love', 'think', 'that', 'this', 'from',
+        'have', 'been', 'were', 'when', 'what', 'which', 'their', 'about',
+        'after', 'into', 'more', 'than', 'they', 'your', 'just', 'only',
+    ]);
+
+    private extractKeywords(text: string): Set<string> {
+        const normalized = (text || '')
+            .normalize('NFKD')
+            .replace(/[̀-ͯ]/g, '')
+            .toLowerCase();
+        const words = normalized.match(/[a-z0-9]+/g) || [];
+        return new Set(words.filter(w => w.length > 4 && !ImagePipelineWorker._KEYWORD_STOPWORDS.has(w)));
+    }
+
+    private keywordsToString(text: string): string {
+        return [...this.extractKeywords(text)].slice(0, 12).join(',');
+    }
+
+    private parseKeywordString(stored?: string | null): Set<string> {
+        if (!stored) return new Set();
+        return new Set(stored.split(',').filter(Boolean));
+    }
+
+    /** True when the two keyword sets share at least one significant word. */
+    private hasKeywordOverlap(a: Set<string>, b: Set<string>): boolean {
+        for (const w of a) {
+            if (b.has(w)) return true;
+        }
+        return false;
     }
 
     getExtensionFromContentType(contentType: string): string {
@@ -611,8 +675,19 @@ export class ImagePipelineWorker {
                                         mimeType: imageData.type,
                                         fileSize: imageData.data.length * 0.75,
                                         hash,
+                                        keywords: this.keywordsToString(title),
                                         lastUsedAt: new Date(),
                                     });
+                                } else {
+                                    const existingKeywords = this.parseKeywordString(exists.keywords);
+                                    const newKeywords = this.extractKeywords(title);
+                                    const sameTopic = existingKeywords.size === 0 || this.hasKeywordOverlap(newKeywords, existingKeywords);
+                                    if (!sameTopic) {
+                                        ImagePipelineWorker.logger.log(
+                                            `[pipeline][IMG] Cross-topic reuse blocked (screenshot path): hash=${hash.slice(0, 12)} previously cached for a different topic than "${title}"`
+                                        );
+                                        return '';
+                                    }
                                 }
                             }
                             return finalUrl;
