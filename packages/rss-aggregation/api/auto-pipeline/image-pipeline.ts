@@ -201,7 +201,12 @@ export class ImagePipelineWorker {
                 } else {
                     const existingKeywords = this.parseKeywordString(existingHash.keywords);
                     const newKeywords = this.extractKeywords(title);
-                    const sameTopic = existingKeywords.size === 0 || this.hasKeywordOverlap(newKeywords, existingKeywords);
+                    // A row cached before this guard existed has no keywords to compare
+                    // against — permit this one encounter (we have no evidence either
+                    // way) but immediately backfill so the NEXT lookup against this hash
+                    // has real data instead of leaving the gap open indefinitely.
+                    const legacyRowNoKeywords = existingKeywords.size === 0;
+                    const sameTopic = legacyRowNoKeywords || this.hasKeywordOverlap(newKeywords, existingKeywords);
 
                     if (!sameTopic) {
                         // Same image bytes already cached for an unrelated article
@@ -219,7 +224,11 @@ export class ImagePipelineWorker {
                     await Repository.update(
                         ImageCacheEntity,
                         { id: existingHash.id },
-                        { lastUsedAt: new Date(), localPath: finalUrl }
+                        {
+                            lastUsedAt: new Date(),
+                            localPath: finalUrl,
+                            ...(legacyRowNoKeywords ? { keywords: this.keywordsToString(title) } : {}),
+                        }
                     );
                 }
             }
