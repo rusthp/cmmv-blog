@@ -121,5 +121,11 @@ Config.assign({
         autoPipelineMaxAttempts: Number(process.env.AUTO_PIPELINE_MAX_ATTEMPTS) || 3,
         autoPipelineScheduleStartHour: Number(process.env.AUTO_PIPELINE_START_HOUR) || 7,
         autoPipelineScheduleEndHour: Number(process.env.AUTO_PIPELINE_END_HOUR) || 23,
+        // ContentMind (standalone Python service, repo root `content-mind/`) —
+        // used to draft an article when a hunting result is approved. Empty path
+        // disables the integration; approval still works, generation is skipped.
+        contentMindPath: process.env.CONTENT_MIND_PATH || "",
+        contentMindPython: process.env.CONTENT_MIND_PYTHON || "python3",
+        contentMindTimeout: Number(process.env.CONTENT_MIND_TIMEOUT) || 300000,
     },
 });

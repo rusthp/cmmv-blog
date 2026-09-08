@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.330",
+    "version": "0.1.331",
     "description": "Blog plugin for CMMV",
     "keywords": [
         "cmmv",
@@ -89,6 +89,7 @@
     },
     "devDependencies": {
         "@changesets/cli": "^2.29.7",
+        "@repo/eslint-config": "workspace:*",
         "@commitlint/cli": "^19.8.1",
         "@commitlint/config-conventional": "^19.8.1",
         "@vitest/coverage-v8": "^4.0.6",

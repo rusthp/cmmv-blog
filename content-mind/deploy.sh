@@ -16,6 +16,7 @@ scp -r \
     article_validator.py \
     content_generator.py \
     cmmv_publisher.py \
+    hunting_bridge.py \
     requirements.txt \
     .env.example \
     content-mind.service \

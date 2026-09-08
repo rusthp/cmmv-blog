@@ -4,7 +4,9 @@ import {
     FeedChannelsContract,
     FeedRawContract,
     FeedParserContract,
-    ImageCacheContract
+    ImageCacheContract,
+    HuntingKeywordsContract,
+    HuntingResultsContract
 } from '../contracts';
 
 import {
@@ -27,18 +29,25 @@ import {
     WebScraperModule
 } from "./web-scraper/web-scraper.module";
 
+import {
+    RSSHuntingModule
+} from "./hunting/hunting.module";
+
 export const RSSAggregationModule = new Module('rss-aggregation', {
     contracts: [
         FeedChannelsContract,
         FeedRawContract,
         FeedParserContract,
-        ImageCacheContract
+        ImageCacheContract,
+        HuntingKeywordsContract,
+        HuntingResultsContract
     ],
     submodules: [
         RSSChannelsModule,
         RSSRawModule,
         RSSParserModule,
         AutoPipelineModule,
-        WebScraperModule
+        WebScraperModule,
+        RSSHuntingModule
     ]
 });

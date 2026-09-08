@@ -11,6 +11,8 @@ Usage:
   python content_mind.py --all          # process all games (slow, use sparingly)
   python content_mind.py --open-topics 2  # only process N open (non-game) trending topics
   python content_mind.py --list         # list registered games
+  python content_mind.py --hunting-result  # read one approved hunting result as
+                                        # JSON on stdin and create a DRAFT post
 """
 import argparse
 import json
@@ -28,6 +30,7 @@ from topic_scanner import scan_open_topics, OpenTopic
 from content_generator import generate_article
 from article_validator import validate_article
 from cmmv_publisher import publish_game_content, PublishResult
+from hunting_bridge import run_from_stdin
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -185,7 +188,15 @@ def main() -> None:
     group.add_argument("--all", action="store_true", help="Process all registered games")
     group.add_argument("--list", action="store_true", help="List all registered game slugs")
     group.add_argument("--open-topics", type=int, metavar="N", help="Only process N open (non-game) trending topics")
+    group.add_argument(
+        "--hunting-result",
+        action="store_true",
+        help="Read one approved hunting result as JSON on stdin and create a DRAFT post",
+    )
     args = parser.parse_args()
+
+    if args.hunting_result:
+        sys.exit(run_from_stdin())
 
     if args.list:
         for g in GAMES:

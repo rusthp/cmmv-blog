@@ -1,12 +1,23 @@
 {
     "name": "@repo/eslint-config",
-    "version": "0.0.330",
+    "version": "0.0.331",
+    "type": "module",
     "main": "index.js",
+    "exports": {
+        ".": "./index.js"
+    },
+    "files": [
+        "index.js",
+        "package.json"
+    ],
     "license": "MIT",
     "dependencies": {
-        "@typescript-eslint/eslint-plugin": "^7.1.0",
-        "@typescript-eslint/parser": "^7.1.0",
-        "eslint-config-prettier": "^9.1.0"
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^16.4.0",
+        "typescript-eslint": "^8.46.0"
+    },
+    "peerDependencies": {
+        "eslint": "^9.0.0"
     },
     "publishConfig": {
         "access": "public"

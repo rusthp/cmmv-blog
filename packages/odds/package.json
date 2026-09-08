@@ -1,11 +1,14 @@
 {
     "name": "@cmmv/odds",
-    "version": "0.1.330",
+    "version": "0.1.331",
     "description": "Odds package for CMMV",
     "scripts": {
-        "build": "tsup"
+        "build": "tsup",
+        "lint": "eslint ."
     },
     "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "eslint": "^9.39.0",
         "tsup": "^8.4.0",
         "typescript": "^5.8.2"
     },

@@ -1,9 +1,10 @@
 {
     "name": "@cmmv/blog",
-    "version": "0.1.330",
+    "version": "0.1.331",
     "description": "Blog package for CMMV",
     "scripts": {
-        "build": "tsup"
+        "build": "tsup",
+        "lint": "eslint ."
     },
     "peerDependencies": {
         "cli-cursor": "^5.0.0",
@@ -11,9 +12,11 @@
         "signal-exit": "^4.1.0"
     },
     "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
         "@types/busboy": "^1.5.4",
         "@types/jsonwebtoken": "^9.0.9",
         "@types/xml2js": "^0.4.14",
+        "eslint": "^9.39.0",
         "tsup": "^8.4.0",
         "typescript": "^5.8.2"
     },

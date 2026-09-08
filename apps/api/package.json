@@ -1,6 +1,6 @@
 {
     "name": "cmmv-blog-api",
-    "version": "0.0.331",
+    "version": "0.0.332",
     "private": true,
     "description": "Blog API sample",
     "dev": {
@@ -34,6 +34,7 @@
     "scripts": {
         "dev": "cmmv dev --watch --debug",
         "build": "echo 'build'",
+        "lint": "eslint .",
         "start": "cmmv dev"
     },
     "peerDependencies": {
@@ -62,6 +63,8 @@
         "typeorm": "^0.3.24"
     },
     "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "eslint": "^9.39.0",
         "tsconfig-paths": "^4.2.0"
     }
 }

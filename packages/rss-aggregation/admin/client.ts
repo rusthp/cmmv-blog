@@ -71,9 +71,33 @@ export const useFeedClient = () => {
         }
     };
 
+    const huntingKeywords = {
+        get: (filters: Record<string, string>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`feed/hunting/keywords?${query}`, "GET");
+        },
+        insert: (data: any) => api.authRequest("feed/hunting/keywords", "POST", data),
+        update: (id: string, data: any) => api.authRequest(`feed/hunting/keywords/${id}`, "PUT", data),
+        delete: (id: string) => api.authRequest(`feed/hunting/keywords/${id}`, "DELETE"),
+        processHunting: () => api.authRequest("feed/hunting/processHunting", "GET"),
+        processKeyword: (keywordId: string) => api.authRequest(`feed/hunting/processKeyword/${keywordId}`, "GET")
+    };
+
+    const huntingResults = {
+        get: (filters: Record<string, string>) => {
+            const query = new URLSearchParams(filters).toString();
+            return api.authRequest(`feed/hunting/getResults?${query}`, "GET");
+        },
+        approve: (id: string) => api.authRequest(`feed/hunting/approveResult/${id}`, "PUT"),
+        reject: (id: string) => api.authRequest(`feed/hunting/rejectResult/${id}`, "PUT"),
+        delete: (id: string) => api.authRequest(`feed/hunting/results/${id}`, "DELETE")
+    };
+
     return {
         channels,
         raw,
-        parser
+        parser,
+        huntingKeywords,
+        huntingResults
     };
 };

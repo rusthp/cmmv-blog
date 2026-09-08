@@ -1,11 +1,14 @@
 {
     "name": "@cmmv/newsletter",
-    "version": "0.1.330",
+    "version": "0.1.331",
     "description": "Newsletter management package for CMMV",
     "scripts": {
-        "build": "tsup index.ts admin/index.ts client/index.ts --format cjs,esm --dts"
+        "build": "tsup index.ts admin/index.ts client/index.ts --format cjs,esm --dts",
+        "lint": "eslint ."
     },
     "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "eslint": "^9.39.0",
         "tsup": "^8.4.0",
         "typescript": "^5.8.2"
     },
