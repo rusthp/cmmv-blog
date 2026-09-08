@@ -40,7 +40,7 @@ export default defineConfig([
         format: ['esm', 'cjs'],
         outDir: 'dist',
         ...sharedOptions,
-        dts: true
+        dts: false
     },
     {
         entry: ['.generated/app.module.ts'],
