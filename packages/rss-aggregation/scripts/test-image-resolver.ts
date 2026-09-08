@@ -196,7 +196,7 @@ export async function resolveImage(url: string, title: string): Promise<{ localP
         // In real app: const existing = await Repository.findOne(ImageCacheEntity, { hash });
 
         const ext = getExtensionFromContentType(contentType) || 'jpg';
-        const filename = \`\${hash}.\${ext}\`;
+        const filename = `${hash}.${ext}`;
         
         const now = new Date();
         const year = now.getFullYear().toString();
@@ -210,19 +210,19 @@ export async function resolveImage(url: string, title: string): Promise<{ localP
         if (!fs.existsSync(absolutePath)) {
             fs.mkdirSync(absoluteDir, { recursive: true });
             fs.writeFileSync(absolutePath, fullBuffer);
-            console.log(\`✅ Saved new image: \${relativePath}\`);
+            console.log(`✅ Saved new image: ${relativePath}`);
         } else {
-            console.log(\`✅ Reused existing image by hash: \${relativePath}\`);
+            console.log(`✅ Reused existing image by hash: ${relativePath}`);
         }
 
         return {
-            localPath: \`/uploads/news/\${relativePath.replace(/\\\\/g, '/')}\`,
+            localPath: `/uploads/news/${relativePath.replace(/\\\\/g, '/')}`,
             source: 'download',
             metadata: { hash, originalUrl: url, mimeType: contentType, fileSize: totalBytes }
         };
 
     } catch (error: any) {
-        console.error(\`❌ Failed to resolve image \${url}: \${error.message}\`);
+        console.error(`❌ Failed to resolve image ${url}: ${error.message}`);
         // Fallback Layer 3: Locally generated SVG Placeholder
         return createAndSavePlaceholder(title);
     }
@@ -238,7 +238,7 @@ async function createAndSavePlaceholder(title: string): Promise<{ localPath: str
         const year = now.getFullYear().toString();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         
-        const filename = \`\${hash}.svg\`;
+        const filename = `${hash}.svg`;
         const relativePath = path.join(year, month, filename);
         const absoluteDir = path.join(UPLOADS_DIR, year, month);
         const absolutePath = path.join(absoluteDir, filename);
@@ -246,13 +246,13 @@ async function createAndSavePlaceholder(title: string): Promise<{ localPath: str
         if (!fs.existsSync(absolutePath)) {
             fs.mkdirSync(absoluteDir, { recursive: true });
             fs.writeFileSync(absolutePath, buffer);
-            console.log(\`🎨 Genered new SVG placeholder: \${relativePath}\`);
+            console.log(`🎨 Genered new SVG placeholder: ${relativePath}`);
         } else {
-            console.log(\`🎨 Reused existing SVG placeholder by hash: \${relativePath}\`);
+            console.log(`🎨 Reused existing SVG placeholder by hash: ${relativePath}`);
         }
 
         return {
-            localPath: \`/uploads/news/\${relativePath.replace(/\\\\/g, '/')}\`,
+            localPath: `/uploads/news/${relativePath.replace(/\\\\/g, '/')}`,
             source: 'placeholder',
             metadata: { hash, mimeType: 'image/svg+xml', fileSize: buffer.length }
         };
@@ -289,9 +289,9 @@ async function runTests() {
     ];
 
     for (const test of tests) {
-        console.log(\`\\n\\n>>> Running: \${test.name}\`);
+        console.log(`\\n\\n>>> Running: ${test.name}`);
         const result = await resolveImage(test.url, test.title);
-        console.log(\`Result:\`, result);
+        console.log(`Result:`, result);
     }
 }
 

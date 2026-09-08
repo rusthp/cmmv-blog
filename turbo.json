@@ -2,13 +2,19 @@
     "$schema": "https://turbo.build/schema.json",
     "daemon": false,
     "globalDependencies": [
-        "packages/plugin/**"
+        "packages/plugin/**",
+        "eslint.config.mjs",
+        "packages/eslint-config/**"
     ],
     "tasks": {
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
             "outputs": ["dist/**"]
+        },
+        "lint": {
+            "inputs": ["$TURBO_DEFAULT$"],
+            "outputs": []
         },
         "dev": {
             "cache": false,
