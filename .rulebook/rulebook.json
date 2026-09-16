@@ -1,0 +1,51 @@
+{
+  "version": "5.7.0",
+  "installedAt": "2026-05-16T20:53:45.714Z",
+  "updatedAt": "2026-05-16T20:53:45.717Z",
+  "projectId": "115c07d0-46c5-4990-958c-8fa11c409ab7",
+  "mode": "full",
+  "features": {
+    "watcher": true,
+    "agent": true,
+    "logging": true,
+    "notifications": false,
+    "dryRun": false,
+    "gitHooks": false,
+    "repl": false,
+    "templates": false,
+    "context": false,
+    "health": false,
+    "plugins": false,
+    "parallel": false,
+    "smartContinue": false
+  },
+  "coverageThreshold": 95,
+  "language": "en",
+  "outputLanguage": "en",
+  "cliTools": [],
+  "maxParallelTasks": 1,
+  "timeouts": {
+    "taskExecution": 300000,
+    "cliResponse": 60000,
+    "testRun": 120000
+  },
+  "memory": {
+    "enabled": false,
+    "dbPath": ".rulebook/memory/memory.db",
+    "maxSizeBytes": 524288000,
+    "autoCapture": false,
+    "vectorDimensions": 256
+  },
+  "agentsMode": "lean",
+  "monorepo": {
+    "detected": false,
+    "tool": null,
+    "packages": []
+  },
+  "languages": [
+    "typescript"
+  ],
+  "modules": [],
+  "modular": true,
+  "rulebookDir": ".rulebook"
+}

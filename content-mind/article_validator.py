@@ -25,7 +25,7 @@ import unicodedata
 from dataclasses import dataclass
 
 from config import GROQ_API_KEY, GROQ_MODEL
-from content_generator import GeneratedArticle
+from content_generator import GeneratedArticle, _parse_groq_json
 from trend_scanner import TrendData
 
 logger = logging.getLogger("content-mind.validator")
@@ -96,12 +96,25 @@ ARTIGO GERADO:
 Título: {article.title}
 Conteúdo: {article.content[:3000]}
 
-Verifique se TODA informação factual do artigo (nomes, eventos, números, datas, afirmações) está
-respaldada pelas fontes acima. Não avalie estilo ou qualidade de escrita, só veracidade factual.
-Seja rigoroso: se o artigo afirma algo como fato definitivo que as fontes só sugerem como boato/
-rumor não confirmado, isso conta como afirmação NÃO respaldada.
+Sua tarefa é achar FATOS INVENTADOS — não achar toda frase que não seja uma citação literal da fonte.
 
-Retorne APENAS um JSON, sem markdown: {{"grounded": true/false, "issues": ["lista de afirmações não respaldadas, se houver"]}}"""
+Considere "ungrounded" (não respaldado) APENAS quando o artigo:
+- Inventa um evento, número, data, nome, citação ou resultado que não está nas fontes
+- Afirma como fato confirmado algo que as fontes tratam como boato/rumor/especulação não confirmada
+- Descreve uma ação/decisão específica (ex: "o jogador deve fazer X") que as fontes não afirmam ter
+  acontecido — quando a fonte só levanta a possibilidade como pergunta em aberto
+
+NÃO considere "ungrounded" — isso é jornalismo normal, não invenção:
+- Comentário/análise/opinião do autor sobre o significado ou impacto de um fato real já confirmado
+  (ex: "isso pode atrair novos assinantes", "isso é considerado rápido pelo mercado") — desde que
+  o FATO BASE por trás da opinião esteja nas fontes
+- Contextualização geral, comparações, ou conclusões razoáveis derivadas logicamente dos fatos reais
+- Parágrafo de fechamento com opinião/análise, que é prática editorial esperada, não fabricação
+
+Se o artigo inventou o fato-base de uma afirmação, isso é ungrounded. Se o artigo só opinou/analisou
+em cima de um fato-base real, isso NÃO é ungrounded.
+
+Retorne APENAS um JSON, sem markdown: {{"grounded": true/false, "issues": ["lista de FATOS inventados, se houver — não liste opiniões/análises"]}}"""
 
     try:
         client = Groq(api_key=GROQ_API_KEY)
@@ -109,15 +122,21 @@ Retorne APENAS um JSON, sem markdown: {{"grounded": true/false, "issues": ["list
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=512,
+            max_tokens=2048,
         )
         raw = response.choices[0].message.content.strip()
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
-        data = json.loads(raw)
     except Exception as exc:
-        logger.error("Grounding check errored: %s", exc)
-        return ValidationResult(False, f"Grounding check errored (fail-closed): {exc}")
+        logger.error("Grounding check request failed: %s", exc)
+        return ValidationResult(False, f"Grounding check request failed (fail-closed): {exc}")
+
+    # Reuse content_generator's multi-strategy JSON parser (handles the same
+    # Groq output quirks the article-generation call already deals with).
+    data = _parse_groq_json(raw, article.title)
+    if data is None:
+        logger.error("Grounding check: could not parse Groq response: %r", raw[:300])
+        return ValidationResult(False, "Grounding check response unparseable (fail-closed)")
 
     if not data.get("grounded", False):
         return ValidationResult(False, f"Ungrounded claims detected: {data.get('issues', [])}")
