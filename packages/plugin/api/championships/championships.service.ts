@@ -11,6 +11,7 @@ const SUPPORTED_GAMES = ['csgo', 'dota2', 'valorant', 'r6siege', 'lol'];
 @Service('blog_championships')
 export class ChampionshipsService {
   private static readonly logger = new Logger('ChampionshipsService');
+  private readonly staleHealedAt = new Map<string, number>();
 
   constructor(
     private readonly liquipediaService?: LiquipediaService,
@@ -376,16 +377,21 @@ export class ChampionshipsService {
     const { EsportsMatchEntity } = this.getEntities();
     if (!EsportsMatchEntity) return [];
 
+    // Hundreds of past matches never got their final status (missed syncs) and sort first
+    // in ASC order, so fetch wide and keep only dated, not-yet-overdue matches.
     const queries: any = {
       status: 'not_started',
-      limit: String(limit),
+      limit: '1000',
       sortBy: 'scheduledAt',
       sort: 'ASC',
     };
     if (game && game !== 'all') queries.game = game;
 
     const results = await Repository.findAll(EsportsMatchEntity, queries);
-    return results?.data || [];
+    const notBefore = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    return ((results?.data || []) as any[])
+      .filter(m => m.scheduledAt && m.scheduledAt >= notBefore)
+      .slice(0, limit);
   }
 
   async getRecentResults(game?: string, limit = 20): Promise<any[]> {
@@ -425,6 +431,8 @@ export class ChampionshipsService {
     const grouped: Record<string, any[]> = {};
     const phaseEarliest: Record<string, string> = {};
     for (const m of matches) {
+      // Canceled series never happened (PandaScore also leaves 0x0 placeholders as canceled)
+      if (m.status === 'canceled') continue;
       const phase = m.phase || 'group_stage';
       if (!grouped[phase]) grouped[phase] = [];
       grouped[phase].push(m);
@@ -726,16 +734,79 @@ export class ChampionshipsService {
     const { EsportsTournamentEntity } = this.getEntities();
     if (!EsportsTournamentEntity) return 0;
 
-    const ongoing = await Repository.findAll(EsportsTournamentEntity, {
-      status: 'ongoing',
-      limit: '100',
-    });
+    // PandaScore tournaments that ended in the last 14 days stay in the sync: once endDate
+    // passes the status flips to "finished" and nothing else fetches their matches, so the
+    // last playoff results (or anything missed while the API was down) would never land.
+    // Liquipedia entries are left to healStaleMatches — Liquipedia already rate-limits (429).
+    const RECENTLY_FINISHED_DAYS = 14;
+    const cutoff = new Date(Date.now() - RECENTLY_FINISHED_DAYS * 86_400_000).toISOString().slice(0, 10);
 
-    const tournaments: any[] = ongoing?.data || [];
+    const [ongoing, finished] = await Promise.all([
+      Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '100' }),
+      Repository.findAll(EsportsTournamentEntity, {
+        status: 'finished',
+        limit: '300',
+        sortBy: 'endDate',
+        sort: 'DESC',
+      }),
+    ]);
+
+    const recentlyFinished = ((finished?.data || []) as any[]).filter(
+      t => t.endDate && t.endDate.slice(0, 10) >= cutoff && !String(t.externalId || '').startsWith('liq_')
+    );
+
+    const tournaments: any[] = [...(ongoing?.data || []), ...recentlyFinished];
+    const synced = new Set(tournaments.map(t => t.slug));
     let total = 0;
 
     for (const t of tournaments) {
       total += await this.syncMatchesForEntry(t);
+    }
+
+    total += await this.healStaleMatches(synced);
+
+    return total;
+  }
+
+  // Fallback validation: a match still "not_started"/"running" hours after its scheduled
+  // time means its sync was missed (outage, source hiccup, status window passed). Re-sync
+  // the owning tournaments, any source, capped per run so rate-limited sources are safe.
+  private async healStaleMatches(alreadySynced: Set<string>): Promise<number> {
+    const { EsportsTournamentEntity, EsportsMatchEntity } = this.getEntities();
+    if (!EsportsTournamentEntity || !EsportsMatchEntity) return 0;
+
+    const STALE_AFTER_MS = 6 * 3_600_000;
+    const LOOKBACK_MS = 30 * 86_400_000;
+    const MAX_TOURNAMENTS_PER_RUN = 10;
+    const now = Date.now();
+
+    // Newest first: thousands of years-old rows are stuck "running", ASC would hide recent ones.
+    const [notStarted, running] = await Promise.all([
+      Repository.findAll(EsportsMatchEntity, { status: 'not_started', limit: '1000', sortBy: 'scheduledAt', sort: 'DESC' }),
+      Repository.findAll(EsportsMatchEntity, { status: 'running', limit: '1000', sortBy: 'scheduledAt', sort: 'DESC' }),
+    ]);
+
+    const staleSlugs = new Set<string>();
+    for (const m of [...(notStarted?.data || []), ...(running?.data || [])] as any[]) {
+      const scheduled = new Date(m.scheduledAt || m.beginAt || '').getTime();
+      if (!scheduled || !m.tournamentSlug || alreadySynced.has(m.tournamentSlug)) continue;
+      if (now - scheduled > STALE_AFTER_MS && now - scheduled < LOOKBACK_MS) staleSlugs.add(m.tournamentSlug);
+    }
+
+    // Rotate: a tournament the source never fixes must not take every slot each hour.
+    const due = [...staleSlugs].filter(slug => now - (this.staleHealedAt.get(slug) || 0) > 86_400_000);
+
+    let total = 0;
+    for (const slug of due.slice(0, MAX_TOURNAMENTS_PER_RUN)) {
+      this.staleHealedAt.set(slug, now);
+      const t = await Repository.findOne(EsportsTournamentEntity, { slug });
+      if (t) total += await this.syncMatchesForEntry(t);
+    }
+
+    if (staleSlugs.size > 0) {
+      ChampionshipsService.log(
+        `[championships] Stale matches in ${staleSlugs.size} tournament(s); re-synced ${Math.min(due.length, MAX_TOURNAMENTS_PER_RUN)}`
+      );
     }
 
     return total;

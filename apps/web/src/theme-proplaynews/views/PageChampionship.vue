@@ -402,8 +402,14 @@ const teams = computed(() => {
     if (!t) return [];
     return t.teams || (t.teamsJson ? JSON.parse(t.teamsJson) : []);
 });
-const liveMatches = computed(() => matches.value.filter(m => m.status === 'running'));
-const upcomingMatches = computed(() => matches.value.filter(m => m.status === 'not_started' || m.status === 'running'));
+// A match still "not_started"/"running" 12h after its scheduled time is a missed sync,
+// not something live or upcoming — keep it out of those lists.
+const isOverdue = (m: any) => {
+    const t = new Date(m.scheduledAt || m.beginAt || '').getTime();
+    return !!t && Date.now() - t > 12 * 3_600_000;
+};
+const liveMatches = computed(() => matches.value.filter(m => m.status === 'running' && !isOverdue(m)));
+const upcomingMatches = computed(() => matches.value.filter(m => (m.status === 'not_started' || m.status === 'running') && !isOverdue(m)));
 const finishedMatches = computed(() => matches.value.filter(m => m.status === 'finished'));
 const hasAnyMatches = computed(() => matches.value.length > 0);
 
