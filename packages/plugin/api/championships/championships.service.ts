@@ -30,10 +30,7 @@ export class ChampionshipsService {
   }
 
   private get apiToken(): string {
-    return Config.get<string>(
-      'blog.pandascoreToken',
-      'nUO1wT0wR9Vpvv1B4n_G9TGVqjPPr4wtIzN-mRxV0B4hmHR83SY'
-    );
+    return Config.get<string>('blog.pandascoreToken', '');
   }
 
   private get headers() {
