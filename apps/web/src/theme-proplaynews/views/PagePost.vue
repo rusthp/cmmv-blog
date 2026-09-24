@@ -816,48 +816,126 @@ function addImageAlt(html: string, postTitle: string): string {
     });
 }
 
+interface SocialEmbed {
+    name: string;
+    // Matches the public URL of a single post/video; group 1 identifies it (used to dedupe).
+    url: RegExp;
+    // Extra patterns that identify the same item inside markup that is already an embed.
+    existing?: RegExp[];
+    html: (match: RegExpMatchArray) => string;
+}
+
+const SOCIAL_EMBEDS: SocialEmbed[] = [
+    {
+        name: 'twitter',
+        url: /https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[a-zA-Z0-9_]+\/status\/([0-9]+)(?:\?[^\s<"']*)?/g,
+        html: (m) => `<div class="social-embed twitter-embed">
+                <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
+                    <a href="https://twitter.com/i/status/${m[1]}"></a>
+                </blockquote>
+            </div>`
+    },
+    {
+        name: 'youtube',
+        url: /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^\s<"'#]*?&(?:amp;)?)?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])[^\s<"']*/g,
+        existing: [/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{11})/g],
+        html: (m) => `<div class="social-embed youtube-embed">
+                <iframe src="https://www.youtube-nocookie.com/embed/${m[1]}" title="YouTube" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>`
+    },
+    {
+        name: 'instagram',
+        url: /https?:\/\/(?:www\.)?instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)[^\s<"']*/g,
+        html: (m) => `<div class="social-embed instagram-embed">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/${m[1]}/" data-instgrm-version="14">
+                    <a href="https://www.instagram.com/p/${m[1]}/"></a>
+                </blockquote>
+            </div>`
+    },
+    {
+        name: 'facebook',
+        url: /(https?:\/\/(?:www\.|m\.)?facebook\.com\/[^\s<"'?#]+\/(?:posts|videos)\/[^\s<"'?#\/]+)[^\s<"']*/g,
+        html: (m) => `<div class="social-embed facebook-embed">
+                <div class="${m[1].includes('/videos/') ? 'fb-video' : 'fb-post'}" data-href="${m[1]}" data-width="500" data-show-text="true"></div>
+            </div>`
+    },
+    {
+        name: 'tiktok',
+        url: /https?:\/\/(?:www\.)?tiktok\.com\/@[A-Za-z0-9_.]+\/video\/([0-9]+)[^\s<"']*/g,
+        existing: [/data-video-id=["']([0-9]+)/g, /tiktok\.com\/embed\/v2\/([0-9]+)/g],
+        html: (m) => `<div class="social-embed tiktok-embed-wrap">
+                <iframe src="https://www.tiktok.com/embed/v2/${m[1]}" title="TikTok" loading="lazy" allow="encrypted-media; fullscreen" allowfullscreen></iframe>
+            </div>`
+    },
+    {
+        name: 'reddit',
+        url: /(https?:\/\/(?:www\.)?reddit\.com\/r\/[a-zA-Z0-9_]+\/comments\/[a-zA-Z0-9]+)[^\s<"']*/g,
+        html: (m) => `<div class="social-embed reddit-embed">
+                <blockquote class="reddit-embed-bq" data-embed-height="500">
+                    <a href="${m[1]}/"></a>
+                </blockquote>
+            </div>`
+    }
+];
+
+// Blocks that already are embeds (official blockquotes, iframes) are never touched, only
+// scanned so the same post is not embedded twice.
+const EXISTING_EMBED_PATTERN = /<blockquote\b[^>]*class=["'][^"']*(?:twitter-tweet|instagram-media|tiktok-embed|reddit-embed-bq)[\s\S]*?<\/blockquote>|<iframe\b[^>]*>/g;
+
 function processPostContent(content) {
     if (!content) return '';
 
-    const twitterUrlPatterns = [
-        /https?:\/\/(www\.)?twitter\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s<"']*)?/g,
-        /https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s<"']*)?/g
-    ];
+    const embedded = new Set<string>();
+    const embedOnce = (provider: SocialEmbed, match: RegExpMatchArray): string => {
+        const key = `${provider.name}:${match[1]}`;
+        if (embedded.has(key)) return '';
+        embedded.add(key);
+        return provider.html(match);
+    };
 
-    const redditUrlPatterns = [
-        /https?:\/\/(www\.)?reddit\.com\/r\/([a-zA-Z0-9_]+)\/comments\/([a-zA-Z0-9]+)(?:\/[^\/\s<"']+)?(?:\/([a-zA-Z0-9]+))?/g
-    ];
+    for (const block of content.match(EXISTING_EMBED_PATTERN) || []) {
+        for (const provider of SOCIAL_EMBEDS) {
+            for (const pattern of [provider.url, ...(provider.existing || [])]) {
+                for (const match of block.matchAll(pattern)) embedded.add(`${provider.name}:${match[1]}`);
+            }
+        }
+    }
 
-    // Only bare URLs in text become embeds. URLs inside tag attributes (href) or
-    // inside an existing <a>...</a> are left alone — replacing them injects block
-    // markup into the attribute, and the stray </div> truncates the post on hydration.
-    let processedContent = content.replace(/<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>|[^<]+/g, (token) => {
-        if (token.startsWith('<')) return token;
+    // 1. Bare URLs in text become embeds in place. URLs inside tag attributes (href) or
+    // inside an existing <a>...</a> are left alone: replacing them injects block markup
+    // into the attribute, and the stray </div> truncates the post on hydration.
+    let processedContent = content.replace(
+        new RegExp(`${EXISTING_EMBED_PATTERN.source}|<a\\b[^>]*>[\\s\\S]*?<\\/a>|<[^>]+>|[^<]+`, 'g'),
+        (token) => {
+            if (token.startsWith('<')) return token;
 
-        let text = token;
+            let text = token;
+            for (const provider of SOCIAL_EMBEDS) {
+                text = text.replace(provider.url, (...args) => embedOnce(provider, args.slice(0, -2) as RegExpMatchArray));
+            }
+            return text;
+        }
+    );
 
-        twitterUrlPatterns.forEach(pattern => {
-            text = text.replace(pattern, (match) => {
-                return `<div class="twitter-embed">
-                <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
-                    <a href="${match}"></a>
-                </blockquote>
-            </div>`;
-            });
-        });
+    // 2. Posts linked inline (<a href="...">) keep the link in the text and get the embed
+    // placed right after the paragraph.
+    processedContent = processedContent.replace(
+        new RegExp(`${EXISTING_EMBED_PATTERN.source}|<p(?:\\s[^>]*)?>[\\s\\S]*?<\\/p>`, 'g'),
+        (block) => {
+            if (!block.startsWith('<p')) return block;
 
-        redditUrlPatterns.forEach(pattern => {
-            text = text.replace(pattern, (match) => {
-                return `<div class="reddit-embed">
-                <div class="reddit-card" data-embed-height="500">
-                    <a href="${match}"></a>
-                </div>
-            </div>`;
-            });
-        });
+            const found: { index: number; html: string }[] = [];
+            for (const provider of SOCIAL_EMBEDS) {
+                const hrefPattern = new RegExp(`href=["']${provider.url.source}`, 'g');
+                for (const match of block.matchAll(hrefPattern)) {
+                    const html = embedOnce(provider, match);
+                    if (html) found.push({ index: match.index ?? 0, html });
+                }
+            }
 
-        return text;
-    });
+            return block + found.sort((a, b) => a.index - b.index).map(e => e.html).join('');
+        }
+    );
 
     // Lazy images + alt text
     processedContent = addLazyImages(processedContent);
@@ -866,41 +944,59 @@ function processPostContent(content) {
     // Esports formatting (teams, players, keywords)
     processedContent = applyEsportsFormatting(processedContent);
 
-    if (!isSSR && (processedContent.includes('twitter-tweet') || processedContent.includes('twitter-embed'))) {
-        setTimeout(() => {
-            loadTwitterScript();
-        }, 100);
-    }
-
-    if (!isSSR && processedContent.includes('reddit-embed')) {
-        setTimeout(() => {
-            loadRedditScript();
-        }, 100);
-    }
+    if (!isSSR) setTimeout(() => loadEmbedScripts(processedContent), 100);
 
     return processedContent;
 }
 
-function loadTwitterScript() {
-    if (document.getElementById('twitter-widgets-script')) return;
+const EMBED_SCRIPTS = [
+    {
+        id: 'twitter-widgets-script',
+        src: 'https://platform.twitter.com/widgets.js',
+        marker: 'twitter-tweet',
+        rescan: () => (window as any).twttr?.widgets?.load()
+    },
+    {
+        id: 'instagram-embed-script',
+        src: 'https://www.instagram.com/embed.js',
+        marker: 'instagram-media',
+        rescan: () => (window as any).instgrm?.Embeds?.process()
+    },
+    {
+        id: 'facebook-jssdk',
+        src: 'https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v21.0',
+        marker: 'facebook-embed',
+        rescan: () => (window as any).FB?.XFBML?.parse()
+    },
+    {
+        id: 'reddit-widget-script',
+        src: 'https://embed.reddit.com/widgets.js',
+        marker: 'reddit-embed',
+        rescan: null
+    }
+];
 
-    const script = document.createElement('script');
-    script.id = 'twitter-widgets-script';
-    script.src = 'https://platform.twitter.com/widgets.js';
-    script.async = true;
-    script.charset = 'utf-8';
-    document.body.appendChild(script);
-}
+// Each embed script scans the page when it loads. On client-side navigation between
+// posts the script is already there, so ask it to scan again (Reddit has no API for
+// that, so its script is re-inserted).
+function loadEmbedScripts(html: string) {
+    for (const { id, src, marker, rescan } of EMBED_SCRIPTS) {
+        if (!html.includes(marker)) continue;
 
-function loadRedditScript() {
-    if (document.getElementById('reddit-widget-script')) return;
+        const current = document.getElementById(id);
+        if (current && rescan) {
+            rescan();
+            continue;
+        }
+        current?.remove();
 
-    const script = document.createElement('script');
-    script.id = 'reddit-widget-script';
-    script.src = 'https://embed.reddit.com/widgets.js';
-    script.async = true;
-    script.charset = 'utf-8';
-    document.body.appendChild(script);
+        const script = document.createElement('script');
+        script.id = id;
+        script.src = src;
+        script.async = true;
+        script.charset = 'utf-8';
+        document.body.appendChild(script);
+    }
 }
 
 const author = computed(() => post.value?.authors?.find((a: any) => a.user === post.value?.author))
@@ -1584,6 +1680,39 @@ const sidebarLeftAdContainer = ref(null);
 .post-content :deep(.twitter-embed iframe) {
     border: none !important;
     margin: 0 auto !important;
+}
+
+/* Instagram / Facebook / TikTok / Reddit / YouTube embeds */
+.post-content :deep(.social-embed:not(.twitter-embed)) {
+    margin: 1.5rem auto;
+    max-width: 550px;
+    display: flex;
+    justify-content: center;
+}
+
+.post-content :deep(.social-embed .instagram-media),
+.post-content :deep(.social-embed .reddit-embed-bq) {
+    width: 100%;
+    margin: 0 auto !important;
+}
+
+.post-content :deep(.youtube-embed) {
+    max-width: 720px;
+    aspect-ratio: 16 / 9;
+}
+
+.post-content :deep(.youtube-embed iframe) {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+}
+
+.post-content :deep(.tiktok-embed-wrap iframe) {
+    width: 100%;
+    max-width: 325px;
+    height: 740px;
+    border: 0;
 }
 
 .featured-img {
