@@ -820,34 +820,43 @@ function processPostContent(content) {
     if (!content) return '';
 
     const twitterUrlPatterns = [
-        /https?:\/\/(www\.)?twitter\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s]*)?/g,
-        /https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s]*)?/g
+        /https?:\/\/(www\.)?twitter\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s<"']*)?/g,
+        /https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\?[^\s<"']*)?/g
     ];
 
     const redditUrlPatterns = [
-        /https?:\/\/(www\.)?reddit\.com\/r\/([a-zA-Z0-9_]+)\/comments\/([a-zA-Z0-9]+)(?:\/[^\/\s]+)?(?:\/([a-zA-Z0-9]+))?/g
+        /https?:\/\/(www\.)?reddit\.com\/r\/([a-zA-Z0-9_]+)\/comments\/([a-zA-Z0-9]+)(?:\/[^\/\s<"']+)?(?:\/([a-zA-Z0-9]+))?/g
     ];
 
-    let processedContent = content;
+    // Only bare URLs in text become embeds. URLs inside tag attributes (href) or
+    // inside an existing <a>...</a> are left alone — replacing them injects block
+    // markup into the attribute, and the stray </div> truncates the post on hydration.
+    let processedContent = content.replace(/<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>|[^<]+/g, (token) => {
+        if (token.startsWith('<')) return token;
 
-    twitterUrlPatterns.forEach(pattern => {
-        processedContent = processedContent.replace(pattern, (match, p1, username, tweetId) => {
-            return `<div class="twitter-embed">
+        let text = token;
+
+        twitterUrlPatterns.forEach(pattern => {
+            text = text.replace(pattern, (match) => {
+                return `<div class="twitter-embed">
                 <blockquote class="twitter-tweet" data-dnt="true" data-theme="light">
                     <a href="${match}"></a>
                 </blockquote>
             </div>`;
+            });
         });
-    });
 
-    redditUrlPatterns.forEach(pattern => {
-        processedContent = processedContent.replace(pattern, (match, p1, subreddit, postId, commentId) => {
-            return `<div class="reddit-embed">
+        redditUrlPatterns.forEach(pattern => {
+            text = text.replace(pattern, (match) => {
+                return `<div class="reddit-embed">
                 <div class="reddit-card" data-embed-height="500">
                     <a href="${match}"></a>
                 </div>
             </div>`;
+            });
         });
+
+        return text;
     });
 
     // Lazy images + alt text
