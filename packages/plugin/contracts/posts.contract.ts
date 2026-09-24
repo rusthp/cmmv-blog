@@ -300,4 +300,14 @@ export class PostsContract extends AbstractContract {
         exclude: true,
     })
     needsSeoUpdate: boolean;
+
+    // Kept online but out of search engines: <meta name="robots" content="noindex, follow">
+    // and left out of the sitemaps.
+    @ContractField({
+        protoType: 'boolean',
+        nullable: false,
+        defaultValue: false,
+        index: true,
+    })
+    noindex: boolean;
 }

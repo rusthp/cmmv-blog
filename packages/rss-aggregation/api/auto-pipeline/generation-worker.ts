@@ -36,6 +36,18 @@ export class GenerationWorker {
 
             GenerationWorker.logger.log("[pipeline] generateWorker: Starting generation cycle");
 
+            // The posting worker publishes at most blog.autoPipelineMaxPostsPerDay; don't spend
+            // AI generating articles beyond what is already queued for that.
+            const maxPerDay = Config.get<number>("blog.autoPipelineMaxPostsPerDay", 3);
+            const ready = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.GENERATED,
+                limit: 1
+            });
+            if ((ready?.count || 0) >= maxPerDay) {
+                GenerationWorker.logger.log(`[pipeline] generateWorker: ${ready?.count} items already generated (daily limit ${maxPerDay}), skipping`);
+                return;
+            }
+
             // Prefer KEYWORD_DONE items; fall back to CLASSIFIED if keyword engine hasn't run yet
             let classifiedItems = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.KEYWORD_DONE,

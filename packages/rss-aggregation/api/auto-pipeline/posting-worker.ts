@@ -36,9 +36,15 @@ export class PostingWorker {
 
             PostingWorker.logger.log("[pipeline] postWorker: Starting posting cycle");
 
+            const remainingToday = await PostingWorker.remainingPostsToday();
+            if (remainingToday <= 0) {
+                PostingWorker.logger.log("[pipeline] postWorker: Daily post limit reached, skipping");
+                return;
+            }
+
             const generatedItems = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.GENERATED,
-                limit: maxPerCycle,
+                limit: Math.min(maxPerCycle, remainingToday),
                 sortBy: "relevance",
                 sort: "DESC"
             }, ['channel'] as any);
@@ -369,6 +375,31 @@ export class PostingWorker {
         } finally {
             PostingWorker.isRunning = false;
         }
+    }
+
+    // ─── Daily Volume Cap ─────────────────────────────────────
+
+    // Pipeline posts (sourceFeedRaw set, incl. scheduled "cron" ones) created in the last
+    // 24h count against blog.autoPipelineMaxPostsPerDay. Mass-rewritten volume is what the
+    // Aug-2026 Google spam update penalized, so the pipeline publishes only its best items.
+    static async remainingPostsToday(): Promise<number> {
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const maxPerDay = Config.get<number>("blog.autoPipelineMaxPostsPerDay", 3);
+        const since = Date.now() - 24 * 60 * 60 * 1000;
+
+        const recent = await Repository.findAll(PostsEntity, {
+            limit: 100,
+            sortBy: 'createdAt',
+            sort: 'DESC'
+        }, [], {
+            select: ['id', 'sourceFeedRaw', 'createdAt']
+        } as any);
+
+        const createdToday = (recent?.data || []).filter((p: any) =>
+            p.sourceFeedRaw && new Date(p.createdAt).getTime() >= since
+        ).length;
+
+        return maxPerDay - createdToday;
     }
 
     // ─── Adaptive Smart Scheduling ────────────────────────────

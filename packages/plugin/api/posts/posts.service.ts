@@ -752,7 +752,7 @@ export class PostsPublicService {
                 'canonicalUrl', 'categories', 'codeInjectionBody', 'codeInjectionHead', 'excerpt',
                 'featureImage', 'featureImageAlt', 'featureImageCaption', 'featured', 'image',
                 'metaDescription', 'metaKeywords', 'metaTitle',
-                'publishedAt', 'tags', 'type', 'visibility', 'createdAt', 'updatedAt'
+                'publishedAt', 'tags', 'type', 'visibility', 'createdAt', 'updatedAt', 'noindex'
             ]
         });
 

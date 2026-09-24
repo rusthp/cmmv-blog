@@ -1098,6 +1098,8 @@ const headData = computed(() => ({
         { name: 'twitter:url', content: pageUrl.value },
         { name: 'twitter:site', content: settings.value?.['blog.twitter'] ? `@${settings.value['blog.twitter']}` : undefined },
         { name: 'twitter:creator', content: author.value?.twitter ? `@${author.value.twitter}` : undefined },
+        // index.html ships a global "index, follow"; Google applies the most restrictive rule.
+        ...(post.value?.noindex ? [{ name: 'robots', content: 'noindex, follow' }] : []),
         ...metadata.value
     ],
     link: [

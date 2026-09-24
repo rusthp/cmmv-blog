@@ -30,7 +30,8 @@ export class SitemapService {
         // Count posts and calculate pagination
         const postCount = await Repository.count(PostsEntity, {
             type: "post",
-            status: "published"
+            status: "published",
+            noindex: false
         });
 
         const pageCount = await Repository.count(PostsEntity, {
@@ -162,6 +163,7 @@ export class SitemapService {
         const posts = await Repository.findAll(PostsEntity, {
             type: type,
             status: "published",
+            noindex: false,
             sortBy: "publishedAt",
             sort: "desc",
             limit: postsPerPage,

@@ -1831,6 +1831,12 @@
                                         <p class="mt-1 text-xs text-neutral-500">Posts created per pipeline run (default: 3)</p>
                                     </div>
                                     <div>
+                                        <label class="block text-sm font-medium text-neutral-300 mb-1">Max Posts per Day</label>
+                                        <input type="number" min="1" max="50" v-model.number="settings.autoPipelineMaxPostsPerDay"
+                                            class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                        <p class="mt-1 text-xs text-neutral-500">Pipeline posts in any 24h window; highest relevance first (default: 3)</p>
+                                    </div>
+                                    <div>
                                         <label class="block text-sm font-medium text-neutral-300 mb-1">Backlog Factor</label>
                                         <input type="number" min="0" max="20" v-model.number="settings.autoPipelineBacklogFactor"
                                             class="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
@@ -4648,6 +4654,7 @@ const settings = ref({
     autoPipelineScheduleStartHour: 7,
     autoPipelineScheduleEndHour: 1,
     autoPipelineMaxPostsPerCycle: 3,
+    autoPipelineMaxPostsPerDay: 3,
     autoPostDefaultFormat: "New post: {title} - {excerpt} {url}",
     autoPostSharePosts: true,
     autoPostSharePages: true,
