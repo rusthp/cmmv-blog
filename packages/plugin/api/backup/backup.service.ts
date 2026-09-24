@@ -256,24 +256,16 @@ export class BackupService {
                 fs.mkdirSync(backupDirPath, { recursive: true });
 
             try {
-                // Copy SQLite database file
+                // Snapshot through the live connection with VACUUM INTO: a consistent single
+                // file that already includes the WAL contents. Never open/copy the database
+                // file with fs from this process — closing any fd on it drops SQLite's POSIX
+                // locks, and the next external sqlite3 client (e.g. the rankings cron) then
+                // checkpoints and deletes the WAL under the running API, corrupting the db.
                 const dbFileName = path.basename(dbPath);
                 const backupDbPath = path.join(backupDirPath, dbFileName);
-                fs.copyFileSync(dbPath, backupDbPath);
-
-                // Also backup WAL and SHM files if they exist (SQLite journal files)
-                const dbDir = path.dirname(dbPath);
-                const dbName = path.parse(dbPath).name;
-                const walFile = path.join(dbDir, `${dbName}.db-wal`);
-                const shmFile = path.join(dbDir, `${dbName}.db-shm`);
-
-                if (fs.existsSync(walFile)) {
-                    fs.copyFileSync(walFile, path.join(backupDirPath, `${dbName}.db-wal`));
-                }
-
-                if (fs.existsSync(shmFile)) {
-                    fs.copyFileSync(shmFile, path.join(backupDirPath, `${dbName}.db-shm`));
-                }
+                await Repository.getInstance().dataSource.query(
+                    `VACUUM INTO '${backupDbPath.replace(/'/g, "''")}'`
+                );
 
                 // Create metadata file
                 const metadata = {
@@ -281,9 +273,7 @@ export class BackupService {
                     timestamp,
                     originalDbPath: dbPath,
                     dbFileName,
-                    created: now.toISOString(),
-                    hasWalFile: fs.existsSync(walFile),
-                    hasShmFile: fs.existsSync(shmFile)
+                    created: now.toISOString()
                 };
 
                 const metadataPath = path.join(backupDirPath, 'backup_metadata.json');
