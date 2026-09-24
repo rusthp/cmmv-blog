@@ -1696,7 +1696,7 @@ const sidebarLeftAdContainer = ref(null);
     margin: 0 auto !important;
 }
 
-.post-content :deep(.youtube-embed) {
+.post-content :deep(.social-embed.youtube-embed) {
     max-width: 720px;
     aspect-ratio: 16 / 9;
 }
