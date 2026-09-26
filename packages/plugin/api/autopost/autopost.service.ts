@@ -32,7 +32,37 @@ interface SocialPostPayload {
     author: string;
     featureImage?: string;
     postId: string;
+    hashtags?: string;
 }
+
+// Curated hashtags: short, stable ones people actually follow. Built from the post's game
+// category, Brazilian teams named in the title and a brand tag — the raw post tags
+// (e.g. "valorant champions shanghai 2026") make long one-off hashtags nobody searches.
+const GAME_HASHTAGS: Record<string, string> = {
+    'cs2': '#CS2',
+    'valorant': '#VALORANT',
+    'league of legends': '#LoL',
+    'dota 2': '#Dota2',
+    'fortnite': '#Fortnite',
+    'rainbow six siege': '#R6',
+};
+
+const BR_TEAM_HASHTAGS: Array<[RegExp, string]> = [
+    [/\bfuria\b/i, '#FURIA'],
+    [/\bmibr\b/i, '#MIBR'],
+    [/\bpain\b/i, '#paiN'],
+    [/\bloud\b/i, '#LOUD'],
+    [/\bimperial\b/i, '#Imperial'],
+    [/\bfluxo\b/i, '#Fluxo'],
+    [/\bred canids\b/i, '#REDCanids'],
+    [/\bkeyd\b/i, '#Keyd'],
+    [/\bsharks\b/i, '#Sharks'],
+    [/\boddik\b/i, '#ODDIK'],
+    [/\blegacy\b/i, '#Legacy'],
+    [/\bw7m\b/i, '#W7M'],
+];
+
+const MAX_HASHTAGS = 4;
 
 @Service('blog_autopost')
 export class AutopostService {
@@ -97,7 +127,8 @@ export class AutopostService {
                 categories: post.categories || [],
                 author: post.author?.name || "Anonymous",
                 featureImage: featureImageUrl,
-                postId: post.id
+                postId: post.id,
+                hashtags: await AutopostService.buildHashtags(post)
             };
 
             const delayAutoPosting = Config.get<boolean>("blog.delayAutoPosting", false);
@@ -231,7 +262,7 @@ export class AutopostService {
     private buildSocialPrompt(payload: SocialPostPayload, network: 'facebook' | 'twitter' | 'bluesky', category: string): string {
         const networkName = network === 'facebook' ? 'Facebook' : network === 'twitter' ? 'X/Twitter' : 'Bluesky';
         const maxChars = network === 'twitter' ? 260 : network === 'bluesky' ? 290 : 900;
-        const hashtagsStr = this.tagsToHashtags(payload.tags, 6);
+        const hashtagsStr = payload.hashtags ?? this.tagsToHashtags(payload.tags, 6);
 
         const categoryInstructions: Record<string, string> = {
             tournament: `Este é um artigo sobre torneio/campeonato de esports.
@@ -367,11 +398,38 @@ Regras obrigatórias:
      * @param template - The template to use for formatting the message
      * @returns The formatted message
      */
+    // Posts store categories as a comma-separated string of category ids.
+    static async buildHashtags(post: any): Promise<string> {
+        const hashtags: string[] = [];
+
+        try {
+            const ids = Array.isArray(post.categories)
+                ? post.categories.map((c: any) => (typeof c === 'object' ? c?.id : c))
+                : String(post.categories || '').split(',');
+
+            const CategoriesEntity = Repository.getEntity("CategoriesEntity");
+            for (const id of ids.map((i: any) => String(i || '').trim()).filter(Boolean)) {
+                const category: any = await Repository.findOne(CategoriesEntity, { id });
+                const tag = category?.name ? GAME_HASHTAGS[String(category.name).toLowerCase()] : undefined;
+                if (tag && !hashtags.includes(tag)) hashtags.push(tag);
+            }
+        } catch (error: any) {
+            AutopostService.logger.debug(`Hashtags: could not resolve categories: ${error?.message}`);
+        }
+
+        for (const [pattern, tag] of BR_TEAM_HASHTAGS) {
+            if (pattern.test(post.title || '') && !hashtags.includes(tag)) hashtags.push(tag);
+        }
+
+        return [...hashtags.slice(0, MAX_HASHTAGS - 1), '#esports'].join(' ');
+    }
+
     private tagsToHashtags(tags: string[], maxTags = 5): string {
         if (!Array.isArray(tags) || tags.length === 0) return '';
         return tags
             .slice(0, maxTags)
             .map(tag => '#' + tag
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-zA-Z0-9\s]/g, '')
                 .trim()
                 .split(/\s+/)
@@ -391,7 +449,7 @@ Regras obrigatórias:
 
         const tagsStr = Array.isArray(payload.tags) ? payload.tags.join(', ') : '';
         const categoriesStr = Array.isArray(payload.categories) ? payload.categories.join(', ') : '';
-        const hashtagsStr = this.tagsToHashtags(payload.tags);
+        const hashtagsStr = payload.hashtags ?? this.tagsToHashtags(payload.tags);
 
         message = message.replace('{tags}', tagsStr);
         message = message.replace('{categories}', categoriesStr);
