@@ -1008,6 +1008,26 @@ export class ChampionshipsService {
     }
   }
 
+  // Matches synced without a known tournament (the running/upcoming feed) used to take the
+  // PandaScore sub-tournament slug (e.g. "…-2026-playoffs"), which matches no tournament page:
+  // 23% of all matches were orphaned and invisible. Resolve the parent via its serie id.
+  private static readonly serieSlugCache = new Map<string, { slug: string | null; at: number }>();
+
+  private static async resolveSerieSlug(serieId: any): Promise<string | null> {
+    if (!serieId) return null;
+    const key = String(serieId);
+    const cached = ChampionshipsService.serieSlugCache.get(key);
+    if (cached && Date.now() - cached.at < 3_600_000) return cached.slug;
+
+    const EsportsTournamentEntity = Repository.getEntity('EsportsTournamentsEntity');
+    const t: any = EsportsTournamentEntity
+      ? await Repository.findOne(EsportsTournamentEntity, { serieExternalId: key })
+      : null;
+    const slug = t?.slug || null;
+    ChampionshipsService.serieSlugCache.set(key, { slug, at: Date.now() });
+    return slug;
+  }
+
   private async upsertMatch(m: any, game: string, tournamentSlug?: string): Promise<void> {
     const { EsportsMatchEntity } = this.getEntities();
     if (!EsportsMatchEntity) return;
@@ -1025,7 +1045,10 @@ export class ChampionshipsService {
     const score1 = results.find((r) => r.team_id === team1?.id)?.score ?? 0;
     const score2 = results.find((r) => r.team_id === team2?.id)?.score ?? 0;
 
-    const slug = tournamentSlug || m.tournament?.slug || String(m.tournament_id || '');
+    const slug = tournamentSlug
+      || (await ChampionshipsService.resolveSerieSlug(m.serie_id))
+      || m.tournament?.slug
+      || String(m.tournament_id || '');
 
     const streams: any[] = m.streams_list || [];
     const stream =
