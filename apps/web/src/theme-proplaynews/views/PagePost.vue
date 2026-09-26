@@ -1064,10 +1064,12 @@ const pageUrl = computed(() => {
 const keywords = computed(() => post.value?.keywords ||
     (post.value?.tags?.map((tag: any) => tag.name).join(', ') || ''))
 
-const description = computed(() =>
-    stripHtml(post.value?.description || post.value?.excerpt || post.value?.content || '')
-        .substring(0, 150) + '...'
-)
+// Only mark truncation when something was actually cut (excerpts often already end in "...",
+// which used to render as "......" in link previews).
+const description = computed(() => {
+    const text = stripHtml(post.value?.description || post.value?.excerpt || post.value?.content || '').trim();
+    return text.length > 150 ? text.substring(0, 150).trimEnd() + '...' : text;
+})
 
 const metadata = computed(() => keywords.value
     .split(', ')
@@ -1079,6 +1081,7 @@ const headData = computed(() => ({
         { name: 'description', content: description.value },
         { name: 'keywords', content: keywords.value },
         { property: 'og:type', content: 'article' },
+        { property: 'og:site_name', content: settings.value?.['blog.title'] || 'ProPlay News' },
         { property: 'og:title', content: post.value?.title },
         { property: 'og:description', content: description.value },
         { property: 'og:image', content: post.value?.featureImage || settings.value?.['blog.image'] },
