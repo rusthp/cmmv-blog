@@ -2,7 +2,7 @@ import { Service } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 
 @Service()
-export class NewsletterSubscribersService {
+export class NewsletterSubscriptionService {
     constructor() {}
 
     /**
@@ -11,6 +11,9 @@ export class NewsletterSubscribersService {
      * @returns The created subscriber
      */
     async subscribe(data: { email: string; name?: string; source?: string }) {
+        if (typeof data?.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()))
+            return { success: false, message: "Invalid email" };
+
         const NewsletterSubscribersEntity = Repository.getEntity("NewsletterSubscribersEntity");
 
         const existingSubscriber = await Repository.findOne(NewsletterSubscribersEntity, {

@@ -218,13 +218,16 @@
                         </p>
                     </div>
                     <div class="md:w-1/2 w-full">
-                        <form class="flex w-full">
-                            <input type="email" placeholder="Seu email"
+                        <form class="flex w-full" @submit.prevent="subscribeNewsletter">
+                            <input type="email" required placeholder="Seu email" v-model="newsletterEmail"
+                                :disabled="newsletterStatus === 'sending'"
                                 class="flex-grow px-4 py-3 rounded-l-md border-0 bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#ffcc00]">
-                            <button type="submit" class="bg-[#ffcc00] text-[#333333] font-medium px-6 py-3 rounded-r-md hover:bg-[#ffa500] transition-colors whitespace-nowrap">
-                                Assinar
+                            <button type="submit" :disabled="newsletterStatus === 'sending'" class="bg-[#ffcc00] text-[#333333] font-medium px-6 py-3 rounded-r-md hover:bg-[#ffa500] transition-colors whitespace-nowrap disabled:opacity-60">
+                                {{ newsletterStatus === 'sending' ? 'Enviando…' : 'Assinar' }}
                             </button>
                         </form>
+                        <p v-if="newsletterStatus === 'done'" class="mt-2 text-sm text-[#ffcc00]">Pronto! Você vai receber as novidades no seu e-mail.</p>
+                        <p v-else-if="newsletterStatus === 'error'" class="mt-2 text-sm text-red-300">Não foi possível assinar agora. Confira o e-mail e tente de novo.</p>
                     </div>
                 </div>
             </div>
@@ -490,6 +493,27 @@ const applyTheme = () => {
 };
 
 const searchModalOpen = ref(false);
+const newsletterEmail = ref('');
+const newsletterStatus = ref<'idle' | 'sending' | 'done' | 'error'>('idle');
+
+const subscribeNewsletter = async () => {
+    newsletterStatus.value = 'sending';
+    try {
+        const res = await fetch('/api/newsletter/subscribers/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: newsletterEmail.value, source: window.location.pathname }),
+        });
+        const data = await res.json().catch(() => null);
+        const result = data?.result ?? data;
+        if (!res.ok || !result?.success) throw new Error(result?.message || 'subscribe failed');
+        newsletterStatus.value = 'done';
+        newsletterEmail.value = '';
+    } catch {
+        newsletterStatus.value = 'error';
+    }
+};
+
 const searchQuery = ref('');
 const searchResults = ref<any[]>([]);
 const isSearching = ref(false);

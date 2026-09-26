@@ -1,7 +1,7 @@
 import { Module } from '@cmmv/core';
 
 import {
-    NewsletterSubscribersService
+    NewsletterSubscriptionService
 } from "./subscribers.service";
 
 import {
@@ -9,6 +9,6 @@ import {
 } from "./subscribers.controller";
 
 export const NewsletterSubscribersModule = new Module('newsletter-subscribers', {
-    providers: [NewsletterSubscribersService],
+    providers: [NewsletterSubscriptionService],
     controllers: [NewsletterSubscribersController]
 }); 

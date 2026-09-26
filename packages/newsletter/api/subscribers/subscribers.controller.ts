@@ -8,13 +8,13 @@ import {
 } from "@cmmv/auth";
 
 import {
-    NewsletterSubscribersService
+    NewsletterSubscriptionService
 } from "./subscribers.service";
 
 
 @Controller("newsletter/subscribers")
 export class NewsletterSubscribersController {
-    constructor(private readonly newsletterService: NewsletterSubscribersService) {}
+    constructor(private readonly newsletterService: NewsletterSubscriptionService) {}
 
     @Post("subscribe")
     async subscribeToNewsletter(@Body() data: { email: string, name?: string, source?: string }) {
