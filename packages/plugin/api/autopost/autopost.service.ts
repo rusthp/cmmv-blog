@@ -802,6 +802,26 @@ Regras obrigatórias:
             langs: ["pt-BR"],
         };
 
+        // Bluesky only renders hashtags/links as clickable (and indexes hashtags for search)
+        // when the record carries facets with UTF-8 byte offsets.
+        const facets: any[] = [];
+        const byteIndex = (charIndex: number) => Buffer.byteLength(text.slice(0, charIndex), "utf8");
+        for (const m of text.matchAll(/(^|\s)(#[\p{L}\p{N}_]+)/gu)) {
+            const start = (m.index ?? 0) + m[1].length;
+            facets.push({
+                index: { byteStart: byteIndex(start), byteEnd: byteIndex(start + m[2].length) },
+                features: [{ $type: "app.bsky.richtext.facet#tag", tag: m[2].slice(1) }],
+            });
+        }
+        for (const m of text.matchAll(/https?:\/\/[^\s]+/g)) {
+            const start = m.index ?? 0;
+            facets.push({
+                index: { byteStart: byteIndex(start), byteEnd: byteIndex(start + m[0].length) },
+                features: [{ $type: "app.bsky.richtext.facet#link", uri: m[0] }],
+            });
+        }
+        if (facets.length) record.facets = facets;
+
         // 4. Link card embed (external) — upload thumbnail if available
         let thumbBlob: any = null;
 
