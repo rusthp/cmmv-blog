@@ -12,7 +12,7 @@ import { PostsPublicService } from "@cmmv/blog/posts/posts.service";
 
 /**
  * Worker responsible for generating AI content from classified feed items.
- * Uses a 2-pass approach: initial generation + continuation for depth.
+ * Single pass grounded in the source article (the old "continuation" pass invented facts).
  */
 export class GenerationWorker {
     private static readonly logger = new Logger("GenerationWorker");
@@ -206,9 +206,7 @@ export class GenerationWorker {
             ${keywordContext}
             ${await promptService.getDefaultPrompt(promptId)}
 
-            IMPORTANT: DO NOT write any conclusion or summary paragraph. The article should feel unfinished and open-ended.
-            It should not wrap up the discussion or provide closing thoughts. Avoid phrases like "In conclusion," "To summarize,"
-            "Finally," or any language that suggests the article is ending.
+            End with a short, natural closing line. Avoid cliché openers like "In conclusion," or "To summarize,".
 
             - ONLY use images that exist in the original post - DO NOT create or generate new images that don't exist
 
@@ -216,9 +214,13 @@ export class GenerationWorker {
             - NEVER invent or alter match scores, tournament standings/rankings, placements, prize amounts, dates, or player/team
               attributions. Every factual claim (who won, what position a team holds, what the score was) must come directly from
               the source content below — do not extrapolate, guess, or "fill in" numbers that aren't stated.
+            - Which team a player/coach plays for, their role, nationality or past results: ONLY as stated in the source. Do not
+              use your own memory — rosters change constantly and your knowledge may be outdated. If the source doesn't say, don't say it.
+            - Do not describe specific plays, clutches, quotes or performances that the source doesn't describe.
             - If the source content is ambiguous or incomplete about a specific stat, omit that detail rather than inventing one.
             - Analysis, context, and opinion may be added, but never disguised as a new fact (result, ranking, score) not present
               in the source.
+            - Length follows the source: a short source makes a short article. Never pad with filler or repeated points.
 
             Here is the content to transform:
 
@@ -273,79 +275,11 @@ export class GenerationWorker {
             parsedContent.title = (lastSpace > 60 ? cut.substring(0, lastSpace) : cut) + '...';
         }
 
-        // ── Pass 2: Generate continuation ──
-        this.pipelineLog(raw.id, "generating continuation (pass 2)");
-
-        const continuationPrompt = `
-            You are a content generator for a news aggregation platform that uses the TipTap editor.
-
-            I've already generated part of the content below, but I need you to continue this article with more details, examples, or insights. Keep the same style and flow as the existing content.
-
-            1. Translating it to ${language}
-
-            - ONLY use images that exist in the original post - DO NOT create or generate new images that don't exist
-
-            Original prompt:
-            ${await promptService.getRandomPrompt(promptId)}
-
-            Original Title: ${contentToProcess.title}
-            Category: ${contentToProcess.category || 'General'}
-
-            Here's the content already generated:
-            ${parsedContent.content}
-
-            Please continue from where this left off, adding depth, details, and value. Make it feel like a natural extension.
-            Your continuation should be at least as long as the original text.
-
-            FACTUAL ACCURACY: DO NOT introduce any new match score, tournament standing/ranking, placement, date, or result that
-            was not already stated in the content above. You may add context, analysis, or background about the games/teams/players
-            mentioned, but never a new concrete stat or outcome — if you're not certain it's already in the text, leave it out.
-
-            IMPORTANT: DO NOT write any conclusion or summary paragraph. The article should feel unfinished and open-ended.
-            It should not wrap up the discussion or provide closing thoughts. Avoid phrases like "In conclusion," "To summarize,"
-            "Finally," or any language that suggests the article is ending.
-
-            Return only the continuation in JSON format with the following field:
-            {
-              "continuation": "HTML-formatted content with proper tags that continues the existing text"
-            }
-            `;
-
-        try {
-            const continuationText = await aiContentService.generateContent(continuationPrompt);
-
-            if (continuationText) {
-                const sanitizedContinuation = continuationText
-                    .replace(/\r\n/g, '\n')
-                    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
-                const continuationJsonMatch = sanitizedContinuation.match(/\{[\s\S]*\}/);
-                const continuationJsonContent = continuationJsonMatch
-                    ? continuationJsonMatch[0].replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/\t/g, ' ')
-                    : null;
-
-                if (continuationJsonContent) {
-                    const parsedContinuation = JSON.parse(continuationJsonContent);
-
-                    if (parsedContinuation.continuation) {
-                        const lastClosingTagMatch = parsedContent.content.match(/<\/[^>]+>$/);
-
-                        if (lastClosingTagMatch) {
-                            const insertPosition = parsedContent.content.lastIndexOf(lastClosingTagMatch[0]);
-                            parsedContent.content =
-                                parsedContent.content.substring(0, insertPosition) +
-                                parsedContinuation.continuation +
-                                parsedContent.content.substring(insertPosition);
-                        } else {
-                            parsedContent.content += parsedContinuation.continuation;
-                        }
-
-                        this.pipelineLog(raw.id, "continuation merged successfully");
-                    }
-                }
-            }
-        } catch (continuationError) {
-            this.pipelineLog(raw.id, `continuation failed (non-fatal): ${continuationError}`);
-        }
+        // No "continuation" pass: it asked the model to write at least as much again from the
+        // generated text alone (no source), so it padded with invented facts — e.g. insani
+        // (MIBR) described as a FURIA player with made-up clutches. Pass 1 is grounded in the
+        // source; a shorter faithful article beats a long fabricated one (and padding is what
+        // Google's Aug-2026 spam update penalized).
 
         // Rewrite "Leia também: <título>" style cross-references into internal links when a
         // matching local post exists, and strip the link (keep the text) when it doesn't — the

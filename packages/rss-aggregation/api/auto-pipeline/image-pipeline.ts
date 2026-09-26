@@ -27,6 +27,21 @@ export class ImagePipelineWorker {
      * Validates, downloads, caches, and returns a served URL for the given image.
      * Falls back to a branded SVG placeholder on failure.
      */
+    private async fetchViaImageProxy(url: string, maxSize: number): Promise<{ buffer: Buffer; contentType: string } | null> {
+        try {
+            const proxied = `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
+            const contentType = response.headers.get('content-type') || '';
+            if (!response.ok || !contentType.startsWith('image/')) return null;
+            const buffer = Buffer.from(await response.arrayBuffer());
+            if (buffer.length < 1000 || buffer.length > maxSize) return null;
+            ImagePipelineWorker.logger.log(`[pipeline][IMG] fetched via image proxy: ${url.substring(0, 80)}`);
+            return { buffer, contentType };
+        } catch {
+            return null;
+        }
+    }
+
     async validateAndResolveImage(
         url: string,
         title: string,
@@ -93,82 +108,99 @@ export class ImagePipelineWorker {
             let contentType = '';
             let totalBytes = 0;
 
-            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 8000);
+            let downloadError: any = null;
+            try {
+                for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 8000);
 
-                const attemptReferer: string =
-                    attempt > 0 && lastError?.message.includes('403')
-                        ? 'https://www.google.com/'
-                        : this.getRefererForDomain(parsedUrl.hostname, channelReferer);
+                    const attemptReferer: string =
+                        attempt > 0 && lastError?.message.includes('403')
+                            ? 'https://www.google.com/'
+                            : this.getRefererForDomain(parsedUrl.hostname, channelReferer);
 
-                const attemptHeaders: Record<string, string> = {
-                    'User-Agent':
-                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-                    'Accept': 'image/webp,image/apng,image/svg+xml,image/jpeg,image/png,image/*;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Referer': attemptReferer,
-                    'Sec-Fetch-Site': 'cross-site',
-                    'Sec-Fetch-Mode': 'no-cors',
-                    'Sec-Fetch-Dest': 'image',
-                };
+                    const attemptHeaders: Record<string, string> = {
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                        'Accept': 'image/webp,image/apng,image/svg+xml,image/jpeg,image/png,image/*;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'Referer': attemptReferer,
+                        'Sec-Fetch-Site': 'cross-site',
+                        'Sec-Fetch-Mode': 'no-cors',
+                        'Sec-Fetch-Dest': 'image',
+                    };
 
-                try {
-                    ImagePipelineWorker.logger.log(
-                        `[pipeline][IMG] attempt=${attempt+1} url=${normalizedUrl.substring(0, 80)} referer=${attemptReferer}`
-                    );
+                    try {
+                        ImagePipelineWorker.logger.log(
+                            `[pipeline][IMG] attempt=${attempt+1} url=${normalizedUrl.substring(0, 80)} referer=${attemptReferer}`
+                        );
 
-                    const response = await proxyManager.fetch(normalizedUrl, {
-                        method: 'GET',
-                        headers: attemptHeaders,
-                        redirect: 'follow',
-                        follow: 10,
-                        signal: controller.signal,
-                        size: MAX_SIZE,
-                    });
+                        const response = await proxyManager.fetch(normalizedUrl, {
+                            method: 'GET',
+                            headers: attemptHeaders,
+                            redirect: 'follow',
+                            follow: 10,
+                            signal: controller.signal,
+                            size: MAX_SIZE,
+                        });
 
-                    clearTimeout(timeout);
+                        clearTimeout(timeout);
 
-                    if (!response.ok) {
-                        ImagePipelineWorker.logger.log(`[pipeline][IMG] HTTP ${response.status} for ${normalizedUrl.substring(0, 80)}`);
-                        const strategy = this.classifyImageError(response.status);
-                        if (strategy === 'discard') throw new Error(`HTTP ${response.status} (discard)`);
-                        lastError = new Error(`HTTP ${response.status}`);
-                        if (strategy === 'retry' && attempt < MAX_ATTEMPTS - 1) {
-                            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-                            continue;
+                        if (!response.ok) {
+                            ImagePipelineWorker.logger.log(`[pipeline][IMG] HTTP ${response.status} for ${normalizedUrl.substring(0, 80)}`);
+                            const strategy = this.classifyImageError(response.status);
+                            if (strategy === 'discard') throw new Error(`HTTP ${response.status} (discard)`);
+                            lastError = new Error(`HTTP ${response.status}`);
+                            if (strategy === 'retry' && attempt < MAX_ATTEMPTS - 1) {
+                                await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                                continue;
+                            }
+                            if (strategy === 'retry-referer' && attempt < MAX_ATTEMPTS - 1) continue;
+                            throw lastError;
                         }
-                        if (strategy === 'retry-referer' && attempt < MAX_ATTEMPTS - 1) continue;
-                        throw lastError;
+
+                        contentType = response.headers.get('content-type') || '';
+                        if (!contentType.startsWith('image/')) {
+                            throw new Error(`Invalid content-type: ${contentType}`);
+                        }
+
+                        // node-fetch v2: .buffer() reads the full body as Buffer
+                        const imgBuffer: Buffer = await response.buffer();
+                        totalBytes = imgBuffer.length;
+
+                        if (totalBytes > MAX_SIZE) throw new Error(`Image exceeded max size (${totalBytes} bytes)`);
+                        if (totalBytes < 1000) throw new Error("Image too small");
+
+                        fullBuffer = imgBuffer;
+                        break; // success — exit retry loop
+                    } catch (err: any) {
+                        clearTimeout(timeout);
+                        lastError = err;
+                        const strategy = this.classifyImageError(err.message || '');
+                        if (strategy === 'discard' || attempt >= MAX_ATTEMPTS - 1) throw err;
+                        ImagePipelineWorker.logger.log(
+                            `[pipeline][RETRY] Attempt ${attempt + 1} failed for ${parsedUrl.hostname}: ${err.message}`
+                        );
+                        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
                     }
+                }
+            } catch (err: any) {
+                downloadError = err;
+            }
 
-                    contentType = response.headers.get('content-type') || '';
-                    if (!contentType.startsWith('image/')) {
-                        throw new Error(`Invalid content-type: ${contentType}`);
-                    }
-
-                    // node-fetch v2: .buffer() reads the full body as Buffer
-                    const imgBuffer: Buffer = await response.buffer();
-                    totalBytes = imgBuffer.length;
-
-                    if (totalBytes > MAX_SIZE) throw new Error(`Image exceeded max size (${totalBytes} bytes)`);
-                    if (totalBytes < 1000) throw new Error("Image too small");
-
-                    fullBuffer = imgBuffer;
-                    break; // success — exit retry loop
-                } catch (err: any) {
-                    clearTimeout(timeout);
-                    lastError = err;
-                    const strategy = this.classifyImageError(err.message || '');
-                    if (strategy === 'discard' || attempt >= MAX_ATTEMPTS - 1) throw err;
-                    ImagePipelineWorker.logger.log(
-                        `[pipeline][RETRY] Attempt ${attempt + 1} failed for ${parsedUrl.hostname}: ${err.message}`
-                    );
-                    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            // Some CDNs (e.g. img-cdn.hltv.org behind Cloudflare) block this server's datacenter IP
+            // outright — 403 / challenge HTML regardless of headers. Retry once through a public
+            // image proxy that fetches from its own IPs, instead of falling back to an unrelated image.
+            if (!fullBuffer && downloadError && /(403|429|503)|content-type/i.test(downloadError.message || '')) {
+                const viaProxy = await this.fetchViaImageProxy(normalizedUrl, MAX_SIZE);
+                if (viaProxy) {
+                    fullBuffer = viaProxy.buffer;
+                    contentType = viaProxy.contentType;
+                    totalBytes = viaProxy.buffer.length;
                 }
             }
 
-            if (!fullBuffer) throw new Error("All download attempts failed");
+            if (!fullBuffer) throw downloadError || new Error("All download attempts failed");
 
             const hash = this.hashBuffer(fullBuffer);
 

@@ -210,26 +210,9 @@ export class PostingWorker {
                         }
                     }
 
-                    // Step 5: Reuse a contextually similar image from existing posts
-                    if (!validatedImage) {
-                        try {
-                            const similarImage = await this.findSimilarImageFromDB(
-                                raw.title || '',
-                                raw.suggestedTags || [],
-                                raw.suggestedCategories || []
-                            );
-                            if (similarImage) {
-                                validatedImage = similarImage;
-                                PostingWorker.logger.log(
-                                    `[pipeline] Reusing similar image for ${raw.id} from DB context match`
-                                );
-                            }
-                        } catch (e: any) {
-                            PostingWorker.logger.log(
-                                `[pipeline][WARN] Similar image search failed for ${raw.id}: ${e.message}`
-                            );
-                        }
-                    }
+                    // (No "reuse a similar image from other posts" step: it put photos of unrelated
+                    // stories on articles — e.g. Liquid's women's team on a KSCERATO post. A generic
+                    // placeholder is honest; someone else's photo is not.)
 
                     // Step 6: Last resort — placeholder
                     if (!validatedImage) {
@@ -803,118 +786,6 @@ export class PostingWorker {
     }
 
     // ─── Contextual Image Fallback ────────────────────────────
-
-    /**
-     * Searches existing published/scheduled posts for a reusable image
-     * that is contextually similar to the given title + tags.
-     *
-     * Scoring (higher = better):
-     *   +3 per matching tag
-     *   +2 if any keyword from title appears in a matching post's title
-     *   -1 per day old (recency decay, capped at 30 days)
-     *
-     * Returns the featureImage URL of the best match, or null.
-     */
-    private async findSimilarImageFromDB(
-        title: string,
-        tags: string[],
-        categories: string[],
-    ): Promise<string | null> {
-        try {
-            const PostsEntity = Repository.getEntity("PostsEntity");
-
-            // Normalize candidates: tags + significant words from title
-            const titleWords = title
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s]/g, '')
-                .split(/\s+/)
-                .filter(w => w.length >= 4);
-
-            const keywords = [
-                ...tags.map(t => t.toLowerCase().trim()),
-                ...categories.map(c => c.toLowerCase().trim()),
-                ...titleWords,
-            ].filter(Boolean);
-
-            if (keywords.length === 0) return null;
-
-            // Fetch recent posts that have a feature image
-            const recent = await Repository.findAll(PostsEntity, {
-                limit: 200,
-                sortBy: 'createdAt',
-                sort: 'DESC',
-            }, [], {
-                select: ['id', 'title', 'featureImage', 'tags', 'categories', 'createdAt'],
-            });
-
-            if (!recent?.data?.length) return null;
-
-            // Count how many recent posts already share each image, so the
-            // fallback doesn't keep piling the same photo onto more and more
-            // unrelated posts.
-            const imageUsageCount = new Map<string, number>();
-            for (const post of recent.data) {
-                if (!post.featureImage) continue;
-                imageUsageCount.set(post.featureImage, (imageUsageCount.get(post.featureImage) || 0) + 1);
-            }
-
-            const now = Date.now();
-            let bestImage: string | null = null;
-            let bestScore = -Infinity;
-            let bestFallbackImage: string | null = null;
-            let bestFallbackScore = -Infinity;
-
-            for (const post of recent.data) {
-                if (!post.featureImage) continue;
-
-                let rawTags = post.tags;
-                if (typeof rawTags === 'string') {
-                    try { rawTags = JSON.parse(rawTags); } catch {
-                        rawTags = rawTags.split(',');
-                    }
-                }
-                const postTags: string[] = Array.isArray(rawTags)
-                    ? rawTags.map((t: string) => String(t).toLowerCase().trim()).filter(Boolean)
-                    : [];
-
-                const postTitle = (post.title || '').toLowerCase()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-                let score = 0;
-
-                for (const kw of keywords) {
-                    if (postTags.some((t: string) => t.includes(kw) || kw.includes(t))) score += 3;
-                    if (postTitle.includes(kw)) score += 2;
-                }
-
-                if (score <= 0) continue;
-
-                // Recency decay: -1 per day, capped at 30
-                const ageMs = now - new Date(post.createdAt).getTime();
-                const ageDays = Math.min(Math.floor(ageMs / 86_400_000), 30);
-                score -= ageDays;
-
-                // Track the best match overall as a last-resort fallback...
-                if (score > bestFallbackScore) {
-                    bestFallbackScore = score;
-                    bestFallbackImage = post.featureImage;
-                }
-
-                // ...but prefer the best match whose image isn't already shared
-                // by another post, to avoid the same photo spreading further.
-                if ((imageUsageCount.get(post.featureImage) || 0) <= 1 && score > bestScore) {
-                    bestScore = score;
-                    bestImage = post.featureImage;
-                }
-            }
-
-            return bestImage ?? bestFallbackImage;
-        } catch {
-            return null;
-        }
-    }
 
     // ─── Helpers ──────────────────────────────────────────────
 
