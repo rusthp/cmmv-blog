@@ -6,13 +6,8 @@ import {
     Repository
 } from "@cmmv/repository";
 
-import {
-    MediasService
-} from "../medias/medias.service";
-
 @Service("sitemap")
 export class SitemapService {
-    constructor(private readonly mediasService: MediasService) {}
 
     /**
      * Generate the sitemap index
@@ -177,20 +172,14 @@ export class SitemapService {
 
         if(posts){
             for(const post of posts.data){
-                // A post without (or with a broken) cover used to throw here and turn the
-                // whole sitemap page into a 500; list it without the image block instead.
-                let featureImage: string | null = null;
-                if(post.featureImage){
-                    try{
-                        featureImage = await this.mediasService.getImageUrl(
-                            post.featureImage,
-                            "webp",
-                            1200,
-                            post.featureImageAlt,
-                            post.featureImageCaption
-                        );
-                    }catch(e){}
-                }
+                // Use the stored cover URL as-is. Running it through getImageUrl here threw on
+                // posts without a cover (500 for the whole page) and re-downloaded every
+                // external cover on each request (alt text landed in `height` → sharp failed →
+                // nothing cached), so the oldest sitemap page took ~3 min and hit the proxy timeout.
+                const featureImage: string | null =
+                    typeof post.featureImage === "string" && post.featureImage.startsWith("http")
+                        ? post.featureImage.replace(/&(?!amp;)/g, "&amp;")
+                        : null;
 
                 try{
                     sitemapIndex.push(
