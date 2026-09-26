@@ -741,10 +741,14 @@ export class ChampionshipsService {
 
     const [ongoing, finished] = await Promise.all([
       Repository.findAll(EsportsTournamentEntity, { status: 'ongoing', limit: '100' }),
+      // Sorting is only allowed on indexed fields (endDate isn't). The newest-created PandaScore
+      // finished rows hold nearly all recently ended ones (72/74 when checked); healStaleMatches
+      // covers the rest.
       Repository.findAll(EsportsTournamentEntity, {
         status: 'finished',
-        limit: '300',
-        sortBy: 'endDate',
+        dataSource: 'pandascore',
+        limit: '1000',
+        sortBy: 'createdAt',
         sort: 'DESC',
       }),
     ]);
