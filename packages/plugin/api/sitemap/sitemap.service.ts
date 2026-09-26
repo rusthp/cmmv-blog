@@ -177,13 +177,20 @@ export class SitemapService {
 
         if(posts){
             for(const post of posts.data){
-                const featureImage = await this.mediasService.getImageUrl(
-                    post.featureImage,
-                    "webp",
-                    1200,
-                    post.featureImageAlt,
-                    post.featureImageCaption
-                );
+                // A post without (or with a broken) cover used to throw here and turn the
+                // whole sitemap page into a 500; list it without the image block instead.
+                let featureImage: string | null = null;
+                if(post.featureImage){
+                    try{
+                        featureImage = await this.mediasService.getImageUrl(
+                            post.featureImage,
+                            "webp",
+                            1200,
+                            post.featureImageAlt,
+                            post.featureImageCaption
+                        );
+                    }catch(e){}
+                }
 
                 try{
                     sitemapIndex.push(
@@ -192,9 +199,11 @@ export class SitemapService {
                             `\t\t<lastmod>${post.publishedAt.toISOString()}</lastmod>`,
                             `\t\t<changefreq>weekly</changefreq>`,
                             `\t\t<priority>0.8</priority>`,
-                            `\t\t<image:image>`,
-                                `\t\t\t<image:loc>${featureImage}</image:loc>`,
-                            `\t\t</image:image>`,
+                            ...(featureImage ? [
+                                `\t\t<image:image>`,
+                                    `\t\t\t<image:loc>${featureImage}</image:loc>`,
+                                `\t\t</image:image>`
+                            ] : []),
                         `\t</url>`
                     );
                 }catch(e){}

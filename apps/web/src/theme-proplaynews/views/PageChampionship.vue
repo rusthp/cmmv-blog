@@ -369,11 +369,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onServerPrefetch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useHead } from '@unhead/vue';
 
 const route = useRoute();
 const slug = computed(() => route.params.slug as string);
 
 const tournament = ref<any>(null);
+
+useHead(computed(() => {
+    const name = tournament.value?.name;
+    if (!name) return { title: 'Campeonatos — ProPlay News' };
+    const description = `Partidas, chaveamento e resultados do ${name}.`;
+    return {
+        title: `${name} — ProPlay News`,
+        meta: [
+            { name: 'description', content: description },
+            { property: 'og:title', content: `${name} — ProPlay News` },
+            { property: 'og:description', content: description },
+        ],
+    };
+}));
 const matches = ref<any[]>([]);
 const brackets = ref<{ phases: string[]; brackets: Record<string, any[]>; hasPlayoffs: boolean }>({
     phases: [],
