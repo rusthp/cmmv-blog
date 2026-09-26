@@ -2,6 +2,7 @@ import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 import { PIPELINE_STATE, GeneratedContent } from "./pipeline-constants";
 import { checkRankingFacts } from "./ranking-fact-check";
+import { checkAgainstSource } from "./source-fact-check";
 
 //@ts-ignore
 import { AIContentService } from "@cmmv/ai-content";
@@ -100,7 +101,23 @@ export class GenerationWorker {
                         const result = await this.generateContentForRaw(raw, promptId);
 
                         if (result) {
-                            const factCheck = await checkRankingFacts({
+                            // Verify against the full source before anything else sees the text.
+                            const sourceCheck = await checkAgainstSource({
+                                title: result.title || '',
+                                content: result.content || '',
+                                source: raw.content || '',
+                            }).catch((err) => ({
+                                content: result.content,
+                                flagged: true,
+                                notes: `source fact-check crashed: ${err}`,
+                                removed: [] as string[],
+                            }));
+                            result.content = sourceCheck.content;
+                            for (const sentence of sourceCheck.removed) {
+                                this.pipelineLog(raw.id, `removed unsupported sentence: "${sentence.substring(0, 120)}"`);
+                            }
+
+                            const rankingCheck = await checkRankingFacts({
                                 title: result.title || '',
                                 content: result.content || '',
                                 category: raw.category || '',
@@ -108,6 +125,12 @@ export class GenerationWorker {
                                 this.pipelineLog(raw.id, `ranking fact-check crashed (non-fatal, publishing normally): ${err}`);
                                 return { flagged: false } as const;
                             });
+
+                            const factCheck = {
+                                flagged: sourceCheck.flagged || rankingCheck.flagged,
+                                notes: [sourceCheck.notes, 'notes' in rankingCheck ? rankingCheck.notes : undefined]
+                                    .filter(Boolean).join(' | ') || undefined,
+                            };
 
                             const updatePayload: Record<string, any> = {
                                 pipelineState: factCheck.flagged ? PIPELINE_STATE.NEEDS_REVIEW : PIPELINE_STATE.GENERATED,
@@ -130,7 +153,7 @@ export class GenerationWorker {
                             );
 
                             if (factCheck.flagged) {
-                                this.pipelineLog(raw.id, `FLAGGED for review — ranking mismatch: ${factCheck.notes}`);
+                                this.pipelineLog(raw.id, `FLAGGED for review — fact-check: ${factCheck.notes}`);
                             } else {
                                 this.pipelineLog(raw.id, `generated: title="${result.title?.substring(0, 50)}..."`);
                             }
@@ -173,9 +196,10 @@ export class GenerationWorker {
         const language = Config.get("blog.language");
         const maxAttempts = Config.get<number>("blog.autoPipelineMaxAttempts", 3);
 
-        // Truncate content to ~2000 chars to stay within Groq TPM limits
-        // The prompt template + defaultPrompt alone is ~10k tokens, so content must be small
-        const MAX_CONTENT_CHARS = 2000;
+        // The source used to be cut at 2,000 chars (for Groq's TPM limit), so the model wrote
+        // without most of the article and filled the gaps itself — e.g. scores listed after the
+        // stats tables never reached it. DeepSeek (the working provider) takes far more context.
+        const MAX_CONTENT_CHARS = 12000;
         const contentToProcess = {
             title: raw.title,
             content: raw.content
