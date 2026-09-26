@@ -11,7 +11,8 @@ const SUPPORTED_GAMES = ['csgo', 'dota2', 'valorant', 'r6siege', 'lol'];
 @Service('blog_championships')
 export class ChampionshipsService {
   private static readonly logger = new Logger('ChampionshipsService');
-  private readonly staleHealedAt = new Map<string, number>();
+  // Static: @Cron handlers run without the constructed instance, so instance fields are undefined there.
+  private static readonly staleHealedAt = new Map<string, number>();
 
   constructor(
     private readonly liquipediaService?: LiquipediaService,
@@ -748,8 +749,16 @@ export class ChampionshipsService {
       }),
     ]);
 
-    const recentlyFinished = ((finished?.data || []) as any[]).filter(
-      t => t.endDate && t.endDate.slice(0, 10) >= cutoff && !String(t.externalId || '').startsWith('liq_')
+    const recentlyFinished = ((finished?.data || []) as any[]).filter(t => {
+      const end = t.endDate ? new Date(t.endDate) : null;
+      if (!end || isNaN(end.getTime())) return false;
+      return end.toISOString().slice(0, 10) >= cutoff && !String(t.externalId || '').startsWith('liq_');
+    });
+
+    // Repository.findAll swallows query errors and returns null — make an empty result visible.
+    ChampionshipsService.log(
+      `[championships] Match sync: ${ongoing?.data?.length ?? 'query failed'} ongoing, ` +
+      `${finished ? recentlyFinished.length : 'query failed'} finished in the last ${RECENTLY_FINISHED_DAYS} days`
     );
 
     const tournaments: any[] = [...(ongoing?.data || []), ...recentlyFinished];
@@ -791,11 +800,11 @@ export class ChampionshipsService {
     }
 
     // Rotate: a tournament the source never fixes must not take every slot each hour.
-    const due = [...staleSlugs].filter(slug => now - (this.staleHealedAt.get(slug) || 0) > 86_400_000);
+    const due = [...staleSlugs].filter(slug => now - (ChampionshipsService.staleHealedAt.get(slug) || 0) > 86_400_000);
 
     let total = 0;
     for (const slug of due.slice(0, MAX_TOURNAMENTS_PER_RUN)) {
-      this.staleHealedAt.set(slug, now);
+      ChampionshipsService.staleHealedAt.set(slug, now);
       const t = await Repository.findOne(EsportsTournamentEntity, { slug });
       if (t) total += await this.syncMatchesForEntry(t);
     }
