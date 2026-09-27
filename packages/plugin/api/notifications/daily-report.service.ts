@@ -49,9 +49,10 @@ export class DailyReportService {
             if (!backup || backup.ageHours > BACKUP_MAX_AGE_HOURS) warnings.push('backup SQLite atrasado');
             if (disk && disk.usedPercent >= DISK_WARN_PERCENT) warnings.push(`disco em ${disk.usedPercent}%`);
 
-            const postsList = published.length > 0
-                ? published.map((p) => `• [${p.title}](${siteUrl}/post/${p.slug})${p.noindex ? ' _(noindex)_' : ''}`).join('\n')
-                : 'Nenhuma.';
+            const postsList = DailyReportService.fitLines(
+                published.map((p) => `• [${p.title}](${siteUrl}/post/${p.slug})${p.noindex ? ' _(noindex)_' : ''}`),
+                1024
+            ) || 'Nenhuma.';
 
             const trafficDelta = traffic.previous > 0
                 ? ` (${traffic.current >= traffic.previous ? '+' : ''}${Math.round(((traffic.current - traffic.previous) / traffic.previous) * 100)}% vs dia anterior)`
@@ -78,6 +79,24 @@ export class DailyReportService {
             DailyReportService.logger.error(`Daily report failed: ${error instanceof Error ? error.message : String(error)}`);
             return false;
         }
+    }
+
+    /** Joins whole lines up to `max` chars (Discord field limit) instead of cutting a link in half. */
+    private static fitLines(lines: string[], max: number): string {
+        const kept: string[] = [];
+        let length = 0;
+        for (let i = 0; i < lines.length; i++) {
+            const more = `+${lines.length - i} outras`;
+            const next = length + lines[i].length + 1;
+            const rest = i < lines.length - 1 ? more.length + 1 : 0;
+            if (next + rest > max) {
+                kept.push(more);
+                break;
+            }
+            kept.push(lines[i]);
+            length = next;
+        }
+        return kept.join('\n');
     }
 
     private static async publishedSince(since: number) {
