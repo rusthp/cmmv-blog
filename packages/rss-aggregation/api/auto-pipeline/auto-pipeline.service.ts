@@ -252,6 +252,24 @@ export class AutoPipelineService {
                     AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} stuck in GENERATING >30min → reset to ${resetState}`);
                 }
             }
+
+            // Fact-check flagged items nobody reviewed within 3 days → REJECTED. News this
+            // old is no longer worth publishing, and a queue without an owner only grows.
+            // Reversible: setting pipelineState back to needs_review restores the item.
+            const reviewExpiry = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+            const staleReview = await Repository.findAll(FeedRawEntity, {
+                pipelineState: PIPELINE_STATE.NEEDS_REVIEW,
+                limit: 100,
+                sortBy: 'updatedAt',
+                sort: 'ASC',
+            });
+
+            for (const item of staleReview?.data || []) {
+                const updatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
+                if (!updatedAt || updatedAt > reviewExpiry) continue;
+                await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.REJECTED });
+                AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} in NEEDS_REVIEW >3 days without review → REJECTED`);
+            }
         } catch (err: any) {
             AutoPipelineService.logger.error(`[pipeline][recovery] recoverStuckItems error: ${err.message}`);
         }

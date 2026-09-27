@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Query } from '@cmmv/http';
+import { Config } from '@cmmv/core';
 import { Auth } from '@cmmv/auth';
 import { ChampionshipsService } from './championships.service';
 import { RankingsService } from './rankings.service';
@@ -11,8 +12,17 @@ import { LolGprService } from './lol-gpr.service';
 import { LiquipediaService } from './liquipedia.service';
 import { HltvService } from './hltv.service';
 
+// Manual sync/migration triggers hit third-party APIs (PandaScore quota, Liquipedia
+// rate limits) and write to the database — never callable anonymously.
+const UNAUTHORIZED = { success: false, message: 'Unauthorized' };
+
 @Controller('esports')
 export class ChampionshipsController {
+  private static authorized(key?: string): boolean {
+    const signature = Config.get<string>('api.signature', '') || process.env.API_SIGNATURE || '';
+    return !!signature && key === signature;
+  }
+
   constructor(
     private readonly service: ChampionshipsService,
     private readonly rankingsService: RankingsService,
@@ -111,7 +121,8 @@ export class ChampionshipsController {
   }
 
   @Get('rankings/sync-now')
-  async syncRankingsNow() {
+  async syncRankingsNow(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.rankingsService.syncAll();
     return { success: true, stats };
   }
@@ -139,7 +150,8 @@ export class ChampionshipsController {
   }
 
   @Get('rankings/valorant/sync-now')
-  async syncValorantRankingsNow() {
+  async syncValorantRankingsNow(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.valorantRankingsService.syncAll();
     return { success: true, stats };
   }
@@ -174,13 +186,15 @@ export class ChampionshipsController {
   }
 
   @Get('rankings/lol/sync-now')
-  async syncLolRankingsNow() {
+  async syncLolRankingsNow(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.lolRankingsService.syncAll();
     return { success: true, stats };
   }
 
   @Get('sync-now')
-  async syncNow() {
+  async syncNow(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const [pandaStats, rankingStats, valorantStats, lolStats] = await Promise.all([
       this.service.syncAll(),
       this.rankingsService.syncAll(),
@@ -191,25 +205,29 @@ export class ChampionshipsController {
   }
 
   @Get('sync-lol')
-  async syncLol() {
+  async syncLol(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.lolService.syncAll();
     return { success: true, lolesports: stats };
   }
 
   @Get('sync-draft5')
-  async syncDraft5() {
+  async syncDraft5(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.draft5Service.syncAll();
     return { success: true, draft5: stats };
   }
 
   @Get('sync-vlr')
-  async syncVlr() {
+  async syncVlr(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.vlrService.syncAll();
     return { success: true, vlr: stats };
   }
 
   @Get('sync-liquipedia')
-  async syncLiquipedia(@Query('game') game?: string) {
+  async syncLiquipedia(@Query('key') key: string, @Query('game') game?: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     if (game) {
       const count = await this.liquipediaService.syncTournaments(game);
       return { success: true, game, upserted: count };
@@ -222,32 +240,37 @@ export class ChampionshipsController {
   }
 
   @Get('sync-liquipedia-matches')
-  async syncLiquipediaMatches(@Query('slug') slug: string, @Query('game') game?: string) {
+  async syncLiquipediaMatches(@Query('key') key: string, @Query('slug') slug: string, @Query('game') game?: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     if (!slug) return { error: 'slug is required' };
     const count = await this.liquipediaService.syncMatches(slug, game || 'csgo');
     return { success: true, slug, matches: count };
   }
 
   @Get('sync-hltv')
-  async syncHltv() {
+  async syncHltv(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.hltvService.syncFromRss();
     return { success: true, hltv: stats };
   }
 
   @Get('sync-stale')
-  async syncStale() {
+  async syncStale(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.service.syncStale();
     return { success: true, ...stats };
   }
 
   @Get('migrate-to-series')
-  async migrateToSeries() {
+  async migrateToSeries(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.service.migrateToSeries();
     return { success: true, ...stats };
   }
 
   @Get('sync-missing-teams')
-  async syncMissingTeams() {
+  async syncMissingTeams(@Query('key') key: string) {
+    if (!ChampionshipsController.authorized(key)) return UNAUTHORIZED;
     const stats = await this.service.syncMissingTeams();
     return { success: true, ...stats };
   }
