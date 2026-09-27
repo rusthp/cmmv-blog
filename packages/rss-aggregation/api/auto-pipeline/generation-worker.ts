@@ -10,6 +10,7 @@ import { AIContentService } from "@cmmv/ai-content";
 import { PromptsServiceTools } from "@cmmv/blog/prompts/prompts.service";
 //@ts-ignore
 import { PostsPublicService } from "@cmmv/blog/posts/posts.service";
+import { notifyDiscord, DISCORD_COLOR } from "@cmmv/blog/utils/discord.utils";
 
 /**
  * Worker responsible for generating AI content from classified feed items.
@@ -154,6 +155,17 @@ export class GenerationWorker {
 
                             if (factCheck.flagged) {
                                 this.pipelineLog(raw.id, `FLAGGED for review — fact-check: ${factCheck.notes}`);
+                                void notifyDiscord('proplay', {
+                                    title: `⚠️ Matéria barrada na checagem de fatos`,
+                                    description: result.title || raw.title || raw.id,
+                                    color: DISCORD_COLOR.WARN,
+                                    url: raw.link || undefined,
+                                    fields: [
+                                        { name: 'Motivo', value: factCheck.notes || 'sem detalhes' },
+                                        { name: 'Frases removidas', value: String(sourceCheck.removed.length), inline: true },
+                                        { name: 'Estado', value: 'needs_review (não publicada)', inline: true },
+                                    ],
+                                });
                             } else {
                                 this.pipelineLog(raw.id, `generated: title="${result.title?.substring(0, 50)}..."`);
                             }

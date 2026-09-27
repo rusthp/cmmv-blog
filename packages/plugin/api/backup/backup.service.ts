@@ -15,6 +15,7 @@ import {
 } from "@cmmv/repository";
 import { MediasService } from "../medias/medias.service";
 import { BlogStorageService } from "../storage/storage.service";
+import { notifyDiscord, DISCORD_COLOR } from "../utils/discord.utils";
 
 @Service('blog_backup')
 export class BackupService {
@@ -27,10 +28,28 @@ export class BackupService {
 
     @Cron(CronExpression.EVERY_DAY_AT_1AM)
     async handleCronBackup() {
-        await this.backupDatabase.call(this);
-        await this.backupSQLiteDatabase.call(this);
+        const failures: string[] = [];
+
+        try {
+            await this.backupDatabase.call(this);
+        } catch (error) {
+            failures.push(`Backup JSON: ${error instanceof Error ? error.message : String(error)}`);
+        }
+
+        const sqlite = await this.backupSQLiteDatabase.call(this);
+        if (!sqlite.success)
+            failures.push(sqlite.message);
+
         await this.clearOldBackups.call(this);
         await this.clearOldSQLiteBackups.call(this);
+
+        if (failures.length > 0) {
+            await notifyDiscord('infra', {
+                title: '❌ ProPlayNews: backup das 1h falhou',
+                description: failures.join('\n'),
+                color: DISCORD_COLOR.ERROR,
+            });
+        }
     }
 
     /**
