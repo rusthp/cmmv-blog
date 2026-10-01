@@ -128,6 +128,69 @@
                                         </div>
                                     </div>
 
+                                    <!-- Mais Conteúdo Section -->
+                                    <div class="mt-10">
+                                        <h2 class="text-xl font-bold mb-6 pb-2 text-purple-700 border-b-2 border-purple-400">
+                                            Mais Conteúdo
+                                        </h2>
+
+                                        <div ref="relatedPostsObserver" class="min-h-[200px]">
+                                            <div v-if="!relatedPostsLoaded" class="flex justify-center items-center py-6">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+                                                <span class="ml-3 text-gray-600">Carregando posts relacionados...</span>
+                                            </div>
+
+                                            <div v-else-if="relatedPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                                <article
+                                                    v-for="relatedPost in relatedPosts"
+                                                    :key="relatedPost.id"
+                                                    class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
+                                                >
+                                                    <a :href="`/post/${relatedPost.slug}`" class="block">
+                                                        <div class="bg-gray-100 overflow-hidden relative h-48">
+                                                                                                        <OptimizedImage
+                                                v-if="relatedPost.featureImage"
+                                                :src="relatedPost.featureImage"
+                                                :alt="relatedPost.title"
+                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                                :hover="true"
+                                                icon-size="md"
+                                            />
+                                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </div>
+                                                            <div v-if="relatedPost.categories && relatedPost.categories.length > 0" class="absolute top-2 left-2">
+                                                                <span class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-1 rounded-md text-xs font-medium">
+                                                                    {{ relatedPost.categories[0].name }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                    <div class="p-4">
+                                                        <a :href="`/post/${relatedPost.slug}`" class="block">
+                                                            <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b border-gray-200 hover:text-purple-600 transition-colors line-clamp-2">
+                                                                {{ relatedPost.title }}
+                                                            </h3>
+                                                        </a>
+                                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2 pt-2">
+                                                            {{ relatedPost.excerpt || stripHtml(relatedPost.content).substring(0, 120) + '...' }}
+                                                        </p>
+                                                        <div class="flex justify-between items-center text-xs text-gray-500">
+                                                            <span v-if="getAuthor(relatedPost)">Por {{ getAuthor(relatedPost).name }}</span>
+                                                            <span>{{ formatDate(relatedPost.publishedAt || relatedPost.updatedAt) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </article>
+                                            </div>
+
+                                            <div v-else class="text-center py-4 text-gray-600">
+                                                Nenhum post relacionado encontrado.
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Author Box -->
                                     <div v-if="author"
                                         class="mb-10 p-6 bg-neutral-50 rounded-lg border border-neutral-200 mt-8">
@@ -241,69 +304,6 @@
                                         <div class="ad-container ad-banner-mid py-2 px-4" v-else>
                                             <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
                                                 <span>Anúncio</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Mais Conteúdo Section -->
-                                    <div class="mt-10">
-                                        <h2 class="text-xl font-bold mb-6 pb-2 text-purple-700 border-b-2 border-purple-400">
-                                            Mais Conteúdo
-                                        </h2>
-
-                                        <div ref="relatedPostsObserver" class="min-h-[200px]">
-                                            <div v-if="!relatedPostsLoaded" class="flex justify-center items-center py-6">
-                                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
-                                                <span class="ml-3 text-gray-600">Carregando posts relacionados...</span>
-                                            </div>
-
-                                            <div v-else-if="relatedPosts.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                                <article
-                                                    v-for="relatedPost in relatedPosts"
-                                                    :key="relatedPost.id"
-                                                    class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:-translate-y-1 duration-300"
-                                                >
-                                                    <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                        <div class="bg-gray-100 overflow-hidden relative h-48">
-                                                                                                        <OptimizedImage
-                                                v-if="relatedPost.featureImage"
-                                                :src="relatedPost.featureImage"
-                                                :alt="relatedPost.title"
-                                                class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
-                                                :hover="true"
-                                                icon-size="md"
-                                            />
-                                                            <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                </svg>
-                                                            </div>
-                                                            <div v-if="relatedPost.categories && relatedPost.categories.length > 0" class="absolute top-2 left-2">
-                                                                <span class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-1 rounded-md text-xs font-medium">
-                                                                    {{ relatedPost.categories[0].name }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </a>
-                                                    <div class="p-4">
-                                                        <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                            <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b border-gray-200 hover:text-purple-600 transition-colors line-clamp-2">
-                                                                {{ relatedPost.title.length > 30 ? relatedPost.title.substring(0, 30) + '...' : relatedPost.title }}
-                                                            </h3>
-                                                        </a>
-                                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2 pt-2">
-                                                            {{ relatedPost.excerpt || stripHtml(relatedPost.content).substring(0, 120) + '...' }}
-                                                        </p>
-                                                        <div class="flex justify-between items-center text-xs text-gray-500">
-                                                            <span v-if="getAuthor(relatedPost)">Por {{ getAuthor(relatedPost).name }}</span>
-                                                            <span>{{ formatDate(relatedPost.publishedAt || relatedPost.updatedAt) }}</span>
-                                                        </div>
-                                                    </div>
-                                                </article>
-                                            </div>
-
-                                            <div v-else class="text-center py-4 text-gray-600">
-                                                Nenhum post relacionado encontrado.
                                             </div>
                                         </div>
                                     </div>
@@ -944,9 +944,29 @@ function processPostContent(content) {
     // Esports formatting (teams, players, keywords)
     processedContent = applyEsportsFormatting(processedContent);
 
+    processedContent = addReadAlsoLink(processedContent);
+
     if (!isSSR) setTimeout(() => loadEmbedScripts(processedContent), 100);
 
     return processedContent;
+}
+
+const escapeHtml = (text: string) =>
+    text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// Readers coming from social leave after one page; put the top related post in the
+// middle of the text (after the 2nd paragraph) instead of only at the end.
+function addReadAlsoLink(html: string) {
+    const target = relatedCandidates.value[0];
+    if (!target) return html;
+
+    const closes = [...html.matchAll(/<\/p>/g)];
+    if (closes.length < 4) return html;
+
+    const at = (closes[1].index ?? 0) + '</p>'.length;
+    const link = `<p class="read-also"><strong>Leia também:</strong> <a href="/post/${target.slug}">${escapeHtml(target.title)}</a></p>`;
+
+    return html.slice(0, at) + link + html.slice(at);
 }
 
 const EMBED_SCRIPTS = [
@@ -1016,15 +1036,6 @@ const authorInitials = computed(() => {
         : '?'
 })
 
-const shuffleArray = (array: any[]) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-};
-
 const whatsappShareUrl = computed(() => {
     if (!post.value) return '';
     const text = encodeURIComponent(post.value.title + ' ' + pageUrl.value)
@@ -1044,17 +1055,20 @@ onServerPrefetch(async () => {
             : await blogAPI.posts.getBySlug(route.params.slug as string);
 })
 
+// Latest posts (store order), same category first. Deterministic so the inline
+// "Leia também" link renders the same on SSR and on hydration.
+const relatedCandidates = computed(() => {
+    if (!post.value?.id) return [];
+
+    const categoryIds = new Set((post.value.categories || []).map((c: any) => c.id));
+    const others = (postsStore.getPosts || []).filter((p: any) => p.id !== post.value.id);
+    const sameCategory = others.filter((p: any) => (p.categories || []).some((c: any) => categoryIds.has(c.id)));
+
+    return [...sameCategory, ...others.filter((p: any) => !sameCategory.includes(p))];
+})
+
 watchEffect(() => {
-    if (post.value && post.value.id) {
-        const storePosts = postsStore.getPosts || [];
-
-        if (storePosts.length > 0) {
-            const filteredPosts = storePosts.filter(p => p.id !== post.value.id);
-
-            if (filteredPosts.length > 0)
-                relatedPosts.value = shuffleArray(filteredPosts).slice(0, 3);
-        }
-    }
+    relatedPosts.value = relatedCandidates.value.slice(1, 7);
 })
 
 const pageUrl = computed(() => {
@@ -1400,17 +1414,6 @@ const loadRelatedPosts = async () => {
 
     try {
         if (post.value && post.value.id) {
-            const storePosts = postsStore.getPosts || [];
-
-            if (storePosts.length > 0) {
-                const filteredPosts = storePosts.filter(p => p.id !== post.value.id);
-
-                if (filteredPosts.length > 0) {
-                    if (document.body.contains(relatedPostsObserver.value))
-                        relatedPosts.value = shuffleArray(filteredPosts).slice(0, 3);
-                }
-            }
-
             if (document.body.contains(relatedPostsObserver.value))
                 relatedPostsLoaded.value = true;
         }
@@ -1504,6 +1507,18 @@ const sidebarLeftAdContainer = ref(null);
     font-weight: 700;
     color: #111827;
     background: none;
+}
+
+.post-content :deep(.read-also) {
+    border-left: 4px solid #7e22ce;
+    background: #faf5ff;
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+}
+
+.post-content :deep(.read-also a) {
+    color: #7e22ce;
+    font-weight: 600;
 }
 
 /* ─── Content images ─── */

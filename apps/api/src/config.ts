@@ -98,7 +98,7 @@ Config.assign({
         // AI provider — deepseek é principal (créditos ativos), fallback automático para groq/gemini
         aiService: process.env.AI_SERVICE || "deepseek",
         groqApiKey: process.env.GROQ_API_KEY || "",
-        groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+        groqModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
         deepseekApiKey: process.env.DEEPSEEK_API_KEY || "",
         geminiApiKey: process.env.GEMINI_API_KEY || "",
         openaiApiKey: process.env.OPENAI_API_KEY || "",

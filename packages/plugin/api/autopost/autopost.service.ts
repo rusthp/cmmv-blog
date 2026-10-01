@@ -357,7 +357,7 @@ Regras obrigatórias:
                 ? 'https://api.groq.com/openai/v1/chat/completions'
                 : 'https://api.openai.com/v1/chat/completions';
 
-            const model = useGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
+            const model = useGroq ? Config.get<string>("blog.groqModel", "openai/gpt-oss-120b") : 'gpt-4o-mini';
 
             const res = await fetch(endpoint, {
                 method: 'POST',
