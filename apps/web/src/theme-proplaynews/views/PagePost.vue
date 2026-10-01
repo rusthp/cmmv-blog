@@ -170,7 +170,7 @@
                                                     </a>
                                                     <div class="p-4">
                                                         <a :href="`/post/${relatedPost.slug}`" class="block">
-                                                            <h3 class="text-lg font-bold text-gray-800 mb-3 pb-2 border-b border-gray-200 hover:text-purple-600 transition-colors line-clamp-2">
+                                                            <h3 class="text-lg font-bold text-gray-800 mb-3 border-b border-gray-200 hover:text-purple-600 transition-colors line-clamp-2">
                                                                 {{ relatedPost.title }}
                                                             </h3>
                                                         </a>
