@@ -1,6 +1,6 @@
 {
     "name": "@repo/eslint-config",
-    "version": "0.0.358",
+    "version": "0.0.359",
     "type": "module",
     "main": "index.js",
     "exports": {

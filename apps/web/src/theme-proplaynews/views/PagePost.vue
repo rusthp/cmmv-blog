@@ -1509,15 +1509,16 @@ const sidebarLeftAdContainer = ref(null);
     background: none;
 }
 
+/* Dark theme: translucent card in the theme's yellow; text colors come from the theme */
 .post-content :deep(.read-also) {
-    border-left: 4px solid #7e22ce;
-    background: #faf5ff;
+    background: rgba(255, 204, 0, 0.08);
+    border: 1px solid rgba(255, 204, 0, 0.35);
+    border-left-width: 4px;
     padding: 0.75rem 1rem;
-    border-radius: 0 8px 8px 0;
+    border-radius: 8px;
 }
 
 .post-content :deep(.read-also a) {
-    color: #7e22ce;
     font-weight: 600;
 }
 
