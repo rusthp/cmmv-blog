@@ -44,7 +44,7 @@ export class PostingWorker {
 
             const generatedItems = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.GENERATED,
-                limit: Math.min(maxPerCycle, remainingToday),
+                limit: Math.max(maxPerCycle * 20, 60),
                 sortBy: "relevance",
                 sort: "DESC"
             }, ['channel'] as any);
@@ -52,6 +52,14 @@ export class PostingWorker {
             if (!generatedItems || generatedItems.data.length === 0) {
                 PostingWorker.logger.log("[pipeline] postWorker: No generated items to post");
                 return;
+            }
+
+            // Recency tiebreak: among equal-relevance generated items, publish the freshest first,
+            // then cap to the remaining daily budget.
+            {
+                const ts = (x: any) => new Date(x.truePubDate || x.pubDate || x.createdAt || 0).getTime();
+                generatedItems.data.sort((a: any, b: any) => (b.relevance - a.relevance) || (ts(b) - ts(a)));
+                generatedItems.data = generatedItems.data.slice(0, Math.min(maxPerCycle, remainingToday));
             }
 
             const backlogCount = generatedItems.data.length;

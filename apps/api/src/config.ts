@@ -114,6 +114,7 @@ Config.assign({
         autoPipelinePromptId: process.env.AUTO_PIPELINE_PROMPT_ID || "",
         autoPipelineRelevanceThreshold: Number(process.env.AUTO_PIPELINE_RELEVANCE_THRESHOLD) || 60,
         autoPipelineMaxPostsPerCycle: Number(process.env.AUTO_PIPELINE_MAX_POSTS_PER_CYCLE) || 3,
+        autoPipelineMaxPostsPerDay: Number(process.env.AUTO_PIPELINE_MAX_POSTS_PER_DAY) || 3,
         autoPipelineBaseIntervalMinutes: Number(process.env.AUTO_PIPELINE_BASE_INTERVAL) || 60,
         autoPipelineMinIntervalMinutes: Number(process.env.AUTO_PIPELINE_MIN_INTERVAL) || 20,
         autoPipelineBacklogFactor: Number(process.env.AUTO_PIPELINE_BACKLOG_FACTOR) || 5,

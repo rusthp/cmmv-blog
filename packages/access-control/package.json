@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/access-control",
-    "version": "0.1.359",
+    "version": "0.1.360",
     "description": "Access Control package for CMMV",
     "scripts": {
         "build": "tsup",

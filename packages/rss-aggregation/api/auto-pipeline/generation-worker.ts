@@ -54,7 +54,7 @@ export class GenerationWorker {
             let classifiedItems = await Repository.findAll(FeedRawEntity, {
                 pipelineState: PIPELINE_STATE.KEYWORD_DONE,
                 rejected: false,
-                limit: maxPerCycle,
+                limit: Math.max(maxPerCycle * 20, 60),
                 sortBy: "relevance",
                 sort: "DESC"
             });
@@ -63,7 +63,7 @@ export class GenerationWorker {
                 classifiedItems = await Repository.findAll(FeedRawEntity, {
                     pipelineState: PIPELINE_STATE.CLASSIFIED,
                     rejected: false,
-                    limit: maxPerCycle,
+                    limit: Math.max(maxPerCycle * 20, 60),
                     sortBy: "relevance",
                     sort: "DESC"
                 });
@@ -72,6 +72,15 @@ export class GenerationWorker {
             if (!classifiedItems || classifiedItems.data.length === 0) {
                 GenerationWorker.logger.log("[pipeline] generateWorker: No items to generate");
                 return;
+            }
+
+            // Recency tiebreak: among items of equal relevance, the freshest article wins.
+            // A ~440-deep keyword_done backlog drained at 3/day must not bury a championship
+            // final behind older same-relevance items. truePubDate is mostly null -> use pubDate.
+            if (classifiedItems?.data?.length) {
+                const ts = (x: any) => new Date(x.truePubDate || x.pubDate || x.createdAt || 0).getTime();
+                classifiedItems.data.sort((a: any, b: any) => (b.relevance - a.relevance) || (ts(b) - ts(a)));
+                classifiedItems.data = classifiedItems.data.slice(0, maxPerCycle);
             }
 
             GenerationWorker.logger.log(`[pipeline] generateWorker: Processing ${classifiedItems.data.length} items`);
