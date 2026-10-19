@@ -103,6 +103,49 @@ ${articleText}
     return parsed.unsupported.filter((s: any) => typeof s === 'string' && s.trim().length > 0).map((s: string) => s.trim());
 }
 
+/**
+ * Second pass over the first reviewer's flags. The single-shot "list every unsupported
+ * sentence" prompt over-flags faithful articles (it blocked a verbatim-faithful championship
+ * recap at 16/24). Re-judging each flagged sentence individually, with the source in focus,
+ * reverses most of the noisy first-pass flags while keeping genuine fabrications. On any
+ * failure it returns the original flags unchanged (fail-closed: keep blocking).
+ */
+async function confirmFlags(flagged: string[], sourceText: string): Promise<string[]> {
+    if (flagged.length === 0) return flagged;
+    try {
+        const ai: any = Application.resolveProvider(AIContentService);
+        const numbered = flagged.map((sentence, i) => `${i + 1}. ${sentence}`).join('\n');
+        const prompt = `
+You are a strict fact-checker for an eSports news site. For each numbered SENTENCE, decide
+whether its concrete factual claims (names, which team a player belongs to, roles, results,
+scores, placements, dates, prizes, quotes, specific plays/events) are STATED or DIRECTLY
+IMPLIED by the SOURCE. A translation or paraphrase of the SOURCE counts as supported. A
+sentence of pure opinion, analysis or a rhetorical question (asserting no concrete fact) also
+counts as supported. Judge each sentence on its own against the SOURCE.
+
+Return ONLY JSON: {"unsupported": [<the numbers of the sentences the SOURCE does NOT support>]}.
+Empty list if the SOURCE supports all of them.
+
+SOURCE:
+${sourceText}
+
+SENTENCES:
+${numbered}
+`;
+        const response: string = await ai.generateContent(prompt);
+        const json = (response || '').match(/\{[\s\S]*\}/);
+        if (!json) return flagged;
+        const parsed = JSON.parse(json[0]);
+        if (!Array.isArray(parsed.unsupported)) return flagged;
+        const keep = new Set(
+            parsed.unsupported.map((x: any) => Number(x)).filter((x: number) => Number.isInteger(x)),
+        );
+        return flagged.filter((_, i) => keep.has(i + 1));
+    } catch {
+        return flagged;
+    }
+}
+
 const QUOTES: Record<string, string> = { '“': '"', '”': '"', '„': '"', '‘': "'", '’': "'" };
 
 /** Visible text of `html` (tags skipped, entities decoded, whitespace collapsed, quotes unified)
@@ -190,7 +233,11 @@ export async function checkAgainstSource(params: {
     try {
         const articleText = toText(content);
         const visible = textMap(content).text;
-        for (const s of await askReviewer(articleText, sourceText)) {
+        // Confirm the first reviewer's flags one by one before acting on them: the
+        // list-everything pass over-flags faithful articles (blocked a verbatim-faithful
+        // recap at 16/24). confirmFlags fails closed, keeping the originals on error.
+        const confirmed = await confirmFlags(await askReviewer(articleText, sourceText), sourceText);
+        for (const s of confirmed) {
             if (visible.includes(unify(s))) toRemove.add(s);
             else notes.push(`reviewer flagged a sentence not found verbatim: "${s.substring(0, 80)}"`);
         }
