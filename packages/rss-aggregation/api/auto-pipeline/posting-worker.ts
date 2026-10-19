@@ -14,6 +14,9 @@ export class PostingWorker {
     private static isRunning = false;
     /** Titles currently in-flight across all concurrent invocations (normalized). */
     private static readonly processingTitles = new Set<string>();
+    /** Image CDNs that block this server behind a Cloudflare challenge (which also defeats
+     *  the wsrv.nl proxy), so the source photo must be borrowed from a sibling feed. */
+    private static readonly BLOCKED_IMAGE_HOSTS = ["hltv.org", "img-cdn.hltv.org"];
 
     constructor(private readonly imagePipeline: ImagePipelineWorker) {}
 
@@ -199,6 +202,17 @@ export class PostingWorker {
                                     `[pipeline][WARN] Content image failed for ${raw.id}: ${e.message}`
                                 );
                             }
+                        }
+                    }
+
+                    // Step 3.5: Same event, reachable CDN. When the article image sits on a blocked
+                    // CDN (HLTV), another ingested feed usually covers the same event with an og:image
+                    // on a reachable host; borrow that real photo before resorting to a screenshot.
+                    if (!validatedImage) {
+                        try {
+                            validatedImage = await this.findSiblingImage(raw);
+                        } catch (e: any) {
+                            PostingWorker.logger.log(`[pipeline][WARN] sibling-image lookup failed for ${raw.id}: ${e.message}`);
                         }
                     }
 
@@ -697,6 +711,55 @@ export class PostingWorker {
      * Scrapes og:image, twitter:image, JSON-LD image, or first large <img>
      * from the article page when RSS didn't provide a feature image.
      */
+    private isBlockedImageHost(url: string): boolean {
+        try { return PostingWorker.BLOCKED_IMAGE_HOSTS.includes(new URL(url).hostname.replace(/^www\./, "")); }
+        catch { return false; }
+    }
+
+    /**
+     * Finds a real cover photo for an event whose own article image cannot be fetched
+     * (HLTV behind Cloudflare). Scans recently ingested feed items for the best
+     * title-matched sibling with a non-blocked featureImage and resolves that. Requires
+     * >=2 shared significant title words (team+event co-occurrence), so it will not grab an
+     * unrelated photo; validateAndResolveImage adds a cross-topic guard on top.
+     */
+    private async findSiblingImage(raw: any): Promise<string> {
+        if (!raw?.title) return "";
+        const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+        const targetWords = this.titleToWordSet(this.normalizeTitle(raw.title));
+        if (targetWords.size < 2) return "";
+
+        const since = Date.now() - 5 * 24 * 60 * 60 * 1000;
+        const candidates = await Repository.findAll(FeedRawEntity, {
+            limit: 400,
+            sortBy: "createdAt",
+            sort: "DESC",
+        });
+
+        const scored: { img: string; overlap: number; ts: number }[] = [];
+        for (const c of candidates?.data || []) {
+            if (c.id === raw.id || !c.featureImage || this.isBlockedImageHost(c.featureImage)) continue;
+            const ts = new Date(c.truePubDate || c.pubDate || c.createdAt || 0).getTime();
+            if (ts && ts < since) continue;
+            const words = this.titleToWordSet(this.normalizeTitle(c.title || ""));
+            let overlap = 0;
+            for (const w of targetWords) if (words.has(w)) overlap++;
+            if (overlap >= 2) scored.push({ img: c.featureImage, overlap, ts });
+        }
+        scored.sort((a, b) => (b.overlap - a.overlap) || (b.ts - a.ts));
+
+        for (const cand of scored.slice(0, 5)) {
+            try {
+                const resolved = await this.imagePipeline.validateAndResolveImage(cand.img, raw.title || "");
+                if (resolved) {
+                    PostingWorker.logger.log(`[pipeline] Using sibling-feed image (overlap=${cand.overlap}) for ${raw.id}: ${cand.img.substring(0, 80)}`);
+                    return resolved;
+                }
+            } catch { /* try next candidate */ }
+        }
+        return "";
+    }
+
     private async scrapeImageFromArticle(url: string): Promise<string> {
         try {
             const controller = new AbortController();
