@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/ai-content",
-    "version": "0.1.362",
+    "version": "0.1.363",
     "description": "AI Content package for CMMV",
     "scripts": {
         "build": "tsup",

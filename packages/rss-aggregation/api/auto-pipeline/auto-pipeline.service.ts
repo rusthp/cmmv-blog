@@ -270,6 +270,38 @@ export class AutoPipelineService {
                 await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.REJECTED });
                 AutoPipelineService.logger.log(`[pipeline][recovery] Item ${item.id} in NEEDS_REVIEW >3 days without review → REJECTED`);
             }
+            // Pre-publish queue hygiene: feed items still waiting to be generated whose article
+            // is older than AUTO_PIPELINE_STALE_DAYS are dropped. At ~3 posts/day a 400-deep queue
+            // takes months to drain, by which point the news is worthless; expiring stale items
+            // keeps selection on current events. Judged by the article's own date
+            // (truePubDate/pubDate), not updatedAt, which keyword processing keeps fresh while the
+            // news underneath goes stale. Reversible: flip pipelineState back to requeue.
+            const staleDays = Config.get<number>('blog.autoPipelineStaleDays', 4);
+            const staleCutoff = Date.now() - staleDays * 24 * 60 * 60 * 1000;
+            const prePublishStates = [
+                PIPELINE_STATE.PENDING,
+                PIPELINE_STATE.CLASSIFIED,
+                PIPELINE_STATE.KEYWORD_PENDING,
+                PIPELINE_STATE.KEYWORD_DONE,
+            ];
+            let expiredStale = 0;
+            for (const state of prePublishStates) {
+                const batch = await Repository.findAll(FeedRawEntity, {
+                    pipelineState: state,
+                    rejected: false,
+                    limit: 1000,
+                    sortBy: 'createdAt',
+                    sort: 'ASC',
+                });
+                for (const item of batch?.data || []) {
+                    const dateStr = item.truePubDate || item.pubDate || item.createdAt;
+                    const ts = dateStr ? new Date(dateStr).getTime() : 0;
+                    if (!ts || ts >= staleCutoff) continue;
+                    await Repository.updateOne(FeedRawEntity, Repository.queryBuilder({ id: item.id }), { pipelineState: PIPELINE_STATE.REJECTED });
+                    expiredStale++;
+                }
+            }
+            if (expiredStale) AutoPipelineService.logger.log(`[pipeline][recovery] Expired ${expiredStale} pre-publish item(s) older than ${staleDays} days -> REJECTED`);
         } catch (err: any) {
             AutoPipelineService.logger.error(`[pipeline][recovery] recoverStuckItems error: ${err.message}`);
         }
