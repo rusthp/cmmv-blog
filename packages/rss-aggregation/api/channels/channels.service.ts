@@ -1007,11 +1007,12 @@ export class ChannelsService {
                     }
                 }
 
-                // If parser didn't provide content, try direct extraction (fallback)
-                // Especially useful for Dust2 and similar sites
+                // If parser didn't provide content, scrape the article body directly. Many feeds
+                // (vzone.gg, vlr.gg, dexerto) deliver only a ~100-char RSS stub; without this the
+                // article generates from almost nothing and fails fact-check as "source too short".
                 if (!content || content.length < 100) {
                     try {
-                        const directContent = await this.extractContentFromDust2Page(link);
+                        const directContent = await this.extractArticleContent(link);
                         if (directContent && directContent.length > 50) {
                             content = directContent;
                             ChannelsService.logger.log(`Successfully extracted content directly from ${link} (${content.length} chars)`);
@@ -1334,13 +1335,8 @@ export class ChannelsService {
      * @param link - Article URL
      * @returns Article content or empty string
      */
-    private async extractContentFromDust2Page(link: string): Promise<string> {
+    private async extractArticleContent(link: string): Promise<string> {
         try {
-            // Only process Dust2 URLs
-            if (!link.includes('dust2.com.br/noticias/')) {
-                return '';
-            }
-
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
@@ -1366,25 +1362,28 @@ export class ChannelsService {
             // Dust2 uses specific structure for article content
             // Look for article content between specific markers or in specific containers
 
-            // Strategy 1: Look for main content area (common patterns)
+            // Generic article-body extraction (any site, not just Dust2): drop chrome/nav,
+            // prefer <article>/<main>, then keep the substantial <p> blocks. Fixes stub feeds
+            // (vzone.gg, vlr.gg, dexerto) whose RSS gives ~100 chars and failed fact-check as
+            // "source too short to verify".
             let content = '';
+            let scope = html
+                .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+                .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+                .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+                .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+                .replace(/<form[\s\S]*?<\/form>/gi, ' ');
+            const scopeMatch = scope.match(/<article[^>]*>([\s\S]*?)<\/article>/i)
+                || scope.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+            if (scopeMatch && scopeMatch[1]) scope = scopeMatch[1];
 
-            // Try to find article body - common patterns in Dust2
-            const articlePatterns = [
-                /<article[^>]*>([\s\S]*?)<\/article>/i,
-                /<div[^>]*class=["'][^"']*article-content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-                /<div[^>]*class=["'][^"']*post-content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-                /<div[^>]*class=["'][^"']*content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-                // Look for content after the main heading (h1 or h2)
-                /<h1[^>]*>[\s\S]*?<\/h1>[\s\S]*?<p[^>]*>(.*?)(?:<div[^>]*class=["'][^"']*(?:footer|comments|sidebar)[^"']*["']|<\/body>)/is,
-            ];
-
-            for (const pattern of articlePatterns) {
-                const match = html.match(pattern);
-                if (match && match[1] && match[1].length > 200) {
-                    content = match[1];
-                    break;
-                }
+            const paragraphs = [...scope.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+                .map(m => m[1])
+                .filter(pp => pp.replace(/<[^>]+>/g, '').trim().length >= 40);
+            if (paragraphs.length >= 2) {
+                content = paragraphs.map(pp => '<p>' + pp + '</p>').join('\n');
             }
 
             // Strategy 2: Extract all paragraphs between title and "Leia também" or footer
