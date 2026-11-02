@@ -1020,13 +1020,22 @@ onServerPrefetch(async () => {
             : await blogAPI.posts.getBySlug(route.params.slug as string);
 })
 
+// On a direct visit to a post page the posts store is empty (only this post was
+// prefetched via onServerPrefetch), which left "Mais Conteúdo" with no related
+// posts. We fetch recent posts on mount as a fallback and use them when the store
+// has nothing. See the fetch in onMounted.
+const fallbackPosts = ref<any[]>([]);
+
 // Latest posts (store order), same category first. Deterministic so the inline
 // "Leia também" link renders the same on SSR and on hydration.
 const relatedCandidates = computed(() => {
     if (!post.value?.id) return [];
 
+    const pool = (postsStore.getPosts && postsStore.getPosts.length)
+        ? postsStore.getPosts
+        : fallbackPosts.value;
     const categoryIds = new Set((post.value.categories || []).map((c: any) => c.id));
-    const others = (postsStore.getPosts || []).filter((p: any) => p.id !== post.value.id);
+    const others = (pool || []).filter((p: any) => p.id !== post.value.id);
     const sameCategory = others.filter((p: any) => (p.categories || []).some((c: any) => categoryIds.has(c.id)));
 
     return [...sameCategory, ...others.filter((p: any) => !sameCategory.includes(p))];
@@ -1317,6 +1326,15 @@ onMounted(() => {
     window.addEventListener('scroll', handleScroll);
     setupLazyLoading();
     loadAdScripts();
+
+    // Fill the related-posts pool on direct visits, where the store is empty.
+    if (!postsStore.getPosts || postsStore.getPosts.length === 0) {
+        blogAPI.posts.getAll(0)
+            .then((response: any) => {
+                fallbackPosts.value = Array.isArray(response) ? response : (response?.posts || []);
+            })
+            .catch(() => { /* leave empty — section falls back to "Nenhum post relacionado" */ });
+    }
 });
 
 onUnmounted(() => {
