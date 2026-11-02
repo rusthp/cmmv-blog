@@ -17,7 +17,9 @@ export function stripSourcePromo(html: string): string {
     if (!html) return html;
     return html.replace(/<p\b[^>]*>[\s\S]*?<\/p>/gi, (block) => {
         const text = block.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
-        if (/^\s*(Fonte|Source)\s*:/i.test(text)) return '';
+        // Allow a leading emoji / symbol before the label, e.g. "📸 Fonte:".
+        const lead = text.replace(/^[^\p{L}]+/u, '');
+        if (/^(Fonte|Source)\s*:/i.test(lead)) return '';
         if (CTA.test(text) && SOCIAL.test(text)) return '';
         return block;
     });
