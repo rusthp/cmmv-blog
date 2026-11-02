@@ -475,12 +475,15 @@ async function bootstrap() {
             if (served) return;
         }
 
-        if (url.startsWith('/src/theme-') && /\.\w+$/.test(url)) {
+        if (url.startsWith('/src/theme-') && /\.\w+(\?.*)?$/.test(url)) {
+            // Strip the query (e.g. the ?v= cache-bust on theme CSS) before resolving
+            // the file — otherwise the path includes "?v=..." and never matches.
+            const cleanUrl = url.split('?')[0];
             // In dev mode, skip .ts/.vue/.tsx files — let Vite middleware handle them
-            const urlExt = path.extname(url.split('?')[0]).toLowerCase();
+            const urlExt = path.extname(cleanUrl).toLowerCase();
             const viteHandled = ['.ts', '.tsx', '.vue', '.mts', '.js', '.mjs'];
             if (!isDev || !viteHandled.includes(urlExt)) {
-                const srcPath = path.resolve(process.cwd(), '.' + url);
+                const srcPath = path.resolve(process.cwd(), '.' + cleanUrl);
                 const served = await serveStaticFile(req, res, srcPath);
                 if (served) return;
             }

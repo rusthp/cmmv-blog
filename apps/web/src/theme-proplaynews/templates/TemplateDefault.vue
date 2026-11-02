@@ -453,7 +453,10 @@ useHead({
     link: [
         {
             rel: 'stylesheet',
-            href: '/src/theme-proplaynews/style.css',
+            // Versioned so a theme-CSS change actually reaches browsers: the file is
+            // served raw with max-age=3600, so without a cache-bust an edit stays
+            // invisible for up to an hour (and behind Cloudflare). Bump on CSS changes.
+            href: '/src/theme-proplaynews/style.css?v=20261102',
             media: 'all'
         },
         {
