@@ -1,6 +1,6 @@
 import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
-import { PIPELINE_STATE, GeneratedContent } from "./pipeline-constants";
+import { PIPELINE_STATE, GeneratedContent, computePriority } from "./pipeline-constants";
 import { checkRankingFacts } from "./ranking-fact-check";
 import { checkAgainstSource } from "./source-fact-check";
 
@@ -74,12 +74,16 @@ export class GenerationWorker {
                 return;
             }
 
-            // Recency tiebreak: among items of equal relevance, the freshest article wins.
-            // A ~440-deep keyword_done backlog drained at 3/day must not bury a championship
-            // final behind older same-relevance items. truePubDate is mostly null -> use pubDate.
+            // Priority queue: generate the highest-priority items first so a championship win or
+            // roster move from today isn't buried behind a ~440-deep keyword_done backlog drained
+            // at a few per day. Event type + freshness drive the order; relevance and recency break
+            // near-ties. truePubDate is mostly null -> freshnessScore falls back to pubDate.
             if (classifiedItems?.data?.length) {
                 const ts = (x: any) => new Date(x.truePubDate || x.pubDate || x.createdAt || 0).getTime();
-                classifiedItems.data.sort((a: any, b: any) => (b.relevance - a.relevance) || (ts(b) - ts(a)));
+                classifiedItems.data.sort((a: any, b: any) =>
+                    (computePriority(b) - computePriority(a)) ||
+                    (b.relevance - a.relevance) ||
+                    (ts(b) - ts(a)));
                 classifiedItems.data = classifiedItems.data.slice(0, maxPerCycle);
             }
 

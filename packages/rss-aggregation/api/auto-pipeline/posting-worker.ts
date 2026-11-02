@@ -1,6 +1,6 @@
 import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
-import { PIPELINE_STATE } from "./pipeline-constants";
+import { PIPELINE_STATE, computePriority } from "./pipeline-constants";
 import { ImagePipelineWorker } from "./image-pipeline";
 import { proxyManager } from '../proxy/proxy-manager';
 
@@ -57,11 +57,15 @@ export class PostingWorker {
                 return;
             }
 
-            // Recency tiebreak: among equal-relevance generated items, publish the freshest first,
-            // then cap to the remaining daily budget.
+            // Priority queue: event type (champion ≫ roster > result > other) + freshness drive
+            // the order, so a title win or signing from today jumps ahead of an older same-relevance
+            // preview; relevance and recency only break near-ties. Then cap to the daily budget.
             {
                 const ts = (x: any) => new Date(x.truePubDate || x.pubDate || x.createdAt || 0).getTime();
-                generatedItems.data.sort((a: any, b: any) => (b.relevance - a.relevance) || (ts(b) - ts(a)));
+                generatedItems.data.sort((a: any, b: any) =>
+                    (computePriority(b) - computePriority(a)) ||
+                    (b.relevance - a.relevance) ||
+                    (ts(b) - ts(a)));
                 generatedItems.data = generatedItems.data.slice(0, Math.min(maxPerCycle, remainingToday));
             }
 
