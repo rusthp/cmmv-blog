@@ -99,9 +99,13 @@ export class AutoPipelineController {
                 sort: 'DESC',
             });
             for (const media of smallMedias?.data || []) {
-                // Placeholders are SVG-converted-to-webp with very small file sizes (< 15KB)
-                // and dimensions matching the placeholder config
-                if (media.size && media.size < 15000 && media.width === media.height * 2) {
+                // Placeholders are SVG-converted-to-webp: very small files (< 15KB) with a
+                // roughly 2:1 cover aspect. Match a tolerance band rather than an exact
+                // width===height*2, since the generated covers are 960x504 (~1.9:1), not
+                // only the older exact-2:1 800x400 ones. Real photos at these sizes are
+                // comfortably larger than 15KB, so size keeps the match precise.
+                if (media.size && media.size < 15000 && media.height > 0 &&
+                    Math.abs(media.width / media.height - 2) <= 0.12) {
                     placeholderHashes.add(media.sha1);
                 }
             }
