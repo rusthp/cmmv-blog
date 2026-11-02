@@ -148,9 +148,12 @@ main, .container, .content {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* SOBRESCREVE: Truncamento APENAS para parágrafos na homepage */
+/* SOBRESCREVE: Truncamento APENAS para parágrafos na homepage.
+   A line-height real do excerpt é 1.5 (21px/14px), então 3 linhas = 4.5em.
+   O 3.6em antigo cortava em ~2.4 linhas, no meio da 3ª linha (corte feio que
+   encostava na data). 4.6em cabe as 3 linhas inteiras e esconde a 4ª limpo. */
 .home-page article p {
-    max-height: 3.6em !important; /* Limita a 3 linhas aproximadamente */
+    max-height: 4.6em !important;
     overflow: hidden !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 3 !important;
