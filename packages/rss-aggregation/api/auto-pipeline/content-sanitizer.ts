@@ -15,6 +15,14 @@ const CTA = /(siga|seguindo|acompanhe|confira as produções|fique por dentro)/i
 /** Remove whole <p> blocks that are source self-promotion or a "Fonte:/Source:" line. */
 export function stripSourcePromo(html: string): string {
     if (!html) return html;
+    // A trailing source credit is often malformed HTML — a <p> opened for the "Fonte:"
+    // line while the previous <p> was never closed — so the per-<p> pass below would
+    // swallow the body with it and not recognize it. Remove the Fonte paragraph (and any
+    // <br> spacing before it) directly first.
+    html = html.replace(
+        /(?:<br\s*\/?>\s*)*<p\b[^>]*>\s*(?:<strong>\s*)?[^<\w]*(?:Fonte|Source)\s*:[\s\S]*?<\/p>/gi,
+        ''
+    );
     return html.replace(/<p\b[^>]*>[\s\S]*?<\/p>/gi, (block) => {
         const text = block.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
         // Allow a leading emoji / symbol before the label, e.g. "📸 Fonte:".

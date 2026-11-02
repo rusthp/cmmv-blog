@@ -867,6 +867,12 @@ function stripSourcePromo(html: string): string {
     if (!html) return html;
     const SOCIAL = /(twitter|instagram|threads|bluesky|facebook|tiktok|youtube|spotify|nas redes)/i;
     const CTA = /(siga|seguindo|acompanhe|confira as produções|fique por dentro)/i;
+    // Trailing "Fonte:" credits are often malformed (a <p> opened while the previous
+    // one was never closed), so remove that paragraph directly before the per-<p> pass.
+    html = html.replace(
+        /(?:<br\s*\/?>\s*)*<p\b[^>]*>\s*(?:<strong>\s*)?[^<\w]*(?:Fonte|Source)\s*:[\s\S]*?<\/p>/gi,
+        ''
+    );
     return html.replace(/<p\b[^>]*>[\s\S]*?<\/p>/gi, (block) => {
         const text = block.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
         // Allow a leading emoji / symbol before the label, e.g. "📸 Fonte:".
