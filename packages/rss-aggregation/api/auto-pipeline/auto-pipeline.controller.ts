@@ -14,7 +14,6 @@ import {
 } from "../channels/channels.service";
 
 import { ImagePipelineWorker } from "./image-pipeline";
-import { sanitizeArticleContent } from "./content-sanitizer";
 
 @Controller("pipeline")
 export class AutoPipelineController {
@@ -196,72 +195,6 @@ export class AutoPipelineController {
             fixed,
             failed,
             skipped,
-        };
-    }
-
-    // One-off cleanup: strip source self-promo and raw-keyword filler from the stored
-    // content of already-published posts, so the distribution channels that read the
-    // saved content (not the rendered page) are clean too. Idempotent — safe to re-run.
-    @Get("clean-content", { exclude: true })
-    async cleanContent() {
-        const logger = new Logger("ContentClean");
-        const PostsEntity = Repository.getEntity("PostsEntity");
-        const FeedRawEntity = Repository.getEntity("FeedRawEntity");
-
-        // findAll caps a page at 1000 rows (and only hydrates content at that size), so
-        // walk the whole table in offset batches to cover every published post.
-        const PAGE = 1000;
-        let offset = 0;
-        let cleaned = 0;
-        let unchanged = 0;
-        let scanned = 0;
-
-        for (;;) {
-            const page = await Repository.findAll(PostsEntity, {
-                limit: PAGE,
-                offset,
-                sortBy: 'createdAt',
-                sort: 'DESC',
-            });
-            const rows = page?.data || [];
-            if (rows.length === 0) break;
-
-            for (const post of rows) {
-                scanned++;
-                const original = post.content || '';
-                if (!original) { unchanged++; continue; }
-
-                let keyword: string | null = null;
-                try {
-                    const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
-                    keyword = feedRaw?.seoMainKeyword || null;
-                } catch {}
-
-                const next = sanitizeArticleContent(original, keyword);
-                // Never blank a post: only write when something changed and content remains.
-                if (next !== original && next.trim().length > 0) {
-                    await Repository.updateOne(
-                        PostsEntity,
-                        Repository.queryBuilder({ id: post.id }),
-                        { content: next }
-                    );
-                    cleaned++;
-                } else {
-                    unchanged++;
-                }
-            }
-
-            offset += PAGE;
-            if (rows.length < PAGE) break;
-        }
-
-        logger.log(`Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged, ${scanned} scanned`);
-        return {
-            result: true,
-            message: `Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged, ${scanned} scanned`,
-            cleaned,
-            unchanged,
-            scanned,
         };
     }
 
