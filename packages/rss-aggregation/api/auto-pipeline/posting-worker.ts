@@ -525,6 +525,18 @@ export class PostingWorker {
                     candidates.push(categoryName);
                 }
             }
+
+            // Topical categories were starving: tournament/championship coverage and
+            // expo/community events were only landing in the game categories (CS2,
+            // Valorant) and Notícias, leaving Campeonatos and Eventos stale. Tag them
+            // from the title so those sections stay alive. Accent-insensitive.
+            const t = lowerTitle.normalize('NFD').replace(/[̀-ͯ]/g, '');
+            if (/(campeonato|\bmajor\b|masters|championship|\bcup\b|\bcopa\b|\bliga\b|circuit|\biem\b|\bpgl\b|\bblast\b|\bvct\b|playoffs|semifinal|quartas de final|\bfinal\b|fase de grupos|classificat|qualifier|qualify|campea|conquist(a|ou)|e campe)/.test(t)) {
+                candidates.push('Campeonatos');
+            }
+            if (/(gamescom|brasil game show|\bbgs\b|comic ?con|watch part|fan fest|fan ?meet|\bexpo\b|convention|convencao|meetup|evento de|encontro de f)/.test(t)) {
+                candidates.push('Eventos');
+            }
         }
 
         candidates = [...new Set(candidates)];
