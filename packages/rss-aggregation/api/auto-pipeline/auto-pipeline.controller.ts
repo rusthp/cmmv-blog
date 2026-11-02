@@ -2,6 +2,8 @@ import {
     Controller, Get
 } from "@cmmv/http";
 
+import { Auth } from "@cmmv/auth";
+
 import { Application, Config, Logger } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 
@@ -18,6 +20,7 @@ import { ImagePipelineWorker } from "./image-pipeline";
 @Controller("pipeline")
 export class AutoPipelineController {
 
+    @Auth({ rootOnly: true })
     @Get("classify", { exclude: true })
     async runClassify() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -25,6 +28,7 @@ export class AutoPipelineController {
         return { result: true, message: "classifyWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("generate", { exclude: true })
     async runGenerate() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -32,6 +36,7 @@ export class AutoPipelineController {
         return { result: true, message: "generateWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("postworker", { exclude: true })
     async runPost() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -39,6 +44,7 @@ export class AutoPipelineController {
         return { result: true, message: "postWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("keywords", { exclude: true })
     async runKeywords() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -46,6 +52,7 @@ export class AutoPipelineController {
         return { result: true, message: "keywordEngineWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("enrich-keywords", { exclude: true })
     async runEnrichKeywords() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -53,6 +60,7 @@ export class AutoPipelineController {
         return { result: true, message: "keywordSuggestionsWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("update-posts", { exclude: true })
     async runUpdatePosts() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -60,6 +68,7 @@ export class AutoPipelineController {
         return { result: true, message: "postUpdateWorker executed" };
     }
 
+    @Auth({ rootOnly: true })
     @Get("runall", { exclude: true })
     async runAll() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
@@ -69,6 +78,7 @@ export class AutoPipelineController {
         await svc.postWorker();
         return { result: true, message: "Full pipeline executed" };
     }
+    @Auth({ rootOnly: true })
     @Get("reprocess-images", { exclude: true })
     async reprocessImages() {
         const logger = new Logger("ImageReprocess");
