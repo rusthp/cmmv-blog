@@ -1,6 +1,6 @@
 {
     "name": "@cmmv/odds",
-    "version": "0.1.374",
+    "version": "0.1.375",
     "description": "Odds package for CMMV",
     "scripts": {
         "build": "tsup",

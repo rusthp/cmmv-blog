@@ -209,7 +209,7 @@ export class AutoPipelineController {
         const FeedRawEntity = Repository.getEntity("FeedRawEntity");
 
         const posts = await Repository.findAll(PostsEntity, {
-            limit: 1000,
+            limit: 100000,
             sortBy: 'createdAt',
             sort: 'DESC',
         });
