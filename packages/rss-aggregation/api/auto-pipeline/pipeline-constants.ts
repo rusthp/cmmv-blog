@@ -57,8 +57,8 @@ const normalizeTitle = (title: string): string =>
 // A championship WIN, not mere tournament coverage. "campeonato" (tournament)
 // must NOT match here — only "campeao/campea", "titulo", "conquista", etc.
 const RE_CHAMPION = /\b(campea|campea[o]|bicampe|tricampe|tetracampe|conquist|levanta a taca|leva o titulo|fatura o titulo|e campe|sao campe|campeon(a|es) d)/;
-const RE_ROSTER = /(contrata|anuncia|oficializ|e o novo|reforco|reforca|bench|banco de reservas|deixa a|sai d[ao]|sai para|roster|line ?up|acerta com|fecha com|nova contratacao|novo integrante|retorna (a|para)|assina com)/;
-const RE_RESULT = /(vence|venceu|derrota|elimina|avanca|classifica|atropela|bate |supera|semifinal|vaga n[aà] final|chega (a|à|a ) final|estreia|enfrenta|empata)/;
+const RE_ROSTER = /(contrata|anuncia|oficializ|e o novo|reforco|reforca|bench|banco de reservas|deixa[m]? a|sai d[ao]|sai para|roster|line ?up|free[ -]?agent|acerta com|fecha com|nova contratacao|novo integrante|retorna (a|para)|volta (a|para)|agora (sou|somos)|assina com)/;
+const RE_RESULT = /(vence|venceu|derrota|elimina|avanca|classifica|atropela|bate |supera|semifina|finalist|vaga n[aà] final|chega (a|à|a ) final|estreia|enfrenta|empata)/;
 
 export function priorityTypeScore(title: string): number {
     const t = normalizeTitle(title);
