@@ -143,6 +143,8 @@
                                                 :src="relatedPost.featureImage"
                                                 :alt="relatedPost.title"
                                                 class="w-full h-full object-cover transition-transform hover:scale-105 duration-300 imgix-lazy"
+                                                width="400"
+                                                height="192"
                                                 :hover="true"
                                                 icon-size="md"
                                             />

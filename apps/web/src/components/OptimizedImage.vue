@@ -6,7 +6,7 @@
             ref="imageElement"
             :src="imageSrc"
             :srcset="useOriginalImage ? undefined : computedSrcset"
-            :sizes="useOriginalImage || !computedSrcset ? undefined : sizes"
+            :sizes="useOriginalImage || !computedSrcset ? undefined : effectiveSizes"
             :alt="alt || 'Image'"
             :class="imageClasses"
             :width="width"
@@ -92,7 +92,7 @@ const props = withDefaults(defineProps<OptimizedImageProps>(), {
     transition: true,
     autoSrcset: true,
     srcsetSizes: () => [320, 640, 960, 1280, 2560],
-    sizes: '(max-width: 320px) 320px, (max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 2560px',
+    sizes: '',
     quality: 75,
     format: 'auto'
 });
@@ -153,6 +153,21 @@ const computedSrcset = computed(() => {
     }
 
     return undefined;
+});
+
+// The browser picks a srcset candidate from `sizes`. Without a realistic value
+// it assumed the largest layout slot and downloaded the 2560w variant for every
+// image (hero, 400px cards, 80px thumbs alike). Derive sizes from the display
+// width each call site already passes, so each slot gets an appropriately sized
+// image (the browser still scales up for high-DPR screens on its own).
+const effectiveSizes = computed(() => {
+    if (props.sizes) return props.sizes;
+
+    const w = typeof props.width === 'number'
+        ? props.width
+        : parseInt(String(props.width ?? ''), 10);
+
+    return (w && !Number.isNaN(w)) ? `${w}px` : '100vw';
 });
 
 const imageClasses = computed(() => {
