@@ -208,45 +208,60 @@ export class AutoPipelineController {
         const PostsEntity = Repository.getEntity("PostsEntity");
         const FeedRawEntity = Repository.getEntity("FeedRawEntity");
 
-        const posts = await Repository.findAll(PostsEntity, {
-            limit: 100000,
-            sortBy: 'createdAt',
-            sort: 'DESC',
-        });
-
+        // findAll caps a page at 1000 rows (and only hydrates content at that size), so
+        // walk the whole table in offset batches to cover every published post.
+        const PAGE = 1000;
+        let offset = 0;
         let cleaned = 0;
         let unchanged = 0;
+        let scanned = 0;
 
-        for (const post of posts?.data || []) {
-            const original = post.content || '';
-            if (!original) { unchanged++; continue; }
+        for (;;) {
+            const page = await Repository.findAll(PostsEntity, {
+                limit: PAGE,
+                offset,
+                sortBy: 'createdAt',
+                sort: 'DESC',
+            });
+            const rows = page?.data || [];
+            if (rows.length === 0) break;
 
-            let keyword: string | null = null;
-            try {
-                const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
-                keyword = feedRaw?.seoMainKeyword || null;
-            } catch {}
+            for (const post of rows) {
+                scanned++;
+                const original = post.content || '';
+                if (!original) { unchanged++; continue; }
 
-            const next = sanitizeArticleContent(original, keyword);
-            // Never blank a post: only write when something changed and content remains.
-            if (next !== original && next.trim().length > 0) {
-                await Repository.updateOne(
-                    PostsEntity,
-                    Repository.queryBuilder({ id: post.id }),
-                    { content: next }
-                );
-                cleaned++;
-                logger.log(`cleaned "${post.title}"`);
-            } else {
-                unchanged++;
+                let keyword: string | null = null;
+                try {
+                    const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
+                    keyword = feedRaw?.seoMainKeyword || null;
+                } catch {}
+
+                const next = sanitizeArticleContent(original, keyword);
+                // Never blank a post: only write when something changed and content remains.
+                if (next !== original && next.trim().length > 0) {
+                    await Repository.updateOne(
+                        PostsEntity,
+                        Repository.queryBuilder({ id: post.id }),
+                        { content: next }
+                    );
+                    cleaned++;
+                } else {
+                    unchanged++;
+                }
             }
+
+            offset += PAGE;
+            if (rows.length < PAGE) break;
         }
 
+        logger.log(`Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged, ${scanned} scanned`);
         return {
             result: true,
-            message: `Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged`,
+            message: `Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged, ${scanned} scanned`,
             cleaned,
             unchanged,
+            scanned,
         };
     }
 
