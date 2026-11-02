@@ -14,6 +14,7 @@ import {
 } from "../channels/channels.service";
 
 import { ImagePipelineWorker } from "./image-pipeline";
+import { sanitizeArticleContent } from "./content-sanitizer";
 
 @Controller("pipeline")
 export class AutoPipelineController {
@@ -195,6 +196,57 @@ export class AutoPipelineController {
             fixed,
             failed,
             skipped,
+        };
+    }
+
+    // One-off cleanup: strip source self-promo and raw-keyword filler from the stored
+    // content of already-published posts, so the distribution channels that read the
+    // saved content (not the rendered page) are clean too. Idempotent — safe to re-run.
+    @Get("clean-content", { exclude: true })
+    async cleanContent() {
+        const logger = new Logger("ContentClean");
+        const PostsEntity = Repository.getEntity("PostsEntity");
+        const FeedRawEntity = Repository.getEntity("FeedRawEntity");
+
+        const posts = await Repository.findAll(PostsEntity, {
+            limit: 1000,
+            sortBy: 'createdAt',
+            sort: 'DESC',
+        });
+
+        let cleaned = 0;
+        let unchanged = 0;
+
+        for (const post of posts?.data || []) {
+            const original = post.content || '';
+            if (!original) { unchanged++; continue; }
+
+            let keyword: string | null = null;
+            try {
+                const feedRaw = await Repository.findOne(FeedRawEntity, { postRef: post.id });
+                keyword = feedRaw?.seoMainKeyword || null;
+            } catch {}
+
+            const next = sanitizeArticleContent(original, keyword);
+            // Never blank a post: only write when something changed and content remains.
+            if (next !== original && next.trim().length > 0) {
+                await Repository.updateOne(
+                    PostsEntity,
+                    Repository.queryBuilder({ id: post.id }),
+                    { content: next }
+                );
+                cleaned++;
+                logger.log(`cleaned "${post.title}"`);
+            } else {
+                unchanged++;
+            }
+        }
+
+        return {
+            result: true,
+            message: `Content cleanup: ${cleaned} cleaned, ${unchanged} unchanged`,
+            cleaned,
+            unchanged,
         };
     }
 

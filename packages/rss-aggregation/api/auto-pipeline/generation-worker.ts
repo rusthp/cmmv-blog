@@ -1,6 +1,7 @@
 import { Logger, Config, Application } from "@cmmv/core";
 import { Repository } from "@cmmv/repository";
 import { PIPELINE_STATE, GeneratedContent, computePriority } from "./pipeline-constants";
+import { sanitizeArticleContent } from "./content-sanitizer";
 import { checkRankingFacts } from "./ranking-fact-check";
 import { checkAgainstSource } from "./source-fact-check";
 
@@ -130,6 +131,11 @@ export class GenerationWorker {
                             for (const sentence of sourceCheck.removed) {
                                 this.pipelineLog(raw.id, `removed unsupported sentence: "${sentence.substring(0, 120)}"`);
                             }
+
+                            // Deterministic hygiene: drop source self-promo and raw-keyword
+                            // filler the model may have left in, so stored content (and the
+                            // distribution channels that read it) is clean, not just the page.
+                            result.content = sanitizeArticleContent(result.content || '', raw.seoMainKeyword);
 
                             const rankingCheck = await checkRankingFacts({
                                 title: result.title || '',
