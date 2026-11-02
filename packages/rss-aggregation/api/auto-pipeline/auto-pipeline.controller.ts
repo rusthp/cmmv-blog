@@ -20,56 +20,56 @@ import { ImagePipelineWorker } from "./image-pipeline";
 @Controller("pipeline")
 export class AutoPipelineController {
 
-    @Auth({ rootOnly: true })
     @Get("classify", { exclude: true })
+    @Auth({ rootOnly: true })
     async runClassify() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.classifyWorker();
         return { result: true, message: "classifyWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("generate", { exclude: true })
+    @Auth({ rootOnly: true })
     async runGenerate() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.generateWorker();
         return { result: true, message: "generateWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("postworker", { exclude: true })
+    @Auth({ rootOnly: true })
     async runPost() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.postWorker();
         return { result: true, message: "postWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("keywords", { exclude: true })
+    @Auth({ rootOnly: true })
     async runKeywords() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.keywordEngineWorker();
         return { result: true, message: "keywordEngineWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("enrich-keywords", { exclude: true })
+    @Auth({ rootOnly: true })
     async runEnrichKeywords() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.keywordSuggestionsWorker();
         return { result: true, message: "keywordSuggestionsWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("update-posts", { exclude: true })
+    @Auth({ rootOnly: true })
     async runUpdatePosts() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.postUpdateWorker();
         return { result: true, message: "postUpdateWorker executed" };
     }
 
-    @Auth({ rootOnly: true })
     @Get("runall", { exclude: true })
+    @Auth({ rootOnly: true })
     async runAll() {
         const svc: any = Application.resolveProvider(AutoPipelineService);
         await svc.classifyWorker();
@@ -78,8 +78,8 @@ export class AutoPipelineController {
         await svc.postWorker();
         return { result: true, message: "Full pipeline executed" };
     }
-    @Auth({ rootOnly: true })
     @Get("reprocess-images", { exclude: true })
+    @Auth({ rootOnly: true })
     async reprocessImages() {
         const logger = new Logger("ImageReprocess");
         logger.log("Starting image reprocessing for posts with placeholder or missing images...");
