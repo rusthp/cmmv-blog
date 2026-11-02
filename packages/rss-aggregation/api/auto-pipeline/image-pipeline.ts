@@ -847,41 +847,14 @@ export class ImagePipelineWorker {
             const esc = (s: string) => s
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-            // Truncate title to avoid overflow in the SVG
-            let displayTitle = (title || 'No Title');
-            if (displayTitle.length > 80) displayTitle = displayTitle.substring(0, 77) + '...';
-
-            const words = displayTitle.split(' ');
-            let lines: string[] = [];
-            let currentLine = '';
-            const maxCharsPerLine = Math.floor(placeholderWidth / 28);
-
-            for (const word of words) {
-                if ((currentLine + word).length > maxCharsPerLine) {
-                    lines.push(currentLine);
-                    currentLine = word + ' ';
-                } else {
-                    currentLine += word + ' ';
-                }
-            }
-            if (currentLine) lines.push(currentLine);
-            lines = lines.slice(0, 2);
-
-            let textElements = '';
+            // Clean branded cover. We deliberately do NOT bake the headline into the image:
+            // the page already renders the title over the cover, so printing it here produced a
+            // duplicated "ghost" title on the hero and read as a cheap text screenshot on cards.
+            // The brand lockup is the focal point; the theme overlays the real title and the
+            // category pill on top, which is what differentiates each cover.
+            const brand = esc(siteName);
             const centerY = placeholderHeight / 2;
-            const lineHeight = 32;
-            const startY = centerY - ((lines.length - 1) * lineHeight) / 2;
-
-            lines.forEach((line, index) => {
-                textElements += `<text x="50%" y="${startY + index * lineHeight}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="22" fill="#ffffff" font-weight="600" letter-spacing="0.3">${line
-                    .trim()
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')}</text>`;
-            });
-
-            const brandY = placeholderHeight - 60;
-            const lineY = brandY - 30;
+            const accentW = 140;
 
             const svg = `<svg width="${placeholderWidth}" height="${placeholderHeight}" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -902,10 +875,9 @@ export class ImagePipelineWorker {
                     <circle cx="85%" cy="75%" r="120" fill="#7c3aed"/>
                     <circle cx="70%" cy="15%" r="40" fill="#ffcc00"/>
                 </g>
-                <rect x="50%" y="${lineY}" width="120" height="3" rx="1.5" fill="url(#accent)" transform="translate(-60,0)"/>
-                ${textElements}
-                <text x="50%" y="${brandY}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="14" fill="#ffcc00" font-weight="600" letter-spacing="2" text-transform="uppercase">${siteName
-                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
+                <rect x="50%" y="${centerY - 46}" width="${accentW}" height="4" rx="2" fill="url(#accent)" transform="translate(${-accentW / 2},0)"/>
+                <text x="50%" y="${centerY}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="46" fill="#ffffff" font-weight="800" letter-spacing="1">${brand}</text>
+                <text x="50%" y="${centerY + 40}" dominant-baseline="middle" text-anchor="middle" font-family="'Segoe UI',Roboto,sans-serif" font-size="15" fill="#ffcc00" font-weight="600" letter-spacing="4">COBERTURA DE ESPORTS</text>
             </svg>`;
 
             const buffer = Buffer.from(svg, 'utf-8');

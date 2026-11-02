@@ -267,6 +267,21 @@ export class GenerationWorker {
               in the source.
             - Length follows the source: a short source makes a short article. Never pad with filler or repeated points.
 
+            CONTENT HYGIENE — STRIP SOURCE SELF-PROMOTION (critical):
+            - This is a rewrite published by ProPlay News, NOT the original outlet. Remove every call to follow,
+              subscribe to, watch or visit the source or any third party: "siga o/a ... nas redes sociais",
+              "follow us on", newsletter / Discord / Telegram / WhatsApp invites, "Fonte:", "Source:", author or
+              outlet sign-offs, and plugs for other brands, sites or channels (a source's own social handles,
+              YouTube / TikTok / Spotify / Twitch channels, "produções da ..."). The reader must NEVER be told to
+              follow or consume the original source — ProPlay News must not promote a competitor inside its own article.
+            - You MAY keep a factual attribution only if the default prompt requires one, but as a plain neutral
+              mention — never as a "follow them" call to action.
+
+            KEYWORD IN BODY (critical):
+            - Do NOT output the raw SEO keyword string (the lowercase internal metadata, e.g. "liquid g2 game changers
+              championship 2026") anywhere in the body text, headings or closing line. It is targeting metadata, not
+              reader-facing copy. Express the topic as natural, properly capitalized and punctuated prose instead.
+
             Here is the content to transform:
 
             Title: ${contentToProcess.title}
