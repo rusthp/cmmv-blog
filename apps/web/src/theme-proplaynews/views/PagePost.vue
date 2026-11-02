@@ -10,14 +10,9 @@
 
             <div v-else>
                 <!-- Top AdSense Banner -->
-                <div v-if="adSettings.enableAds && adSettings.articlePageHeader" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
-                    <div class="ad-container ad-banner-top py-2 px-4" v-if="getAdHtml('header')">
+                <div v-if="adSettings.enableAds && adSettings.articlePageHeader && getAdHtml('header')" class="w-full bg-gray-100 rounded-lg mb-8 overflow-hidden flex justify-center">
+                    <div class="ad-container ad-banner-top py-2 px-4">
                         <div v-html="getAdHtml('header')"></div>
-                    </div>
-                    <div class="ad-container ad-banner-top py-2 px-4" v-else>
-                        <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                            <span>Anúncio</span>
-                        </div>
                     </div>
                 </div>
 
@@ -82,14 +77,9 @@
                                     </div>
 
                                     <!-- After Title Ad -->
-                                    <div v-if="adSettings.enableAds && adSettings.articlePageAfterTitle" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
-                                        <div class="ad-container ad-after-title py-2 px-4" v-if="getAdHtml('afterTitle')">
+                                    <div v-if="adSettings.enableAds && adSettings.articlePageAfterTitle && getAdHtml('afterTitle')" class="w-full bg-gray-100 rounded-lg my-6 overflow-hidden flex justify-center">
+                                        <div class="ad-container ad-after-title py-2 px-4">
                                             <div v-html="getAdHtml('afterTitle')"></div>
-                                        </div>
-                                        <div class="ad-container ad-after-title py-2 px-4" v-else>
-                                            <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                                <span>Anúncio</span>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -297,26 +287,16 @@
                                     </div>
 
                                     <!-- Mid-content AdSense Banner -->
-                                    <div v-if="adSettings.enableAds && adSettings.articlePageInContent" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
-                                        <div class="ad-container ad-banner-mid py-2 px-4" v-if="getAdHtml('inContent')">
+                                    <div v-if="adSettings.enableAds && adSettings.articlePageInContent && getAdHtml('inContent')" class="w-full bg-gray-100 rounded-lg my-8 overflow-hidden flex justify-center">
+                                        <div class="ad-container ad-banner-mid py-2 px-4">
                                             <div v-html="getAdHtml('inContent')"></div>
-                                        </div>
-                                        <div class="ad-container ad-banner-mid py-2 px-4" v-else>
-                                            <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                                <span>Anúncio</span>
-                                            </div>
                                         </div>
                                     </div>
 
                                     <!-- Bottom AdSense Banner -->
-                                    <div v-if="adSettings.enableAds && adSettings.articlePageAfterContent" class="w-full bg-gray-100 rounded-lg mt-8 mb-4 overflow-hidden flex justify-center">
-                                        <div class="ad-container ad-banner-bottom py-2 px-4" v-if="getAdHtml('belowContent')">
+                                    <div v-if="adSettings.enableAds && adSettings.articlePageAfterContent && getAdHtml('belowContent')" class="w-full bg-gray-100 rounded-lg mt-8 mb-4 overflow-hidden flex justify-center">
+                                        <div class="ad-container ad-banner-bottom py-2 px-4">
                                             <div v-html="getAdHtml('belowContent')"></div>
-                                        </div>
-                                        <div class="ad-container ad-banner-bottom py-2 px-4" v-else>
-                                            <div class="ad-placeholder h-[90px] w-full max-w-[728px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                                <span>Anúncio</span>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -330,26 +310,16 @@
                             <!-- Right Column (Widgets + Ads) -->
                             <div class="lg:col-span-1 min-w-[300px]">
                                 <!-- AdSense Rectangle (Top) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarTop" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
-                                    <div class="ad-container ad-sidebar-top" v-if="getAdHtml('sidebarTop')">
+                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarTop && getAdHtml('sidebarTop')" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
+                                    <div class="ad-container ad-sidebar-top">
                                         <div v-html="getAdHtml('sidebarTop')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-top" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- AdSense Rectangle (Middle) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarMid" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
-                                    <div class="ad-container ad-sidebar-mid" v-if="getAdHtml('sidebarMid')">
+                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarMid && getAdHtml('sidebarMid')" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center overflow-hidden h-[400px]">
+                                    <div class="ad-container ad-sidebar-mid">
                                         <div v-html="getAdHtml('sidebarMid')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-mid" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -478,14 +448,9 @@
 
 
                                 <!-- AdSense Rectangle (Bottom) -->
-                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarBottom" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
-                                    <div class="ad-container ad-sidebar-bottom" v-if="getAdHtml('sidebarBottom')">
+                                <div v-if="adSettings.enableAds && adSettings.articlePageSidebarBottom && getAdHtml('sidebarBottom')" class="bg-gray-100 rounded-lg p-2 mb-6 flex justify-center h-[400px]">
+                                    <div class="ad-container ad-sidebar-bottom">
                                         <div v-html="getAdHtml('sidebarBottom')"></div>
-                                    </div>
-                                    <div class="ad-container ad-sidebar-bottom" v-else>
-                                        <div class="ad-placeholder h-[250px] w-[300px] bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                                            <span>Anúncio</span>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1329,7 +1294,11 @@ const loadDisqusComments = () => {
 
 const relatedPostsObserver = ref<HTMLElement | null>(null)
 const commentsObserver = ref<HTMLElement | null>(null)
-const relatedPostsLoaded = ref(false)
+// Related posts come from the store (no async fetch — loadRelatedPosts only
+// flips this flag), so render them immediately. Gating on the IntersectionObserver
+// left a permanent spinner whenever the observer never fired, and also kept the
+// related links out of the SSR HTML. Starting true fixes both.
+const relatedPostsLoaded = ref(true)
 const commentsLoaded = ref(false)
 const relatedPostsObserverInstance = ref<IntersectionObserver | null>(null)
 const commentsObserverInstance = ref<IntersectionObserver | null>(null)
