@@ -726,6 +726,16 @@ function transformTextNodes(html: string, transform: (segment: string) => string
     });
 }
 
+// Single alternation per category, longest match first, so a shorter name that is
+// a substring of a longer one (e.g. "Liquid" inside "Team Liquid") can't double-wrap.
+const buildAltRx = (names: string[]): RegExp | null => {
+    const sorted = [...names].filter(Boolean).sort((a, b) => b.length - a.length);
+    if (!sorted.length) return null;
+    return new RegExp(`(?<![\\w#@])(${sorted.map(escapeRegex).join('|')})(?![\\w])`, 'g');
+};
+const teamAltRx = buildAltRx(KNOWN_TEAMS);
+const playerAltRx = buildAltRx(KNOWN_PLAYERS);
+
 function applyEsportsFormatting(html: string): string {
     // Only process text nodes inside <p> and <li> — avoid breaking HTML tags
     // We use a tag-aware split strategy
@@ -748,22 +758,21 @@ function applyEsportsFormatting(html: string): string {
             return segment;
         });
 
-        // Apply team names (text nodes only — never inside href/attributes)
+        // Apply team names (text nodes only — never inside href/attributes).
+        // One alternation sorted longest-first, not a forEach: a per-team loop
+        // wrapped "Team Liquid" and then matched "Liquid" again INSIDE it, nesting
+        // <em> in <em> so the two pill backgrounds overlapped. A single global
+        // replace consumes each match, so "Team Liquid" wins and the inner "Liquid"
+        // can't re-match.
         text = transformTextNodes(text, (segment) => {
-            KNOWN_TEAMS.forEach(team => {
-                const rx = new RegExp(`(?<![\\w#@])${escapeRegex(team)}(?![\\w])`, 'g');
-                segment = segment.replace(rx, '<em class="team-name">$&</em>');
-            });
-            return segment;
+            if (!teamAltRx) return segment;
+            return segment.replace(teamAltRx, '<em class="team-name">$1</em>');
         });
 
-        // Apply player names (italic, text nodes only)
+        // Apply player names (italic, text nodes only) — same single-alternation rule.
         text = transformTextNodes(text, (segment) => {
-            KNOWN_PLAYERS.forEach(player => {
-                const rx = new RegExp(`(?<![\\w#@])${escapeRegex(player)}(?![\\w])`, 'g');
-                segment = segment.replace(rx, `<em class="player-name">${player}</em>`);
-            });
-            return segment;
+            if (!playerAltRx) return segment;
+            return segment.replace(playerAltRx, '<em class="player-name">$1</em>');
         });
 
         return openTag + text + closeTag;
@@ -849,8 +858,27 @@ const SOCIAL_EMBEDS: SocialEmbed[] = [
 // scanned so the same post is not embedded twice.
 const EXISTING_EMBED_PATTERN = /<blockquote\b[^>]*class=["'][^"']*(?:twitter-tweet|instagram-media|tiktok-embed|reddit-embed-bq)[\s\S]*?<\/blockquote>|<iframe\b[^>]*>/g;
 
+// Remove the source outlet's own promotion that the AI rewrite sometimes carries
+// over — "siga/seguindo X nas redes", "confira as produções da ...", and a trailing
+// "Fonte:/Source:" line — so ProPlay News stops pointing its readers at the outlet it
+// rewrote. Runs at render (SSR included), so it also cleans already-published posts
+// without touching the database.
+function stripSourcePromo(html: string): string {
+    if (!html) return html;
+    const SOCIAL = /(twitter|instagram|threads|bluesky|facebook|tiktok|youtube|spotify|nas redes)/i;
+    const CTA = /(siga|seguindo|acompanhe|confira as produções|fique por dentro)/i;
+    return html.replace(/<p\b[^>]*>[\s\S]*?<\/p>/gi, (block) => {
+        const text = block.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+        if (/^\s*(Fonte|Source)\s*:/i.test(text)) return '';
+        if (CTA.test(text) && SOCIAL.test(text)) return '';
+        return block;
+    });
+}
+
 function processPostContent(content) {
     if (!content) return '';
+
+    content = stripSourcePromo(content);
 
     const embedded = new Set<string>();
     const embedOnce = (provider: SocialEmbed, match: RegExpMatchArray): string => {
